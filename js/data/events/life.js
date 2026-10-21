@@ -83,7 +83,7 @@ export default [
     roles: { friend: { best: ['p_friend', 'p_rival', 'p_senior'] } },
     text: '초겨울 첫날, 집집마다 열을 잠깐씩 이웃에게 나누는 첫불 축제가 열렸다. 운하 위로 등불이 흐르고, 기계 행렬이 증기를 뿜으며 지나간다. 오늘 밤만은 아무것도 갚지 않아도 된다.',
     choices: [
-      { id: 'together', label: '{@friend}와 함께 등불을 띄운다',
+      { id: 'together', label: '{@friend|와} 함께 등불을 띄운다',
         ok: { text: '{@friend|이} 띄운 등불이 당신 것보다 조금 멀리 갔다. 둘 다 그걸 보고 한참 웃었다.', effects: [{ t: 'rel', who: 'friend', trust: 3, aff: 6 }, { t: 'stat', k: 'stress', v: -6 }] } },
       { id: 'parade', label: '혼자 기계 행렬을 끝까지 따라간다',
         ok: { text: '행렬의 마지막 기계는 낡은 소방 펌프였다. 누군가 그 위에 꽃을 얹어 두었다.', effects: [{ t: 'stat', k: 'stress', v: -5 }, { t: 'attr', k: 'sense', xp: 2 }] } },

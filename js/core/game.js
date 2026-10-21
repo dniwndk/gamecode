@@ -364,7 +364,7 @@ function npcYearTick(state) {
   for (const n of Object.values(state.npcs)) {
     if (!n.alive) continue;
     n.age += 1;
-    if (n.core && n.age >= 66 && !n.retired) { n.retired = true; state.yearLog.causes.push(`${n.name}이 은퇴했다. 공개 업무는 후임이 잇는다.`); }
+    if (n.core && n.age >= 66 && !n.retired) { n.retired = true; state.yearLog.causes.push(`${josa(n.name, '이')} 은퇴했다. 공개 업무는 후임이 잇는다.`); }
     if (n.age >= 60) {
       const p = (n.age - 58) * 0.6;
       if (withRng(state, 'city', r => r.pct(p))) {
@@ -381,7 +381,7 @@ function npcYearTick(state) {
       if (!d.done && !d.failed && !d.waived && state.year > d.due) {
         d.failed = true; state.stats.dutiesFailed = (state.stats.dutiesFailed || 0) + 1;
         changeRel(state, n, -10, -5, null, '약속을 지키지 못했다');
-        state.yearLog.causes.push(`${shortName(n.name)}와의 약속 기한을 넘겼다: ${d.text}`);
+        state.yearLog.causes.push(`${josa(shortName(n.name), '와')}의 약속 기한을 넘겼다: ${d.text}`);
       }
     }
   }
@@ -397,7 +397,7 @@ export function buy(state, id) {
   state.ch.cash -= it.price;
   state.yearLog.startCash -= it.price;
   applyEffects(state, [{ t: 'item', id }], { cause: '구입' });
-  state.journal.push({ year: state.year, age: state.age, season: 0, kind: 'note', text: `${it.name}을 ${it.price}C에 샀다.` });
+  state.journal.push({ year: state.year, age: state.age, season: 0, kind: 'note', text: `${josa(it.name, '을')} ${it.price}C에 샀다.` });
   return { ok: true };
 }
 
@@ -451,7 +451,7 @@ export function workshopOffer(state) {
   const price = 80 - (heir ? 20 : 0) - (master ? 20 : 0);
   const need = heir ? 1 : 2;
   const perks = [heir ? '열쇠 「공방집 아이」 −20C · 숙련 1부터' : null, master ? `${shortName(state.npcs.p_master.name)}의 설비 −20C` : null].filter(Boolean);
-  return { price, need, perks, ok: ch.cash >= price && skill >= need, reason: skill < need ? `수리 또는 상업 숙련 ${need}가 필요하다` : ch.cash < price ? `시작 자금 ${price}C가 필요하다 (저축, 대출, 동업)` : '' };
+  return { price, need, perks, ok: ch.cash >= price && skill >= need, reason: skill < need ? `수리 또는 상업 숙련 ${josa(String(need), '가')} 필요하다` : ch.cash < price ? `시작 자금 ${price}C가 필요하다 (저축, 대출, 동업)` : '' };
 }
 
 export function openWorkshop(state) {

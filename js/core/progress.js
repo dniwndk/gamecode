@@ -1,7 +1,7 @@
 // 개인 목표·업적·엔딩. 판정은 확정된 상태와 기록만 사용한다.
 import { GOALS, JOBS, LIFE_CLASSES, PUBLIC_RANKS, SKILLS, ABILITIES, ABILITY_STAGES, DISTRICTS } from '../data/world.js';
 import { withRng } from './rng.js';
-import { shortName } from './util.js';
+import { shortName, josa } from './util.js';
 import { totalDebt } from './economy.js';
 import { applyEffects, fmt } from './rules.js';
 import { TRAITS, hasTrait, traitName, tierOf } from './traits.js';
@@ -164,7 +164,7 @@ export const ENDINGS = {
   price_of_trade: { name: '거래의 대가', scene: '넘긴 사업과 남은 계약의 평가', test: s => (s.ch.workshop && s.ch.lifeClass >= 2) || (s.ch.job?.id === 'merchant' && s.ch.job.rank >= 2 && s.ch.cash >= 150 && totalDebt(s) < s.ch.cash),
     text: () => '{fullme}의 장부는 끝까지 맞아떨어졌다. 넘겨준 사업에는 단골과 계약서가 함께 갔고, 남은 계약들은 공정했는지 아닌지로 하나씩 평가받았다. 돈은 목적이 아니라 문을 여는 열쇠였다고, 그 장부가 말하고 있었다.' },
   kept_promise: { name: '끝내 지킨 약속', scene: '기록에 없던 작은 약속의 결실', test: s => (s.stats.dutiesDone || 0) >= 3 && !(s.stats.dutiesFailed > 0),
-    text: s => `{fullme}는 ${s.stats.dutiesDone}개의 약속을 날짜 안에 지켰다. 그중 어떤 것은 기록에 남지 않았다. 장례식 날, 기록에 없던 약속을 기억하는 사람이 한 명 더 찾아왔다.` },
+    text: s => `{fullme|는} ${s.stats.dutiesDone}개의 약속을 날짜 안에 지켰다. 그중 어떤 것은 기록에 남지 않았다. 장례식 날, 기록에 없던 약속을 기억하는 사람이 한 명 더 찾아왔다.` },
   warm_window: { name: '따뜻한 창문', scene: '겨울 저녁 식탁에 모인 사람들', test: s => (s.ch.lifeClass >= 1 || !s.ch.independent) && Object.values(s.npcs).filter(n => n.alive && n.trust >= 40).length >= 3,
     text: () => '마지막 겨울에도 {fullme}의 창문에는 불이 켜져 있었다. 식탁에는 의자가 모자랐고, 사람들은 서서 수프를 먹었다. 대단한 일을 하지 않아도 사람이 모이는 집이 있다는 것을, 그 골목은 알고 있었다.' },
   // 특성과 인연이 연 길의 끝
@@ -205,8 +205,8 @@ function funeralLine(state, n) {
   if ((n.id === 'sabine' || n.heirOf === 'sabine') && hasTrait(state, 'pos_solidarity')) return `"그 겨울 밤 교대를 맡아 준 사람이에요. 이번엔 제가 끝까지 서 있을게요."`;
   if ((n.id === 'elian' || n.heirOf === 'elian') && hasTrait(state, 'pos_archivist')) return `"맨 아래 서랍의 열쇠는 ${me}의 목에서 내려와 다시 제 손에 있습니다. 서랍은 한 번도 잘못 열리지 않았어요."`;
   if (n.role === 'friend' && hasTrait(state, 'pos_partner')) return `"간판에서 ${me}의 이름은 안 지울 거야. 골목 끝에서 한 약속이니까."`;
-  if (n.id === 'toma' || n.heirOf === 'toma') return state.flags.project_ash_boiler ? `"난로 점검표 맨 위 칸은 아직도 ${me}의 이름이야."` : `"${me}는 배관을 두드리는 소리만 듣고도 어디가 아픈지 알았지."`;
-  if (n.id === 'sabine' || n.heirOf === 'sabine') return `"${me}는 누가 대신 견디는 걸 그냥 두지 않았어요."`;
+  if (n.id === 'toma' || n.heirOf === 'toma') return state.flags.project_ash_boiler ? `"난로 점검표 맨 위 칸은 아직도 ${me}의 이름이야."` : `"${josa(me, '는')} 배관을 두드리는 소리만 듣고도 어디가 아픈지 알았지."`;
+  if (n.id === 'sabine' || n.heirOf === 'sabine') return `"${josa(me, '는')} 누가 대신 견디는 걸 그냥 두지 않았어요."`;
   if ((n.id === 'sera' || n.heirOf === 'sera') && hasTrait(state, 'kw_rivet_partner')) return `"장부 한쪽이 비었네. 그래도 값은 정직하게 매길 거야. 그 사람이 그랬듯이."`;
   if (n.id === 'sera' || n.heirOf === 'sera') return state.stats.bigLoanRepaid ? `"끝까지 갚은 사람은 드물어. 그래서 기억해."` : `"계약서는 깔끔했지. 그 사람다웠어."`;
   if (n.id === 'elian' || n.heirOf === 'elian') return `"약속 장부에 ${me}의 이름은 ${done ? '지킨 쪽에' : '깨끗하게'} 남아 있습니다."`;
@@ -214,7 +214,7 @@ function funeralLine(state, n) {
   if (n.role === 'guardian') return `"처음 걸음마를 뗀 날을 기억한다. 마지막 걸음도 잘 걸었구나."`;
   if (n.role === 'rival') return `"이기고 싶었던 사람이 있어서 여기까지 왔어."`;
   if (n.role === 'child') return `"가르쳐 준 대로 하고 있어요. 서명도요."`;
-  return done ? `"약속을 지켜 준 사람이었어요."` : `"그 골목에서 ${me}를 모르는 사람은 없었어요."`;
+  return done ? `"약속을 지켜 준 사람이었어요."` : `"그 골목에서 ${josa(me, '를')} 모르는 사람은 없었어요."`;
 }
 
 export function buildEnding(state, type) {

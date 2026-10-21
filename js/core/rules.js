@@ -185,8 +185,8 @@ export function costProblem(state, cost) {
   const c = effectiveCost(state, cost);
   const ch = state.ch;
   if (c.cash && spendable(state) < c.cash) return `쓸 수 있는 돈이 부족하다 (필요 ${c.cash}C)`;
-  if (c.item && !(ch.consumables[c.item] > 0 || ch.items.includes(c.item))) return `${ITEMS[c.item].name}이 필요하다`;
-  if (c.requireItem && !ch.items.includes(c.requireItem)) return `${ITEMS[c.requireItem].name}이 필요하다`;
+  if (c.item && !(ch.consumables[c.item] > 0 || ch.items.includes(c.item))) return `${josa(ITEMS[c.item].name, '이')} 필요하다`;
+  if (c.requireItem && !ch.items.includes(c.requireItem)) return `${josa(ITEMS[c.requireItem].name, '이')} 필요하다`;
   if (c.requireAny && !c.requireAny.some(i => ch.items.includes(i))) return `${c.requireAny.map(i => ITEMS[i].name).join(' 또는 ')} 필요`;
   return null;
 }
@@ -401,7 +401,7 @@ export function applyEffects(state, effects, ctx = {}) {
       case 'trait': gainTrait(state, e.id, log, cause); break;
       case 'loseTrait': loseTrait(state, e.id, log, cause); break;
       case 'goal': state.stats['g_' + e.k] = (state.stats['g_' + e.k] || 0) + (e.v ?? 1); break;
-      case 'move': if (ch.home !== e.d) { ch.home = e.d; log.push(`${DISTRICTS[e.d].name}으로 이사했다`); state.history.moved = state.year; } break;
+      case 'move': if (ch.home !== e.d) { ch.home = e.d; log.push(`${josa(DISTRICTS[e.d].name, '으로')} 이사했다`); state.history.moved = state.year; } break;
       case 'workshop': if (!ch.workshop) { ch.workshop = { since: state.year, value: e.value || 80, quality: 1, coop: !!e.coop }; log.push(e.coop ? '협동 공방을 열었다' : '작은 공방을 열었다'); } break;
       case 'workshopValue': if (ch.workshop) { ch.workshop.value += e.v; ch.workshop.quality += 1; log.push(`공방 설비 가치 +${e.v}C`); } break;
       case 'abilityTask': {
@@ -428,7 +428,7 @@ export function setJob(state, id, rank, log) {
   const ch = state.ch;
   const prev = ch.job;
   ch.job = { id, rank: rank || 0, years: 0, since: state.year, district: JOBS[id].district, history: prev ? [...(prev.history || []), prev.id] : [] };
-  log?.push(`${JOBS[id].name} ${['견습', '숙련', '책임자', '독립 전문가'][ch.job.rank]}이 되었다`);
+  log?.push(`${JOBS[id].name} ${josa(['견습', '숙련', '책임자', '독립 전문가'][ch.job.rank], '이')} 되었다`);
   state.yearLog.jobChanges.push(`${JOBS[id].name} 시작`);
 }
 

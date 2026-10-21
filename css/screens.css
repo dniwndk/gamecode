@@ -528,6 +528,7 @@
 .set-group { margin-bottom: 8px; }
 .set-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px dotted var(--line); }
 .set-row.col { flex-direction: column; align-items: stretch; gap: 6px; }
+.set-row > .btn { flex: none; white-space: nowrap; }
 .set-row b { font-weight: 400; }
 .set-row small { display: block; font-size: .76em; color: var(--text-faint); }
 .set-row label { display: flex; justify-content: space-between; }
@@ -557,6 +558,9 @@
 .candle.c1 { height: 110px; margin-top: 30px; }
 .candle .flame { position: absolute; left: 50%; top: -26px; width: 12px; height: 22px; margin-left: -6px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: radial-gradient(circle at 50% 70%, #fff6d0, #ffc45a 50%, rgba(255, 120, 30, 0) 75%); box-shadow: 0 0 30px 12px rgba(255, 180, 80, .35); animation: flicker 2.2s infinite, swing 3s ease-in-out infinite; transform-origin: 50% 100%; }
 .end-head { position: relative; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 30px; }
+/* 생몰 연도 줄이 촛대와 겹쳐도 읽히게: 촛대 위로 올리고 어두운 번짐을 두른다 */
+.end-head .eyebrow { position: relative; z-index: 1; color: var(--brass-hi); text-shadow: 0 0 3px #0a0705, 0 0 8px #0a0705, 0 0 14px rgba(10, 7, 5, .8); }
+:root[data-theme="ivory"] .end-head .eyebrow { color: var(--brass); text-shadow: 0 0 3px var(--bg, #e9dcc0), 0 0 8px var(--bg, #e9dcc0); }
 .end-name { font-weight: 400; font-size: clamp(40px, 7vw, 76px); letter-spacing: .14em; color: var(--brass-hi); animation: ink-bleed 1.6s var(--ease-out) both, title-glow 5s ease-in-out 1.6s infinite; }
 .end-plaque { font-size: 1.15em; animation: rise .6s .9s var(--ease-out) both; }
 .end-scene { color: var(--text-dim); font-size: .9em; animation: fade-in .8s 1.2s both; }
@@ -628,7 +632,8 @@
   .choice { gap: 10px; padding: 8px 10px 8px 8px; }
   .choice .key { width: 28px; height: 28px; }
   .c-odds { width: 54px; }
-  .drawer { top: 0; bottom: 0; right: 0; width: 100vw; border-radius: 0; padding: 34px 12px 12px; }
+  /* 이름판(plaque)이 위로 21px 걸쳐 나오고 모서리 장식이 7px 밖으로 나가므로 그만큼 띄운다 */
+  .drawer { top: calc(24px + env(safe-area-inset-top)); bottom: calc(8px + env(safe-area-inset-bottom)); right: 8px; width: calc(100vw - 16px); padding: 34px 12px 12px; }
   .toast-zone { right: 50%; transform: translateX(50%); bottom: auto; top: 10px; }
   .ledger-top { grid-template-columns: 1fr 1fr 1fr; }
   .eq-row { gap: 6px; }
@@ -637,6 +642,7 @@
   .plan-foot { flex-direction: column; align-items: stretch; }
   .plan-foot .btn { width: 100%; }
   .candles { gap: 70px; }
+  .end-head .eyebrow { letter-spacing: .12em; }
   .ticket-row { grid-template-columns: 1fr; }
   .fate-row { gap: 12px; }
   .flip-card { min-height: 290px; }
