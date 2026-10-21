@@ -173,6 +173,7 @@ export function advance(state) {
     const econ = seasonEconomy(state);
     queueForSeason(state);
     entries.push({ kind: 'season', season: state.season, text: SEASONS[state.season], deltas: econ });
+    state.journal.push({ year: state.year, age: state.age, season: state.season, kind: 'season', text: SEASONS[state.season], deltas: econ.length ? econ : undefined });
     loadChecks(state, entries);
   }
   while (state.queue.length) {
@@ -190,6 +191,11 @@ export function advance(state) {
   return { entries, phase: state.phase };
 }
 
+function warn(state, entries, text) {
+  entries.push({ kind: 'warn', text });
+  state.journal.push({ year: state.year, age: state.age, season: state.season, kind: 'warn', text });
+}
+
 function loadChecks(state, entries) {
   const ch = state.ch;
   const flagKey = (n) => `load${n}_${state.year}`;
@@ -199,10 +205,10 @@ function loadChecks(state, entries) {
     state.pending.push({ id: '__load90', ev: 'evt_emergency_stabilize', due: state.year, roles: {}, tries: 0 });
   } else if (ch.load >= 75 && !state.flags[flagKey(75)]) {
     state.flags[flagKey(75)] = true;
-    entries.push({ kind: 'warn', text: `공명부하 ${ch.load}. 손끝의 감각이 엇나가기 시작한다. 강한 사용은 사고를 부를 수 있다.` });
+    warn(state, entries, `공명부하 ${ch.load}. 손끝의 감각이 엇나가기 시작한다. 강한 사용은 사고를 부를 수 있다.`);
   } else if (ch.load >= 50 && !state.flags[flagKey(50)]) {
     state.flags[flagKey(50)] = true;
-    entries.push({ kind: 'warn', text: `공명부하 ${ch.load}. 정밀한 일을 할 때 손이 무겁다.` });
+    warn(state, entries, `공명부하 ${ch.load}. 정밀한 일을 할 때 손이 무겁다.`);
   }
 }
 

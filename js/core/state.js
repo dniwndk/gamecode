@@ -84,7 +84,9 @@ export function newRun(seedInput, opts = {}) {
     skills[subSkill] = 1; skillXp[subSkill] = 3;
 
     const used = new Set(Object.values(CORE_NPCS).map(n => n.name));
-    const playerName = (opts.name && String(opts.name).trim()) || makeName(r, used);
+    // 이름을 직접 정해도 생성 이름을 한 번 뽑아 둔다: 이름만 바꿔도 다른 인물 이름은 그대로다
+    const generated = makeName(r, used);
+    const playerName = (opts.name && String(opts.name).trim()) || generated;
     used.add(playerName);
 
     state.ch = {

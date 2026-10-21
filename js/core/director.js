@@ -58,7 +58,7 @@ function resolveRoles(state, def, given = {}) {
 function eligible(state, def, opts = {}) {
   if (!def || def.chainOnly && !opts.pending) return false;
   if (!opts.pending) {
-    const cd = def.cooldown ?? 5;
+    const cd = Math.max(5, def.cooldown ?? 5); // 같은 사건은 최소 5년 뒤에 다시 나온다
     const last = state.cooldowns[def.id];
     if (last != null && state.year - last < cd) return false;
     if (def.once && last != null) return false;
@@ -89,19 +89,25 @@ function cityFactor(state, def) {
   return Math.min(2, Math.max(0.5, f));
 }
 
-function novelty(state, def) {
-  const recent = Object.entries(state.cooldowns).some(([id, y]) => state.year - y <= 2 && EVENTS[id]?.category === def.category);
-  return recent ? 0.25 : 1;
+function recentCategories(state) {
+  const set = new Set();
+  for (const id in state.cooldowns) if (state.year - state.cooldowns[id] <= 2 && EVENTS[id]) set.add(EVENTS[id].category);
+  return set;
 }
 
-export function eventWeight(state, def) {
-  return (def.base ?? 10) * relevance(state, def) * cityFactor(state, def) * novelty(state, def);
+function novelty(state, def, recent = recentCategories(state)) {
+  return recent.has(def.category) ? 0.25 : 1;
+}
+
+export function eventWeight(state, def, recent) {
+  return (def.base ?? 10) * relevance(state, def) * cityFactor(state, def) * novelty(state, def, recent);
 }
 
 export function pickMajor(state) {
   const cands = Object.values(EVENTS).filter(d => eligible(state, d));
   if (!cands.length) return null;
-  const pairs = cands.map(d => [d, Math.max(1, Math.round(eventWeight(state, d) * 100))]);
+  const recent = recentCategories(state);
+  const pairs = cands.map(d => [d, Math.max(1, Math.round(eventWeight(state, d, recent) * 100))]);
   return withRng(state, 'event', r => r.weighted(pairs));
 }
 
@@ -122,8 +128,7 @@ export function pickDaily(state) {
 // 계절 큐에서 다음 항목을 처리한다. 사건이 시작되면 true를 반환해 진행을 멈춘다.
 export function processQueueItem(state, item, entries) {
   if (item.kind === 'daily') {
-    const t = pickDaily(state);
-    if (t) entries.push({ kind: 'daily', text: t });
+    pushDaily(state, entries);
     return false;
   }
   if (item.kind === 'pending') {
@@ -131,6 +136,16 @@ export function processQueueItem(state, item, entries) {
     if (!p) return false;
     const def = EVENTS[p.ev];
     const roles = def ? resolveRoles(state, def, p.roles) : {};
+    // 담당 인물이 세상을 떠났고 이어받을 후임도 없으면, 사건 대신 편지와 유품으로 마무리한다
+    const lost = def && Object.keys(def.roles || {}).map(k => state.npcs[roles[k]]).find(n => n && !n.alive);
+    if (lost) {
+      state.pending = state.pending.filter(x => x !== p);
+      const rest = p.invalid ? fmt(state, p.invalid, roles) : '유품 상자에서 당신 앞으로 남긴 쪽지가 나왔다. 하려던 일은 그렇게 끝을 맺었다.';
+      const text = `${lost.name}의 부고가 먼저 닿았다. ${rest}`;
+      entries.push({ kind: 'letter', text });
+      state.journal.push({ year: state.year, age: state.age, season: state.season, kind: 'letter', text, eventId: p.ev, lost: lost.id });
+      return false;
+    }
     if (def && meets(state, def.cond, roles)) {
       state.pending = state.pending.filter(x => x !== p);
       startEvent(state, def, roles, entries, p);
@@ -151,14 +166,20 @@ export function processQueueItem(state, item, entries) {
   if (item.kind === 'major') {
     const def = pickMajor(state);
     if (!def) {
-      const t = pickDaily(state);
-      if (t) entries.push({ kind: 'daily', text: t });
+      pushDaily(state, entries);
       return false;
     }
     startEvent(state, def, resolveRoles(state, def), entries);
     return true;
   }
   return false;
+}
+
+function pushDaily(state, entries) {
+  const t = pickDaily(state);
+  if (!t) return;
+  entries.push({ kind: 'daily', text: t });
+  state.journal.push({ year: state.year, age: state.age, season: state.season, kind: 'daily', text: t });
 }
 
 export function startEvent(state, def, roles, entries, pending) {
@@ -187,7 +208,14 @@ export function getChoices(state) {
   if (!cn) return [];
   const { def, node } = cn;
   const roles = state.current.roles;
-  return (node.choices || []).filter(c => !c.cond || meets(state, c.cond, roles)).filter(c => !(c.once && state.current.used.includes(c.id))).map(c => {
+  let list = (node.choices || []).filter(c => !c.cond || meets(state, c.cond, roles)).filter(c => !(c.once && state.current.used.includes(c.id)));
+  // 한 장면의 선택지는 최대 4개: 넘치면 지금 고를 수 없는 것부터 빼고, 그래도 넘치면 마지막(후퇴) 선택지를 남긴다
+  if (list.length > 4) {
+    const blocked = list.filter(c => costProblem(state, c.cost) || (c.req && !meets(state, c.req, roles)));
+    for (const b of blocked) if (list.length > 4) list = list.filter(c => c !== b);
+    if (list.length > 4) list = [...list.slice(0, 3), list[list.length - 1]];
+  }
+  return list.map(c => {
     const problem = costProblem(state, c.cost) || (c.req && !meets(state, c.req, roles) ? fmt(state, c.reqText || '조건이 부족하다', roles) : null);
     let chance = null, parts = null;
     if (c.check) ({ chance, parts } = computeChance(state, c.check, roles));
@@ -228,7 +256,7 @@ export function choose(state, choiceId, token) {
   for (const e of outcome?.effects || []) if (e.t === 'var') cur.vars[e.k] = (cur.vars[e.k] || 0) + e.v;
   const text = fmt(state, outcome?.text || '', cur.roles);
   const result = { kind: 'result', text, choice: fmt(state, c.label, cur.roles), success: c.check ? success : null, chance, deltas: [...log, ...effLog] };
-  state.journal.push({ year: state.year, age: state.age, season: state.season, ...result, eventId: def.id });
+  state.journal.push({ year: state.year, age: state.age, season: state.season, ...result, eventId: def.id, node: cur.node, choiceId: c.id });
   state.yearLog.events.push({ title: def.title, choice: result.choice, success: result.success, deltas: result.deltas });
   if (outcome?.cause) state.yearLog.causes.push(fmt(state, outcome.cause, cur.roles));
 
