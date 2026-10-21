@@ -1,0 +1,75 @@
+// 관계 사건 4개 (원본 16장 씨앗 03·04·26·35) + 보증 후속
+
+export default [
+  {
+    id: 'evt_classmate_leaves', title: '학비 때문에 떠나는 급우', category: 'relation', tags: ['school'], base: 12, cooldown: 6, once: true,
+    cond: { maxAge: 17 },
+    roles: { mate: { pick: ['p_friend', 'p_rival'] } },
+    text: '야간학교 뒷자리가 비었다. {@mate|가} 학비를 못 내서 이번 학기를 끝으로 그만둔다고 한다. 마지막 수업 날, {@mate|는} 아무렇지 않은 척 교과서를 당신 책상에 밀어 놓았다. "필기 깨끗하니까 너 가져."',
+    choices: [
+      { id: 'scholar', label: '장학금 서류를 같이 찾아본다', check: { attr: 'lore', diff: 6, skill: 'record' }, failHint: '실패해도 관계는 깊어진다',
+        ok: { text: '시청 게시판 구석에서 기술 장학생 모집 공고를 찾았다. 마감은 내년 봄. 둘이서 서류 칸을 하나씩 채우기로 했다.', effects: [{ t: 'rel', who: 'mate', trust: 10, aff: 8 }, { t: 'duty', who: 'mate', text: '장학 서류를 함께 마감한다', years: 2 }, { t: 'skill', k: 'record', xp: 2 }] },
+        fail: { text: '맞는 공고가 없었다. 그래도 {@mate|는} 같이 게시판을 뒤져 준 저녁을 오래 기억했다.', effects: [{ t: 'rel', who: 'mate', trust: 4, aff: 6 }] } },
+      { id: 'work', label: '같이 할 수 있는 일거리를 찾는다', hint: '소지금 +4C',
+        ok: { text: '둘이서 운하 창고의 상자를 날랐다. 일당은 반으로 나눴고, 교과서는 돌려줬다. "다음 학기에 다시 와."', effects: [{ t: 'cash', v: 4 }, { t: 'rel', who: 'mate', trust: 5, aff: 8 }, { t: 'attr', k: 'body', xp: 2 }] } },
+      { id: 'letter', label: '교과서를 받고, 편지를 쓰기로 한다',
+        ok: { text: '편지는 한 달에 한 번 오갔다. 글씨는 점점 짧아졌지만 끊기지는 않았다.', effects: [{ t: 'rel', who: 'mate', aff: 5 }, { t: 'stat', k: 'stress', v: -2 }, { t: 'skill', k: 'record', xp: 1 }] } },
+    ],
+  },
+  {
+    id: 'evt_same_apprentice', title: '같은 견습 자리', category: 'relation', tags: ['plumber', 'merchant', 'recorder'], base: 11, cooldown: 8, once: true,
+    cond: { minAge: 14, maxAge: 17, apprentice: true },
+    roles: { rival: 'p_rival' },
+    text: '내년 견습 자리는 하나뿐인데 {@rival}도 지원서를 냈다. 시험은 실기 하나, 면접 하나. {@rival|는} 대기실에서 당신을 보자 고개를 까딱했다. 둘 다 이 자리가 얼마나 필요한지 안다.',
+    choices: [
+      { id: 'compete', label: '정면으로 겨룬다', check: { attr: 'craft', diff: 6, skill: 'repair' }, failHint: '실패 시 스트레스 +5',
+        ok: { text: '실기 점수는 당신이 한 점 높았다. 결과 발표 날 {@rival|는} 악수를 청했다. "다음 판은 내가 이겨."', effects: [{ t: 'skill', k: 'job', xp: 3 }, { t: 'rel', who: 'rival', trust: 5, aff: -4 }, { t: 'attr', k: 'craft', xp: 2 }] },
+        fail: { text: '자리는 {@rival}에게 갔다. 분했지만, 실기에서 무엇이 모자랐는지는 정확히 알았다.', effects: [{ t: 'stat', k: 'stress', v: 5 }, { t: 'skill', k: 'job', xp: 1 }, { t: 'rel', who: 'rival', trust: 3 }] } },
+      { id: 'together', label: '같이 준비하고 결과를 받아들인다',
+        ok: { text: '두 사람은 밤마다 서로의 실기를 봐 줬다. 누가 붙든 떨어진 사람에게 공구를 빌려주기로 약속했다.', effects: [{ t: 'rel', who: 'rival', trust: 8, aff: 8 }, { t: 'skill', k: 'job', xp: 1 }] } },
+      { id: 'yield', label: '다른 진로를 찾고 자리를 양보한다',
+        ok: { text: '{@rival|는} 당신의 결정을 이해하지 못했다. 몇 년 뒤에야 그날 일을 고맙다고 말했다.', effects: [{ t: 'rel', who: 'rival', aff: 10, trust: 4 }, { t: 'stat', k: 'stress', v: -2 }, { t: 'flag', k: 'yieldedSeat' }] } },
+    ],
+  },
+  {
+    id: 'evt_guarantee', title: '대출 보증 부탁', category: 'relation', tags: [], base: 9, cooldown: 8,
+    cond: { minAge: 21, independent: true },
+    roles: { friend: { best: ['p_friend', 'p_senior', 'p_rival'] } },
+    text: '{@friend|가} 공방 개업 자금을 빌리려는데 보증인이 필요하다고 한다. 은행은 보증 한도 20크라운을 요구한다. {@friend|는} 사업 계획서를 세 번이나 고쳐 왔다. 숫자는 그럴듯하지만, 숫자는 늘 그럴듯하다.',
+    choices: [
+      { id: 'guarantee', label: '한도를 정해 보증을 선다', irreversible: true, hint: '신뢰 상승 · 최대 20C 위험',
+        ok: { text: '보증서에 이름을 적었다. {@friend|는} 당신 손을 잡고 한참 놓지 않았다. 이제 그 사업의 내일이 당신의 내일과 조금 겹친다.', effects: [{ t: 'rel', who: 'friend', trust: 10, aff: 8 }, { t: 'schedule', ev: 'evt_guarantee_result', after: [1, 3], invalid: '보증을 섰던 {@friend}의 소식이 끊겼다. 은행은 한도 내에서 정리했다는 통지만 보냈다.' }, { t: 'flag', k: 'guaranteed' }, { t: 'duty', who: 'friend', id: 'guarantee', text: '보증인으로서 첫 결산을 함께 본다', years: 4, manual: true }] } },
+      { id: 'other', label: '보증 대신 10C를 보탠다', cost: { cash: 10 },
+        ok: { text: '"보증은 못 서. 대신 이건 돌려받을 생각 없는 돈이야." {@friend|는} 그 말을 오래 기억했다.', effects: [{ t: 'rel', who: 'friend', aff: 6, trust: 4 }] } },
+      { id: 'refuse', label: '거절한다',
+        ok: { text: '{@friend|는} 웃으며 괜찮다고 했다. 그 뒤로 연락이 조금 뜸해졌다.', effects: [{ t: 'rel', who: 'friend', aff: -8, trust: -2 }, { t: 'flag', k: 'refusedFavor' }] } },
+    ],
+  },
+  {
+    id: 'evt_guarantee_result', title: '보증의 결과', category: 'relation', tags: [], chainOnly: true, cooldown: 0,
+    cond: {},
+    roles: { friend: { best: ['p_friend', 'p_senior', 'p_rival'] } },
+    text: '{@friend}의 공방이 문을 연 지 시간이 꽤 지났다. 은행에서 보증인 확인 통지가 왔다. 장부를 보자는 {@friend}의 편지도 함께였다. "같이 봐 줄 수 있어? 숫자가 이상한데 어디가 이상한지 모르겠어."',
+    choices: [
+      { id: 'books', label: '장부를 함께 들여다본다', check: { attr: 'lore', diff: 6, skill: 'trade' }, failHint: '실패 시 보증 한도 20C 부담',
+        ok: { text: '재료비 항목이 두 번 적혀 있었다. 바로잡고 나니 공방은 흑자였다. 대출은 예정대로 갚아졌고, 보증서는 서랍 속에서 조용히 효력을 잃었다.', effects: [{ t: 'rel', who: 'friend', trust: 10, aff: 6 }, { t: 'dutyDone', id: 'guarantee' }, { t: 'stat', k: 'stress', v: -4 }], cause: '보증을 선 친구의 장부를 바로잡았다' },
+        fail: { text: '구멍은 생각보다 컸다. 은행은 보증 한도 20크라운을 청구했다. {@friend|는} 꼭 갚겠다며 차용증을 써 주었다.', effects: [{ t: 'cash', v: -20 }, { t: 'rel', who: 'friend', trust: 4, aff: 2 }, { t: 'loss' }] } },
+      { id: 'leave', label: '은행 통지만 확인하고 맡긴다',
+        ok: { text: '석 달 뒤 은행에서 정산 완료 통지가 왔다. 무엇이 어떻게 해결됐는지는 끝내 묻지 않았다.', effects: [{ t: 'rel', who: 'friend', aff: -2 }] } },
+    ],
+  },
+  {
+    id: 'evt_old_favor', title: '돌아온 옛 부탁', category: 'relation', tags: [], base: 10, cooldown: 10, once: true,
+    cond: { minAge: 25, flags: ['refusedFavor'] },
+    roles: { who: { best: ['p_senior', 'p_friend', 'p_rival'] } },
+    text: '오래된 우표가 붙은 편지가 왔다. 몇 해 전 당신이 거절했던 부탁에 대한 이야기였다. {@who|는} 그때 일을 원망하지 않는다고 썼다. 다만 그 뒤로 무슨 일이 있었는지, 당신은 알아야 할 것 같았다고.',
+    choices: [
+      { id: 'reconcile', label: '찾아가 사과하고 지금 할 수 있는 일을 묻는다',
+        ok: { text: '찻집은 그대로였다. {@who|는} 먼저 와 있었다. 사과는 짧았고, 대화는 길었다. 둘 다 그 사이 조금 변해 있었다.', effects: [{ t: 'rel', who: 'who', trust: 8, aff: 12 }, { t: 'stat', k: 'stress', v: -4 }, { t: 'flag', k: 'reconciled' }, { t: 'duty', who: 'who', text: '다음 겨울, 다시 찻집에서 만난다', years: 2 }], cause: '오래전 거절한 사람과 화해했다' } },
+      { id: 'boundary', label: '답장으로 그때의 이유와 지금의 경계를 적는다',
+        ok: { text: '쓰고 지우기를 반복한 끝에 두 장짜리 답장을 보냈다. 거절이 틀린 선택은 아니었다는 것, 그래도 미안했다는 것.', effects: [{ t: 'rel', who: 'who', trust: 5, aff: 4 }, { t: 'attr', k: 'will', xp: 3 }, { t: 'stat', k: 'stress', v: -2 }] } },
+      { id: 'silence', label: '편지를 서랍에 넣는다',
+        ok: { text: '편지는 서랍 속에서 누렇게 바랬다. 가끔 서랍을 열 때마다 우표가 눈에 걸렸다.', effects: [{ t: 'stat', k: 'stress', v: 2 }] } },
+    ],
+  },
+];

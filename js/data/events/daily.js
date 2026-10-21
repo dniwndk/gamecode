@@ -1,0 +1,90 @@
+// 일상 기록: 아무 일 없는 해도 의미 있게. 구역·계절·직업·관계·도시 상태로 골라진다.
+const W = (id, text, cond = {}, extra = {}) => ({ id, text, cond, ...extra });
+
+export default [
+  // 계절과 날씨
+  W('d_spring_canal', '봄비가 운하의 기름막을 씻어 냈다. 오랜만에 물 밑의 돌이 보였다.', { seasons: [0] }),
+  W('d_spring_kite', '공장 굴뚝 사이로 아이들이 연을 날렸다. 연 꼬리에 매단 깡통이 바람에 딸랑거렸다.', { seasons: [0] }),
+  W('d_spring_market', '매듭 시장에 첫 딸기가 들어왔다. 값은 비쌌고, 냄새는 공짜였다.', { seasons: [0] }),
+  W('d_summer_heat', '여름 한낮, 배관이 지나가는 골목 바닥이 맨발로 걷기 힘들 만큼 달아올랐다.', { seasons: [1] }),
+  W('d_summer_race', '주말 운하 경주에서 공업대 팀이 또 이겼다. 진 팀은 내년을 기약하며 노를 닦았다.', { seasons: [1] }),
+  W('d_summer_window', '열대야. 동네 사람들이 모두 창문을 열어, 밤새 남의 집 라디오 소리를 함께 들었다.', { seasons: [1] }),
+  W('d_autumn_fog', '공명 안개가 사흘 동안 낮게 깔렸다. 가로등 빛이 청록색으로 번졌다.', { seasons: [2] }),
+  W('d_autumn_coal', '석탄 배급표가 나왔다. 줄은 길었지만 이번 해엔 다들 웃으며 기다렸다.', { seasons: [2] }),
+  W('d_autumn_puppet', '기계 인형극단이 골목을 돌았다. 인형이 넘어지는 장면에서 매번 같은 아이가 웃었다.', { seasons: [2] }),
+  W('d_winter_breath', '아침마다 입김이 길어졌다. 공동 난로 둘레에 앉을 자리를 두고 순번표가 생겼다.', { seasons: [3] }),
+  W('d_winter_snow', '드물게 하얀 눈이 왔다. 반나절 만에 회색이 되었지만, 그 반나절은 다들 기억했다.', { seasons: [3] }),
+  W('d_winter_bell', '해 질 녘 시계 성소의 종이 아홉 번 울렸다. 누군가의 장례였다.', { seasons: [3] }),
+
+  // 구역
+  W('d_ash_scrap', '재의 골목 고물상이 쓸 만한 압력계를 싸게 내놨다. 저녁이 되기 전에 팔렸다.', { home: ['ash'] }),
+  W('d_ash_stew', '공동 난로 위 큰 솥에 집집마다 한 가지씩 넣은 국이 끓었다. 이름 없는 맛이었다.', { home: ['ash'] }),
+  W('d_ash_children', '골목 아이들이 버려진 배관 조각으로 피리를 만들어 불었다. 음은 하나도 맞지 않았다.', { home: ['ash'] }),
+  W('d_ash_cold', '골목 끝 집의 열 공급이 또 끊겼다. 이웃들이 번갈아 뜨거운 물병을 날랐다.', { home: ['ash'], districtMax: { 'ash.heat': 40 } }, { effects: [{ t: 'stat', k: 'stress', v: 1 }] }),
+  W('d_brass_shift', '공업대의 교대 종이 새벽 다섯 시에 울렸다. 길 위의 사람들이 한꺼번에 방향을 바꿨다.', { area: ['brass'] }),
+  W('d_brass_soot', '창틀에 앉은 그을음을 닦아 냈다. 사흘 뒤 다시 까매졌다.', { home: ['brass'] }),
+  W('d_brass_union', '공장 담벼락에 노동연맹의 새 벽보가 붙었다. "안전은 협상 대상이 아니다."', { area: ['brass'] }),
+  W('d_market_haggle', '매듭 시장 단골 가게 주인이 덤으로 나사 한 줌을 넣어 주었다.', { area: ['market'] }),
+  W('d_market_clock', '시장 한가운데 시계탑이 7분 늦게 가고 있었다. 아무도 고치지 않았고, 모두 그 시계에 맞춰 약속했다.', { area: ['market'] }),
+  W('d_market_records', '출장 기록소 앞에 서류를 든 사람들이 줄을 섰다. 엘리안은 점심도 거르고 도장을 찍었다.', { area: ['market'] }),
+
+  // 나이와 생애 단계
+  W('d_teen_school', '야간학교 칠판에 그려진 회로도가 처음으로 이해되었다. 그 짜릿함이 하루 종일 갔다.', { maxAge: 17 }, { effects: [{ t: 'attr', k: 'lore', xp: 1 }] }),
+  W('d_teen_growth', '작년 겨울 외투의 소매가 손목 위로 올라갔다. 보호자가 웃으며 단을 내려 주었다.', { maxAge: 16 }),
+  W('d_teen_friend', '친구와 운하 다리 난간에 앉아 해가 질 때까지 아무 말도 하지 않았다. 그래도 좋았다.', { maxAge: 17 }, { effects: [{ t: 'rel', who: 'p_friend', aff: 2 }] }),
+  W('d_teen_dream', '비행선이 도시 위를 낮게 지나갔다. 그날 밤 꿈속에서 당신은 그 배의 갑판에 서 있었다.', { maxAge: 17 }),
+  W('d_young_room', '이사한 방의 창문 틀을 직접 고쳤다. 이제 바람 소리가 덜 난다.', { minAge: 18, maxAge: 30 }),
+  W('d_young_letter', '오래전 같이 학교를 다닌 사람에게서 짧은 엽서가 왔다. 철륜 역세권에서 일한다고 했다.', { minAge: 19, maxAge: 35 }),
+  W('d_mid_tired', '저녁에 신발을 벗다가 문득, 언제부터 이렇게 무릎이 소리를 냈는지 생각했다.', { minAge: 35 }),
+  W('d_mid_young', '견습생 하나가 당신에게 공구 이름을 물었다. 대답하다 보니 당신도 처음엔 몰랐던 이름이었다.', { minAge: 30 }),
+  W('d_old_bench', '운하 둑길 벤치에 앉아 지나가는 화물선의 이름을 하나씩 읽었다. 반은 아는 배였다.', { minAge: 55 }),
+  W('d_old_photo', '서랍 정리를 하다가 젊을 때 찍은 단체 사진을 찾았다. 이름이 기억나지 않는 얼굴이 둘 있었다.', { minAge: 50 }),
+  W('d_old_hands', '손등의 화상 자국이 날씨를 먼저 알았다. 비 오기 전날이면 늘 근질거렸다.', { minAge: 45, job: ['plumber'] }),
+
+  // 직업
+  W('d_plumber_whistle', '배관 하나를 고치고 나니 집주인 아이가 휘파람으로 배관 소리를 흉내 냈다. 꽤 닮았다.', { job: ['plumber'] }, { effects: [{ t: 'skill', k: 'repair', xp: 1 }] }),
+  W('d_plumber_map', '공업대 지하 배관 지도를 새로 그렸다. 지도에 없던 분기관이 세 개 나왔다.', { job: ['plumber'] }),
+  W('d_plumber_soak', '터진 수도관 앞에서 한 시간을 젖은 채 일했다. 퇴근길에 산 따뜻한 빵이 그날의 보상이었다.', { job: ['plumber'] }),
+  W('d_merchant_price', '황동 판재 값이 또 올랐다. 가격표를 고쳐 쓰는 손이 익숙해졌다.', { job: ['merchant'] }, { effects: [{ t: 'skill', k: 'trade', xp: 1 }] }),
+  W('d_merchant_regular', '단골 손님이 손주를 데리고 왔다. 아이가 진열대의 나사를 하나하나 세었다.', { job: ['merchant'] }),
+  W('d_merchant_ledger', '장부의 숫자가 한 번에 맞아떨어졌다. 별것 아닌데 하루가 가벼웠다.', { job: ['merchant'] }, { effects: [{ t: 'stat', k: 'stress', v: -1 }] }),
+  W('d_recorder_ink', '기록소 잉크병을 엎었다. 다행히 원본이 아니라 사본 위였다.', { job: ['recorder'] }),
+  W('d_recorder_name', '스무 해 전 출생 기록에서 오타 하나를 찾아 고쳤다. 그 사람은 평생 자기 이름 철자를 두 가지로 썼을 것이다.', { job: ['recorder'] }, { effects: [{ t: 'skill', k: 'record', xp: 1 }] }),
+  W('d_recorder_quiet', '기록소의 오후는 종이 넘기는 소리뿐이었다. 그 소리가 좋아서 이 일을 계속한다.', { job: ['recorder'] }),
+  W('d_jobless', '공공근로 현장에서 같은 처지의 사람들과 점심을 나눴다. 누구도 오래 여기 있을 생각은 없었다.', { minAge: 18, job: 'none' }),
+
+  // 공명
+  W('d_res_hum', '밤에 손끝이 웅웅 울렸다. 낮에 너무 많이 쓴 날이면 늘 이랬다.', { ability: true, minLoad: 25 }),
+  W('d_res_quiet', '오늘은 능력을 한 번도 쓰지 않았다. 감각이 조용히 가라앉아 있었다.', { ability: true, maxLoad: 15 }),
+  W('d_res_registry', '시민 등록부 갱신 통지가 왔다. 사용 기록 수첩의 빈칸을 채웠다.', { ability: true, flags: [] }),
+  W('d_res_device', '대응 장치의 필터를 갈았다. 작은 부품 하나가 크라운 단위로 비쌌다.', { when: s => ['heat_pump', 'stethoscope', 'echo_lens', 'align_frame'].some(i => s.ch.items.includes(i)) }),
+
+  // 사람들
+  W('d_toma_cup', '토마가 수리 도구를 정리하다 말고 차를 한 잔 따라 주었다. 상호회 장부 이야기는 끝내 꺼내지 않았다.', { npcAlive: ['toma'], when: s => s.npcs.toma.trust >= 20 }, { effects: [{ t: 'rel', who: 'toma', aff: 2 }] }),
+  W('d_sabine_cold', '사빈의 손이 유난히 차가웠다. 오늘도 누군가 대신 열을 옮겨 준 모양이었다.', { npcAlive: ['sabine'], area: ['brass'], when: s => s.npcs.sabine.met }),
+  W('d_sera_nod', '시장 골목에서 세라와 눈이 마주쳤다. 그녀는 고개만 까딱하고 지나갔다. 그게 그녀식 인사였다.', { npcAlive: ['sera'], area: ['market'] }),
+  W('d_elian_promise', '엘리안이 지난번 당신이 지나가듯 한 약속을 날짜까지 정확히 되짚었다. 조금 무서웠고, 조금 든든했다.', { npcAlive: ['elian'], when: s => s.npcs.elian.met }),
+  W('d_guardian_visit', '보호자가 반찬 통을 들고 찾아왔다. 통을 돌려주러 가는 길이 일주일에 한 번의 약속이 되었다.', { minAge: 18, when: s => s.npcs.p_guardian.alive && s.npcs.p_guardian.affinity >= 30 }, { effects: [{ t: 'rel', who: 'p_guardian', aff: 2 }] }),
+  W('d_friend_drink', '오랜 친구와 선술집에서 만났다. 둘 다 예전 이야기만 하다가 헤어졌다.', { minAge: 18, when: s => s.npcs.p_friend.alive && s.npcs.p_friend.affinity >= 25 }, { effects: [{ t: 'rel', who: 'p_friend', aff: 2 }, { t: 'stat', k: 'stress', v: -2 }] }),
+  W('d_rival_news', '경쟁자였던 사람이 책임자로 승진했다는 소식을 들었다. 축하 엽서를 썼다가, 보냈다.', { minAge: 22, when: s => s.npcs.p_rival.alive && s.npcs.p_rival.met }),
+  W('d_child_grow', '골목 아이가 어느새 키가 훌쩍 커서 당신에게 공구 이름을 물었다.', { minAge: 25, when: s => s.npcs.p_child.alive }),
+
+  // 도시 상태
+  W('d_city_price', '빵값이 또 1페니 올랐다. 가게 주인은 "열값 때문"이라며 미안한 얼굴을 했다.', { when: s => s.city.global.price >= 106 }),
+  W('d_city_strike', '공업대 굴뚝 절반이 연기를 멈췄다. 파업 중인 노동자들이 공장 앞에서 수프를 나눴다.', { strike: true }),
+  W('d_city_shortage', '난방 시간이 하루 네 시간으로 줄었다는 공고가 붙었다. 사람들은 담요를 한 장씩 더 꺼냈다.', { when: s => s.city.shortage > 0.05 }, { effects: [{ t: 'stat', k: 'stress', v: 2 }] }),
+  W('d_city_calm', '올해는 큰 소식이 없었다. 신문 1면이 운하 경주 결과였다. 그게 가장 좋은 뉴스였다.', { when: s => s.city.global.tension < 40 }),
+  W('d_city_second_heart', '제2심장 계획에 대한 공청회 소식이 신문에 실렸다. 아직은 먼 이야기처럼 들렸다.', { minAge: 16 }),
+  W('d_city_airship', '외국 비행선이 안개 부두에 정박했다. 낯선 말투의 선원들이 매듭 시장에서 시계를 샀다.', {}),
+  W('d_city_boiler_good', '재의 골목 보일러가 올겨울도 문제없이 돌아갔다. 동판의 이름들 위로 김이 서렸다.', { when: s => !!s.flags.project_ash_boiler, seasons: [3] }, { effects: [{ t: 'stat', k: 'stress', v: -2 }] }),
+  W('d_city_repair_corner', '주민 공용 수리소 공구 벽의 이름표가 또 바뀌었다. 빌려 간 사람과 돌려준 사람이 같았다.', { when: s => !!s.flags.project_repair_corner }),
+  W('d_city_blackout', '순환 정전이 있는 밤엔 골목이 별빛만큼 어두웠다. 오랜만에 하늘을 올려다봤다.', { when: s => s.city.blackout && s.city.blackout.seasons > 0 }),
+
+  // 생활
+  W('d_life_savings', '작은 깡통에 동전을 모으기 시작했다. 깡통 바닥이 처음으로 보이지 않게 되었다.', { minAge: 16, minCash: 24 }),
+  W('d_life_broke', '월말, 주머니를 뒤집어 보았다. 실밥과 오래된 버스표가 나왔다.', { minAge: 18, maxCash: 5 }, { effects: [{ t: 'stat', k: 'stress', v: 2 }] }),
+  W('d_life_cook', '처음으로 남에게 대접할 만한 수프를 끓였다. 맛을 본 사람이 레시피를 물었다.', { minAge: 18 }),
+  W('d_life_book', '헌책방에서 백 년 전 배관 교본을 샀다. 그림 속 공구가 지금과 거의 같았다.', { minAge: 15 }),
+  W('d_life_plant', '창가에 화분을 하나 들였다. 매연 속에서도 잎이 났다.', { minAge: 18 }),
+  W('d_life_walk', '퇴근길을 일부러 돌아갔다. 처음 보는 골목에 작은 시계 수리점이 있었다.', { minAge: 18 }),
+];
