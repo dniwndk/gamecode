@@ -2,6 +2,7 @@
 import { esc, sentences, icon } from '../dom.js';
 import { stagger, reduced } from '../motion.js';
 import { childhoodScene, chooseChildhood } from '../../core/game.js';
+import { traitChip, traitToken, TRAITS } from '../traits.js';
 
 const SCENE_ICON = { birth: 'heart', six: 'people', twelve: 'gear' };
 
@@ -27,8 +28,9 @@ export default function childhood(ui, root) {
           <div class="mc-stamp"><b>${sc.year}</b>년 · ${sc.age}세</div>
           <h2 class="mc-title">${esc(sc.title)}</h2>
           <p class="mc-text">${textHtml}</p>
+          ${sc.traits?.length ? `<div class="mc-traits"><small>타고난 성향</small><div class="opt-traits">${sc.traits.map(id => traitChip(id)).join('')}</div></div>` : ''}
           <div class="choice-list" style="--base:${n}">
-            ${sc.choices.map((c, i) => `<button class="choice choice--paper" data-id="${esc(c.id)}"><span class="key">${i + 1}</span><span class="c-label">${esc(c.label)}</span>${icon('chevron', 'c-arrow')}</button>`).join('')}
+            ${sc.choices.map((c, i) => `<button class="choice choice--paper ${c.rewards?.length ? 'choice--key' : ''}" data-id="${esc(c.id)}"><span class="key">${i + 1}</span><span class="c-main"><span class="c-label">${esc(c.label)}</span>${c.rewards?.length ? `<span class="c-meta c-traits">${c.rewards.map(r => traitChip(r.id, { prefix: '이 기억이 남기는 열쇠 · ' })).join('')}</span>` : ''}</span>${icon('chevron', 'c-arrow')}</button>`).join('')}
           </div>
         </article>
       </div>`;
@@ -43,7 +45,15 @@ export default function childhood(ui, root) {
     ui.sfx.play('select');
     const card = root.querySelector('.memory-card');
     root.querySelectorAll('.choice').forEach(b => { b.disabled = true; if (b.dataset.id === id) b.classList.add('is-chosen'); });
+    const before = new Set(s.ch.traits.map(t => t.id));
     chooseChildhood(s, id);
+    // 기억이 열쇠를 남기면 사진 위에 도장처럼 찍어 보여 준다
+    const gained = s.ch.traits.map(t => t.id).filter(t => !before.has(t));
+    if (gained.length) {
+      card.insertAdjacentHTML('beforeend', `<div class="mc-gain" role="status">${gained.map(g => `${traitToken(g, { cls: 'tk--lg' })}<div><small>${TRAITS[g].kind === 'keyword' ? '열쇠 획득' : '특성 획득'}</small><b>${esc(TRAITS[g].name)}</b><span>${esc(TRAITS[g].opens || TRAITS[g].effects?.[0] || TRAITS[g].desc)}</span></div>`).join('')}</div>`);
+      ui.sfx.play('stamp');
+      await new Promise(r => setTimeout(r, reduced() ? 700 : 1500));
+    }
     if (s.phase === 'goal') { setTimeout(() => ui.go('goal'), 350); return; }
     if (!reduced()) await card.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-40px) rotate(-2deg)' }], { duration: 380, easing: 'cubic-bezier(.55,0,.7,.2)', fill: 'forwards' }).finished;
     ui.sfx.play('page');

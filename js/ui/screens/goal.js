@@ -3,11 +3,20 @@ import { esc, icon, btn } from '../dom.js';
 import { stagger } from '../motion.js';
 import { chooseGoal } from '../../core/game.js';
 import { GOALS } from '../../data/world.js';
+import { goalTraitList } from '../../core/progress.js';
+import { hasTrait } from '../../core/traits.js';
+import { traitChip } from '../traits.js';
 
 const KIND = { life: ['생활', 'home'], craft: ['기술', 'wrench'], community: ['공동체', 'people'] };
 
 export default function goal(ui, root, opts = {}) {
   const s = ui.state;
+  // 이 목표와 어울리는 특성: 가진 것이 있으면 단계마다 보상이 더 붙는다
+  const fitHtml = (id) => {
+    const list = goalTraitList(id).filter(t => t.kind !== 'negative');
+    const owned = list.filter(t => hasTrait(s, t.id));
+    return list.length ? `<span class="tk-fit ${owned.length ? 'has' : ''}"><small>${owned.length ? '내 특성과 어울린다 · 단계마다 +10/20/30C' : '어울리는 특성'}</small><span class="opt-traits">${list.map(t => traitChip(t.id, { cls: hasTrait(s, t.id) ? 'owned' : 'dim' })).join('')}</span></span>` : '';
+  };
   let sel = null;
   const ids = s.goalCandidates;
   root.innerHTML = `
@@ -22,6 +31,7 @@ export default function goal(ui, root, opts = {}) {
               <span class="tk-title">${esc(g.name)}</span>
               <span class="tk-stages">${g.stages.map((st, j) => `<span><b>${j + 1}</b>${esc(st)}</span>`).join('')}</span>
               <span class="tk-reward">${icon('star')}${esc(g.reward)}</span>
+              ${fitHtml(id)}
             </span>
             <span class="tk-seal" aria-hidden="true">${icon('check')}</span>
           </button>`;

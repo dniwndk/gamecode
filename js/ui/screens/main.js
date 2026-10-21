@@ -8,6 +8,8 @@ import { goalView } from '../../core/progress.js';
 import { SEASONS, JOBS, RANKS, DISTRICTS, SKILLS, ATTRS, ITEMS, SHOP, GOALS, LIFE_CLASSES, PUBLIC_RANKS, SUB_COMMITMENTS, ABILITIES } from '../../data/world.js';
 import { CATEGORY_NAMES } from '../../data/events/index.js';
 import { openPanel } from './panels.js';
+import { josa } from '../../core/util.js';
+import { traitToken, traitChip, tierBadge, fxGood, kindCls, goalTraitsHtml, TRAITS } from '../traits.js';
 
 const SPEEDS = [1, 2, 4, 8];
 const YEAR_MS = 20000; // 1× 기준 한 해 20초
@@ -29,7 +31,7 @@ export default function main(ui, root) {
         ${frame(`<div class="chron scroll" id="chron" tabindex="0" aria-label="연대기" aria-live="polite"></div>`, { cls: 'chron-frame', title: '연대기' })}
       </main>
       <nav class="side-menu" aria-label="기록 메뉴">
-        ${[['me', '나', 'person', 'C'], ['people', '인물', 'people', 'P'], ['city', '도시', 'map', 'M'], ['ledger', '장부', 'ledger', 'L'], ['codex', '기록', 'codex', 'K'], ['settings', '설정', 'settings', 'O']]
+        ${[['me', '나', 'person', 'C'], ['traits', '특성', 'key', 'T'], ['people', '인물', 'people', 'P'], ['city', '도시', 'map', 'M'], ['ledger', '장부', 'ledger', 'L'], ['codex', '기록', 'codex', 'K'], ['settings', '설정', 'settings', 'O']]
           .map(([k, l, ic, key]) => `<button class="menu-item side" data-panel="${k}" aria-label="${l} (${key})"><span class="mi-ico">${icon(ic)}</span><span class="mi-label">${l}</span></button>`).join('')}
       </nav>
       <footer class="controls frame frame--metal">
@@ -45,7 +47,7 @@ export default function main(ui, root) {
 
   const hudEl = root.querySelector('.hud');
   const chron = root.querySelector('#chron');
-  let prev = { cash: s.ch.cash };
+  let prev = { cash: s.ch.cash, traits: null };
 
   // ───────── 계기판 ─────────
   function drawHud(first = false) {
@@ -54,7 +56,7 @@ export default function main(ui, root) {
     const debt = G.totalDebt(s);
     if (first || !hudEl.firstChild) {
       hudEl.innerHTML = `
-        <div class="hud-who">${portrait({ portrait: 'person', alive: true }, 52, 'is-me')}<div class="hud-id"><div class="hud-name"></div><div class="hud-sub"></div></div></div>
+        <div class="hud-who">${portrait({ portrait: 'person', alive: true }, 52, 'is-me')}<div class="hud-id"><div class="hud-name"></div><div class="hud-sub"></div><button class="hud-traits" data-panel="traits" aria-label="보유 특성 보기 (T)"></button></div></div>
         <div class="hud-time"><div class="dial-holder"></div><div class="hud-year"><b class="yr"></b><span class="ssn"></span></div></div>
         <div class="hud-gauges">${gauge('health', '건강', ch.health, 100, 'var(--teal)')}${gauge('stress', '스트레스', ch.stress, 100, 'var(--copper)')}${gauge('load', '공명부하', ch.load, 100, 'var(--rose)')}</div>
         <div class="hud-purse" data-tip=""><span class="coin">${icon('coin')}</span><span class="cash-wrap"><b class="cash">${ch.cash}</b><small>C</small></span><span class="debt"></span></div>`;
@@ -79,8 +81,38 @@ export default function main(ui, root) {
     } else cashEl.textContent = ch.cash;
     cashEl.classList.toggle('neg', ch.cash < 0);
     hudEl.querySelector('.debt').textContent = debt ? `부채 ${debt}C` : '';
+    drawTraits();
     hudEl.querySelector('.hud-purse').dataset.tip = `소지금 ${ch.cash}C${debt ? ` · 부채 ${debt}C` : ''}\n생활 등급 ${LIFE_CLASSES[ch.lifeClass]}\n공적 위상 ${PUBLIC_RANKS[ch.publicRank]}`;
     drawControls();
+  }
+
+  // 보유 특성 리본: 긍정·부정은 토큰으로, 열쇠는 열쇠고리 하나에 묶는다. 새로 생긴 토큰은 반짝이며 들어온다.
+  function drawTraits() {
+    const box = hudEl.querySelector('.hud-traits');
+    const ids = s.ch.traits.map(t => t.id);
+    const sig = ids.join(',');
+    if (box.dataset.sig === sig) return;
+    const before = prev.traits;
+    const fresh = before ? ids.filter(id => !before.includes(id)) : [];
+    const gone = before ? before.filter(id => !ids.includes(id)) : [];
+    prev.traits = ids;
+    box.dataset.sig = sig;
+    const eff = ids.filter(id => TRAITS[id]?.kind !== 'keyword');
+    const keys = ids.filter(id => TRAITS[id]?.kind === 'keyword');
+    const order = [...eff.filter(id => TRAITS[id].kind === 'positive'), ...eff.filter(id => TRAITS[id].kind === 'negative')];
+    const MAX = 6;
+    const shown = order.slice(0, MAX);
+    const keyFresh = keys.some(id => fresh.includes(id));
+    box.innerHTML = `${shown.map(id => traitToken(id, { cls: fresh.includes(id) ? 'tk-new' : '' })).join('')}`
+      + (order.length > MAX ? `<span class="tk tk--more" data-tip="${esc(order.slice(MAX).map(id => TRAITS[id].name).join(', '))}">+${order.length - MAX}</span>` : '')
+      + (keys.length ? `<span class="tk tk--ring ${keyFresh ? 'tk-new' : ''}" data-tip="${esc(`열쇠 특성 ${keys.length}개\n${keys.map(id => `· ${TRAITS[id].name}`).join('\n')}`)}">${icon('key')}<b>${keys.length}</b></span>` : '')
+      + (!ids.length ? '<span class="tk-empty">특성 없음</span>' : '');
+    // 진행 중에 생긴 변화는 토스트로도 알린다 (사건·결산 창이 열려 있으면 그 창이 보여 준다)
+    if (!ui.stack.length) {
+      for (const id of fresh) { const d = TRAITS[id]; ui.toast(`${d.kind === 'keyword' ? '열쇠 획득' : d.kind === 'negative' ? '특성 생김' : '특성 획득'} · 「${d.name}」`, { ico: d.icon, sub: d.effects?.[0] || d.opens || d.desc }); }
+      for (const id of gone) { const d = TRAITS[id]; if (d) ui.toast(`${d.kind === 'negative' ? '극복' : '잃음'} · 「${d.name}」`, { ico: d.kind === 'negative' ? 'check' : d.icon }); }
+    }
+    if (fresh.length) ui.sfx.play('stamp');
   }
 
   function drawControls() {
@@ -124,7 +156,19 @@ export default function main(ui, root) {
       case 'warn': return `<div class="ce ce-warn">${icon('warning')}<p>${esc(j.text)}</p></div>`;
       case 'note': return `<p class="ce ce-note">${esc(j.text)}</p>`;
       case 'plan': return `<div class="ce ce-plan">${icon('scroll')}<span>${esc(j.text)}</span></div>`;
-      case 'memory': return `<div class="ce ce-memory"><div class="ce-etitle">${icon('heart')}<span>${esc(j.title)}</span><small>${j.age}세의 기억</small></div><p>${esc(j.text)}</p>${j.choice ? `<div class="ce-choice">${icon('chevron')}<span>${esc(j.choice)}</span></div>` : ''}</div>`;
+      case 'memory': return `<div class="ce ce-memory"><div class="ce-etitle">${icon('heart')}<span>${esc(j.title)}</span><small>${j.age}세의 기억</small></div><p>${esc(j.text)}</p>${j.choice ? `<div class="ce-choice">${icon('chevron')}<span>${esc(j.choice)}</span></div>` : ''}${j.traits?.length ? `<div class="ce-chips">${j.traits.map(id => traitChip(id, { prefix: '남은 열쇠 · ' })).join('')}</div>` : ''}</div>`;
+      case 'trait': {
+        const d = TRAITS[j.id];
+        if (!d) return '';
+        const verb = j.gained ? (d.kind === 'keyword' ? '열쇠를 얻었다' : d.kind === 'negative' ? '특성이 생겼다' : '특성을 얻었다') : (d.kind === 'negative' ? '이겨 냈다' : '잃었다');
+        return `<div class="ce ce-trait ce-trait--${kindCls(d.kind)} ${j.gained ? 'gained' : 'lost'}">${traitToken(j.id)}<div><span class="ct-main">「${esc(d.name)}」 ${verb}</span>${j.cause ? `<small>${esc(j.cause)}</small>` : ''}</div></div>`;
+      }
+      case 'bond': {
+        const n = s.npcs[j.npc];
+        if (!n) return '';
+        const up = j.to > j.from;
+        return `<div class="ce ce-bond ${up ? 'up' : 'down'}">${portrait(n, 30)}<div><span class="ct-main">${esc(n.name)}</span>${tierBadge(j.to, { small: true })}${j.cause ? `<small>${esc(j.cause)}</small>` : ''}</div></div>`;
+      }
       case 'yearEnd': return `<div class="ce ce-yearend">${icon('ledger')}<span>${esc(j.text)}</span><b class="${j.net < 0 ? 'neg' : 'pos'}">${j.net >= 0 ? '+' : ''}${j.net}C</b></div>`;
       default: return '';
     }
@@ -243,7 +287,7 @@ export default function main(ui, root) {
                 const on = m.id === main && (m.target || null) === target;
                 return `<button class="opt ${on ? 'on' : ''}" role="radio" aria-checked="${on}" data-act="main" data-id="${m.id}" data-target="${m.target || ''}" ${m.disabled ? `disabled data-tip="${esc(m.disabled)}"` : ''}>
                   <span class="opt-head"><span class="opt-name">${esc(m.name)}</span><span class="chip chip--good">${m.income ? `+${m.income}C` : '수입 없음'}</span>${m.cost ? `<span class="chip chip--cost">−${m.cost}C</span>` : ''}</span>
-                  <span class="opt-desc">${esc(m.desc)}</span>${m.disabled ? `<span class="opt-warn">${esc(m.disabled)}</span>` : ''}
+                  <span class="opt-desc">${esc(m.desc)}</span>${m.keyTrait || m.traitTags?.length ? `<span class="opt-traits">${m.keyTrait ? traitChip(m.keyTrait.id, { prefix: '열쇠로 열림 · ' }) : ''}${(m.traitTags || []).map(t => `<span class="chip ${t.good ? 'chip--good' : 'chip--bad'}">${icon('star')}${esc(t.text)}</span>`).join('')}</span>` : ''}${m.disabled ? `<span class="opt-warn">${esc(m.disabled)}</span>` : ''}
                 </button>`;
               }).join('')}
             </div>
@@ -277,9 +321,9 @@ export default function main(ui, root) {
       const ws = G.workshopOffer(s);
       const ins = s.brief.insolvency;
       return `<div class="money-grid">
-        <section class="paper mg-card"><h4>${icon('coin')}대출</h4>${loans.length ? loans.map(o => `<div class="mg-row"><div><b>${esc(o.name)}</b><small>${o.amount}C · 연 ${Math.round(o.rate * 100)}%${o.reason ? ` · ${esc(o.reason)}` : ''}</small></div>${btn('빌린다', `loan:${o.id}`, { cls: 'btn--sm', attrs: o.ok ? '' : 'disabled' })}</div>`).join('') : '<p class="small muted">독립한 뒤에 대출을 받을 수 있다.</p>'}
+        <section class="paper mg-card"><h4>${icon('coin')}대출</h4>${loans.length ? loans.map(o => `<div class="mg-row"><div><b>${esc(o.name)}</b><small>${o.amount}C · 연 ${Math.round((o.shown ?? o.rate) * 100)}%${o.note ? esc(o.note) : ''}${o.reason ? ` · ${esc(o.reason)}` : ''}</small></div>${btn('빌린다', `loan:${o.id}`, { cls: 'btn--sm', attrs: o.ok ? '' : 'disabled' })}</div>`).join('') : '<p class="small muted">독립한 뒤에 대출을 받을 수 있다.</p>'}
           ${s.ch.debts.length ? `<div class="mg-debts">${s.ch.debts.map(d => `<div class="small">${d.lender === 'sera' ? '세라 바인' : '시민 은행'} 잔액 ${d.principal}C · 연 ${Math.round(d.rate * 100)}%${d.overdue ? ` · <b class="neg">연체 ${d.overdue}회</b>` : ''}</div>`).join('')}</div>` : ''}</section>
-        <section class="paper mg-card"><h4>${icon('home')}공방</h4>${s.ch.workshop ? `<p class="small">공방 운영 중 · 설비 가치 ${s.ch.workshop.value}C · 품질 ${s.ch.workshop.quality}</p>` : ws ? `<p class="small">${ws.price}C로 작은 공방을 연다. 주 활동으로 공방 운영을 고를 수 있게 된다.</p>${ws.reason ? `<p class="small neg">${esc(ws.reason)}</p>` : ''}${btn('공방을 연다', 'workshop', { cls: 'btn--sm', attrs: ws.ok ? '' : 'disabled' })}` : '<p class="small muted">독립한 뒤에 공방을 열 수 있다.</p>'}</section>
+        <section class="paper mg-card"><h4>${icon('home')}공방</h4>${s.ch.workshop ? `<p class="small">공방 운영 중 · 설비 가치 ${s.ch.workshop.value}C · 품질 ${s.ch.workshop.quality}</p>` : ws ? `<p class="small">${ws.price}C로 작은 공방을 연다. 주 활동으로 공방 운영을 고를 수 있게 된다.</p>${ws.perks?.length ? `<div class="opt-traits">${ws.perks.map(p => `<span class="chip chip--good">${icon('star')}${esc(p)}</span>`).join('')}</div>` : ''}${ws.reason ? `<p class="small neg">${esc(ws.reason)}</p>` : ''}${btn('공방을 연다', 'workshop', { cls: 'btn--sm', attrs: ws.ok ? '' : 'disabled' })}` : '<p class="small muted">독립한 뒤에 공방을 열 수 있다.</p>'}</section>
         <section class="paper mg-card"><h4>${icon('heart')}흰 종 병원가</h4><p class="small">공명 안정화 치료 15C · 공명부하 −20 · 건강 +6</p>${btn('치료받는다', 'treat', { cls: 'btn--sm', attrs: s.ch.cash < 15 ? 'disabled' : '' })}</section>
         ${ins.length ? `<section class="paper mg-card danger"><h4>${icon('warning')}지급 불능 경로</h4>${ins.map(p => `<div class="mg-row"><div><b>${esc(p.name)}</b><small>${esc(p.desc)}</small></div>${p.id === 'publicwork' ? '<span class="chip">주 활동에서 선택</span>' : btn('택한다', `ins:${p.id}`, { cls: 'btn--sm', attrs: s.flags['insolvency_' + p.id] === s.year ? 'disabled' : '' })}</div>`).join('')}</section>` : ''}
         ${G.canRetire(s) ? `<section class="paper mg-card"><h4>${icon('door')}은퇴</h4><p class="small">일을 내려놓고 삶을 결산한다. 되돌릴 수 없다.</p>${btn('은퇴하고 결산한다', 'retire', { cls: 'btn--sm btn--copper' })}</section>` : ''}
@@ -289,7 +333,7 @@ export default function main(ui, root) {
       const gv = goalView(s);
       return `<div class="goal-now paper">
         <h4>${icon('star')}지금의 목표 · ${esc(gv?.name || '없음')}</h4>
-        ${gv ? `<ol class="stage-list">${gv.stages.map((st, i) => `<li class="${i < gv.stage ? 'done' : i === gv.stage ? 'now' : ''}"><b>${i + 1}</b><span>${esc(st)}</span>${i < gv.stage ? icon('check') : ''}</li>`).join('')}</ol><p class="small">보상: ${esc(gv.reward)}</p>` : ''}
+        ${gv ? `<ol class="stage-list">${gv.stages.map((st, i) => `<li class="${i < gv.stage ? 'done' : i === gv.stage ? 'now' : ''}"><b>${i + 1}</b><span>${esc(st)}</span>${i < gv.stage ? icon('check') : ''}</li>`).join('')}</ol><p class="small">보상: ${esc(gv.reward)}</p>${goalTraitsHtml(gv)}` : ''}
       </div>
       <h4 class="sec-title">${icon('scroll')}목표 바꾸기 <small>이미 한 일은 새 목표에도 인정된다</small></h4>
       <div class="goal-alt">${Object.entries(GOALS).map(([id, g]) => `<button class="opt ${s.goal?.id === id ? 'on' : ''}" data-act="goal:${id}" ${s.goal?.id === id ? 'disabled' : ''}><span class="opt-head"><span class="opt-name">${esc(g.name)}</span><span class="chip">${s.goalProgress?.[id] || 0}/3</span></span><span class="opt-desc">${esc(g.stages.join(' → '))}</span></button>`).join('')}</div>`;
@@ -357,11 +401,22 @@ export default function main(ui, root) {
     let locked = false;
 
     const choicesHtml = () => G.getChoices(s).map((c, i) => {
-      const odds = c.chance != null ? `<span class="c-odds" data-tip="${esc(oddsTip(c))}"><b>${c.chance}%</b><small>${esc(ATTRS[c.check.attr] || '')} 판정</small></span>` : `<span class="c-odds sure"><b>확정</b></span>`;
-      return `<button class="choice" data-id="${esc(c.id)}" ${c.disabled ? 'disabled' : ''}>
-        <span class="key">${i + 1}</span>
-        <span class="c-main"><span class="c-label">${esc(c.label)}</span>${c.hint ? `<span class="c-hint">${esc(c.hint)}</span>` : ''}
-          <span class="c-meta">${c.cost.map(x => `<span class="chip chip--cost">${esc(x)}</span>`).join('')}${c.irreversible ? `<span class="chip chip--lock">${icon('lock')}되돌릴 수 없음</span>` : ''}${c.risk ? `<span class="chip chip--bad">${esc(c.risk)}</span>` : ''}${c.tag === 'resonance' ? `<span class="chip chip--teal">${icon('wave')}공명</span>` : ''}${c.failHint && c.chance != null ? `<span class="chip">${esc(c.failHint)}</span>` : ''}${c.disabled ? `<span class="chip chip--bad">${esc(c.disabled)}</span>` : ''}</span></span>
+      const tb = c.parts?.trait || 0;
+      const odds = c.chance != null ? `<span class="c-odds ${tb > 0 ? 'boosted' : tb < 0 ? 'hindered' : ''}" data-tip="${esc(oddsTip(c))}"><b>${c.chance}%</b><small>${esc(ATTRS[c.check.attr] || '')} 판정</small>${tb ? `<i class="c-odds-tr">특성 ${tb > 0 ? '+' : ''}${tb}</i>` : ''}</span>` : `<span class="c-odds sure"><b>확정</b></span>`;
+      // 열쇠·인연으로 열린 선택지는 띠를 두르고, 잠긴 선택지는 무엇이 필요한지 보여 준다
+      const kind = c.locked ? 'locked' : c.key ? 'key' : c.bond ? 'bond' : '';
+      const ribbon = c.locked === 'key' ? `<span class="c-ribbon lock">${icon('lock')}${esc(c.key.names.map(n => `「${n}」`).join(' 또는 '))} 필요</span>`
+        : c.locked === 'bond' ? `<span class="c-ribbon lock">${icon('lock')}${esc(c.bond.name)} · ${esc(c.bond.tierName)} 필요 <em>지금 ${esc(c.bond.now)}</em></span>`
+        : c.key ? `<span class="c-ribbon key">${icon('key')}${esc(c.key.names.map(n => `「${n}」`).join(' '))}${c.key.kind === 'keyword' ? ' · 열쇠가 연 길' : ' · 특성이 연 길'}</span>`
+        : c.bond ? `<span class="c-ribbon bond">${icon('link')}인연이 연 길 · ${esc(josa(c.bond.name, '과'))} 「${esc(c.bond.now)}」</span>` : '';
+      const tr = [...(c.rewards || []).map(t => traitChip(t.id, { prefix: t.kind === 'negative' ? '생김 · ' : '얻음 · ' })),
+        ...(c.failTraits || []).map(t => traitChip(t.id, { prefix: '실패 시 · ', cls: 'risk' })),
+        ...(c.sheds || []).map(t => traitChip(t.id, { prefix: t.kind === 'negative' ? '벗어남 · ' : '잃음 · ', cls: t.kind === 'negative' ? 'shed' : 'risk' }))].join('');
+      return `<button class="choice ${kind ? `choice--${kind}` : ''}" data-id="${esc(c.id)}" ${c.disabled ? 'disabled' : ''}>
+        <span class="key">${c.locked ? icon('lock') : i + 1}</span>
+        <span class="c-main">${ribbon}<span class="c-label">${esc(c.label)}</span>${c.hint ? `<span class="c-hint">${esc(c.hint)}</span>` : ''}
+          ${tr ? `<span class="c-meta c-traits">${tr}</span>` : ''}
+          <span class="c-meta">${c.cost.map(x => `<span class="chip chip--cost">${esc(x)}</span>`).join('')}${c.irreversible ? `<span class="chip chip--lock">${icon('lock')}되돌릴 수 없음</span>` : ''}${c.risk ? `<span class="chip chip--bad">${esc(c.risk)}</span>` : ''}${c.tag === 'resonance' ? `<span class="chip chip--teal">${icon('wave')}공명</span>` : ''}${c.failHint && c.chance != null ? `<span class="chip">${esc(c.failHint)}</span>` : ''}${c.disabled && !c.locked ? `<span class="chip chip--bad">${esc(c.disabled)}</span>` : ''}</span></span>
         ${odds}
       </button>`;
     }).join('');
@@ -432,9 +487,11 @@ export default function main(ui, root) {
         ${r.text ? `<p>${sentences(r.text)}</p>` : ''}
         ${r.deltas.length ? `<div class="ce-chips">${chips(r.deltas)}</div>` : ''}
         ${res.followup ? `<div class="er-follow"><p>${sentences(res.followup.text)}</p>${res.followup.deltas?.length ? `<div class="ce-chips">${chips(res.followup.deltas)}</div>` : ''}</div>` : ''}
-        ${res.nextText ? `<div class="er-next"><p>${sentences(res.nextText)}</p></div>` : ''}`;
+        ${res.nextText ? `<div class="er-next"><p>${sentences(res.nextText)}</p></div>` : ''}
+        ${changesHtml(res)}`;
       log.appendChild(block);
       block.classList.add('rise');
+      if (res.traits?.length || res.bonds?.some(b => b.to > b.from)) setTimeout(() => ui.sfx.play('bell'), 420);
       if (r.success === true) ui.sfx.play('stamp'); else if (r.success === false) { ui.sfx.play('fail'); shake(en.box.querySelector('.ev-body')); } else ui.sfx.play('page');
       drawHud();
       const listEl = en.box.querySelector('.choice-list');
@@ -461,6 +518,17 @@ export default function main(ui, root) {
     }
   }
 
+  // 선택 결과로 생긴 특성·인연 변화: 도장처럼 찍히는 카드
+  function changesHtml(res) {
+    const tr = (res.traits || []).filter(t => TRAITS[t.id]);
+    const bd = res.bonds || [];
+    if (!tr.length && !bd.length) return '';
+    return `<div class="er-changes">
+      ${tr.map((t, i) => { const d = TRAITS[t.id]; const k = kindCls(d.kind); return `<div class="er-trait er-trait--${k} ${t.gained ? 'gained' : 'lost'}" style="animation-delay:${300 + i * 140}ms">${traitToken(t.id, { cls: 'tk--lg' })}<div><small>${t.gained ? (d.kind === 'keyword' ? '열쇠 획득' : d.kind === 'negative' ? '특성 생김' : '특성 획득') : (d.kind === 'negative' ? '극복' : '잃음')}</small><b>${esc(d.name)}</b><span>${esc(t.gained ? (d.effects?.join(' · ') || d.opens || d.desc) : (d.kind === 'negative' ? '더는 당신을 붙잡지 않는다' : '이 열쇠로 열리던 길이 닫혔다'))}</span></div></div>`; }).join('')}
+      ${bd.map((b, i) => { const n = s.npcs[b.npc]; return `<div class="er-bond ${b.to > b.from ? 'up' : 'down'}" style="animation-delay:${300 + (tr.length + i) * 140}ms">${n ? portrait(n, 36) : ''}<div><small>인연 ${b.to > b.from ? '깊어짐' : '멀어짐'}</small><b>${esc(b.name || '')}</b><span class="er-tiers">${tierBadge(b.from, { small: true })}${icon('chevron')}${tierBadge(b.to, { small: true })}</span></div></div>`; }).join('')}
+    </div>`;
+  }
+
   function groupCity(list) {
     const m = new Map();
     for (const c of list) { const k = c.cause || ''; if (!m.has(k)) m.set(k, []); m.get(k).push(c.text || String(c)); }
@@ -477,10 +545,24 @@ export default function main(ui, root) {
       p.tool ? `도구·장치 +${p.tool}` : null,
       p.prep ? `준비 +${p.prep}` : null,
       p.support ? `지원 +${p.support}` : null,
+      p.trait ? `특성 ${p.trait > 0 ? '+' : ''}${p.trait}${p.traitNotes?.length ? ` (${p.traitNotes.join(', ')})` : ''}` : null,
       p.penalty ? `불이익 −${p.penalty}${p.notes.length ? ` (${p.notes.join(', ')})` : ''}` : null,
       `= ${c.chance}% (5~95% 범위)`,
     ];
     return lines.filter(Boolean).join('\n');
+  }
+
+  // 결산의 「특성과 인연」: 올해 얻고 잃은 특성, 바뀐 인연, 특성이 실제로 움직인 숫자
+  function ledgerTraitCard(st) {
+    const tr = (st.traits || []).filter(t => TRAITS[t.id]);
+    const bd = st.bonds || [];
+    const fx = (st.traitFx || []).filter(f => f.v);
+    if (!tr.length && !bd.length && !fx.length) return '';
+    return `<section class="lg-card wide lg-traits"><h4>${icon('key')}특성과 인연</h4>
+      ${tr.length ? `<div class="lt-row">${tr.map(t => traitChip(t.id, { prefix: t.gained ? (TRAITS[t.id].kind === 'negative' ? '생김 · ' : '얻음 · ') : (TRAITS[t.id].kind === 'negative' ? '극복 · ' : '잃음 · '), cls: t.gained ? '' : 'shed' })).join('')}</div>` : ''}
+      ${bd.length ? `<ul class="lt-bonds">${bd.map(b => { const n = s.npcs[b.npc]; return n ? `<li>${portrait(n, 26)}<b>${esc(n.name)}</b><span class="er-tiers">${tierBadge(b.from, { small: true })}${icon('chevron')}${tierBadge(b.to, { small: true })}</span>${b.cause ? `<small>${esc(b.cause)}</small>` : ''}</li>` : ''; }).join('')}</ul>` : ''}
+      ${fx.length ? `<ul class="lt-fx">${fx.map(f => `<li class="${fxGood(f.what, f.v) ? 'good' : 'bad'}"><span class="lt-who">${f.ids.map(id => traitToken(id)).join('')}<span>${esc(f.ids.map(id => `「${TRAITS[id]?.name || id}」`).join(' '))}</span></span><b>${esc(f.what.replace('(C)', ''))} ${f.v > 0 ? '+' : ''}${f.v}${f.what.endsWith('(C)') ? 'C' : ''}</b></li>`).join('')}</ul>` : ''}
+    </section>`;
   }
 
   // ───────── 연말 결산 ─────────
@@ -505,6 +587,7 @@ export default function main(ui, root) {
           ${st.events.length ? `<section class="lg-card"><h4>${icon('scroll')}올해의 사건</h4><ul>${st.events.map(e => `<li><b>${esc(e.title)}</b><span>${esc(e.choice)}${e.success === true ? ' · 성공' : e.success === false ? ' · 실패' : ''}</span></li>`).join('')}</ul></section>` : ''}
           ${st.rel.length ? `<section class="lg-card"><h4>${icon('people')}관계의 변화</h4><ul>${st.rel.map(r => `<li><b>${esc(r.name)}</b><span>${r.trust ? `신뢰 ${r.trust > 0 ? '+' : ''}${r.trust}` : ''}${r.trust && r.aff ? ' · ' : ''}${r.aff ? `호감 ${r.aff > 0 ? '+' : ''}${r.aff}` : ''}</span>${r.causes.length ? `<small>${esc(r.causes.slice(0, 2).join(', '))}</small>` : ''}</li>`).join('')}</ul></section>` : ''}
           ${st.skills.length || st.actLog?.length ? `<section class="lg-card"><h4>${icon('wrench')}성장</h4><div class="ce-chips">${chips([...new Set([...(st.actLog || []), ...st.skills])])}</div></section>` : ''}
+          ${ledgerTraitCard(st)}
           ${st.city.length ? `<section class="lg-card"><h4>${icon('map')}도시의 변화</h4><ul>${groupCity(st.city).map(([cause, list]) => `<li><span>${esc(list.join(' · '))}</span>${cause ? `<small>${esc(cause)}</small>` : ''}</li>`).join('')}</ul></section>` : ''}
           ${st.causes.length || st.debtLog?.length ? `<section class="lg-card wide"><h4>${icon('bell')}왜 이렇게 되었나</h4><ul class="causes">${[...st.causes, ...(st.debtLog || [])].map(c => `<li>${esc(c)}</li>`).join('')}</ul></section>` : ''}
           ${st.goal?.length ? `<section class="lg-card wide goal-hit"><h4>${icon('star')}목표</h4><ul>${st.goal.map(g => `<li>${esc(g)}</li>`).join('')}</ul></section>` : ''}
@@ -559,7 +642,7 @@ export default function main(ui, root) {
   stagger(root, '.side-menu .menu-item');
   setTimeout(route, reduced() ? 0 : 450);
 
-  const keyPanels = { c: 'me', p: 'people', m: 'city', l: 'ledger', k: 'codex', o: 'settings' };
+  const keyPanels = { c: 'me', t: 'traits', p: 'people', m: 'city', l: 'ledger', k: 'codex', o: 'settings' };
   return {
     particles: 'steam',
     keys(e) {

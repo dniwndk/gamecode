@@ -4,6 +4,8 @@ import { withRng } from './rng.js';
 import { meets, fmt, computeChance, costProblem, describeCost, payCost, applyEffects, rollCheck, npcFor } from './rules.js';
 import { resolveNpc } from './state.js';
 import { JOBS } from '../data/world.js';
+import { hasTrait, traitName, tierOf, tierName, TRAITS, quoted } from './traits.js';
+import { shortName, josa } from './util.js';
 
 const MAJOR_COUNT = [[0, 15], [1, 55], [2, 30]];
 
@@ -77,7 +79,9 @@ function relevance(state, def) {
   if (state.goal && tags.includes(state.goal.id)) rel *= 1.5;
   if (ch.ability && tags.includes('resonance')) rel *= 1.4;
   if (tags.includes('recovery') && state.history.lossStreak >= 2) rel *= 4;
-  return Math.min(2, Math.max(0.5, rel));
+  // 가진 열쇠·특성과 이어진 사건은 더 자주 찾아온다
+  if (def.keys && def.keys.some(id => hasTrait(state, id))) rel *= 1.7;
+  return Math.min(2.5, Math.max(0.5, rel));
 }
 
 function cityFactor(state, def) {
@@ -118,7 +122,8 @@ export function pickDaily(state) {
     return meets(state, d.cond, {});
   });
   if (!cands.length) return null;
-  const d = withRng(state, 'event', r => r.pick(cands));
+  // 특성이 비치는 일상은 더 자주 떠오른다: 가진 특성이 하루하루에서 보이게
+  const d = withRng(state, 'event', r => r.weighted(cands.map(c => [c, c.cond.trait ? 4 : 1])));
   state.dailyUsed[d.id] = state.year;
   const roles = resolveRoles(state, d);
   if (d.effects) applyEffects(state, d.effects, { roles, eventId: d.id, cause: '일상' });
@@ -203,26 +208,70 @@ export function currentNode(state) {
   return { def, node: def.nodes[cur.node] };
 }
 
+// 열쇠 특성 조건: trait는 하나라도 있으면, 없으면 무엇이 필요한지 알려 준다
+const keyIds = (c) => c.trait ? (Array.isArray(c.trait) ? c.trait : [c.trait]) : null;
+function keyMet(state, c) { const ids = keyIds(c); return !ids || ids.some(id => hasTrait(state, id)); }
+function bondMet(state, c, roles) {
+  if (!c.bond) return true;
+  const n = npcFor(state, roles, c.bond.who);
+  return !!(n && n.alive && n.met && tierOf(n) >= c.bond.tier);
+}
+function lockText(state, c, roles) {
+  if (!keyMet(state, c)) return `${keyIds(c).map(id => `「${traitName(id)}」`).join(' 또는 ')} 필요`;
+  if (!bondMet(state, c, roles)) { const n = npcFor(state, roles, c.bond.who); return `${josa(n ? shortName(n.name) : '그 사람', '와')} ${quoted(tierName(c.bond.tier), '이')} 되어야 한다`; }
+  return null;
+}
+
 export function getChoices(state) {
   const cn = currentNode(state);
   if (!cn) return [];
   const { def, node } = cn;
   const roles = state.current.roles;
-  let list = (node.choices || []).filter(c => !c.cond || meets(state, c.cond, roles)).filter(c => !(c.once && state.current.used.includes(c.id)));
+  const base = (node.choices || []).filter(c => !c.cond || meets(state, c.cond, roles)).filter(c => !(c.once && state.current.used.includes(c.id)));
+  // 열쇠·인연이 맞지 않는 선택지는 숨기되, 자리가 남으면 잠긴 채로 하나씩 보여 준다 (인연 먼저, 열쇠는 하나까지)
+  let list = base.filter(c => keyMet(state, c) && bondMet(state, c, roles));
+  const lockedBond = base.filter(c => keyMet(state, c) && !bondMet(state, c, roles));
+  const lockedKey = base.filter(c => !keyMet(state, c));
+  const teasers = [...lockedBond, ...lockedKey.slice(0, 1)];
   // 한 장면의 선택지는 최대 4개: 넘치면 지금 고를 수 없는 것부터 빼고, 그래도 넘치면 마지막(후퇴) 선택지를 남긴다
   if (list.length > 4) {
     const blocked = list.filter(c => costProblem(state, c.cost) || (c.req && !meets(state, c.req, roles)));
     for (const b of blocked) if (list.length > 4) list = list.filter(c => c !== b);
-    if (list.length > 4) list = [...list.slice(0, 3), list[list.length - 1]];
+    if (list.length > 4) {
+      // 열쇠·인연으로 열린 선택지는 끝까지 남긴다
+      const special = list.filter(c => c.trait || c.bond);
+      const plain = list.filter(c => !c.trait && !c.bond);
+      list = [...special, ...plain.slice(0, Math.max(0, 3 - special.length)), plain[plain.length - 1]].filter(Boolean).slice(0, 4);
+      list = base.filter(c => list.includes(c));
+    }
   }
+  for (const t of teasers) if (list.length < 4) list = [...list, t];
+  list = base.filter(c => list.includes(c));
   return list.map(c => {
-    const problem = costProblem(state, c.cost) || (c.req && !meets(state, c.req, roles) ? fmt(state, c.reqText || '조건이 부족하다', roles) : null);
+    const locked = lockText(state, c, roles);
+    const problem = locked || costProblem(state, c.cost) || (c.req && !meets(state, c.req, roles) ? fmt(state, c.reqText || '조건이 부족하다', roles) : null);
     let chance = null, parts = null;
     if (c.check) ({ chance, parts } = computeChance(state, c.check, roles));
+    const ids = keyIds(c);
+    const owned = ids ? ids.filter(id => hasTrait(state, id)) : [];
+    const bn = c.bond ? npcFor(state, roles, c.bond.who) : null;
+    // 결과에 들어 있는 특성 변화: 성공하면 얻는 것, 실패하면 얻는 것, 이 선택으로 벗는 것
+    const traitsIn = (o, t) => [...new Set((o?.effects || []).filter(e => e.t === t && (t !== 'trait' || !hasTrait(state, e.id)) && (t !== 'loseTrait' || hasTrait(state, e.id))).map(e => e.id))];
+    const rewards = traitsIn(c.ok, 'trait');
+    const failTraits = c.fail ? traitsIn(c.fail, 'trait') : [];
+    const sheds = traitsIn(c.ok, 'loseTrait');
+    const boosts = c.check?.traits ? Object.keys(c.check.traits).filter(id => hasTrait(state, id)) : [];
     return {
       id: c.id, label: fmt(state, c.label, roles), hint: fmt(state, c.hint || '', roles), cost: describeCost(state, c.cost),
       chance, parts, check: c.check || null, failHint: fmt(state, c.failHint || '', roles), irreversible: !!c.irreversible,
       disabled: problem, risk: c.risk || null, tag: c.tag || null,
+      locked: locked ? (ids && !owned.length ? 'key' : 'bond') : null,
+      key: ids ? { ids, owned, names: (owned.length ? owned : ids).map(traitName), kind: TRAITS[(owned[0] || ids[0])]?.kind } : null,
+      bond: c.bond && bn ? { npc: bn.id, name: bn.name, tier: c.bond.tier, tierName: tierName(c.bond.tier), now: tierName(tierOf(bn)) } : null,
+      rewards: rewards.map(id => ({ id, name: traitName(id), kind: TRAITS[id]?.kind, icon: TRAITS[id]?.icon })),
+      failTraits: failTraits.map(id => ({ id, name: traitName(id), kind: TRAITS[id]?.kind, icon: TRAITS[id]?.icon })),
+      sheds: sheds.map(id => ({ id, name: traitName(id), kind: TRAITS[id]?.kind, icon: TRAITS[id]?.icon })),
+      boosts: boosts.map(traitName),
     };
   });
 }
@@ -236,12 +285,14 @@ export function choose(state, choiceId, token) {
   const c = (node.choices || []).find(x => x.id === choiceId);
   if (!c) return { ok: false, reason: 'no-choice' };
   if (c.cond && !meets(state, c.cond, cur.roles)) return { ok: false, reason: 'cond' };
+  if (!keyMet(state, c) || !bondMet(state, c, cur.roles)) return { ok: false, reason: 'locked' };
   const problem = costProblem(state, c.cost) || (c.req && !meets(state, c.req, cur.roles) ? 'req' : null);
   if (problem) return { ok: false, reason: problem };
 
   state.nonce += 1;
   cur.token = state.nonce;
   const log = [];
+  const tc0 = state.yearLog.traitChanges.length, bc0 = state.yearLog.bondChanges.length;
   payCost(state, c.cost, log);
   let success = true, chance = null;
   if (c.check) {
@@ -255,7 +306,7 @@ export function choose(state, choiceId, token) {
   // 장면형 사건 변수
   for (const e of outcome?.effects || []) if (e.t === 'var') cur.vars[e.k] = (cur.vars[e.k] || 0) + e.v;
   const text = fmt(state, outcome?.text || '', cur.roles);
-  const result = { kind: 'result', text, choice: fmt(state, c.label, cur.roles), success: c.check ? success : null, chance, deltas: [...log, ...effLog] };
+  const result = { kind: 'result', text, choice: fmt(state, c.label, cur.roles), success: c.check ? success : null, chance, deltas: [...log, ...effLog], key: keyIds(c) ? keyIds(c).find(id => hasTrait(state, id)) || null : null, bond: c.bond ? c.bond.who && npcFor(state, cur.roles, c.bond.who)?.id : null };
   state.journal.push({ year: state.year, age: state.age, season: state.season, ...result, eventId: def.id, node: cur.node, choiceId: c.id });
   state.yearLog.events.push({ title: def.title, choice: result.choice, success: result.success, deltas: result.deltas });
   if (outcome?.cause) state.yearLog.causes.push(fmt(state, outcome.cause, cur.roles));
@@ -279,16 +330,24 @@ export function choose(state, choiceId, token) {
       state.journal.push({ year: state.year, age: state.age, season: state.season, ...endEntry, eventId: def.id });
       if (nn.cause) state.yearLog.causes.push(fmt(state, nn.cause, cur.roles));
       finish(state);
-      return { ok: true, result, followup: endEntry, done: true };
+      return { ok: true, result, followup: endEntry, done: true, ...changesSince(state, tc0, bc0) };
     }
     const same = next === cur.node;
     cur.node = next;
     const nodeText = !same && nn.text ? fmt(state, nn.text, cur.roles) : '';
     const sceneText = scene ? sceneStatus(cur, scene) : '';
-    return { ok: true, result, nextText: nodeText, sceneText, done: false };
+    return { ok: true, result, nextText: nodeText, sceneText, done: false, ...changesSince(state, tc0, bc0) };
   }
   finish(state);
-  return { ok: true, result, done: true };
+  return { ok: true, result, done: true, ...changesSince(state, tc0, bc0) };
+}
+
+// 이번 선택으로 생긴 특성·인연 변화 (결과 화면의 도장과 알림)
+function changesSince(state, tc0, bc0) {
+  return {
+    traits: state.yearLog.traitChanges.slice(tc0),
+    bonds: state.yearLog.bondChanges.slice(bc0).map(b => ({ ...b, name: state.npcs[b.npc]?.name, fromName: tierName(b.from), toName: tierName(b.to) })),
+  };
 }
 
 function sceneStatus(cur, scene) {

@@ -3,6 +3,7 @@ import { esc, icon, frame, btn, divider } from '../dom.js';
 import { stagger, reduced } from '../motion.js';
 import { createGame } from '../../core/game.js';
 import { freshSeed, normalizeSeed } from '../../core/rng.js';
+import { traitChip } from '../traits.js';
 import { BACKGROUNDS, FAMILIES, APTITUDES, ABILITIES, DISTRICTS, OTHER_DISTRICTS, ATTRS, SKILLS } from '../../data/world.js';
 
 const placeName = (id) => DISTRICTS[id]?.name || OTHER_DISTRICTS[id] || id;
@@ -52,7 +53,7 @@ export default function birth(ui, root) {
             </article>`).join('')}
         </div>
         <div class="birth-lower">
-          ${frame(`<ul class="attr-list">${attrsHtml(s)}</ul><p class="muted small">능력치 합계 24 · 주 자질 ${esc(APTITUDES[s.ch.aptitude].name)}</p>`, { cls: 'attr-panel frame--sm', title: '타고난 능력' })}
+          ${frame(`<ul class="attr-list">${attrsHtml(s)}</ul><p class="muted small">능력치 합계 24 · 주 자질 ${esc(APTITUDES[s.ch.aptitude].name)}</p>${birthTraits(s)}`, { cls: 'attr-panel frame--sm', title: '타고난 능력' })}
           ${frame(`
             <div class="field"><label for="nm">이름</label><input id="nm" class="input" maxlength="16" placeholder="${esc(s.ch.name)}" value="${esc(name)}" autocomplete="off"></div>
             <div class="field"><label for="sd">출생 씨앗</label><div class="seed-row"><input id="sd" class="input mono" value="${esc(seed)}" spellcheck="false" autocomplete="off"><button class="btn btn--sm btn--icon" data-act="apply-seed" aria-label="씨앗 적용" data-tip="입력한 씨앗으로 다시 태어난다">${icon('check')}</button></div></div>
@@ -93,6 +94,13 @@ export default function birth(ui, root) {
     if (act === 'back') ui.go('title');
   });
   return { particles: 'embers' };
+}
+
+// 타고난 성향: 긍정·부정 특성과 배경이 남긴 열쇠
+function birthTraits(st) {
+  const ids = (st.ch.traits || []).map(t => t.id);
+  if (!ids.length) return '';
+  return `<div class="birth-traits"><small>${icon('key')}타고난 성향 <span class="muted">마우스를 올리면 효과</span></small><div class="opt-traits">${ids.map((id, i) => traitChip(id, { cls: 'pop-chip', prefix: '' }).replace('class="chip', `style="--i:${i}" class="chip`)).join('')}</div></div>`;
 }
 
 function familyLine(f) {

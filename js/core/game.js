@@ -10,7 +10,8 @@ import { buildSchedule, queueForSeason, processQueueItem, choose as directorChoo
 import { availableMains, subOptions, applyPlanStart, seasonEconomy, yearEndActivities, yearEndDebts, computeLifeClass, tryPromotion, publicRankUpdate, annualCost, costBreakdown, totalDebt, promotionStatus, MAIN, estimateIncome } from './economy.js';
 import { goalCandidates, setGoal, updateGoals, checkAchievements, buildEnding } from './progress.js';
 import { EVENTS } from '../data/events/index.js';
-import { shortName } from './util.js';
+import { shortName, josa } from './util.js';
+import { traitYearTick, hasTrait, bondPerk, traitName, TRAITS } from './traits.js';
 
 export { getChoices };
 
@@ -29,7 +30,12 @@ export function childhoodScene(state) {
   return {
     key: sc.key, year: sc.year, age: sc.age, title: sc.title, step: state.childhoodStep,
     text: fmt(state, sc.text(state), roles),
-    choices: sc.choices.filter(c => !c.cond || meets(state, c.cond)).map(c => ({ id: c.id, label: fmt(state, c.label, roles) })),
+    choices: sc.choices.filter(c => !c.cond || meets(state, c.cond)).map(c => ({
+      id: c.id, label: fmt(state, c.label, roles),
+      // 이 기억이 남기는 열쇠 특성 (선택지 아래에 미리 보여 준다)
+      rewards: (c.effects || []).filter(e => e.t === 'trait').map(e => ({ id: e.id, name: traitName(e.id), kind: TRAITS[e.id]?.kind })),
+    })),
+    traits: sc.key === 'birth' ? (state.ch.traits || []).map(t => t.id) : null,
   };
 }
 
@@ -41,7 +47,10 @@ export function chooseChildhood(state, choiceId) {
   state.yearLog = blankYearLog();
   const roles = childhoodRoles(state);
   const log = applyEffects(state, c.effects, { roles, cause: sc.title });
-  state.journal.push({ year: sc.year, age: sc.age, season: 0, kind: 'memory', title: sc.title, text: fmt(state, sc.text(state), roles), choice: c.id === 'next' ? null : fmt(state, c.label, roles), deltas: log });
+  state.journal.push({
+    year: sc.year, age: sc.age, season: 0, kind: 'memory', title: sc.title, text: fmt(state, sc.text(state), roles), choice: c.id === 'next' ? null : fmt(state, c.label, roles), deltas: log,
+    traits: state.yearLog.traitChanges.filter(t => t.gained).map(t => t.id),
+  });
   if (c.id === 'guardian' || c.id === 'friend' || c.id === 'workbench') state.flags['child_' + c.id] = true;
   state.childhoodStep += 1;
   if (state.childhoodStep >= CHILDHOOD.length) {
@@ -71,6 +80,7 @@ export function blankYearLog() {
   return {
     income: 0, expense: 0, expenseBase: 0, eventIncome: 0, spent: 0, incomeCut: 0, plannedIncome: 0, quarterIncome: 0, quarterExpense: 0,
     relChanges: [], skillUps: [], cityChanges: [], causes: [], events: [], jobChanges: [], loadUsed: 0, startCash: 0, net: 0, warnings: [],
+    traitChanges: [], bondChanges: [], traitFx: {},
   };
 }
 
@@ -91,6 +101,10 @@ export function startYear(state) {
       const best = done.sort((a, b) => ch.skillXp[JOBS[b].skill] - ch.skillXp[JOBS[a].skill])[0];
       setJob(state, best, 0, null);
       notes.push(`견습을 마친 덕분에 ${JOBS[best].name} 자리로 바로 채용되었다.`);
+    }
+    if (bondPerk(state, 'guardian_gift')) {
+      ch.cash += 30; state.yearLog.startCash += 30;
+      notes.push(`보호자 ${josa(shortName(state.npcs.p_guardian.name), '가')} 새 방 열쇠와 함께 30C가 든 봉투를 건넸다. "평생의 인연"이 주는 첫 선물이다.`);
     }
     state.stats.g_housingInfo = (state.stats.g_housingInfo || 0) + 1;
   }
@@ -260,6 +274,7 @@ function endYear(state, entries) {
   hist.cashByYear.push([state.year, ch.cash]);
 
   const goalNotes = updateGoals(state);
+  traitYearTick(state);
   state.stats.yearsEnded = (state.stats.yearsEnded || 0) + 1;
   const ach = checkAchievements(state);
 
@@ -271,6 +286,7 @@ function endYear(state, entries) {
     rel: aggregateRel(state, yl.relChanges), skills: [...yl.skillUps], city: yl.cityChanges.slice(-6), causes: [...yl.causes],
     events: yl.events, promotion: promo, goal: goalNotes, achievements: ach, actLog, debtLog,
     lifeClass: ch.lifeClass, publicRank: ch.publicRank,
+    traits: [...yl.traitChanges], bonds: [...yl.bondChanges], traitFx: Object.values(yl.traitFx || {}).filter(x => x.v),
   };
   state.journal.push({ year: state.year, age: state.age, season: 3, kind: 'yearEnd', text: summaryLine(state), net: yl.net });
   compactJournal(state);
@@ -379,8 +395,20 @@ export function loanOffers(state) {
   if (!ch.independent) return [];
   const offers = [];
   const bankOk = ch.lifeClass >= 1 && !ch.debts.some(d => d.overdue) && totalDebt(state) < 120;
-  offers.push({ id: 'bank', name: '시민 은행 대출', amount: 60, rate: 0.08, ok: bankOk, reason: bankOk ? '' : '자립 시민(L1) 이상, 연체 없음, 잔액 120C 미만일 때' });
-  offers.push({ id: 'sera', name: '세라 바인의 긴급 자금', amount: 40, rate: 0.15, ok: totalDebt(state) < 200, reason: totalDebt(state) < 200 ? '' : '이미 빚이 너무 많다' });
+  const shadow = hasTrait(state, 'neg_debt_shadow') ? 0.03 : 0;
+  const note = shadow ? ' · 「빚의 그림자」 +3%p' : '';
+  offers.push({ id: 'bank', name: '시민 은행 대출', amount: 60, rate: 0.08, shown: 0.08 + shadow, note, ok: bankOk, reason: bankOk ? '' : '자립 시민(L1) 이상, 연체 없음, 잔액 120C 미만일 때' });
+  // 세라와의 인연이 금액과 이율을 바꾼다
+  const sera = state.npcs.sera;
+  if (sera?.alive) {
+    const refuse = bondPerk(state, 'sera_refuse');
+    const t2 = bondPerk(state, 'sera_rate2'), t1 = bondPerk(state, 'sera_rate1');
+    const amount = t2 ? 60 : 40, rate = t2 ? 0.09 : t1 ? 0.12 : 0.15;
+    const why = t2 ? ' · 「믿는 사이」 조건' : t1 ? ' · 「친분」 조건' : '';
+    const ok = !refuse && totalDebt(state) < 200;
+    offers.push({ id: 'sera', name: '세라 바인의 긴급 자금', amount, rate, shown: rate + shadow, note: why + note, ok, reason: refuse ? '세라가 당신과는 거래하지 않는다 (인연 「적대」)' : totalDebt(state) < 200 ? '' : '이미 빚이 너무 많다' });
+    if (hasTrait(state, 'kw_rivet_partner')) offers.push({ id: 'partner', name: '리벳 동업 자금', amount: 80, rate: 0.06, shown: 0.06 + shadow, note: ' · 열쇠 「리벳의 동업자」' + note, ok: totalDebt(state) < 240, key: 'kw_rivet_partner', reason: totalDebt(state) < 240 ? '' : '이미 빚이 너무 많다' });
+  }
   return offers;
 }
 
@@ -388,10 +416,10 @@ export function takeLoan(state, id) {
   if (state.phase !== 'plan') return false;
   const o = loanOffers(state).find(x => x.id === id);
   if (!o || !o.ok) return false;
-  applyEffects(state, [{ t: 'debt', lender: id === 'sera' ? 'sera' : 'bank', v: o.amount, rate: o.rate }], { cause: '대출' });
+  applyEffects(state, [{ t: 'debt', lender: id === 'bank' ? 'bank' : 'sera', v: o.amount, rate: o.rate }], { cause: '대출' });
   state.yearLog.startCash += o.amount;
-  if (id === 'sera') changeRel(state, state.npcs.sera, 2, 0, null, '돈을 빌렸다');
-  state.journal.push({ year: state.year, age: state.age, season: 0, kind: 'note', text: `${o.name} ${o.amount}C를 빌렸다 (연 ${Math.round(o.rate * 100)}%).` });
+  if (id !== 'bank') changeRel(state, state.npcs.sera, 2, 0, null, '돈을 빌렸다');
+  state.journal.push({ year: state.year, age: state.age, season: 0, kind: 'note', text: `${o.name} ${o.amount}C를 빌렸다 (연 ${Math.round(o.shown * 100)}%).` });
   return true;
 }
 
@@ -399,16 +427,22 @@ export function workshopOffer(state) {
   const ch = state.ch;
   if (!ch.independent || ch.workshop) return null;
   const skill = Math.max(ch.skills.repair, ch.skills.trade);
-  return { price: 80, ok: ch.cash >= 80 && skill >= 2, reason: skill < 2 ? '수리 또는 상업 숙련 2가 필요하다' : ch.cash < 80 ? '시작 자금 80C가 필요하다 (저축, 대출, 동업)' : '' };
+  // 공방집 아이는 물려받은 공구로 더 싸고 일찍 연다. 공방 장인과 믿는 사이면 쓰던 설비를 넘겨받는다.
+  const heir = hasTrait(state, 'kw_shop_heir');
+  const master = bondPerk(state, 'master_workshop');
+  const price = 80 - (heir ? 20 : 0) - (master ? 20 : 0);
+  const need = heir ? 1 : 2;
+  const perks = [heir ? '열쇠 「공방집 아이」 −20C · 숙련 1부터' : null, master ? `${shortName(state.npcs.p_master.name)}의 설비 −20C` : null].filter(Boolean);
+  return { price, need, perks, ok: ch.cash >= price && skill >= need, reason: skill < need ? `수리 또는 상업 숙련 ${need}가 필요하다` : ch.cash < price ? `시작 자금 ${price}C가 필요하다 (저축, 대출, 동업)` : '' };
 }
 
 export function openWorkshop(state) {
   const o = workshopOffer(state);
   if (state.phase !== 'plan' || !o || !o.ok) return false;
-  state.ch.cash -= 80;
-  state.yearLog.startCash -= 80;
+  state.ch.cash -= o.price;
+  state.yearLog.startCash -= o.price;
   applyEffects(state, [{ t: 'workshop', value: 80 }], { cause: '공방 개업' });
-  state.journal.push({ year: state.year, age: state.age, season: 0, kind: 'note', text: '80C를 들여 작은 공방을 열었다. 간판에는 아직 페인트 냄새가 남아 있다.' });
+  state.journal.push({ year: state.year, age: state.age, season: 0, kind: 'note', text: `${o.price}C를 들여 작은 공방을 열었다. 간판에는 아직 페인트 냄새가 남아 있다.${o.perks.length ? ` (${o.perks.join(' · ')})` : ''}` });
   return true;
 }
 

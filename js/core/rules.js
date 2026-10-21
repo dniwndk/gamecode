@@ -3,6 +3,7 @@ import { ATTRS, SKILLS, ITEMS, ABILITIES, DISTRICTS, FACTIONS, JOBS } from '../d
 import { clamp, josa, signed, shortName } from './util.js';
 import { resolveNpc } from './state.js';
 import { withRng } from './rng.js';
+import { adjustStat, xpBonus, adjustRel, adjustRep, checkTraitBonus, tierOf, afterRelChange, gainTrait, loseTrait, hasTrait, bondPerk, traitSum } from './traits.js';
 
 export const SKILL_XP = [0, 3, 8, 15, 24, 36];
 
@@ -61,17 +62,21 @@ export function computeChance(state, check, roles = {}, extra = {}) {
     const n = npcFor(state, roles, check.support);
     if (n && n.alive) support = n.trust >= 70 ? 10 : n.trust >= 40 ? 5 : 0;
   }
+  if (check.support && support < 10 && hasTrait(state, 'pos_solidarity')) support += 5;
   support = Math.min(10, support + (extra.support || 0));
   let penalty = 0;
   const notes = [];
-  if (ch.stress >= 70) { penalty += 5; notes.push('스트레스 −5'); }
-  if (ch.health < 40) { penalty += 5; notes.push('건강 −5'); }
+  const tough = hasTrait(state, 'pos_survivor');
+  const stressAt = hasTrait(state, 'neg_anxious') ? 60 : 70;
+  if (ch.stress >= stressAt && !tough) { penalty += 5; notes.push(stressAt < 70 ? '스트레스(잦은 불안) −5' : '스트레스 −5'); }
+  if (ch.health < 40 && !tough) { penalty += 5; notes.push('건강 −5'); }
   if (ch.load >= 50 && (check.attr === 'craft' || check.attr === 'sense' || check.resonance)) { penalty += 10; notes.push('공명부하 −10'); }
   if (check.penalty) penalty += check.penalty;
-  const raw = 50 + 5 * (attr - check.diff) + 8 * skill + tool + prep + support - penalty;
+  const tb = checkTraitBonus(state, check);
+  const raw = 50 + 5 * (attr - check.diff) + 8 * skill + tool + prep + support + tb.v - penalty;
   return {
     chance: clamp(raw, 5, 95),
-    parts: { attr, diff: check.diff, skill, tool, prep, support, penalty, notes },
+    parts: { attr, diff: check.diff, skill, tool, prep, support, trait: tb.v, traitNotes: tb.notes, penalty, notes },
   };
 }
 
@@ -131,6 +136,11 @@ function check1(state, key, v, roles) {
     case 'goal': return !!(state.goal && v.includes(state.goal.id));
     case 'strike': return v === true ? state.city.factions.union.striking : true;
     case 'when': return !!v(state, roles);
+    case 'trait': return Array.isArray(v) ? v.some(id => hasTrait(state, id)) : hasTrait(state, v);
+    case 'allTraits': return v.every(id => hasTrait(state, id));
+    case 'noTrait': return Array.isArray(v) ? !v.some(id => hasTrait(state, id)) : !hasTrait(state, v);
+    case 'minTier': for (const k in v) { const n = npcFor(state, roles, k); if (!n || !n.alive || !n.met || tierOf(n) < v[k]) return false; } return true;
+    case 'minRep': for (const k in v) if ((state.rep[k] || 0) < v[k]) return false; return true;
     default: return true;
   }
 }
@@ -200,8 +210,10 @@ export function maxHealth(state) {
   return Math.round(100 - Math.max(0, state.age - 50) * 1.1);
 }
 
-export function addStat(state, k, v, log) {
+// raw = true면 특성 배율을 건너뛴다 (치료처럼 정해진 양)
+export function addStat(state, k, v, log, raw = false) {
   const ch = state.ch;
+  if (!raw) v = adjustStat(state, k, v);
   const before = ch[k];
   const hi = k === 'health' ? maxHealth(state) : 100;
   let lo = 0;
@@ -216,6 +228,7 @@ export function addStat(state, k, v, log) {
 export function gainSkillXp(state, k, xp, log) {
   const ch = state.ch;
   if (!xp) return;
+  if (xp > 0) xp += xpBonus(state, k);
   ch.skillXp[k] = (ch.skillXp[k] || 0) + xp;
   const before = ch.skills[k];
   let lvl = 0;
@@ -239,7 +252,9 @@ export function gainAttrXp(state, k, xp, log) {
 
 export function changeRel(state, npc, trust = 0, aff = 0, log, cause) {
   if (!npc || !npc.alive) return;
+  [trust, aff] = adjustRel(state, npc, trust, aff);
   const bt = npc.trust, ba = npc.affinity;
+  const tier0 = npc.met ? tierOf(npc) : 2;
   npc.trust = clamp(npc.trust + trust, 0, 100);
   npc.affinity = clamp(npc.affinity + aff, -100, 100);
   if (!npc.met) npc.met = true;
@@ -251,10 +266,12 @@ export function changeRel(state, npc, trust = 0, aff = 0, log, cause) {
     const line = `${shortName(npc.name)} ${parts.join(' · ')}`;
     log?.push(line);
     state.yearLog.relChanges.push({ npc: npc.id, text: line, cause: cause || '' });
+    afterRelChange(state, npc, tier0, log, cause);
   }
 }
 
 export function addRep(state, f, v, log) {
+  v = adjustRep(state, f, v);
   const before = state.rep[f];
   state.rep[f] = clamp(before + v, -100, 100);
   if (state.rep[f] !== before) log?.push(`${FACTIONS[f]} 평판 ${signed(state.rep[f] - before)}`);
@@ -325,7 +342,8 @@ export function applyEffects(state, effects, ctx = {}) {
         if (!n) break;
         const id = e.id || `${ctx.eventId || 'duty'}_${state.year}`;
         if (n.duties.some(d => d.id === id)) break;
-        n.duties.push({ id, text: fmt(state, e.text, roles), due: state.year + (e.years ?? 3), done: false, failed: false, since: state.year, manual: !!e.manual });
+        const extra = bondPerk(state, 'elian_duty') ? 1 : 0;
+        n.duties.push({ id, text: fmt(state, e.text, roles), due: state.year + (e.years ?? 3) + extra, done: false, failed: false, since: state.year, manual: !!e.manual });
         log.push(`약속: ${fmt(state, e.text, roles)}`);
         break;
       }
@@ -353,11 +371,18 @@ export function applyEffects(state, effects, ctx = {}) {
       case 'signature': if (!state.uniq['sig:' + ctx.eventId + state.year]) { state.uniq['sig:' + ctx.eventId + state.year] = true; state.stats.signatureWorks = (state.stats.signatureWorks || 0) + 1; log.push('대표 제작 +1'); } break;
       case 'record': state.stats.recordsPublished = (state.stats.recordsPublished || 0) + 1; log.push('검증된 기록 공개 +1'); break;
       case 'job': setJob(state, e.id, e.rank || 0, log); break;
-      case 'debt': ch.debts.push({ id: `d${state.year}_${ch.debts.length}`, lender: e.lender, principal: e.v, original: e.v, rate: e.rate, overdue: 0, since: state.year }); ch.cash += e.v; log.push(`${e.lender === 'sera' ? '비공식' : '합법'} 대출 ${e.v}C (연 ${Math.round(e.rate * 100)}%)`); break;
+      case 'debt': {
+        const rate = Math.round((e.rate + traitSum(state, 'debtRate')) * 100) / 100;
+        ch.debts.push({ id: `d${state.year}_${ch.debts.length}`, lender: e.lender, principal: e.v, original: e.v, rate, overdue: 0, since: state.year }); ch.cash += e.v;
+        log.push(`${e.lender === 'sera' ? '비공식' : '합법'} 대출 ${e.v}C (연 ${Math.round(rate * 100)}%${rate > e.rate ? ' · 빚의 그림자' : ''})`);
+        break;
+      }
       case 'debtRelief': for (const d of ch.debts) { d.rate = Math.min(d.rate, e.rate ?? d.rate); d.overdue = 0; if (e.cut) d.principal = Math.max(0, d.principal - e.cut); } log.push('채무 조건이 조정되었다'); break;
       case 'ability': if (!ch.ability) { ch.ability = { id: e.id, stage: 0, registered: false, practice: 0 }; log.push(`고유공명 발현: ${ABILITIES[e.id].name}`); } break;
       case 'abilityStage': if (ch.ability && ch.ability.stage < 3) { ch.ability.stage += 1; log.push(`공명 단계 상승`); } break;
-      case 'register': if (ch.ability) { ch.ability.registered = true; log.push('공명 능력을 시민 등록부에 신고했다'); } break;
+      case 'register': if (ch.ability) { ch.ability.registered = true; log.push('공명 능력을 시민 등록부에 신고했다'); gainTrait(state, 'kw_registered', log, cause || '공명 등록'); } break;
+      case 'trait': gainTrait(state, e.id, log, cause); break;
+      case 'loseTrait': loseTrait(state, e.id, log, cause); break;
       case 'goal': state.stats['g_' + e.k] = (state.stats['g_' + e.k] || 0) + (e.v ?? 1); break;
       case 'move': if (ch.home !== e.d) { ch.home = e.d; log.push(`${DISTRICTS[e.d].name}으로 이사했다`); state.history.moved = state.year; } break;
       case 'workshop': if (!ch.workshop) { ch.workshop = { since: state.year, value: e.value || 80, quality: 1, coop: !!e.coop }; log.push(e.coop ? '협동 공방을 열었다' : '작은 공방을 열었다'); } break;

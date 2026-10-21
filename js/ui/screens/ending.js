@@ -3,6 +3,7 @@ import { esc, icon, frame, btn, portrait, sentences, divider } from '../dom.js';
 import { stagger, reduced } from '../motion.js';
 import { ACHIEVEMENTS } from '../../core/progress.js';
 import * as store from '../store.js';
+import { traitChip, kindCls } from '../traits.js';
 
 export default function ending(ui, root) {
   const s = ui.state;
@@ -14,6 +15,18 @@ export default function ending(ui, root) {
   const title = e.main ? e.main.name : e.short ? '짧았던 계절' : '평범한 등불';
   const cause = e.type === 'retire' ? '은퇴 후 결산' : s.ch.alive ? '결산' : '영면';
   const ach = s.achievements.map(id => ACHIEVEMENTS.find(a => a.id === id)).filter(Boolean);
+
+  // 이 삶을 만든 특성: 끝까지 지닌 것과 이겨 낸 것
+  function traitsHtml() {
+    const tr = e.traits || [];
+    const over = e.overcome || [];
+    if (!tr.length && !over.length) return '';
+    const by = (k) => tr.filter(t => t.kind === k);
+    return `<section class="end-traits"><h3 class="sec-title">${icon('key')}이 삶을 만든 특성</h3>
+      <div class="et-cols">${[['positive', '몸에 밴 장점'], ['negative', '끝까지 함께한 그림자'], ['keyword', '쥐고 있던 열쇠']].map(([k, l]) => by(k).length ? `<div class="et-col et-${kindCls(k)}"><small>${l}</small><div class="opt-traits">${by(k).map(t => traitChip(t.id)).join('')}</div></div>` : '').join('')}
+      ${over.length ? `<div class="et-col et-over"><small>이겨 낸 것</small><div class="opt-traits">${over.map(t => traitChip(t.id, { cls: 'shed', prefix: '극복 · ' })).join('')}</div></div>` : ''}</div>
+    </section>`;
+  }
 
   root.innerHTML = `
     <div class="ending-screen">
@@ -49,6 +62,7 @@ export default function ending(ui, root) {
           <h3 class="sec-title">${icon('clock')}기억에 남은 순간</h3>
           <ol>${e.moments.map((m, i) => `<li style="--i:${i}"><span class="tl-node"></span><span class="tl-year">${m.year}년 · ${m.age}세</span><span class="tl-title">${esc(m.title)}</span></li>`).join('') || '<li><span class="tl-node"></span><span class="tl-title">조용한 한 해 한 해</span></li>'}</ol>
         </section>
+        ${traitsHtml()}
         ${ach.length ? `<section class="end-ach"><h3 class="sec-title">${icon('star')}이 삶의 업적 ${ach.length}</h3><ul class="ach-grid">${ach.map(a => `<li class="ach got" data-tip="${esc(a.desc)}" tabindex="0"><span class="ach-medal grade-${a.grade}"><svg><use href="#gear-small"/></svg><b>${a.grade}</b></span><span class="ach-name">${esc(a.name)}</span></li>`).join('')}</ul></section>` : ''}
       </div>
       <footer class="end-actions">${btn('새로운 삶', 'new', { cls: 'btn--brass', gems: 'red', attrs: 'autofocus' })}${btn('타이틀로', 'title', { cls: 'btn--ghost', ico: 'home' })}</footer>
