@@ -22,8 +22,7 @@ function cyrb128(str) {
 
 // sfc32: 상태 4개의 32비트 정수. 저장/복원이 쉽다.
 function sfc32Next(s) {
-  let [a, b, c, d] = s;
-  a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0;
+  let a = s[0] >>> 0, b = s[1] >>> 0, c = s[2] >>> 0, d = s[3] >>> 0;
   let t = (a + b) | 0;
   a = b ^ (b >>> 9);
   b = (c + (c << 3)) | 0;
@@ -36,7 +35,8 @@ function sfc32Next(s) {
 }
 
 export class Rng {
-  constructor(state) { this.s = state.slice(); }
+  // inPlace면 넘겨받은 상태 배열을 복사하지 않고 그대로 굴린다 (withRng 전용)
+  constructor(state, inPlace = false) { this.s = inPlace ? state : state.slice(); }
   u32() { return sfc32Next(this.s); }
   float() { return this.u32() / 4294967296; }
   // 0..n-1 균등 정수, 거부 표본으로 편향 제거
@@ -103,10 +103,7 @@ export function createStreams(seed) {
   return out;
 }
 
-// 상태 객체 안의 흐름 상태로 Rng를 열고, 사용 후 다시 저장한다.
+// 상태 객체 안의 흐름 상태로 Rng를 열어 그 자리에서 굴린다 (흐름 상태 배열이 곧 저장값이다).
 export function withRng(state, name, fn) {
-  const r = new Rng(state.rng[name]);
-  const res = fn(r);
-  state.rng[name] = r.dump();
-  return res;
+  return fn(new Rng(state.rng[name], true));
 }

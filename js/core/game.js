@@ -303,8 +303,12 @@ function aggregateRel(state, changes) {
   const by = {};
   for (const c of changes) {
     by[c.npc] = by[c.npc] || { npc: c.npc, name: state.npcs[c.npc]?.name, trust: 0, aff: 0, causes: [] };
-    const m = c.text.match(/신뢰 ([+-]\d+)/); if (m) by[c.npc].trust += +m[1];
-    const a = c.text.match(/호감 ([+-]\d+)/); if (a) by[c.npc].aff += +a[1];
+    // 수치가 함께 적혀 있으면 그대로 더하고, 옛 저장의 기록은 문장에서 읽는다
+    if (c.dt != null) { by[c.npc].trust += c.dt; by[c.npc].aff += c.da; }
+    else {
+      const m = c.text.match(/신뢰 ([+-]\d+)/); if (m) by[c.npc].trust += +m[1];
+      const a = c.text.match(/호감 ([+-]\d+)/); if (a) by[c.npc].aff += +a[1];
+    }
     if (c.cause && !by[c.npc].causes.includes(c.cause)) by[c.npc].causes.push(c.cause);
   }
   return Object.values(by).filter(x => x.trust || x.aff);
@@ -315,9 +319,23 @@ function summaryLine(state) {
   return `${state.age}세의 한 해. 수입 ${s.income}C · 지출 ${s.expense}C · 잔액 ${s.cash}C`;
 }
 
+const COMPACT_DROP = new Set(['daily', 'season', 'plan', 'warn']);
+// 8년이 지난 일지에서 일상·계절 기록을 덜어 내고 수치 내역을 비운다.
+// 일지는 연도순으로 쌓이므로, 지난해에 정리한 경계가 이어지면 새로 경계를 넘은 한 해만 손본다.
 function compactJournal(state) {
   const cutoff = state.year - 8;
-  state.journal = state.journal.filter(j => j.year >= cutoff || !['daily', 'season', 'plan', 'warn'].includes(j.kind)).map(j => (j.year < cutoff && j.deltas ? { ...j, deltas: undefined } : j));
+  const J = state.journal;
+  const h = state.history;
+  let from = 0;
+  if (h.compactedBelow === cutoff - 1) { from = J.length; while (from > 0 && J[from - 1].year >= cutoff - 1) from--; }
+  let w = from;
+  for (let i = from; i < J.length; i++) {
+    const j = J[i];
+    if (j.year >= cutoff) J[w++] = j;
+    else if (!COMPACT_DROP.has(j.kind)) J[w++] = j.deltas ? { ...j, deltas: undefined } : j;
+  }
+  J.length = w;
+  h.compactedBelow = cutoff;
 }
 
 export function continueYear(state) {

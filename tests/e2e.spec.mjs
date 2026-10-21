@@ -140,6 +140,60 @@ async function playYears(page, years, onEvent, onLedger) {
   await ctx.close();
 }
 
+// ───────── 2-1. 특성 계기판 · 특성 서랍 · 열쇠/인연 선택지 ─────────
+{
+  const { ctx, page } = await newPage();
+  await toPlan(page, 'E2E-TRAITS');
+  const hud = await page.evaluate(() => {
+    const s = window.__ui.state;
+    const box = document.querySelector('.hud-traits');
+    const eff = s.ch.traits.filter(t => !t.id.startsWith('kw_')).length;
+    const keys = s.ch.traits.filter(t => t.id.startsWith('kw_')).length;
+    return { eff, keys, tokens: box ? box.querySelectorAll('.tk:not(.tk--ring):not(.tk--more)').length : -1, ring: box?.querySelector('.tk--ring b')?.textContent || '0', tip: !!box?.querySelector('.tk[data-tip]') };
+  });
+  check('계기판에 보유 특성이 실시간으로 표시 (효과 특성 토큰 · 열쇠 고리 개수 · 설명 툴팁)', hud.tokens === Math.min(6, hud.eff) && Number(hud.ring) === hud.keys && hud.keys >= 1 && hud.tip, JSON.stringify(hud));
+
+  // 계획 창이 떠 있어도 T 키로 특성 서랍이 열리고, 닫으면 계획 창으로 돌아온다
+  await page.keyboard.press('t');
+  const drawer = await until(page, () => !!document.querySelector('.tcard'));
+  const cards = await page.evaluate(() => document.querySelectorAll('.tcard').length);
+  await page.keyboard.press('Escape');
+  const back = await until(page, () => !document.querySelector('.tcard') && !!document.querySelector('.plan-modal [data-act="submit"]'));
+  check('계획 창 위에서 T 키로 특성 서랍: 보유 특성 카드 · 닫으면 계획 창으로', drawer && cards >= 2 && back, `카드 ${cards} · 복귀 ${back}`);
+
+  // 토마와 「친분」 + 장부 열쇠: 열쇠 선택지는 띠를 두르고, 「믿는 사이」가 필요한 선택지는 잠긴다
+  await page.evaluate(async () => {
+    const T = await import('./js/core/traits.js');
+    const s = window.__ui.state;
+    s.age = 24;
+    s.ch.traits = s.ch.traits.filter(t => t.id !== 'pos_lamp_keeper');
+    T.gainTrait(s, 'kw_old_ledgers', [], '시험');
+    Object.assign(s.npcs.toma, { met: true, alive: true, retired: false, trust: 30, affinity: 25 });
+    s.pending.push({ id: 'e2e_route', ev: 'evt_toma_ledger', due: s.year, roles: { toma: 'toma' }, tries: 0, season: 0 });
+    // 나이가 바뀌었으니 성인 활동으로 계획 창을 다시 그린다
+    window.__ui.closeAll();
+    window.__ui.go('main');
+  });
+  await page.waitForSelector('.plan-modal .opt[data-id="jobhunt"]');
+  await page.waitForTimeout(400);
+  await tap(page, '.plan-modal [data-act="submit"]');
+  await page.evaluate(() => window.__ui.setSetting('speed', 8));
+  for (let i = 0; i < 80 && !(await page.$('.event-modal .choice')); i++) { if (await page.evaluate(() => window.__ui.state.phase === 'running')) await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
+  const route = await page.evaluate(() => {
+    const m = document.querySelector('.event-modal');
+    const by = (id) => m?.querySelector(`.choice[data-id="${id}"]`);
+    return {
+      ev: window.__ui.state.current?.eventId,
+      keyRibbon: !!by('audit')?.querySelector('.c-ribbon--key'),
+      reward: !!by('audit')?.querySelector('.chip--trait'),
+      locked: !!(by('share')?.disabled && by('share')?.querySelector('.c-ribbon--lock')),
+      boosted: !!by('audit')?.querySelector('.c-odds-tr'),
+    };
+  });
+  check('열쇠 특성이 연 선택지(띠·보상 특성·특성 보정)와 인연 단계로 잠긴 선택지가 구분되어 보인다', route.ev === 'evt_toma_ledger' && route.keyRibbon && route.reward && route.locked && route.boosted, JSON.stringify(route));
+  await ctx.close();
+}
+
 // ───────── 3. 사건 장면 새로고침 · 판정 불변 ─────────
 {
   const { ctx, page } = await newPage();

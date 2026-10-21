@@ -10,7 +10,7 @@ export function seasonTick(state) {
   const city = state.city;
   city.changeAcc = {};
   const g = city.global;
-  const log = [];
+  const log = null; // 계절 변화는 줄 단위로 보여 주지 않는다. 원인이 있는 변화만 결산에 남는다
   // 수요: 계절 보정 + 해마다 조금씩 늘어나는 기본 수요
   city.demandNow = city.demandBase + SEASON_DEMAND[state.season];
   // 공급: 기본 용량 − 점검 부족 − 이번 계절 사고
@@ -44,7 +44,6 @@ export function seasonTick(state) {
   // 파업 중에는 공업대 일자리가 줄어든다
   if (city.factions.union.striking) cityDelta(state, 'brass', 'jobs', -3, log, '노동연맹 파업');
   else if (city.districts.brass.jobs < DISTRICTS.brass.start.jobs) cityDelta(state, 'brass', 'jobs', 1, log, '');
-  return log;
 }
 
 function pushNews(state, kind, text, editor) {

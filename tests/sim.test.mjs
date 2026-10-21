@@ -272,7 +272,7 @@ check(`사건 ${Object.keys(EVENTS).length}종이 모두 한 번 이상 등장 (
 {
   // 인연이 결정적인 선택지: 「친분」이면 잠기고, 「믿는 사이」가 되면 열려 고유 특성을 준다
   const s = playLife('bond-gate', 'safe', { stopAtAge: 26 }).s;
-  s.ch.traits = s.ch.traits.filter(t => TRAITS[t.id].kind !== 'keyword');
+  s.ch.traits = s.ch.traits.filter(t => TRAITS[t.id].kind !== 'keyword' && t.id !== 'pos_lamp_keeper');
   const toma = s.npcs.toma; toma.alive = true; toma.met = true; toma.retired = false; toma.trust = 30; toma.affinity = 25;
   s.ch.cash = 100;
   const def = EVENTS.evt_toma_ledger;

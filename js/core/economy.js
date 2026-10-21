@@ -3,7 +3,7 @@ import { JOBS, ITEMS, DISTRICTS, PROMOTION, RANKS, SUB_COMMITMENTS, SKILLS, ABIL
 import { gainSkillXp, gainAttrXp, addStat, changeRel, addRep, setJob, computeChance, rollCheck, hasAbilityOrDevice, workDistrict } from './rules.js';
 import { withRng } from './rng.js';
 import { clamp, shortName } from './util.js';
-import { hasTrait, traitMul, traitFx, traitName, bondPerk, TRAITS } from './traits.js';
+import { hasTrait, traitMul, traitFx, traitName, bondPerk, traitMods, traitIdsWith } from './traits.js';
 
 export const BASE_COST = { housing: 24, food: 24, heat: 12, commute: 12 }; // 합계 72C
 
@@ -40,7 +40,7 @@ export function comfortCost(state) {
   const ch = state.ch;
   if (!ch.independent || state.flags.frugal) return 0;
   let at = 150;
-  for (const t of ch.traits || []) { const m = TRAITS[t.id]?.mods; if (m?.comfortAt != null) at = Math.min(at, m.comfortAt); }
+  for (const [x] of traitMods(state, 'comfortAt')) at = Math.min(at, x);
   return Math.max(0, Math.floor((ch.cash - at) * 0.08 * traitMul(state, 'comfortMul')));
 }
 
@@ -59,7 +59,7 @@ export function costBreakdown(state) {
   const base = rows.reduce((a, r) => a + r[1], 0);
   const lt = livingTraitDelta(state, base);
   if (lt) {
-    const ids = (ch.traits || []).filter(t => TRAITS[t.id]?.mods?.living != null).map(t => t.id);
+    const ids = traitIdsWith(state, 'living');
     rows.push([`특성 ${ids.map(id => `「${traitName(id)}」`).join(' ')}`, lt]);
   }
   if (comfortCost(state)) rows.push(['생활 향상', comfortCost(state)]);
@@ -78,24 +78,42 @@ function jobIncomeBase(state) {
 }
 
 // 특성과 인연이 주 활동 수입에 더하는 몫. [더할 금액, [{ label, d, ids }]]
+const TRAIT_INCOME_MAINS = new Set(['work', 'work_res', 'workshop', 'community', 'mentor', 'night_market']);
+const NO_INCOME = Object.freeze([0, Object.freeze([])]);
+// 배율 특성 묶음마다 이름표를 한 번만 만든다 (묶음은 보유 특성이 바뀔 때만 새로 생긴다)
+const MUL_LABEL = new WeakMap();
+function mulGroup(ms) {
+  let g = MUL_LABEL.get(ms);
+  if (!g) {
+    let m = 1; for (const [x] of ms) m *= x;
+    const ids = ms.map(([, id]) => id);
+    g = { m, ids, label: ids.map(id => `「${traitName(id)}」`).join(' ') };
+    MUL_LABEL.set(ms, g);
+  }
+  return g;
+}
 export function traitIncome(state, main, base) {
+  if (!TRAIT_INCOME_MAINS.has(main)) return NO_INCOME;
   const ch = state.ch;
   let add = 0;
-  const why = [];
-  const put = (label, d, ids = []) => { if (d) { add += d; why.push({ label, d, ids }); } };
+  let why = null;
+  const put = (label, d, ids = []) => { if (d) { add += d; (why ||= []).push({ label, d, ids }); } };
   const mul = (key) => {
-    const ids = (ch.traits || []).filter(t => TRAITS[t.id]?.mods?.[key] != null).map(t => t.id);
-    if (ids.length) put(ids.map(id => `「${traitName(id)}」`).join(' '), Math.round(base * (traitMul(state, key) - 1)), ids);
+    const ms = traitMods(state, key);
+    if (!ms.length) return;
+    const g = mulGroup(ms);
+    put(g.label, Math.round(base * (g.m - 1)), g.ids);
   };
-  if (['work', 'work_res', 'workshop'].includes(main)) mul('income');
-  if (main === 'workshop' || ((main === 'work' || main === 'work_res') && ch.job?.id === 'merchant')) mul('partnerIncome');
+  const working = main === 'work' || main === 'work_res';
+  if (working || main === 'workshop') mul('income');
+  if (main === 'workshop' || (working && ch.job?.id === 'merchant')) mul('partnerIncome');
   if (main === 'community') {
     if (hasTrait(state, 'pos_lamp_keeper')) put('「등불지기」', 24, ['pos_lamp_keeper']);
     if (bondPerk(state, 'toma_community')) put('토마와의 인연', 12);
   }
   if (main === 'mentor' && bondPerk(state, 'child_heir')) put('제자와의 인연', 12);
   if (main === 'night_market' && state.age >= 18) put(`상업 숙련 ${ch.skills.trade}`, ch.skills.trade * 8);
-  return [add, why];
+  return why ? [add, why] : NO_INCOME;
 }
 
 // ───────── 주 활동 ─────────
@@ -150,11 +168,15 @@ function resonanceJobFit(state) {
 
 function decorate(state, o) {
   const def = MAIN[o.id];
-  const r = { ...o, name: o.label || def.name, desc: def.desc, income: estimateIncome(state, o), cost: def.cost || 0 };
   // 특성·인연이 이 활동에 주는 몫을 보여 준다
-  const [, why] = traitIncome(state, o.id, baseIncome(state, o));
-  r.traitTags = why.map(w => ({ text: `${w.label} ${w.d > 0 ? '+' : ''}${w.d}C`, good: w.d > 0 }));
-  if (def.trait) r.keyTrait = { id: def.trait, name: traitName(def.trait) };
+  const base = baseIncome(state, o);
+  const [add, why] = traitIncome(state, o.id, base);
+  const r = {
+    id: o.id, target: o.target, label: o.label, name: o.label || def.name, desc: def.desc, income: base + add, cost: def.cost || 0,
+    traitTags: why.length ? why.map(w => ({ text: `${w.label} ${w.d > 0 ? '+' : ''}${w.d}C`, good: w.d > 0 })) : [],
+    keyTrait: def.trait ? { id: def.trait, name: traitName(def.trait) } : null,
+    disabled: null,
+  };
   if (o.id === 'm_apprentice') {
     const mentor = apprenticeMentor(state, o.target);
     r.desc = `${JOBS[o.target].name} 일을 ${shortName(mentor.name)} 밑에서 배운다. ${SKILLS[JOBS[o.target].skill]} 숙련과 신뢰, 소지금 8C.`;
@@ -189,8 +211,9 @@ export function jobQualification(state, job) {
   if (job === 'recorder' && bondPerk(state, 'clerk_ref')) return { ok: true, reason: `${shortName(state.npcs.p_clerk.name)}의 추천서` };
   if (state.flags.wardNetwork) return { ok: true, reason: '후원원 동기회의 추천' };
   let { chance } = computeChance(state, { attr: j.attr, diff: 6, skill: j.skill });
-  if (bondPerk(state, 'friend_job')) chance = Math.min(95, chance + 10);
-  return { ok: false, chance, reason: bondPerk(state, 'friend_job') ? '공개 채용 시험 · 친구의 소개 +10' : '공개 채용 시험' };
+  const friend = bondPerk(state, 'friend_job');
+  if (friend) chance = Math.min(95, chance + 10);
+  return { ok: false, chance, reason: friend ? '공개 채용 시험 · 친구의 소개 +10' : '공개 채용 시험' };
 }
 
 function baseIncome(state, o) {
@@ -226,7 +249,7 @@ export function applyPlanStart(state) {
   if (p.main === 'school') { state.ch.cash -= 12; state.yearLog.spent += 12; state.stats.nightSchool = (state.stats.nightSchool || 0) + 1; }
   const yearIncome = computeYearIncome(state);
   if (state.ch.independent) {
-    const ids = (state.ch.traits || []).filter(t => TRAITS[t.id]?.mods?.living != null).map(t => t.id);
+    const ids = traitIdsWith(state, 'living');
     const d = livingTraitDelta(state, livingBase(state));
     if (ids.length && d) traitFx(state, ids, '생계비(C)', d);
   }

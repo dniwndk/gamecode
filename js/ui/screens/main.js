@@ -374,6 +374,8 @@ export default function main(ui, root) {
       appendNew();
     };
     const submit = (en) => {
+      // 창이 닫히는 동안 한 번 더 눌린 확정은 조용히 넘긴다 (이미 계획이 시작되었다)
+      if (s.phase !== 'plan') return;
       if (!G.submitPlan(s, main, target, sub)) { ui.toast('이 계획은 지금 고를 수 없다'); shake(en.box); ui.sfx.play('fail'); return; }
       ui.sfx.play('steam');
       ui.close(en);
@@ -405,10 +407,10 @@ export default function main(ui, root) {
       const odds = c.chance != null ? `<span class="c-odds ${tb > 0 ? 'boosted' : tb < 0 ? 'hindered' : ''}" data-tip="${esc(oddsTip(c))}"><b>${c.chance}%</b><small>${esc(ATTRS[c.check.attr] || '')} 판정</small>${tb ? `<i class="c-odds-tr">특성 ${tb > 0 ? '+' : ''}${tb}</i>` : ''}</span>` : `<span class="c-odds sure"><b>확정</b></span>`;
       // 열쇠·인연으로 열린 선택지는 띠를 두르고, 잠긴 선택지는 무엇이 필요한지 보여 준다
       const kind = c.locked ? 'locked' : c.key ? 'key' : c.bond ? 'bond' : '';
-      const ribbon = c.locked === 'key' ? `<span class="c-ribbon lock">${icon('lock')}${esc(c.key.names.map(n => `「${n}」`).join(' 또는 '))} 필요</span>`
-        : c.locked === 'bond' ? `<span class="c-ribbon lock">${icon('lock')}${esc(c.bond.name)} · ${esc(c.bond.tierName)} 필요 <em>지금 ${esc(c.bond.now)}</em></span>`
-        : c.key ? `<span class="c-ribbon key">${icon('key')}${esc(c.key.names.map(n => `「${n}」`).join(' '))}${c.key.kind === 'keyword' ? ' · 열쇠가 연 길' : ' · 특성이 연 길'}</span>`
-        : c.bond ? `<span class="c-ribbon bond">${icon('link')}인연이 연 길 · ${esc(josa(c.bond.name, '과'))} 「${esc(c.bond.now)}」</span>` : '';
+      const ribbon = c.locked === 'key' ? `<span class="c-ribbon c-ribbon--lock">${icon('lock')}${esc(c.key.names.map(n => `「${n}」`).join(' 또는 '))} 필요</span>`
+        : c.locked === 'bond' ? `<span class="c-ribbon c-ribbon--lock">${icon('lock')}${esc(c.bond.name)} · ${esc(c.bond.tierName)} 필요 <em>지금 ${esc(c.bond.now)}</em></span>`
+        : c.key ? `<span class="c-ribbon c-ribbon--key">${icon('key')}${esc(c.key.names.map(n => `「${n}」`).join(' '))}${c.key.kind === 'keyword' ? ' · 열쇠가 연 길' : ' · 특성이 연 길'}</span>`
+        : c.bond ? `<span class="c-ribbon c-ribbon--bond">${icon('link')}인연이 연 길 · ${esc(josa(c.bond.name, '과'))} 「${esc(c.bond.now)}」</span>` : '';
       const tr = [...(c.rewards || []).map(t => traitChip(t.id, { prefix: t.kind === 'negative' ? '생김 · ' : '얻음 · ' })),
         ...(c.failTraits || []).map(t => traitChip(t.id, { prefix: '실패 시 · ', cls: 'risk' })),
         ...(c.sheds || []).map(t => traitChip(t.id, { prefix: t.kind === 'negative' ? '벗어남 · ' : '잃음 · ', cls: t.kind === 'negative' ? 'shed' : 'risk' }))].join('');
@@ -643,15 +645,23 @@ export default function main(ui, root) {
   setTimeout(route, reduced() ? 0 : 450);
 
   const keyPanels = { c: 'me', t: 'traits', p: 'people', m: 'city', l: 'ledger', k: 'codex', o: 'settings' };
+  function panelKey(e) {
+    const name = !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1 && keyPanels[e.key.toLowerCase()];
+    if (!name) return false;
+    e.preventDefault();
+    openPanel(ui, name, { onChange: () => drawHud() });
+    return true;
+  }
   return {
     particles: 'steam',
     keys(e) {
       if (e.key === ' ') { e.preventDefault(); togglePause(); }
       else if (e.key === 'Enter' && !e.target.closest('button')) { e.preventDefault(); if (s.phase === 'running') step(); }
       else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); cycleSpeed(); }
-      else if (keyPanels[e.key.toLowerCase()] && !e.ctrlKey && !e.metaKey) { e.preventDefault(); openPanel(ui, keyPanels[e.key.toLowerCase()], { onChange: () => drawHud() }); }
+      else if (panelKey(e)) return;
       else if (e.key === 'Escape') { if (s.phase === 'running' && !paused) togglePause(); }
     },
+    panelKeys: panelKey,
     dispose() { alive = false; clearTimer(); },
     redraw() { drawHud(); },
   };

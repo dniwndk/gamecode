@@ -15,6 +15,7 @@ export function npcFor(state, roles, key) {
 
 export function fmt(state, text, roles = {}) {
   if (!text) return '';
+  if (typeof text === 'string' && text.indexOf('{') < 0) return text;
   return String(text).replace(/\{([^}]+)\}/g, (m, body) => {
     const [token, jp] = body.split('|');
     let word;
@@ -92,56 +93,73 @@ export function rollCheck(state, chance) {
 }
 
 // ───────── 조건 ─────────
+// 조건 객체는 처음 검사할 때 키마다 검사 함수로 바꿔 붙여 둔다.
+// 매번 키 이름으로 갈래를 찾는 대신 미리 고른 함수만 부르므로, 일상 기록 90줄과 사건 수십 종을 매 계절 거르는 일이 가볍다.
+const COMPILED = Symbol('compiledCond');
+export function compileCond(cond) {
+  if (!cond) return [];
+  let fs = cond[COMPILED];
+  if (!fs) {
+    fs = Object.keys(cond).map(k => compile1(k, cond[k]));
+    if (Object.isExtensible(cond)) Object.defineProperty(cond, COMPILED, { value: fs });
+  }
+  return fs;
+}
+
 export function meets(state, cond, roles = {}) {
   if (!cond) return true;
-  // 조건에 실제로 들어 있는 키만 검사한다 (일상 기록 70줄을 매 계절 거르므로 빨라야 한다)
-  for (const key in cond) if (!check1(state, key, cond[key], roles)) return false;
+  return meetsCompiled(state, compileCond(cond), roles);
+}
+
+// 미리 바꿔 둔 검사 함수 목록으로 바로 검사한다 (사건·일상 목록처럼 매 계절 도는 곳)
+export function meetsCompiled(state, fs, roles = {}) {
+  for (let i = 0; i < fs.length; i++) if (!fs[i](state, roles)) return false;
   return true;
 }
 
-function check1(state, key, v, roles) {
-  const ch = state.ch;
+const ALWAYS = () => true;
+function compile1(key, v) {
   switch (key) {
-    case 'minAge': return v == null || state.age >= v;
-    case 'maxAge': return v == null || state.age <= v;
-    case 'seasons': return v.includes(state.season);
-    case 'home': return v.includes(ch.home);
-    case 'area': return v.includes(ch.home) || v.includes(workDistrict(state));
-    case 'job': return v === 'any' ? !!ch.job : v === 'none' ? !ch.job : !!(ch.job && v.includes(ch.job.id));
-    case 'minRank': return v == null || !!(ch.job && ch.job.rank >= v);
-    case 'apprentice': return !v || !!(ch.apprentice && (v === true || v.includes(ch.apprentice)));
-    case 'flags': return v.every(f => state.flags[f]);
-    case 'anyFlags': return v.some(f => state.flags[f]);
-    case 'notFlags': return !v.some(f => state.flags[f]);
-    case 'npcAlive': return v.every(id => { const n = state.npcs[id]; return n && n.alive && !n.retired; });
-    case 'roleAlive': return v.every(k => { const n = npcFor(state, roles, k); return n && n.alive; });
-    case 'ability': return v === true ? !!ch.ability : v === false ? !ch.ability : !!(ch.ability && v.includes(ch.ability.id));
-    case 'abilityOrDevice': return v.some(a => hasAbilityOrDevice(state, a));
-    case 'minLoad': return v == null || ch.load >= v;
-    case 'maxLoad': return v == null || ch.load <= v;
-    case 'independent': return v === true ? ch.independent : v === false ? !ch.independent : true;
-    case 'minCash': return v == null || ch.cash >= v;
-    case 'maxCash': return v == null || ch.cash <= v;
-    case 'maxHealth': return v == null || ch.health <= v;
-    case 'minStress': return v == null || ch.stress >= v;
-    case 'hasDebt': return !v || ch.debts.length > 0;
-    case 'noDebt': return !v || ch.debts.length === 0;
-    case 'workshop': return v === true ? !!ch.workshop : v === false ? !ch.workshop : true;
-    case 'minSkill': for (const k in v) if ((ch.skills[k] || 0) < v[k]) return false; return true;
-    case 'minTrust': for (const k in v) { const n = npcFor(state, roles, k); if (!n || n.trust < v[k]) return false; } return true;
-    case 'minShortage': return v == null || state.city.shortage >= v;
-    case 'clockMin': for (const k in v) if (state.city.clocks[k] < v[k]) return false; return true;
-    case 'districtMax': for (const k in v) { const [d, kk] = k.split('.'); const dd = d === 'home' ? ch.home : d; if (!(state.city.districts[dd]?.[kk] <= v[k])) return false; } return true;
-    case 'minStat': for (const k in v) if ((state.stats[k] || 0) < v[k]) return false; return true;
-    case 'goal': return !!(state.goal && v.includes(state.goal.id));
-    case 'strike': return v === true ? state.city.factions.union.striking : true;
-    case 'when': return !!v(state, roles);
-    case 'trait': return Array.isArray(v) ? v.some(id => hasTrait(state, id)) : hasTrait(state, v);
-    case 'allTraits': return v.every(id => hasTrait(state, id));
-    case 'noTrait': return Array.isArray(v) ? !v.some(id => hasTrait(state, id)) : !hasTrait(state, v);
-    case 'minTier': for (const k in v) { const n = npcFor(state, roles, k); if (!n || !n.alive || !n.met || tierOf(n) < v[k]) return false; } return true;
-    case 'minRep': for (const k in v) if ((state.rep[k] || 0) < v[k]) return false; return true;
-    default: return true;
+    case 'minAge': return state => v == null || state.age >= v;
+    case 'maxAge': return state => v == null || state.age <= v;
+    case 'seasons': return state => v.includes(state.season);
+    case 'home': return state => { const ch = state.ch; return v.includes(ch.home); };
+    case 'area': return state => { const ch = state.ch; return v.includes(ch.home) || v.includes(workDistrict(state)); };
+    case 'job': return state => { const ch = state.ch; return v === 'any' ? !!ch.job : v === 'none' ? !ch.job : !!(ch.job && v.includes(ch.job.id)); };
+    case 'minRank': return state => { const ch = state.ch; return v == null || !!(ch.job && ch.job.rank >= v); };
+    case 'apprentice': return state => { const ch = state.ch; return !v || !!(ch.apprentice && (v === true || v.includes(ch.apprentice))); };
+    case 'flags': return state => v.every(f => state.flags[f]);
+    case 'anyFlags': return state => v.some(f => state.flags[f]);
+    case 'notFlags': return state => !v.some(f => state.flags[f]);
+    case 'npcAlive': return state => v.every(id => { const n = state.npcs[id]; return n && n.alive && !n.retired; });
+    case 'roleAlive': return (state, roles) => v.every(k => { const n = npcFor(state, roles, k); return n && n.alive; });
+    case 'ability': return state => { const ch = state.ch; return v === true ? !!ch.ability : v === false ? !ch.ability : !!(ch.ability && v.includes(ch.ability.id)); };
+    case 'abilityOrDevice': return state => v.some(a => hasAbilityOrDevice(state, a));
+    case 'minLoad': return state => { const ch = state.ch; return v == null || ch.load >= v; };
+    case 'maxLoad': return state => { const ch = state.ch; return v == null || ch.load <= v; };
+    case 'independent': return state => { const ch = state.ch; return v === true ? ch.independent : v === false ? !ch.independent : true; };
+    case 'minCash': return state => { const ch = state.ch; return v == null || ch.cash >= v; };
+    case 'maxCash': return state => { const ch = state.ch; return v == null || ch.cash <= v; };
+    case 'maxHealth': return state => { const ch = state.ch; return v == null || ch.health <= v; };
+    case 'minStress': return state => { const ch = state.ch; return v == null || ch.stress >= v; };
+    case 'hasDebt': return state => { const ch = state.ch; return !v || ch.debts.length > 0; };
+    case 'noDebt': return state => { const ch = state.ch; return !v || ch.debts.length === 0; };
+    case 'workshop': return state => { const ch = state.ch; return v === true ? !!ch.workshop : v === false ? !ch.workshop : true; };
+    case 'minSkill': return state => { const ch = state.ch; for (const k in v) if ((ch.skills[k] || 0) < v[k]) return false; return true; };
+    case 'minTrust': return (state, roles) => { for (const k in v) { const n = npcFor(state, roles, k); if (!n || n.trust < v[k]) return false; } return true; };
+    case 'minShortage': return state => v == null || state.city.shortage >= v;
+    case 'clockMin': return state => { for (const k in v) if (state.city.clocks[k] < v[k]) return false; return true; };
+    case 'districtMax': return state => { const ch = state.ch; for (const k in v) { const [d, kk] = k.split('.'); const dd = d === 'home' ? ch.home : d; if (!(state.city.districts[dd]?.[kk] <= v[k])) return false; } return true; };
+    case 'minStat': return state => { for (const k in v) if ((state.stats[k] || 0) < v[k]) return false; return true; };
+    case 'goal': return state => !!(state.goal && v.includes(state.goal.id));
+    case 'strike': return state => v === true ? state.city.factions.union.striking : true;
+    case 'when': return (state, roles) => !!v(state, roles);
+    case 'trait': return state => Array.isArray(v) ? v.some(id => hasTrait(state, id)) : hasTrait(state, v);
+    case 'allTraits': return state => v.every(id => hasTrait(state, id));
+    case 'noTrait': return state => Array.isArray(v) ? !v.some(id => hasTrait(state, id)) : !hasTrait(state, v);
+    case 'minTier': return (state, roles) => { for (const k in v) { const n = npcFor(state, roles, k); if (!n || !n.alive || !n.met || tierOf(n) < v[k]) return false; } return true; };
+    case 'minRep': return state => { for (const k in v) if ((state.rep[k] || 0) < v[k]) return false; return true; };
+    default: return ALWAYS;
   }
 }
 
@@ -265,7 +283,7 @@ export function changeRel(state, npc, trust = 0, aff = 0, log, cause) {
   if (parts.length) {
     const line = `${shortName(npc.name)} ${parts.join(' · ')}`;
     log?.push(line);
-    state.yearLog.relChanges.push({ npc: npc.id, text: line, cause: cause || '' });
+    state.yearLog.relChanges.push({ npc: npc.id, text: line, cause: cause || '', dt: npc.trust - bt, da: npc.affinity - ba });
     afterRelChange(state, npc, tier0, log, cause);
   }
 }
@@ -284,17 +302,16 @@ export function cityDelta(state, scope, key, v, log, cause) {
   const used = city.changeAcc[accKey] || 0;
   const allowed = v > 0 ? Math.min(v, 6 - used) : Math.max(v, -6 - used);
   if (allowed === 0) return 0;
-  let target, label;
-  if (scope === 'global') { target = city.global; label = GLOBAL_NAMES[key]; }
-  else { target = city.districts[scope]; label = `${DISTRICTS[scope].name} ${DISTRICT_KEYS[key]}`; }
+  const target = scope === 'global' ? city.global : city.districts[scope];
   const before = target[key];
   const lo = key === 'price' ? 70 : 0, hi = key === 'price' ? 160 : 100;
   target[key] = clamp(before + allowed, lo, hi);
   const d = target[key] - before;
   city.changeAcc[accKey] = used + d;
-  if (d) {
-    log?.push(`${label} ${signed(d)}`);
-    if (cause) state.yearLog.cityChanges.push({ text: `${label} ${signed(d)}`, cause });
+  if (d && (log || cause)) {
+    const text = `${scope === 'global' ? GLOBAL_NAMES[key] : `${DISTRICTS[scope].name} ${DISTRICT_KEYS[key]}`} ${signed(d)}`;
+    log?.push(text);
+    if (cause) state.yearLog.cityChanges.push({ text, cause });
   }
   return d;
 }

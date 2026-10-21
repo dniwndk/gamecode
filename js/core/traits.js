@@ -11,11 +11,27 @@ export const quoted = (name, p) => `「${name}」${josa(name, p).slice(name.leng
 export { TRAITS, BOND_TIERS, BOND_PERKS };
 
 // ───────── 보유 ─────────
+// 보유 특성 색인: 특성 목록이 바뀔 때만 다시 만든다. 이 파일의 gainTrait·loseTrait는 목록을 제자리에서 바꾸며 색인을 비우고,
+// 밖에서 목록을 통째로 갈아 끼우면 배열이 달라져 다시 만든다
+let cache = { list: null, len: -1, ids: null, mods: null };
+const invalidate = () => { cache = { list: null, len: -1, ids: null, mods: null }; };
+function index(list) {
+  if (cache.list === list && cache.len === list.length) return cache;
+  const ids = new Set();
+  const mods = new Map();
+  for (const t of list) {
+    ids.add(t.id);
+    const m = TRAITS[t.id]?.mods;
+    if (m) for (const k in m) { if (m[k] == null) continue; if (!mods.has(k)) mods.set(k, []); mods.get(k).push([m[k], t.id]); }
+  }
+  cache = { list, len: list.length, ids, mods };
+  return cache;
+}
+
 export function hasTrait(state, id) {
   const list = state.ch?.traits;
-  if (!list) return false;
-  for (const t of list) if (t.id === id) return true;
-  return false;
+  if (!list || !list.length) return false;
+  return index(list).ids.has(id);
 }
 export const hasAnyTrait = (state, ids) => ids.some(id => hasTrait(state, id));
 export const traitName = (id) => TRAITS[id]?.name || id;
@@ -36,6 +52,7 @@ export function gainTrait(state, id, log, cause = '') {
   if (!d || hasTrait(state, id)) return false;
   const ch = state.ch;
   ch.traits.push({ id, since: state.year, age: state.age, source: cause || '' });
+  invalidate();
   ch.lostTraits = (ch.lostTraits || []).filter(x => x.id !== id);
   log?.push(`${d.kind === 'negative' ? '특성 생김' : d.kind === 'keyword' ? '열쇠 획득' : '특성 획득'}: 「${d.name}」`);
   state.yearLog?.traitChanges?.push({ id, gained: true, cause });
@@ -50,6 +67,7 @@ export function loseTrait(state, id, log, cause = '') {
   const i = (ch.traits || []).findIndex(t => t.id === id);
   if (i < 0) return false;
   const [t] = ch.traits.splice(i, 1);
+  invalidate();
   ch.lostTraits = ch.lostTraits || [];
   ch.lostTraits.push({ id, since: t.since, lost: state.year, age: state.age, cause });
   const d = TRAITS[id];
@@ -73,36 +91,41 @@ export function rollBirthTraits(r, state) {
 }
 
 // ───────── 수치 효과 ─────────
-function eachMod(state, key, fn) {
-  for (const t of state.ch.traits || []) {
-    const m = TRAITS[t.id]?.mods;
-    if (m && m[key] != null) fn(m[key], t.id);
-  }
+const NONE = Object.freeze([]);
+function modsOf(state, key) {
+  const list = state.ch.traits;
+  if (!list || !list.length) return NONE;
+  return index(list).mods.get(key) || NONE;
 }
+// 이 효과 열쇠를 가진 특성들 ([값, id] 목록, 읽기 전용)
+export function traitMods(state, key) { return modsOf(state, key); }
+export function traitIdsWith(state, key) { return modsOf(state, key).map(([, id]) => id); }
 
 export function traitMul(state, key) {
   let v = 1;
-  eachMod(state, key, (x) => { v *= x; });
+  for (const [x] of modsOf(state, key)) v *= x;
   return v;
 }
 
 // 배율과 그 배율을 만든 특성들
+const ONE = Object.freeze([1, NONE]);
 function mulIds(state, key) {
+  const ms = modsOf(state, key);
+  if (!ms.length) return ONE;
   let v = 1; const ids = [];
-  eachMod(state, key, (x, id) => { v *= x; ids.push(id); });
+  for (const [x, id] of ms) { v *= x; ids.push(id); }
   return [v, ids];
 }
 
 export function traitSum(state, key) {
   let v = 0;
-  eachMod(state, key, (x) => { v += x; });
+  for (const [x] of modsOf(state, key)) v += x;
   return v;
 }
 
 export function traitFlag(state, key) {
-  let found = null;
-  eachMod(state, key, (x, id) => { if (x && !found) found = id; });
-  return found;
+  for (const [x, id] of modsOf(state, key)) if (x) return id;
+  return null;
 }
 
 // 특성이 바꾼 숫자를 그해 장부에 모은다 (결산의 「특성과 인연」 칸)
@@ -163,10 +186,7 @@ export function adjustRel(state, npc, trust, aff) {
 export function adjustRep(state, f, v) {
   if (v <= 0 || !state.ch.traits?.length) return v;
   let m = 1; const ids = [];
-  for (const t of state.ch.traits) {
-    const x = TRAITS[t.id]?.mods?.rep?.[f];
-    if (x != null) { m *= x; ids.push(t.id); }
-  }
+  for (const [r, id] of modsOf(state, 'rep')) { const x = r[f]; if (x != null) { m *= x; ids.push(id); } }
   if (m === 1) return v;
   const n = Math.round(v * m);
   traitFx(state, ids, '평판', n - v);
@@ -174,24 +194,20 @@ export function adjustRep(state, f, v) {
 }
 
 // 판정 보정: 특성의 능력치·숙련·공명 보정, 사건이 지정한 열쇠 보정, 인연 혜택. 합계 ±15 상한.
+const NO_BONUS = Object.freeze({ v: 0, notes: NONE });
 export function checkTraitBonus(state, check) {
   let v = 0;
-  const notes = [];
-  for (const t of state.ch.traits || []) {
-    const d = TRAITS[t.id];
-    const m = d?.mods;
-    if (!m) continue;
-    let b = 0;
-    if (m.check?.[check.attr]) b += m.check[check.attr];
-    if (check.skill && m.skillCheck?.[check.skill]) b += m.skillCheck[check.skill];
-    if (m.resonanceCheck && (check.resonance || check.skill === 'resonance')) b += m.resonanceCheck;
-    if (b) { v += b; notes.push(`${d.name} ${signed(b)}`); }
-  }
+  let notes = null;
+  const add = (b, label) => { v += b; (notes ||= []).push(`${label} ${signed(b)}`); };
+  for (const [m, id] of modsOf(state, 'check')) { const b = m[check.attr]; if (b) add(b, TRAITS[id].name); }
+  if (check.skill) for (const [m, id] of modsOf(state, 'skillCheck')) { const b = m[check.skill]; if (b) add(b, TRAITS[id].name); }
+  if (check.resonance || check.skill === 'resonance') for (const [b, id] of modsOf(state, 'resonanceCheck')) if (b) add(b, TRAITS[id].name);
   if (check.traits) {
-    for (const id in check.traits) if (hasTrait(state, id)) { v += check.traits[id]; notes.push(`「${traitName(id)}」 ${signed(check.traits[id])}`); }
+    for (const id in check.traits) if (check.traits[id] && hasTrait(state, id)) add(check.traits[id], `「${traitName(id)}」`);
   }
-  if (check.skill === 'repair' && bondPerk(state, 'toma_repair')) { v += 5; notes.push('토마의 요령 +5'); }
-  if (check.skill === 'record' && bondPerk(state, 'elian_record')) { v += 5; notes.push('엘리안의 조언 +5'); }
+  if (check.skill === 'repair' && bondPerk(state, 'toma_repair')) add(5, '토마의 요령');
+  if (check.skill === 'record' && bondPerk(state, 'elian_record')) add(5, '엘리안의 조언');
+  if (!notes) return NO_BONUS;
   return { v: Math.max(-15, Math.min(15, v)), notes };
 }
 

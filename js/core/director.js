@@ -1,7 +1,7 @@
 // 사건 디렉터: 후보 자격 검사 → 가중치 → 선택. 도시 상태를 몰래 덮어쓰지 않고 결과를 서사로 보여준다.
-import { EVENTS, DAILY } from '../data/events/index.js';
+import { EVENTS, EVENT_LIST, DAILY } from '../data/events/index.js';
 import { withRng } from './rng.js';
-import { meets, fmt, computeChance, costProblem, describeCost, payCost, applyEffects, rollCheck, npcFor } from './rules.js';
+import { meets, meetsCompiled, compileCond, fmt, computeChance, costProblem, describeCost, payCost, applyEffects, rollCheck, npcFor } from './rules.js';
 import { resolveNpc } from './state.js';
 import { JOBS } from '../data/world.js';
 import { hasTrait, traitName, tierOf, tierName, TRAITS, quoted } from './traits.js';
@@ -57,7 +57,7 @@ function resolveRoles(state, def, given = {}) {
   return roles;
 }
 
-function eligible(state, def, opts = {}) {
+function eligible(state, def, opts = {}, conds = null) {
   if (!def || def.chainOnly && !opts.pending) return false;
   if (!opts.pending) {
     const cd = Math.max(5, def.cooldown ?? 5); // 같은 사건은 최소 5년 뒤에 다시 나온다
@@ -66,7 +66,7 @@ function eligible(state, def, opts = {}) {
     if (def.once && last != null) return false;
     if (state.typeUsed[def.category] === state.year) return false;
   }
-  return meets(state, def.cond, {});
+  return conds ? meetsCompiled(state, conds, {}) : meets(state, def.cond, {});
 }
 
 function relevance(state, def) {
@@ -107,24 +107,45 @@ export function eventWeight(state, def, recent) {
   return (def.base ?? 10) * relevance(state, def) * cityFactor(state, def) * novelty(state, def, recent);
 }
 
+const EVENT_CONDS = EVENT_LIST.map(d => compileCond(d.cond));
+
 export function pickMajor(state) {
-  const cands = Object.values(EVENTS).filter(d => eligible(state, d));
+  const cands = EVENT_LIST.filter((d, i) => eligible(state, d, {}, EVENT_CONDS[i]));
   if (!cands.length) return null;
   const recent = recentCategories(state);
   const pairs = cands.map(d => [d, Math.max(1, Math.round(eventWeight(state, d, recent) * 100))]);
   return withRng(state, 'event', r => r.weighted(pairs));
 }
 
+// 일상 기록 후보: 특성이 비치는 줄은 그 특성을 가졌을 때만 살핀다
+const DAILY_INDEX = new Map(DAILY.map((d, i) => [d.id, i]));
+const DAILY_PLAIN = DAILY.map((d, i) => [d, i, compileCond(d.cond)]).filter(([d]) => !d.cond.trait);
+const DAILY_TRAIT = DAILY.map((d, i) => [d, i, compileCond(d.cond), [].concat(d.cond.trait || [])]).filter(([d]) => d.cond.trait);
+
+// 마지막으로 쓴 해를 줄 번호로 찾는 사본. 저장되는 원본은 state.dailyUsed이고, 원본이 바뀌면 다시 만든다.
+const DAILY_LAST = new WeakMap();
+function dailyLast(state) {
+  let c = DAILY_LAST.get(state);
+  if (!c || c.src !== state.dailyUsed) {
+    const last = new Array(DAILY.length).fill(-Infinity);
+    for (const id in state.dailyUsed) { const i = DAILY_INDEX.get(id); if (i != null) last[i] = state.dailyUsed[id]; }
+    c = { src: state.dailyUsed, last };
+    DAILY_LAST.set(state, c);
+  }
+  return c.last;
+}
+
 export function pickDaily(state) {
-  const cands = DAILY.filter(d => {
-    const last = state.dailyUsed[d.id];
-    if (last != null && state.year - last < 3) return false;
-    return meets(state, d.cond, {});
-  });
+  const last = dailyLast(state);
+  const cutoff = state.year - 3;
+  const cands = [];
+  for (const [d, i, conds] of DAILY_PLAIN) if (last[i] <= cutoff && meetsCompiled(state, conds)) cands.push(d);
+  for (const [d, i, conds, ids] of DAILY_TRAIT) if (last[i] <= cutoff && ids.some(id => hasTrait(state, id)) && meetsCompiled(state, conds)) cands.push(d);
   if (!cands.length) return null;
   // 특성이 비치는 일상은 더 자주 떠오른다: 가진 특성이 하루하루에서 보이게
   const d = withRng(state, 'event', r => r.weighted(cands.map(c => [c, c.cond.trait ? 4 : 1])));
   state.dailyUsed[d.id] = state.year;
+  last[DAILY_INDEX.get(d.id)] = state.year;
   const roles = resolveRoles(state, d);
   if (d.effects) applyEffects(state, d.effects, { roles, eventId: d.id, cause: '일상' });
   return fmt(state, d.text, roles);
@@ -209,7 +230,7 @@ export function currentNode(state) {
 }
 
 // 열쇠 특성 조건: trait는 하나라도 있으면, 없으면 무엇이 필요한지 알려 준다
-const keyIds = (c) => c.trait ? (Array.isArray(c.trait) ? c.trait : [c.trait]) : null;
+const keyIds = (c) => choiceTraits(c).keys;
 function keyMet(state, c) { const ids = keyIds(c); return !ids || ids.some(id => hasTrait(state, id)); }
 function bondMet(state, c, roles) {
   if (!c.bond) return true;
@@ -222,6 +243,24 @@ function lockText(state, c, roles) {
   return null;
 }
 
+const NONE = Object.freeze([]);
+const traitInfo = (ids) => ids.length ? ids.map(id => ({ id, name: traitName(id), kind: TRAITS[id]?.kind, icon: TRAITS[id]?.icon })) : NONE;
+
+// 선택지에 적힌 특성 변화는 데이터에 고정돼 있으니 한 번만 모아 둔다
+const CHOICE_TRAITS = new WeakMap();
+function choiceTraits(c) {
+  let v = CHOICE_TRAITS.get(c);
+  if (!v) {
+    const ids = (o, t) => [...new Set((o?.effects || []).filter(e => e.t === t).map(e => e.id))];
+    v = {
+      keys: c.trait ? [].concat(c.trait) : null,
+      rewards: ids(c.ok, 'trait'), fails: ids(c.fail, 'trait'), sheds: ids(c.ok, 'loseTrait'), boosts: c.check?.traits ? Object.keys(c.check.traits) : [],
+    };
+    CHOICE_TRAITS.set(c, v);
+  }
+  return v;
+}
+
 export function getChoices(state) {
   const cn = currentNode(state);
   if (!cn) return [];
@@ -229,9 +268,13 @@ export function getChoices(state) {
   const roles = state.current.roles;
   const base = (node.choices || []).filter(c => !c.cond || meets(state, c.cond, roles)).filter(c => !(c.once && state.current.used.includes(c.id)));
   // 열쇠·인연이 맞지 않는 선택지는 숨기되, 자리가 남으면 잠긴 채로 하나씩 보여 준다 (인연 먼저, 열쇠는 하나까지)
-  let list = base.filter(c => keyMet(state, c) && bondMet(state, c, roles));
-  const lockedBond = base.filter(c => keyMet(state, c) && !bondMet(state, c, roles));
-  const lockedKey = base.filter(c => !keyMet(state, c));
+  let list = [];
+  const lockedBond = [], lockedKey = [];
+  for (const c of base) {
+    if (!keyMet(state, c)) lockedKey.push(c);
+    else if (!bondMet(state, c, roles)) lockedBond.push(c);
+    else list.push(c);
+  }
   const teasers = [...lockedBond, ...lockedKey.slice(0, 1)];
   // 한 장면의 선택지는 최대 4개: 넘치면 지금 고를 수 없는 것부터 빼고, 그래도 넘치면 마지막(후퇴) 선택지를 남긴다
   if (list.length > 4) {
@@ -253,14 +296,11 @@ export function getChoices(state) {
     let chance = null, parts = null;
     if (c.check) ({ chance, parts } = computeChance(state, c.check, roles));
     const ids = keyIds(c);
-    const owned = ids ? ids.filter(id => hasTrait(state, id)) : [];
+    const owned = ids ? ids.filter(id => hasTrait(state, id)) : NONE;
     const bn = c.bond ? npcFor(state, roles, c.bond.who) : null;
     // 결과에 들어 있는 특성 변화: 성공하면 얻는 것, 실패하면 얻는 것, 이 선택으로 벗는 것
-    const traitsIn = (o, t) => [...new Set((o?.effects || []).filter(e => e.t === t && (t !== 'trait' || !hasTrait(state, e.id)) && (t !== 'loseTrait' || hasTrait(state, e.id))).map(e => e.id))];
-    const rewards = traitsIn(c.ok, 'trait');
-    const failTraits = c.fail ? traitsIn(c.fail, 'trait') : [];
-    const sheds = traitsIn(c.ok, 'loseTrait');
-    const boosts = c.check?.traits ? Object.keys(c.check.traits).filter(id => hasTrait(state, id)) : [];
+    const st = choiceTraits(c);
+    const pick = (list, want) => list.length ? traitInfo(list.filter(id => hasTrait(state, id) === want)) : NONE;
     return {
       id: c.id, label: fmt(state, c.label, roles), hint: fmt(state, c.hint || '', roles), cost: describeCost(state, c.cost),
       chance, parts, check: c.check || null, failHint: fmt(state, c.failHint || '', roles), irreversible: !!c.irreversible,
@@ -268,10 +308,10 @@ export function getChoices(state) {
       locked: locked ? (ids && !owned.length ? 'key' : 'bond') : null,
       key: ids ? { ids, owned, names: (owned.length ? owned : ids).map(traitName), kind: TRAITS[(owned[0] || ids[0])]?.kind } : null,
       bond: c.bond && bn ? { npc: bn.id, name: bn.name, tier: c.bond.tier, tierName: tierName(c.bond.tier), now: tierName(tierOf(bn)) } : null,
-      rewards: rewards.map(id => ({ id, name: traitName(id), kind: TRAITS[id]?.kind, icon: TRAITS[id]?.icon })),
-      failTraits: failTraits.map(id => ({ id, name: traitName(id), kind: TRAITS[id]?.kind, icon: TRAITS[id]?.icon })),
-      sheds: sheds.map(id => ({ id, name: traitName(id), kind: TRAITS[id]?.kind, icon: TRAITS[id]?.icon })),
-      boosts: boosts.map(traitName),
+      rewards: pick(st.rewards, false),
+      failTraits: pick(st.fails, false),
+      sheds: pick(st.sheds, true),
+      boosts: st.boosts.length ? st.boosts.filter(id => hasTrait(state, id)).map(traitName) : NONE,
     };
   });
 }
