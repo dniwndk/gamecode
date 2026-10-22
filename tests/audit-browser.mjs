@@ -7,20 +7,24 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
+// GAME_ROOT=dist 로 배포 빌드를 같은 기준으로 검사한다 (기본은 저장소 루트의 원본)
+const SITE = process.env.GAME_ROOT ? join(ROOT, process.env.GAME_ROOT) : ROOT;
 const OUT = join(ROOT, 'tests/out/audit');
 await mkdir(OUT, { recursive: true });
 const require = createRequire(import.meta.url);
 let chromium;
 try { ({ chromium } = require('playwright')); } catch { ({ chromium } = createRequire('/opt/node22/lib/node_modules/')('playwright')); }
 
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.woff2': 'font/woff2', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.woff2': 'font/woff2', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
 let served = 0;
 const server = createServer(async (req, res) => {
   const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^([/\\])+/, '');
   try {
-    const body = await readFile(join(ROOT, path || 'index.html'));
+    // 배포본에 없는 원본 모듈(검사 코드가 직접 import하는 js/core 등)은 저장소 루트에서 내준다
+    const body = await readFile(join(SITE, path || 'index.html')).catch(() => readFile(join(ROOT, path)));
     served += body.length;
-    res.writeHead(200, { 'content-type': TYPES[extname(path)] || 'application/octet-stream' });
+    // 배포본은 GitHub Pages와 같은 캐시 머리(max-age=600)로 내준다
+    res.writeHead(200, { 'content-type': TYPES[extname(path)] || 'application/octet-stream', ...(process.env.GAME_ROOT ? { 'cache-control': 'max-age=600' } : {}) });
     res.end(body);
   } catch { res.writeHead(404); res.end(); }
 });

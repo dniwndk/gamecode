@@ -1,0 +1,22 @@
+{
+  "id": "./",
+  "name": "황동의 생애",
+  "short_name": "황동의 생애",
+  "description": "마법공학 도시 에르덴에서 열세 살의 봄부터 마지막 겨울까지, 한 시민의 생애를 사는 텍스트 시뮬레이션.",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#15110d",
+  "theme_color": "#15110d",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

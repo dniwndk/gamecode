@@ -2,15 +2,35 @@
 
 마법공학 도시 에르덴(공력 184년)에서 한 시민의 열세 살부터 마지막 날까지를 사는 텍스트 생애 시뮬레이션. 설계는 [design/plan.md](design/plan.md).
 
-## 실행
+## 플레이
 
-빌드 도구가 없는 정적 웹 게임이다. 저장소 루트에서 정적 서버를 띄우고 브라우저로 연다.
+**https://dniwndk.github.io/gamecode/** — 데스크톱 브라우저와 휴대폰에서 같은 주소로 연다. main에 들어온 판본이 자동으로 올라간다.
+
+- **휴대폰에 설치**: 안드로이드 크롬은 타이틀의 「기기에 설치」(또는 브라우저 메뉴 › 앱 설치), iPhone·iPad 사파리는 공유 버튼 › 「홈 화면에 추가」. 아이콘으로 열면 주소창 없이 전체 화면으로 돈다.
+- **오프라인**: 한 번 연 뒤에는 인터넷 없이도 열리고 이어 할 수 있다(서비스 워커가 판본 전체를 받아 둔다).
+- **새 판본**: 새로 배포되면 「새 판본이 도착했다 · 적용」 알림이 뜬다. 누르면 저장하고 다시 연다.
+- 저장은 기기 브라우저 안에 남는다. 기기를 옮길 때는 환경 설정 › 내보내기/가져오기.
+
+## 실행 (개발)
+
+원본은 빌드 없이 그대로 도는 정적 웹 게임이다. 저장소 루트에서 정적 서버를 띄우고 브라우저로 연다.
 
 ```bash
 python3 -m http.server 8000
 # http://localhost:8000/index.html
 # 특정 시드로 시작: http://localhost:8000/index.html?seed=MY-SEED
 ```
+
+## 배포 빌드
+
+```bash
+npm ci
+npm run build      # dist/: 모듈 40개 → 묶음 1개, CSS 5장 → 1장(압축·지문), 매니페스트·아이콘, 서비스 워커
+npm run preview    # 빌드 후 http://localhost:8000 에서 배포본으로 열기
+```
+
+`.github/workflows/pages.yml`이 PR마다 검사·빌드·배포본 검사를 돌리고, main에 들어오면 GitHub Pages에 올린다.
+앱 아이콘(`icons/`)은 `npm run icons`로 다시 그린다(황동 톱니 + 리디바탕 「황」).
 
 ## 조작
 
@@ -40,6 +60,8 @@ node tests/sim.test.mjs           # 전체 (1만 생애 · 10만 출생, 약 2�
 node tests/e2e.spec.mjs           # 브라우저 기준 (Playwright Chromium 필요)
 node tests/audit.mjs [--quick]    # 최종 감사: 무작위 플레이 2천 회 · 상태 불변식 · 문장(조사) 검사 · 도달 가능성
 node tests/audit-browser.mjs      # 최종 감사: 성능 예산 · 서랍 7종×두 테마×360px · 터치 흐름 (스크린숏 tests/out/audit/)
+node tests/dist.spec.mjs           # 배포본: 매니페스트·아이콘 · 서비스 워커·오프라인 · 새 판본 알림 · 설치 안내(iPhone/크롬) · 휴대폰 터치 플레이
+GAME_ROOT=dist node tests/e2e.spec.mjs   # 위 브라우저 기준들을 배포본에 그대로 (audit-browser·shots도 같음)
 node tests/shots.mjs [desk|m]     # 디자인 검토용: 주요 화면 12곳을 데스크톱·모바일로 찍는다 (tests/out/shots/, 판정 없음)
 ```
 
