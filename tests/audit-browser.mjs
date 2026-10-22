@@ -143,6 +143,8 @@ for (const [tag, vp, touch] of [['desk', { width: 1366, height: 860 }, false], [
     for (const [key, name] of PANELS) {
       await page.keyboard.press(key);
       const opened = await page.waitForSelector('.drawer', { timeout: 4000 }).then(() => true).catch(() => false);
+      // 미끄러져 들어오는 중에 재면 화면 밖으로 넘친 것처럼 보인다: 서랍 자체의 등장 애니메이션이 끝난 뒤에 잰다
+      if (opened) await page.waitForFunction(() => document.querySelector('.drawer')?.getAnimations().every(a => a.playState === 'finished'), null, { timeout: 4000 }).catch(() => {});
       await page.waitForTimeout(500);
       if (!opened) { bad.push(`${theme}/${name} 안 열림`); continue; }
       const ov = await page.evaluate(overflowProbe);

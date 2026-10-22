@@ -28,6 +28,32 @@ export async function iris(swap, sfx) {
   ov.classList.remove('active');
 }
 
+// 첫 화면: 닫힌 셔터(index.html에서 닫힌 채로 시작) 가운데 톱니가 돌다가 글꼴이 준비되면 열린다.
+// 기다림은 최대 0.7초. 그 사이 다른 화면으로 넘어가면 skip()으로 바로 걷는다.
+export function irisIntro(ready) {
+  const ov = $('#iris');
+  let anim = null, done = false;
+  const finish = () => {
+    if (done || !ov) return;
+    done = true;
+    anim?.cancel();
+    ov.classList.remove('active', 'closed', 'booting');
+    ov.style.removeProperty('--iris');
+  };
+  if (!ov || reduced()) { finish(); return { skip: finish }; }
+  (async () => {
+    await Promise.race([ready, wait(700)]).catch(() => {});
+    await wait(90);
+    if (done) return;
+    ov.classList.remove('closed');
+    const big = `${Math.ceil(Math.hypot(innerWidth, innerHeight) / 2) + 40}px`;
+    anim = ov.animate([{ '--iris': '0px' }, { '--iris': big }], { duration: 640, easing: 'cubic-bezier(.16,1,.3,1)' });
+    await anim.finished.catch(() => {});
+    finish();
+  })();
+  return { skip: finish };
+}
+
 // 버튼과 카드에 순차 등장 + 반짝임
 export function stagger(root, sel = '.btn, .choice, .ticket, .menu-item') {
   $$(sel, root).forEach((b, i) => {

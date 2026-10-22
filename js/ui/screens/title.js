@@ -27,9 +27,10 @@ export default function title(ui, root) {
         <div class="tb-light"></div>
       </div>
       <header class="title-block rise">
-        <div class="eyebrow">증기 도시 일대기 · 1차 빌드</div>
+        <div class="eyebrow">공력 184년 · 마법공학 도시 에르덴</div>
         <h1 class="logo"><span>황동의</span> <span>생애</span></h1>
         <div class="logo-sub">LIFE&nbsp;OF&nbsp;BRASS</div>
+        <svg class="title-rule" viewBox="0 0 400 20" preserveAspectRatio="none" aria-hidden="true"><use href="#divider"/></svg>
         <p class="tagline">열세 살의 봄부터 마지막 겨울까지.<br>한 사람의 선택이 한 골목의 온도를 바꾼다.</p>
       </header>
       <nav class="title-menu" aria-label="주 메뉴">
@@ -39,7 +40,7 @@ export default function title(ui, root) {
             <span class="mi-ico">${icon(it.ico)}</span>
           </button>`).join('')}
       </nav>
-      <footer class="title-foot">글꼴 리디바탕 · 모든 결과는 출생 씨앗에서 결정된다</footer>
+      <footer class="title-foot">같은 씨앗과 같은 선택은 언제나 같은 삶을 만든다 · 글꼴 리디바탕</footer>
     </div>`;
   stagger(root, '.menu-item');
 

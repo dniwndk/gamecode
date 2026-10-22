@@ -2,6 +2,8 @@
 import { icon } from './sprite.js';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
+// 터치 화면이면 키보드·마우스 안내 대신 누르기 안내를 쓴다
+export const touchy = () => matchMedia('(pointer: coarse)').matches;
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -15,6 +17,11 @@ export function el(htmlText) {
 
 export function corners() {
   return ['tl', 'tr', 'bl', 'br'].map(c => `<svg class="corner ${c}" aria-hidden="true"><use href="#corner"/></svg>`).join('');
+}
+
+// 큰 겹창 좌우의 보석 받침 (참고 1)
+export function finials() {
+  return ['l', 'r'].map(c => `<span class="finial ${c}" aria-hidden="true"><svg viewBox="0 0 44 150"><use href="#finial"/></svg></span>`).join('');
 }
 
 // 가죽 패널 + 황동 모서리 + 상단 명판

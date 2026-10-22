@@ -30,8 +30,9 @@ export default function ending(ui, root) {
 
   root.innerHTML = `
     <div class="ending-screen">
-      <div class="end-bg" aria-hidden="true"><div class="candles">${[0, 1, 2].map(i => `<span class="candle c${i}"><i class="flame"></i></span>`).join('')}</div></div>
+      <div class="end-bg" aria-hidden="true"></div>
       <header class="end-head">
+        <div class="candles" aria-hidden="true">${[0, 1, 2].map(i => `<span class="candle c${i}"><i class="flame"></i></span>`).join('')}</div>
         <div class="eyebrow">${esc(cause)} · ${born}년 ~ ${s.year}년 · ${s.age}세</div>
         <h1 class="end-name">${esc(s.ch.name)}</h1>
         <div class="plaque end-plaque">${esc(title)}</div>

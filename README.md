@@ -40,6 +40,7 @@ node tests/sim.test.mjs           # 전체 (1만 생애 · 10만 출생, 약 2�
 node tests/e2e.spec.mjs           # 브라우저 기준 (Playwright Chromium 필요)
 node tests/audit.mjs [--quick]    # 최종 감사: 무작위 플레이 2천 회 · 상태 불변식 · 문장(조사) 검사 · 도달 가능성
 node tests/audit-browser.mjs      # 최종 감사: 성능 예산 · 서랍 7종×두 테마×360px · 터치 흐름 (스크린숏 tests/out/audit/)
+node tests/shots.mjs [desk|m]     # 디자인 검토용: 주요 화면 12곳을 데스크톱·모바일로 찍는다 (tests/out/shots/, 판정 없음)
 ```
 
 검수 기록은 [progress.txt](progress.txt)에 쌓는다.

@@ -91,6 +91,12 @@ export function buildSprite() {
     <radialGradient id="g-gem-teal" cx=".35" cy=".3" r=".8">
       <stop offset="0" stop-color="#d8fff8"/><stop offset=".45" stop-color="#3fae9f"/><stop offset="1" stop-color="#0b3530"/>
     </radialGradient>
+    <radialGradient id="g-gem-amber" cx=".35" cy=".3" r=".8">
+      <stop offset="0" stop-color="#fff6d2"/><stop offset=".4" stop-color="#f0a530"/><stop offset="1" stop-color="#5a2e04"/>
+    </radialGradient>
+    <radialGradient id="g-halo">
+      <stop offset="0" stop-color="#ffd27a" stop-opacity=".75"/><stop offset=".45" stop-color="#f0a530" stop-opacity=".22"/><stop offset="1" stop-color="#f0a530" stop-opacity="0"/>
+    </radialGradient>
     <radialGradient id="g-glass" cx=".5" cy=".4" r=".7">
       <stop offset="0" stop-color="#f3e9d0"/><stop offset=".8" stop-color="#d9c79f"/><stop offset="1" stop-color="#a8915f"/>
     </radialGradient>
@@ -107,6 +113,22 @@ export function buildSprite() {
     <circle cx="16" cy="16" r="5" fill="url(#g-rivet)" stroke="#2a1b06" stroke-width=".9"/>
     <circle cx="16" cy="16" r="1.6" fill="#3a2709" opacity=".55"/>
     <path d="M58 3l5 5 5-5M3 58l5 5-5 5" fill="#c99a3e" stroke="#2c1d08" stroke-width=".8"/>
+  </symbol>
+  <!-- 겹창 옆면 장식 (참고 1): 덩굴 받침 두 개 사이에 빛나는 호박 보석, 바깥으로 뻗은 촉 -->
+  <symbol id="finial" viewBox="0 0 44 150">
+    <path d="M36 16v118" stroke="#2c1d08" stroke-width="7" stroke-linecap="round"/>
+    <path d="M36 16v118" stroke="url(#g-brass-v)" stroke-width="4.4" stroke-linecap="round"/>
+    <path d="M36 22C20 28 15 44 24 57c4 6-1 10-6 6" fill="none" stroke="#2c1d08" stroke-width="4.6" stroke-linecap="round"/>
+    <path d="M36 22C20 28 15 44 24 57c4 6-1 10-6 6" fill="none" stroke="url(#g-brass)" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M36 128C20 122 15 106 24 93c4-6-1-10-6-6" fill="none" stroke="#2c1d08" stroke-width="4.6" stroke-linecap="round"/>
+    <path d="M36 128C20 122 15 106 24 93c4-6-1-10-6-6" fill="none" stroke="url(#g-brass)" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M2 75l11-6.5v13z" fill="url(#g-brass)" stroke="#2c1d08" stroke-width="1"/>
+    <circle class="f-halo" cx="22" cy="75" r="21" fill="url(#g-halo)"/>
+    <circle cx="22" cy="75" r="11.5" fill="url(#g-brass)" stroke="#2c1d08" stroke-width="1.2"/>
+    <circle cx="22" cy="75" r="7.4" fill="url(#g-gem-amber)" stroke="#3d2006" stroke-width=".8"/>
+    <circle cx="19.6" cy="72.2" r="2.1" fill="#fff" opacity=".7"/>
+    <circle cx="36" cy="16" r="3.6" fill="url(#g-rivet)" stroke="#2a1b06" stroke-width=".8"/>
+    <circle cx="36" cy="134" r="3.6" fill="url(#g-rivet)" stroke="#2a1b06" stroke-width=".8"/>
   </symbol>
   <symbol id="rivet" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.6" fill="url(#g-rivet)" stroke="#24170a" stroke-width=".8"/><circle cx="4.6" cy="4.4" r="1.2" fill="#fff6d8" opacity=".7"/></symbol>
   <symbol id="gem-red" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8.6" fill="url(#g-brass)" stroke="#2c1d08"/><circle cx="10" cy="10" r="5.6" fill="url(#g-gem-red)"/><circle cx="8" cy="7.6" r="1.6" fill="#fff" opacity=".55"/></symbol>

@@ -30,7 +30,9 @@
 @keyframes title-glow { 0%, 100% { text-shadow: 0 2px 0 #3d2808, 0 0 22px rgba(242, 217, 142, .25); } 50% { text-shadow: 0 2px 0 #3d2808, 0 0 34px rgba(242, 217, 142, .45); } }
 
 .rise { animation: rise var(--t-rise) var(--ease-out) both; }
-.btn-in { animation: btn-in var(--t-btn) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--t-stagger)); }
+/* 등장 연출은 transform을 쥐고 끝나므로, 올림·누름 반응은 따로 노는 translate·scale·rotate 속성으로 준다 */
+.btn-in { animation: btn-in var(--t-btn) var(--ease-soft) both; animation-delay: calc(var(--i, 0) * var(--t-stagger)); }
+.cascade { animation: rise 420ms var(--ease-soft) both; animation-delay: calc(80ms + var(--ci, 0) * 45ms); }
 .fade-in { animation: fade-in var(--t-rise) var(--ease-out) both; }
 .sent { display: inline; animation: sentence var(--t-fade) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 70ms); }
 .spin-slow { animation: spin 40s linear infinite; }
@@ -59,6 +61,10 @@
 .iris .hub { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; opacity: 0; transition: opacity 120ms; }
 .iris.closed .hub { opacity: 1; }
 .iris .hub svg { width: 100%; height: 100%; animation: spin 2.4s linear infinite; }
+/* 첫 부팅: 셔터가 닫힌 채 톱니가 돌고, 늦어질 때만 안내 글이 떠오른다 */
+.iris .boot-label { position: absolute; left: 0; right: 0; top: calc(50% + 78px); text-align: center; font-size: .82em; letter-spacing: .5em; color: var(--brass); opacity: 0; }
+.iris.booting.closed .boot-label { animation: fade-in 500ms var(--ease-out) 450ms both; }
+.iris.booting .hub { transition: none; }
 
 /* 줄임 동작: 모든 연출을 150ms 페이드로 */
 :root[data-motion="reduced"] *, :root[data-motion="reduced"] *::before, :root[data-motion="reduced"] *::after {
@@ -67,7 +73,7 @@
   animation-iteration-count: 1 !important;
   transition-duration: 150ms !important;
 }
-:root[data-motion="reduced"] .rise, :root[data-motion="reduced"] .btn-in, :root[data-motion="reduced"] .sent,
+:root[data-motion="reduced"] .rise, :root[data-motion="reduced"] .btn-in, :root[data-motion="reduced"] .sent, :root[data-motion="reduced"] .cascade,
 :root[data-motion="reduced"] .pop, :root[data-motion="reduced"] .event-title { animation-name: fade-in !important; }
 :root[data-motion="reduced"] .spin-slow, :root[data-motion="reduced"] .spin-rev, :root[data-motion="reduced"] .float, :root[data-motion="reduced"] .pulse { animation: none !important; }
 :root[data-motion="reduced"] .btn::after { display: none; }

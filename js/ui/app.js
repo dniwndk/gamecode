@@ -1,7 +1,7 @@
 // 화면 관리자: 화면 전환(아이리스), 겹창(서랍·모달), 키보드, 툴팁, 설정 적용, 저장.
 import { buildSprite } from './sprite.js';
-import { $, el, esc, frame, icon } from './dom.js';
-import { iris, stagger, Particles, reduced } from './motion.js';
+import { $, $$, el, esc, frame, icon, finials } from './dom.js';
+import { iris, irisIntro, stagger, Particles, reduced } from './motion.js';
 import { Sfx } from './audio.js';
 import * as store from './store.js';
 import { ACHIEVEMENTS } from '../core/progress.js';
@@ -33,6 +33,7 @@ class UI {
     this.bindGlobal();
     const params = new URLSearchParams(location.search);
     if (params.has('seed')) this.pendingSeed = params.get('seed');
+    this.intro = irisIntro(document.fonts?.ready);
     this.go('title', {}, true);
   }
 
@@ -59,6 +60,7 @@ class UI {
   async go(name, opts = {}, instant = false) {
     // 전환 도중(셔터가 열리는 동안) 들어온 요청은 버리지 않고 끝난 뒤 이어서 처리한다
     if (this.busy) { this.queued = [name, opts, instant]; return; }
+    if (!instant && this.intro) { this.intro.skip(); this.intro = null; }
     this.busy = true;
     const swap = async () => {
       this.closeAll(true);
@@ -91,6 +93,7 @@ class UI {
     box.classList.add(kind === 'drawer' ? 'drawer' : 'modal');
     if (cls) box.classList.add(...cls.split(' '));
     if (kind === 'drawer') { layer.removeChild(holder); layer.appendChild(box); } else holder.appendChild(box);
+    if (kind === 'modal' && !box.classList.contains('frame--sm')) box.insertAdjacentHTML('beforeend', finials());
     document.body.appendChild(layer);
     const entry = { layer, box, kind, dismiss, keys, onClose, prevFocus: document.activeElement };
     this.stack.push(entry);
@@ -107,6 +110,7 @@ class UI {
       onAct?.(a.dataset.act, a, e, entry);
     });
     stagger(box);
+    cascade(box);
     this.sfx.play(kind === 'drawer' ? 'page' : 'select');
     setTimeout(() => (box.querySelector('[autofocus]') || box.querySelector('button:not(:disabled), input, [tabindex="0"]'))?.focus({ preventScroll: true }), 30);
     return entry;
@@ -219,6 +223,20 @@ class UI {
     if (!box.contains(document.activeElement)) { e.preventDefault(); first.focus(); return; }
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+}
+
+// 서랍·겹창이 열릴 때 속 카드 목록이 위에서부터 차례로 떠오른다 (앞의 8장까지만 늦추고 나머지는 함께).
+// 열릴 때 한 번만: 선택할 때마다 다시 그리는 목록은 class가 없어 다시 흔들리지 않는다.
+const CASCADE = '.person, .tcard, .dist-card, .slot-card, .mg-card, .opt, .ach, .endings-list > li, .slot-list > li';
+export function cascade(root) {
+  const seen = new Map();
+  for (const n of $$(CASCADE, root)) {
+    const k = n.parentElement;
+    const i = seen.get(k) || 0;
+    seen.set(k, i + 1);
+    n.style.setProperty('--ci', Math.min(i, 8));
+    n.classList.add('cascade');
   }
 }
 

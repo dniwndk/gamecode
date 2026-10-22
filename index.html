@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#15110d">
   <meta name="description" content="증기 도시에서 한 사람의 생애를 사는 텍스트 시뮬레이션 게임">
+  <meta property="og:title" content="황동의 생애">
+  <meta property="og:description" content="마법공학 도시 에르덴에서 열세 살의 봄부터 마지막 겨울까지, 한 시민의 생애를 산다.">
+  <meta property="og:type" content="website">
   <title>황동의 생애</title>
   <link rel="preload" href="fonts/RIDIBatang.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/tokens.css">
@@ -20,11 +23,12 @@
     <div id="screen"></div>
     <div class="vignette" aria-hidden="true"></div>
   </div>
-  <div id="iris" class="iris" aria-hidden="true">
+  <div id="iris" class="iris active closed booting" style="--iris:0px" aria-hidden="true">
     <div class="ring"></div>
     <div class="hub"><svg viewBox="0 0 100 100"><use href="#gear-big"/></svg></div>
+    <div class="boot-label">증기를 올리는 중</div>
   </div>
-  <noscript><p style="color:#efe4cc;padding:24px">이 게임은 자바스크립트가 필요하다.</p></noscript>
+  <noscript><style>#iris{display:none}</style><p style="color:#efe4cc;padding:24px">이 게임은 자바스크립트가 필요하다.</p></noscript>
   <script type="module" src="js/ui/app.js"></script>
 </body>
 </html>

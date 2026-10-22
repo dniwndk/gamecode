@@ -1,5 +1,5 @@
 // 출생 기록: 운명 카드 네 장이 차례로 뒤집힌다. 이름과 씨앗을 정하고 삶을 시작한다.
-import { esc, icon, frame, btn, divider } from '../dom.js';
+import { esc, icon, frame, btn, divider, touchy } from '../dom.js';
 import { stagger, reduced } from '../motion.js';
 import { createGame } from '../../core/game.js';
 import { freshSeed, normalizeSeed } from '../../core/rng.js';
@@ -100,7 +100,7 @@ export default function birth(ui, root) {
 function birthTraits(st) {
   const ids = (st.ch.traits || []).map(t => t.id);
   if (!ids.length) return '';
-  return `<div class="birth-traits"><small>${icon('key')}타고난 성향 <span class="muted">마우스를 올리면 효과</span></small><div class="opt-traits">${ids.map((id, i) => traitChip(id, { cls: 'pop-chip', prefix: '' }).replace('class="chip', `style="--i:${i}" class="chip`)).join('')}</div></div>`;
+  return `<div class="birth-traits"><small>${icon('key')}타고난 성향 <span class="muted">${touchy() ? '누르면 효과' : '마우스를 올리면 효과'}</span></small><div class="opt-traits">${ids.map((id, i) => traitChip(id, { cls: 'pop-chip', prefix: '' }).replace('class="chip', `style="--i:${i}" class="chip`)).join('')}</div></div>`;
 }
 
 function familyLine(f) {
