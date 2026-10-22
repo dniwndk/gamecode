@@ -1,0 +1,30 @@
+# Netlify 배포 (비공개 저장소를 그대로 연결해 쓰는 경우). GitHub Pages와 같은 dist/를 올린다.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
+
+# 지문 붙은 묶음은 오래 두고, 문서·서비스 워커·매니페스트는 매번 새로 확인한다 (새 판본 알림이 바로 오도록)
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "no-cache"

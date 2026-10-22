@@ -36,14 +36,15 @@ jobs:
       - name: 배포본 검사 (설치형 웹앱 · 오프라인 · 휴대폰 플레이)
         run: node tests/dist.spec.mjs
       - uses: actions/upload-pages-artifact@v3
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.event.repository.private == false
         with:
           path: dist
 
   deploy:
     name: GitHub Pages 공개
     needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    # 무료 플랜의 비공개 저장소는 Pages를 켤 수 없으므로 공개 저장소일 때만 올린다 (비공개면 Netlify가 맡는다)
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.event.repository.private == false
     runs-on: ubuntu-latest
     permissions:
       pages: write

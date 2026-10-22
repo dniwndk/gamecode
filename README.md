@@ -30,6 +30,8 @@ npm run preview    # 빌드 후 http://localhost:8000 에서 배포본으로 열
 ```
 
 `.github/workflows/pages.yml`이 PR마다 검사·빌드·배포본 검사를 돌리고, main에 들어오면 GitHub Pages에 올린다.
+GitHub Pages는 무료 플랜에서 공개 저장소만 켤 수 있어서, 저장소가 비공개면 배포 단계는 건너뛴다.
+비공개로 둔 채 배포하려면 Netlify에서 이 저장소를 연결한다. 빌드 설정은 `netlify.toml`에 들어 있다(빌드 `npm run build`, 게시 폴더 `dist`).
 앱 아이콘(`icons/`)은 `npm run icons`로 다시 그린다(황동 톱니 + 리디바탕 「황」).
 
 ## 조작
