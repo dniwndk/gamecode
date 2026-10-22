@@ -4,10 +4,11 @@ import {
   START_YEAR, START_AGE, BACKGROUNDS, FAMILIES, APTITUDES, ABILITIES, RESONANCE_ROLL, DISTRICTS,
   CITY_PHASES, CORE_NPCS, NPC_ROLES, NAME_POOL, DESIRES, PRINCIPLES, WEAKNESSES, ATTRS, SKILLS, FACTIONS,
 } from '../data/world.js';
+import { rollBirthTraits } from './traits.js';
 
-export const RULES_VERSION = 1;
-export const CONTENT_VERSION = 1;
-export const GENERATOR_VERSION = 1;
+export const RULES_VERSION = 2;
+export const CONTENT_VERSION = 2;
+export const GENERATOR_VERSION = 2;
 
 const ATTR_KEYS = Object.keys(ATTRS);
 
@@ -129,6 +130,9 @@ export function newRun(seedInput, opts = {}) {
     state.npcs.p_friend.met = true; state.npcs.p_friend.affinity = 20; state.npcs.p_friend.trust = 10;
     state.npcs.p_neighbor.met = true; state.npcs.p_neighbor.affinity = 10; state.npcs.p_neighbor.trust = 10;
     if (state.ch.home === 'ash') { state.npcs.toma.met = true; state.npcs.toma.affinity = 15; state.npcs.toma.trust = 10; }
+    // 타고난 성향 (출생 흐름의 마지막 추첨이라 앞의 출생 결과를 바꾸지 않는다)
+    rollBirthTraits(r, state);
+    state.start.traits = state.ch.traits.map(t => t.id);
   });
 
   // 도시 흐름
@@ -161,6 +165,20 @@ function roleJob(role, bg) {
     guardian: { factory: '공장 압연공', workshop: '공방 주인', admin: '시정청 서기', transport: '화물 기관사', migrant: '부두 짐꾼', sponsor: '후원원 사감' }[bg],
     friend: '야간학교 학생', rival: '견습 지원생', neighbor: '은퇴한 보일러공', senior: '공장 배관 반장', master: '매듭 시장 공방 장인', clerk: '출장 기록소 사무원', child: '골목 아이',
   }[role] || '';
+}
+
+// 1차 빌드 저장을 이어 할 때: 특성 칸이 없으면 빈 칸으로 채운다 (특성 없이 태어난 삶으로 이어진다)
+export function migrateState(state) {
+  if (!state?.ch) return state;
+  state.ch.traits = state.ch.traits || [];
+  state.ch.lostTraits = state.ch.lostTraits || [];
+  if (state.yearLog) {
+    state.yearLog.traitChanges = state.yearLog.traitChanges || [];
+    state.yearLog.bondChanges = state.yearLog.bondChanges || [];
+    state.yearLog.traitFx = state.yearLog.traitFx || {};
+  }
+  state.version = Math.max(state.version || 1, RULES_VERSION);
+  return state;
 }
 
 // 역할 이름 → 실제 인물. 사라진 핵심 인물은 같은 세력의 후임으로 대체한다.

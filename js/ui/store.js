@@ -1,4 +1,5 @@
 // 브라우저 저장: 자동 저장 3칸 순환, 설정, 계정 단위 업적·엔딩 수집. 접근이 막혀도 게임은 계속된다.
+import { migrateState } from '../core/state.js';
 const KEY = 'brassLife.v1';
 const SLOTS = 3;
 
@@ -52,7 +53,7 @@ export function listSlots() {
 
 export function loadSlot(i) {
   const e = read(`slot${i}`, null);
-  return validate(e) ? e.state : null;
+  return validate(e) ? migrateState(e.state) : null;
 }
 
 export function latestSlot() {
@@ -71,14 +72,16 @@ export function importText(text) {
   let e;
   try { e = JSON.parse(text); } catch { return { ok: false, reason: '저장 문자열을 읽을 수 없다.' }; }
   if (!validate(e)) return { ok: false, reason: '황동의 생애 저장 형식이 아니다.' };
-  return { ok: true, state: e.state };
+  return { ok: true, state: migrateState(e.state) };
 }
 
 // 계정: 여러 삶에 걸친 업적·엔딩·삶의 수
-export function loadAccount() { return { achievements: [], endings: [], lives: 0, ...read('account', {}) }; }
+export function loadAccount() { return { achievements: [], endings: [], lives: 0, traits: [], ...read('account', {}) }; }
 export function recordAccount(state) {
   const acc = loadAccount();
   for (const a of state.achievements || []) if (!acc.achievements.includes(a)) acc.achievements.push(a);
+  // 특성 도감: 한 번이라도 가져 본 특성 (극복해 잃은 것도 포함)
+  for (const t of [...(state.ch?.traits || []), ...(state.ch?.lostTraits || [])]) if (!acc.traits.includes(t.id)) acc.traits.push(t.id);
   if (state.ending && state.runId !== acc.lastRun) {
     acc.lives += 1; acc.lastRun = state.runId;
     if (state.ending.main && !acc.endings.includes(state.ending.main.id)) acc.endings.push(state.ending.main.id);

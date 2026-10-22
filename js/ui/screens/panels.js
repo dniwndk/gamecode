@@ -8,8 +8,10 @@ import { costBreakdown } from '../../core/economy.js';
 import { districtStatus } from '../../core/city.js';
 import { ATTRS, SKILLS, ABILITIES, ABILITY_STAGES, ITEMS, JOBS, RANKS, DISTRICTS, FACTIONS, LIFE_CLASSES, PUBLIC_RANKS, NPC_ROLES, BACKGROUNDS, APTITUDES, GOALS } from '../../data/world.js';
 import { GLOBAL_NAMES, DISTRICT_KEYS } from '../../core/rules.js';
+import { traitGroups, bondView } from '../../core/traits.js';
+import { traitCard, traitToken, tierBadge, kindCls, TRAITS, TRAIT_KINDS, BOND_TIERS } from '../traits.js';
 
-const TITLES = { me: '나의 기록', people: '인물', city: '도시', ledger: '장부', codex: '기록 보관소', settings: '환경 설정' };
+const TITLES = { me: '나의 기록', traits: '특성', people: '인물', city: '도시', ledger: '장부', codex: '기록 보관소', settings: '환경 설정' };
 
 export function openPanel(ui, name, opts = {}) {
   if (name === 'settings') return openSettings(ui, opts);
@@ -17,7 +19,7 @@ export function openPanel(ui, name, opts = {}) {
   if (top?.panel === name) { ui.close(top); return; }
   if (top?.kind === 'drawer') ui.close(top, true);
   const s = ui.state;
-  const inner = { me: meHtml, people: peopleHtml, city: cityHtml, ledger: ledgerHtml, codex: codexHtml }[name](ui, s);
+  const inner = { me: meHtml, traits: traitsHtml, people: peopleHtml, city: cityHtml, ledger: ledgerHtml, codex: codexHtml }[name](ui, s);
   const entry = ui.open(frame(`<div class="body scroll panel-body">${inner}</div>`, { title: TITLES[name], close: true }), {
     kind: 'drawer', title: TITLES[name],
     onAct(act, a) {
@@ -69,6 +71,24 @@ function meHtml(ui, s) {
     ${items.length || cons.length ? `<div class="inv">${items.map(id => `<div class="inv-item"><span>${esc(ITEMS[id].name)}</span>${['tool', 'guard', 'aux'].includes(ITEMS[id].slot) ? btn('장착', `equip:${id}`, { cls: 'btn--sm' }) : ''}</div>`).join('')}${cons.map(([id, n]) => `<div class="inv-item"><span>${esc(ITEMS[id].name)} ×${n}</span></div>`).join('')}</div>` : ''}`;
 }
 
+// ───────── 특성 ─────────
+function traitsHtml(ui, s) {
+  const g = traitGroups(s);
+  const lost = (s.ch.lostTraits || []).filter(t => TRAITS[t.id]);
+  const sec = (kind, ico, empty) => `
+    <h4 class="sec-title tsec tsec--${kindCls(kind)}">${icon(ico)}${TRAIT_KINDS[kind].name} 특성 <small>${esc(TRAIT_KINDS[kind].desc)}</small><b class="tsec-n">${g[kind].length}</b></h4>
+    ${g[kind].length ? `<ul class="tcards">${g[kind].map(t => traitCard(t)).join('')}</ul>` : `<p class="small muted panel-note">${empty}</p>`}`;
+  return `
+    <div class="trait-sum paper">
+      <div class="ts-row">${['positive', 'negative', 'keyword'].map(k => `<div class="ts-cell ts-${kindCls(k)}"><span class="tk tk--${kindCls(k)} tk--lg">${icon(k === 'positive' ? 'star' : k === 'negative' ? 'warning' : 'key')}</span><b>${g[k].length}</b><small>${TRAIT_KINDS[k].name}</small></div>`).join('')}</div>
+      <p class="small">특성은 판정·수입·생계비·관계 변화에 실제로 붙고, 열쇠는 특정 사건의 선택지와 루트를 연다. 잠긴 선택지에는 필요한 열쇠와 인연이 적혀 있다.</p>
+    </div>
+    ${sec('positive', 'star', '아직 몸에 밴 장점이 없다. 꾸준한 생활과 인연이 장점을 만든다.')}
+    ${sec('negative', 'warning', '지금은 당신을 붙잡는 그림자가 없다.')}
+    ${sec('keyword', 'key', '아직 쥔 열쇠가 없다. 유년의 기억, 사건의 선택, 깊어진 인연이 열쇠를 건넨다.')}
+    ${lost.length ? `<h4 class="sec-title">${icon('check')}지나온 특성 <small>극복했거나 내려놓은 것</small></h4><ul class="tcards">${lost.map(t => traitCard(t, { lost: true })).join('')}</ul>` : ''}`;
+}
+
 // ───────── 인물 ─────────
 function peopleHtml(ui, s) {
   const list = Object.values(s.npcs).filter(n => n.met || n.core).sort((a, b) => (b.met - a.met) || (b.alive - a.alive) || (b.trust + b.affinity - a.trust - a.affinity));
@@ -81,11 +101,26 @@ function peopleHtml(ui, s) {
       <div class="p-body">
         <div class="p-head"><b>${esc(n.name)}</b><span class="chip">${esc(role || '')}</span>${status}<small>${n.age}세</small></div>
         <p class="small">${esc(n.job)}${n.faction ? ` · ${esc(FACTIONS[n.faction])}` : ''}</p>
+        ${bondHtml(s, n)}
         <div class="rel-bars"><span>신뢰</span>${bar(n.trust, 100)}<b>${n.trust}</b><span>호감</span>${bar(n.affinity + 100, 200, n.affinity < 0 ? 'bar--copper' : 'bar--rose')}<b>${n.affinity}</b></div>
+        ${perksHtml(s, n)}
         ${n.desc ? `<p class="small muted">${esc(n.desc)}</p>` : `<p class="small muted">바라는 것: ${esc(n.desire)} · 원칙: ${esc(n.principle)} · 약점: ${esc(n.weakness)}</p>`}
         ${duties.length ? `<ul class="duties">${duties.map(d => `<li class="${d.done ? 'done' : d.failed ? 'failed' : ''}">${icon(d.done ? 'check' : d.failed ? 'close' : 'clock')}<span>${esc(d.text)}</span><small>${d.done ? '완수' : d.failed ? '기한 넘김' : `${d.due}년까지`}</small></li>`).join('')}</ul>` : ''}
       </div></li>`;
   }).join('')}</ul>`;
+}
+
+// 인연 단계와 다음 단계까지 남은 것
+function bondHtml(s, n) {
+  if (!n.alive) return '';
+  const v = bondView(s, n);
+  return `<div class="bond-row">${tierBadge(v.tier)}${v.next ? `<small class="bond-next">${icon('chevron')}「${esc(BOND_TIERS[v.next.tier].name)}」까지 ${esc(v.next.text)}</small>` : '<small class="bond-next max">더 깊어질 수 없는 사이</small>'}</div>`;
+}
+// 단계별 혜택: 켜진 것은 밝게, 아직인 것은 흐리게. 열쇠 선물은 토큰으로.
+function perksHtml(s, n) {
+  const v = bondView(s, n);
+  if (!v.perks.length) return '';
+  return `<ul class="perks">${v.perks.map(p => `<li class="${p.on ? 'on' : ''} ${p.neg ? 'neg' : ''}"><span class="pk-tier">${esc(BOND_TIERS[p.tier].name)}</span>${p.gift ? traitToken(p.gift, { cls: p.giftOwned ? '' : 'dim' }) : icon(p.neg ? 'warning' : p.on ? 'check' : 'lock')}<span>${esc(p.text)}</span></li>`).join('')}</ul>`;
 }
 
 // ───────── 도시 ─────────
@@ -150,10 +185,13 @@ function codexHtml(ui, s) {
   const gv = s ? goalView(s) : null;
   const acc = ui.account;
   const got = new Set([...(acc.achievements || []), ...(s?.achievements || [])]);
+  const seen = new Set([...(acc.traits || []), ...(s ? [...s.ch.traits, ...(s.ch.lostTraits || [])].map(t => t.id) : [])]);
   return `
     ${gv ? `<div class="goal-now paper"><h4>${icon('star')}${esc(gv.name)}</h4><ol class="stage-list">${gv.stages.map((st, i) => `<li class="${i < gv.stage ? 'done' : i === gv.stage ? 'now' : ''}"><b>${i + 1}</b><span>${esc(st)}</span>${i < gv.stage ? icon('check') : ''}</li>`).join('')}</ol><p class="small">보상: ${esc(gv.reward)}</p></div>` : ''}
     <h4 class="sec-title">${icon('star')}업적 <small>${[...got].filter(id => ACHIEVEMENTS.some(a => a.id === id)).length} / ${ACHIEVEMENTS.length}</small></h4>
     <ul class="ach-grid">${ACHIEVEMENTS.map(a => `<li class="ach ${got.has(a.id) ? 'got' : ''}" tabindex="0" data-tip="${esc(a.desc)}"><span class="ach-medal grade-${a.grade}"><svg><use href="#gear-small"/></svg><b>${a.grade}</b></span><span class="ach-name">${esc(a.name)}</span></li>`).join('')}</ul>
+    <h4 class="sec-title">${icon('key')}특성 도감 <small>${seen.size} / ${Object.keys(TRAITS).length}</small></h4>
+    ${['positive', 'negative', 'keyword'].map(k => `<div class="codex-traits"><small>${TRAIT_KINDS[k].name}</small><div class="ct-grid">${Object.entries(TRAITS).filter(([, d]) => d.kind === k).map(([id, d]) => seen.has(id) ? traitToken(id, { attrs: 'tabindex="0"' }) : `<span class="tk tk--unknown" tabindex="0" data-tip="${esc(d.how ? `아직 가져 본 적 없는 특성\n얻는 법: ${d.how}` : '아직 가져 본 적 없는 특성')}">?</span>`).join('')}</div></div>`).join('')}
     <h4 class="sec-title">${icon('scroll')}만난 결말 <small>${acc.endings.length} / ${Object.keys(ENDINGS).length}</small></h4>
     <ul class="endings-list">${Object.entries(ENDINGS).map(([id, e]) => `<li class="${acc.endings.includes(id) ? 'got' : ''}"><b>${acc.endings.includes(id) ? esc(e.name) : '봉인된 결말'}</b><small>${acc.endings.includes(id) ? esc(e.scene) : '아직 이 결말에 닿은 삶이 없다'}</small></li>`).join('')}</ul>`;
 }

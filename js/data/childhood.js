@@ -36,9 +36,9 @@ export const CHILDHOOD = [
         : '여섯 살의 당신은 골목의 소리를 전부 외우고 있었다. 보호자의 발소리, 친구 {@friend|가} 부르는 휘파람, 이웃 {@neighbor|가} 공구를 내려놓는 소리. 그해 당신이 가장 오래 곁에 있었던 사람은 누구였나.';
     },
     choices: [
-      { id: 'guardian', label: '보호자 {@guardian}의 일을 거들었다', effects: [{ t: 'rel', who: 'p_guardian', trust: 12, aff: 15 }, { t: 'attr', k: 'will', xp: 3 }] },
-      { id: 'friend', label: '친구 {@friend}와 해가 질 때까지 쏘다녔다', effects: [{ t: 'rel', who: 'p_friend', trust: 15, aff: 20 }, { t: 'attr', k: 'body', xp: 3 }] },
-      { id: 'workbench', label: '{@mentor}의 작업대 옆에 쭈그려 앉아 있었다', effects: [{ t: 'rel', who: 'mentor', trust: 15, aff: 12 }, { t: 'skill', k: 'repair', xp: 2 }] },
+      { id: 'guardian', label: '보호자 {@guardian}의 일을 거들었다', effects: [{ t: 'rel', who: 'p_guardian', trust: 12, aff: 15 }, { t: 'attr', k: 'will', xp: 3 }, { t: 'trait', id: 'kw_guardian_back' }] },
+      { id: 'friend', label: '친구 {@friend}와 해가 질 때까지 쏘다녔다', effects: [{ t: 'rel', who: 'p_friend', trust: 15, aff: 20 }, { t: 'attr', k: 'body', xp: 3 }, { t: 'trait', id: 'kw_old_promise' }] },
+      { id: 'workbench', label: '{@mentor}의 작업대 옆에 쭈그려 앉아 있었다', effects: [{ t: 'rel', who: 'mentor', trust: 15, aff: 12 }, { t: 'skill', k: 'repair', xp: 2 }, { t: 'trait', id: 'kw_workbench' }] },
     ],
   },
   {
@@ -48,10 +48,10 @@ export const CHILDHOOD = [
       return '야간학교 칠판에는 회로도와 장부 양식이 번갈아 그려졌다. 시장에서는 흥정 소리가, 공장에서는 증기 소리가 넘어왔다. 열두 살의 당신을 가장 오래 붙잡은 것은 무엇이었나.' + res;
     },
     choices: [
-      { id: 'machine', label: '기계가 내는 소리와 진동', effects: [{ t: 'skill', k: 'repair', xp: 3 }, { t: 'attr', k: 'craft', xp: 3 }, { t: 'flag', k: 'interest_machine' }] },
-      { id: 'ledger', label: '장부와 글자, 오래된 기록', effects: [{ t: 'skill', k: 'record', xp: 3 }, { t: 'attr', k: 'lore', xp: 3 }, { t: 'flag', k: 'interest_ledger' }] },
-      { id: 'market', label: '시장의 흥정과 사람들', effects: [{ t: 'skill', k: 'trade', xp: 3 }, { t: 'attr', k: 'speech', xp: 3 }, { t: 'flag', k: 'interest_market' }] },
-      { id: 'resonance', label: '손끝에 남는 이상한 감각', cond: { ability: true }, effects: [{ t: 'skill', k: 'resonance', xp: 3 }, { t: 'attr', k: 'will', xp: 3 }, { t: 'flag', k: 'interest_resonance' }] },
+      { id: 'machine', label: '기계가 내는 소리와 진동', effects: [{ t: 'skill', k: 'repair', xp: 3 }, { t: 'attr', k: 'craft', xp: 3 }, { t: 'flag', k: 'interest_machine' }, { t: 'trait', id: 'kw_machine_ear' }] },
+      { id: 'ledger', label: '장부와 글자, 오래된 기록', effects: [{ t: 'skill', k: 'record', xp: 3 }, { t: 'attr', k: 'lore', xp: 3 }, { t: 'flag', k: 'interest_ledger' }, { t: 'trait', id: 'kw_old_ledgers' }] },
+      { id: 'market', label: '시장의 흥정과 사람들', effects: [{ t: 'skill', k: 'trade', xp: 3 }, { t: 'attr', k: 'speech', xp: 3 }, { t: 'flag', k: 'interest_market' }, { t: 'trait', id: 'kw_market_kid' }] },
+      { id: 'resonance', label: '손끝에 남는 이상한 감각', cond: { ability: true }, effects: [{ t: 'skill', k: 'resonance', xp: 3 }, { t: 'attr', k: 'will', xp: 3 }, { t: 'flag', k: 'interest_resonance' }, { t: 'trait', id: 'kw_hidden_resonance' }] },
     ],
   },
 ];

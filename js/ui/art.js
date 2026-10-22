@@ -85,8 +85,8 @@ export function seasonDial(season = 0, running = false) {
   </svg>`;
 }
 
-const CAT_ICON = { life: 'home', work: 'wrench', relation: 'people', city: 'map', resonance: 'wave', chain: 'flame', danger: 'warning', recovery: 'heart' };
-const CAT_TONE = { life: '#d9b46a', work: '#d7ac55', relation: '#e0a08a', city: '#9fb6c9', resonance: '#7cc4bb', chain: '#e08a5c', danger: '#e06a4a', recovery: '#a6c98a' };
+const CAT_ICON = { life: 'home', work: 'wrench', relation: 'people', city: 'map', resonance: 'wave', chain: 'flame', danger: 'warning', recovery: 'heart', route: 'key' };
+const CAT_TONE = { life: '#d9b46a', work: '#d7ac55', relation: '#e0a08a', city: '#9fb6c9', resonance: '#7cc4bb', chain: '#e08a5c', danger: '#e06a4a', recovery: '#a6c98a', route: '#e6c27a' };
 
 // 사건 카드 삽화: 필름 틀 안의 판화풍 장면 (참고 4)
 export function eventArt(category = 'life') {

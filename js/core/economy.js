@@ -3,34 +3,67 @@ import { JOBS, ITEMS, DISTRICTS, PROMOTION, RANKS, SUB_COMMITMENTS, SKILLS, ABIL
 import { gainSkillXp, gainAttrXp, addStat, changeRel, addRep, setJob, computeChance, rollCheck, hasAbilityOrDevice, workDistrict } from './rules.js';
 import { withRng } from './rng.js';
 import { clamp, shortName } from './util.js';
+import { hasTrait, traitMul, traitFx, traitName, bondPerk, traitMods, traitIdsWith } from './traits.js';
 
 export const BASE_COST = { housing: 24, food: 24, heat: 12, commute: 12 }; // 합계 72C
 
 export function annualCost(state) {
+  if (!state.ch.independent) return 0;
+  const base = livingBase(state);
+  return base + livingTraitDelta(state, base) + comfortCost(state);
+}
+
+function livingBase(state) {
   const ch = state.ch;
-  if (!ch.independent) return 0;
   const price = state.city.global.price / 100;
-  const rent = BASE_COST.housing + (DISTRICTS[ch.home]?.rent || 0) - (state.flags.tempShelter === state.year ? 12 : 0);
-  return Math.round((rent + BASE_COST.food + BASE_COST.heat + BASE_COST.commute) * price) + comfortCost(state);
+  const rent = BASE_COST.housing + (DISTRICTS[ch.home]?.rent || 0) - (state.flags.tempShelter === state.year ? 12 : 0) - housingRelief(state);
+  return Math.round((rent + BASE_COST.food + BASE_COST.heat + BASE_COST.commute) * price);
+}
+
+// 주거비를 줄여 주는 인연과 루트: 보호자와 함께 사는 집, 이웃의 방 알선
+function housingRelief(state) {
+  let v = 0;
+  if (state.flags.guardianHome && state.npcs.p_guardian?.alive) v += 10;
+  if (bondPerk(state, 'neighbor_room')) v += 4;
+  return v;
+}
+
+// 검소한 살림·헤픈 지갑 같은 특성이 생계비에 더하거나 빼는 양
+export function livingTraitDelta(state, base) {
+  const m = traitMul(state, 'living');
+  return m === 1 ? 0 : Math.round(base * (m - 1));
 }
 
 // 여유가 생기면 생활 수준도 오른다: 150C를 넘는 현금의 8%를 더 나은 식탁과 선물, 수선에 쓴다
+// 검소한 살림은 이 비용을 지우고, 헤픈 지갑은 90C부터 1.5배로 붙인다
 export function comfortCost(state) {
   const ch = state.ch;
   if (!ch.independent || state.flags.frugal) return 0;
-  return Math.max(0, Math.floor((ch.cash - 150) * 0.08));
+  let at = 150;
+  for (const [x] of traitMods(state, 'comfortAt')) at = Math.min(at, x);
+  return Math.max(0, Math.floor((ch.cash - at) * 0.08 * traitMul(state, 'comfortMul')));
 }
 
 export function costBreakdown(state) {
   const price = state.city.global.price / 100;
   const ch = state.ch;
-  return [
+  const rows = [
     ['주거', Math.round((BASE_COST.housing + (DISTRICTS[ch.home]?.rent || 0)) * price)],
     ['식비', Math.round(BASE_COST.food * price)],
     ['열 공급', Math.round(BASE_COST.heat * price)],
     ['통근·수선', Math.round(BASE_COST.commute * price)],
-    ...(comfortCost(state) ? [['생활 향상', comfortCost(state)]] : []),
   ];
+  if (state.flags.tempShelter === state.year) rows.push(['임시 숙소', -Math.round(12 * price)]);
+  if (state.flags.guardianHome && state.npcs.p_guardian?.alive) rows.push(['보호자와 함께 사는 집', -Math.round(10 * price)]);
+  if (bondPerk(state, 'neighbor_room')) rows.push(['이웃의 방 알선', -Math.round(4 * price)]);
+  const base = rows.reduce((a, r) => a + r[1], 0);
+  const lt = livingTraitDelta(state, base);
+  if (lt) {
+    const ids = traitIdsWith(state, 'living');
+    rows.push([`특성 ${ids.map(id => `「${traitName(id)}」`).join(' ')}`, lt]);
+  }
+  if (comfortCost(state)) rows.push(['생활 향상', comfortCost(state)]);
+  return rows;
 }
 
 function jobIncomeBase(state) {
@@ -40,8 +73,47 @@ function jobIncomeBase(state) {
   let inc = j.income[ch.job.rank];
   const d = state.city.districts[workDistrict(state)];
   if (d.jobs < 35) inc *= 0.85; else if (d.jobs > 75) inc *= 1.05;
-  if (state.city.factions.union.striking && workDistrict(state) === 'brass') inc *= 0.8;
+  if (state.city.factions.union.striking && workDistrict(state) === 'brass' && !bondPerk(state, 'sabine_strike')) inc *= 0.8;
   return Math.round(inc);
+}
+
+// 특성과 인연이 주 활동 수입에 더하는 몫. [더할 금액, [{ label, d, ids }]]
+const TRAIT_INCOME_MAINS = new Set(['work', 'work_res', 'workshop', 'community', 'mentor', 'night_market']);
+const NO_INCOME = Object.freeze([0, Object.freeze([])]);
+// 배율 특성 묶음마다 이름표를 한 번만 만든다 (묶음은 보유 특성이 바뀔 때만 새로 생긴다)
+const MUL_LABEL = new WeakMap();
+function mulGroup(ms) {
+  let g = MUL_LABEL.get(ms);
+  if (!g) {
+    let m = 1; for (const [x] of ms) m *= x;
+    const ids = ms.map(([, id]) => id);
+    g = { m, ids, label: ids.map(id => `「${traitName(id)}」`).join(' ') };
+    MUL_LABEL.set(ms, g);
+  }
+  return g;
+}
+export function traitIncome(state, main, base) {
+  if (!TRAIT_INCOME_MAINS.has(main)) return NO_INCOME;
+  const ch = state.ch;
+  let add = 0;
+  let why = null;
+  const put = (label, d, ids = []) => { if (d) { add += d; (why ||= []).push({ label, d, ids }); } };
+  const mul = (key) => {
+    const ms = traitMods(state, key);
+    if (!ms.length) return;
+    const g = mulGroup(ms);
+    put(g.label, Math.round(base * (g.m - 1)), g.ids);
+  };
+  const working = main === 'work' || main === 'work_res';
+  if (working || main === 'workshop') mul('income');
+  if (main === 'workshop' || (working && ch.job?.id === 'merchant')) mul('partnerIncome');
+  if (main === 'community') {
+    if (hasTrait(state, 'pos_lamp_keeper')) put('「등불지기」', 24, ['pos_lamp_keeper']);
+    if (bondPerk(state, 'toma_community')) put('토마와의 인연', 12);
+  }
+  if (main === 'mentor' && bondPerk(state, 'child_heir')) put('제자와의 인연', 12);
+  if (main === 'night_market' && state.age >= 18) put(`상업 숙련 ${ch.skills.trade}`, ch.skills.trade * 8);
+  return why ? [add, why] : NO_INCOME;
 }
 
 // ───────── 주 활동 ─────────
@@ -59,6 +131,9 @@ export const MAIN = {
   recover: { name: '요양', desc: '일을 쉬고 몸을 돌본다. 수입이 없지만 건강·스트레스·공명부하가 크게 회복된다.', income: 0 },
   mentor: { name: '제자 지도', desc: '쌓아 온 기술을 후배에게 넘긴다. 연 60C, 전수의 기록이 남는다.', income: 60 },
   publicwork: { name: '공공근로 (보장)', insolvency: true, desc: '시정청이 보장하는 일자리. 연 84C. 지급 불능 상태에서 생계를 다시 세운다.', income: 84 },
+  // 열쇠 특성이 여는 주 활동
+  night_market: { name: '야시장 노점', trait: 'kw_market_kid', desc: '시장통에서 자란 감으로 밤마다 노점을 연다. 상업 숙련만큼 벌이가 늘고, 매듭 시장 사람들과 가까워진다.', income: 64, minorIncome: 18 },
+  rivet_errand: { name: '검은 리벳 심부름', trait: 'kw_rivet_contact', desc: '세라의 비공식 운송과 수금을 맡는다. 연 104C. 리벳 평판과 세라의 신뢰가 오르지만 시정청의 눈길과 스트레스가 따른다.', income: 104 },
 };
 
 export function availableMains(state) {
@@ -69,6 +144,7 @@ export function availableMains(state) {
     for (const j of Object.keys(JOBS)) out.push({ id: 'm_apprentice', target: j, label: `${JOBS[j].name} 견습` });
     out.push({ id: 'm_delivery' });
     out.push({ id: 'm_family' });
+    if (state.age >= 14 && hasTrait(state, 'kw_market_kid')) out.push({ id: 'night_market' });
     return out.map(o => decorate(state, o));
   }
   if (ch.job) out.push({ id: 'work' });
@@ -77,6 +153,8 @@ export function availableMains(state) {
   for (const j of Object.keys(JOBS)) if (!ch.job || ch.job.id !== j) out.push({ id: 'jobhunt', target: j, label: ch.job ? `${JOBS[j].name}로 전직 준비` : `${JOBS[j].name} 구직` });
   for (const j of Object.keys(JOBS)) out.push({ id: 'school', target: j, label: `${SKILLS[JOBS[j].skill]} 야간교육` });
   out.push({ id: 'community' });
+  if (hasTrait(state, 'kw_market_kid')) out.push({ id: 'night_market' });
+  if (hasTrait(state, 'kw_rivet_contact') && state.npcs.sera?.alive && !bondPerk(state, 'sera_refuse')) out.push({ id: 'rivet_errand' });
   if (state.age >= 50 && Math.max(...Object.values(ch.skills)) >= 3) out.push({ id: 'mentor' });
   out.push({ id: 'recover' });
   if (ch.independent && (ch.cash < 0 || state.ch.lifeClass === 0)) out.push({ id: 'publicwork' });
@@ -90,7 +168,15 @@ function resonanceJobFit(state) {
 
 function decorate(state, o) {
   const def = MAIN[o.id];
-  const r = { ...o, name: o.label || def.name, desc: def.desc, income: estimateIncome(state, o), cost: def.cost || 0 };
+  // 특성·인연이 이 활동에 주는 몫을 보여 준다
+  const base = baseIncome(state, o);
+  const [add, why] = traitIncome(state, o.id, base);
+  const r = {
+    id: o.id, target: o.target, label: o.label, name: o.label || def.name, desc: def.desc, income: base + add, cost: def.cost || 0,
+    traitTags: why.length ? why.map(w => ({ text: `${w.label} ${w.d > 0 ? '+' : ''}${w.d}C`, good: w.d > 0 })) : [],
+    keyTrait: def.trait ? { id: def.trait, name: traitName(def.trait) } : null,
+    disabled: null,
+  };
   if (o.id === 'm_apprentice') {
     const mentor = apprenticeMentor(state, o.target);
     r.desc = `${JOBS[o.target].name} 일을 ${shortName(mentor.name)} 밑에서 배운다. ${SKILLS[JOBS[o.target].skill]} 숙련과 신뢰, 소지금 8C.`;
@@ -120,16 +206,28 @@ export function jobQualification(state, job) {
   if (state.flags['apprenticeDone_' + job]) return { ok: true, reason: '견습 수료' };
   if (ch.skills[j.skill] >= 1 && ch.attrs[j.attr] >= 4) return { ok: true, reason: '기초 숙련' };
   if (mentor && mentor.trust >= 30) return { ok: true, reason: `${shortName(mentor.name)}의 추천` };
-  const { chance } = computeChance(state, { attr: j.attr, diff: 6, skill: j.skill });
-  return { ok: false, chance, reason: '공개 채용 시험' };
+  if (job === 'recorder' && hasTrait(state, 'kw_paper_house')) return { ok: true, reason: '「서류의 집」 출신' };
+  if (job === 'plumber' && bondPerk(state, 'senior_ref')) return { ok: true, reason: `${shortName(state.npcs.p_senior.name)}의 추천서` };
+  if (job === 'recorder' && bondPerk(state, 'clerk_ref')) return { ok: true, reason: `${shortName(state.npcs.p_clerk.name)}의 추천서` };
+  if (state.flags.wardNetwork) return { ok: true, reason: '후원원 동기회의 추천' };
+  let { chance } = computeChance(state, { attr: j.attr, diff: 6, skill: j.skill });
+  const friend = bondPerk(state, 'friend_job');
+  if (friend) chance = Math.min(95, chance + 10);
+  return { ok: false, chance, reason: friend ? '공개 채용 시험 · 친구의 소개 +10' : '공개 채용 시험' };
 }
 
-export function estimateIncome(state, o) {
+function baseIncome(state, o) {
   const def = MAIN[o.id];
   if (o.id === 'work') return jobIncomeBase(state);
   if (o.id === 'work_res') return Math.round(jobIncomeBase(state) * 1.1);
   if (o.id === 'workshop') return workshopIncome(state, true);
+  if (def.minorIncome != null && state.age < 18) return def.minorIncome;
   return def.income || 0;
+}
+
+export function estimateIncome(state, o) {
+  const b = baseIncome(state, o);
+  return b + traitIncome(state, o.id, b)[0];
 }
 
 function workshopIncome(state, estimate) {
@@ -150,6 +248,11 @@ export function applyPlanStart(state) {
   const p = state.plan;
   if (p.main === 'school') { state.ch.cash -= 12; state.yearLog.spent += 12; state.stats.nightSchool = (state.stats.nightSchool || 0) + 1; }
   const yearIncome = computeYearIncome(state);
+  if (state.ch.independent) {
+    const ids = traitIdsWith(state, 'living');
+    const d = livingTraitDelta(state, livingBase(state));
+    if (ids.length && d) traitFx(state, ids, '생계비(C)', d);
+  }
   state.yearLog.plannedIncome = yearIncome;
   state.yearLog.quarterIncome = Math.round(yearIncome / 4);
   state.yearLog.quarterExpense = Math.round(annualCost(state) / 4);
@@ -157,15 +260,21 @@ export function applyPlanStart(state) {
 
 function computeYearIncome(state) {
   const p = state.plan;
-  const ch = state.ch;
+  let base;
   switch (p.main) {
-    case 'work': return jobIncomeBase(state);
-    case 'work_res': return Math.round(jobIncomeBase(state) * 1.1);
-    case 'workshop': return workshopIncome(state, false);
-    case 'm_delivery': return 12;
-    case 'm_apprentice': return 8;
-    default: return MAIN[p.main]?.income || 0;
+    case 'work': base = jobIncomeBase(state); break;
+    case 'work_res': base = Math.round(jobIncomeBase(state) * 1.1); break;
+    case 'workshop': base = workshopIncome(state, false); break;
+    case 'm_delivery': base = 12; break;
+    case 'm_apprentice': base = 8; break;
+    default: base = baseIncome(state, { id: p.main });
   }
+  const [add, why] = traitIncome(state, p.main, base);
+  for (const w of why) {
+    state.yearLog.causes.push(`${w.label} ${w.d > 0 ? '덕분에' : '때문에'} 올해 수입 ${w.d > 0 ? '+' : ''}${w.d}C`);
+    if (w.ids.length) traitFx(state, w.ids, '수입(C)', w.d);
+  }
+  return base + add;
 }
 
 // ───────── 계절 처리 ─────────
@@ -182,9 +291,21 @@ export function seasonEconomy(state) {
   }
   // 겨울 추위: 열 공급이 낮은 구역에서 외투 없이 지내면 건강이 깎이고 난방비가 든다
   if (state.season === 3 && state.city.districts[ch.home].heat < 40) {
-    if (ch.items.includes('heat_coat')) { ch.cash -= 2; yl.expense += 2; log.push('열축전 외투 재충전 2C'); }
+    const shelter = ch.home === 'ash' && (bondPerk(state, 'toma_winter') ? '토마가 먼저 골목 난로를 돌봤다' : hasTrait(state, 'pos_lamp_keeper') ? '「등불지기」의 난로 장부가 겨울을 지켰다' : null);
+    if (shelter) { log.push(shelter); yl.causes.push(`${shelter}. 추위 피해가 없었다`); }
+    else if (hasTrait(state, 'pos_iron_body')) { log.push('「무쇠 같은 몸」이 한파를 버텼다'); traitFx(state, ['pos_iron_body'], '건강', 3); }
+    else if (ch.items.includes('heat_coat')) { ch.cash -= 2; yl.expense += 2; log.push('열축전 외투 재충전 2C'); }
     else { addStat(state, 'health', -3, log); if (ch.independent) { ch.cash -= 2; yl.expense += 2; } yl.causes.push('난방이 약한 겨울을 외투 없이 보냈다'); }
   }
+  // 몸에 새겨진 특성: 겨울의 흉터와 매연, 다시 일어선 사람의 회복력
+  if (state.season === 3) {
+    if (hasTrait(state, 'neg_scarred')) { addStat(state, 'health', -1, null, true); traitFx(state, ['neg_scarred'], '건강', -1); }
+    if (hasTrait(state, 'neg_frail') && state.city.districts[ch.home].pollution >= 60) { addStat(state, 'health', -2, log, true); traitFx(state, ['neg_frail'], '건강', -2); }
+  }
+  if (hasTrait(state, 'pos_survivor')) { const d = addStat(state, 'health', 1, null, true); if (d) traitFx(state, ['pos_survivor'], '건강', d); }
+  if (hasTrait(state, 'neg_debt_shadow') && ch.debts.length) { addStat(state, 'stress', 1, null, true); traitFx(state, ['neg_debt_shadow'], '스트레스', 1); }
+  if (hasTrait(state, 'neg_overwork') && ch.stress >= 50) { addStat(state, 'health', -1, null, true); traitFx(state, ['neg_overwork'], '건강', -1); }
+  if (bondPerk(state, 'friend_stress')) addStat(state, 'stress', -1, null, true);
   // 스트레스 흐름
   const workStress = p.main === 'work' || p.main === 'work_res' ? (ch.job?.id === 'plumber' ? 3 : 2) : p.main === 'jobhunt' || p.main === 'publicwork' ? 3 : p.main === 'recover' ? -4 : 1;
   addStat(state, 'stress', workStress - 1, null);
@@ -223,7 +344,8 @@ export function yearEndActivities(state) {
       gainSkillXp(state, j.skill, xp(3), log); gainAttrXp(state, j.attr, 3, log);
       ch.apprentice = p.target;
       state.stats['appr_' + p.target] = (state.stats['appr_' + p.target] || 0) + 1;
-      changeRel(state, apprenticeMentor(state, p.target), 4, 3, log, `${j.name} 견습`);
+      const bench = p.target === 'plumber' && hasTrait(state, 'kw_workbench');
+      changeRel(state, apprenticeMentor(state, p.target), bench ? 8 : 4, bench ? 5 : 3, log, bench ? `${j.name} 견습 · 「작업대 아래의 기억」` : `${j.name} 견습`);
       if (state.stats['appr_' + p.target] >= 2 && !state.flags['apprenticeDone_' + p.target]) { state.flags['apprenticeDone_' + p.target] = true; log.push(`${j.name} 견습 수료`); state.yearLog.causes.push(`${j.name} 견습을 2년 채워 수료했다`); }
       break;
     }
@@ -266,6 +388,26 @@ export function yearEndActivities(state) {
     case 'recover': addStat(state, 'stress', -6, log); state.stats.recoverYears = (state.stats.recoverYears || 0) + 1; break;
     case 'mentor': state.stats.mentorYears = (state.stats.mentorYears || 0) + 1; changeRel(state, state.npcs.p_child, 6, 5, log, '제자로 가르쳤다'); break;
     case 'publicwork': state.stats.publicworkYears = (state.stats.publicworkYears || 0) + 1; break;
+    case 'night_market':
+      gainSkillXp(state, 'trade', xp(3), log); gainAttrXp(state, 'speech', 2, log);
+      changeRel(state, state.npcs.p_master, 2, 3, log, '야시장에서 자주 마주쳤다');
+      addRep(state, 'guild', 1, log);
+      state.stats.nightMarketYears = (state.stats.nightMarketYears || 0) + 1;
+      break;
+    case 'rivet_errand': {
+      gainSkillXp(state, 'transport', xp(2), log); gainSkillXp(state, 'trade', 1, log);
+      addRep(state, 'rivet', 4, log); addRep(state, 'office', -2, log);
+      changeRel(state, state.npcs.sera, 3, 2, log, '검은 리벳 심부름을 맡았다');
+      addStat(state, 'stress', 5, log);
+      // 다섯 해에 한 번꼴로 단속에 걸린다
+      if (rollCheck(state, 20)) { ch.cash -= 20; state.yearLog.spent += 20; addRep(state, 'office', -4, log); log.push('단속에 걸려 벌금 −20C'); state.yearLog.causes.push('검은 리벳 심부름 중 시정청 단속에 걸려 벌금을 냈다'); }
+      state.stats.rivetYears = (state.stats.rivetYears || 0) + 1;
+      break;
+    }
+  }
+  // 시정청 공명 감독관: 해마다 수당과 등록 공명자의 평판
+  if (state.flags.inspector && state.age < 66) {
+    ch.cash += 18; state.yearLog.eventIncome += 18; addRep(state, 'office', 1, log); log.push('공명 감독관 수당 +18C');
   }
 
   // 보조 약속
@@ -274,7 +416,7 @@ export function yearEndActivities(state) {
       case 'care': {
         const target = state.npcs.p_guardian.alive && state.age < 40 ? state.npcs.p_guardian : bestNpc(state, ['p_guardian']);
         if (target) changeRel(state, target, 3, 5, log, '곁을 지켰다');
-        addStat(state, 'stress', -5, log); state.stats.careYears = (state.stats.careYears || 0) + 1; break;
+        addStat(state, 'stress', bondPerk(state, 'guardian_care') ? -10 : -5, log); state.stats.careYears = (state.stats.careYears || 0) + 1; break;
       }
       case 'study': gainSkillXp(state, ch.job ? JOBS[ch.job.id].skill : (ch.apprentice ? JOBS[ch.apprentice].skill : 'record'), 2, log); gainAttrXp(state, 'lore', 1, log); break;
       case 'rest': state.stats.restYears = (state.stats.restYears || 0) + 1; break;
@@ -363,7 +505,8 @@ export function promotionStatus(state) {
   const mentor = state.npcs[j.mentor];
   const reasons = [];
   if (ch.skills[j.skill] < next.skill) reasons.push(`${SKILLS[j.skill]} 숙련 ${ch.skills[j.skill]}/${next.skill}`);
-  if (ch.works < next.works) reasons.push(`실적 ${ch.works}/${next.works}`);
+  const works = next.works - (bondPerk(state, 'rival_spur') ? 1 : 0);
+  if (ch.works < works) reasons.push(`실적 ${ch.works}/${works}`);
   if (ch.job.years < next.years) reasons.push(`재직 ${ch.job.years}/${next.years}년`);
   const trustOk = next.trust === 0 || (mentor && mentor.trust >= next.trust) || Object.values(state.rep).some(v => v >= 20);
   if (!trustOk) reasons.push(`${mentor ? shortName(mentor.name) : '멘토'}의 신뢰 ${mentor ? mentor.trust : 0}/${next.trust} 또는 세력 평판 20`);

@@ -172,7 +172,13 @@ class UI {
         if (top && top.dismiss) { e.preventDefault(); this.sfx.play('click'); this.close(top); return; }
       }
       if (inField) return;
-      if (top) { top.keys?.(e, top); this.trapFocus(e, top.box); return; }
+      if (top) {
+        top.keys?.(e, top);
+        // 계획·사건·결산 창 위에서도 특성·인물 같은 서랍은 단축키로 바로 열 수 있다
+        if (!e.defaultPrevented && top.kind !== 'drawer') this.view?.panelKeys?.(e);
+        this.trapFocus(e, top.box);
+        return;
+      }
       this.view?.keys?.(e);
     });
 

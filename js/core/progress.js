@@ -4,6 +4,8 @@ import { withRng } from './rng.js';
 import { shortName } from './util.js';
 import { totalDebt } from './economy.js';
 import { applyEffects, fmt } from './rules.js';
+import { TRAITS, hasTrait, traitName, tierOf } from './traits.js';
+import { GOAL_TRAITS } from '../data/traits.js';
 
 // ───────── 개인 목표 ─────────
 export function goalCandidates(state) {
@@ -72,6 +74,14 @@ export function updateGoals(state) {
     if (!state.uniq[key]) {
       state.uniq[key] = true;
       applyEffects(state, STAGE_REWARDS[id][st], { cause: GOALS[id].name });
+      // 목표와 어울리는 특성이 있으면 단계마다 덧붙는 보상
+      const fit = goalTraitsOf(state, id);
+      if (fit.length) {
+        const bonus = 10 * (st + 1);
+        state.ch.cash += bonus;
+        state.yearLog.eventIncome += bonus;
+        out.push(`${fit.map(t => `「${traitName(t)}」`).join('·')} 덕분에 목표 단계 보상 +${bonus}C`);
+      }
     }
     out.push(`목표 「${GOALS[id].name}」 ${st + 1}단계 완료: ${GOALS[id].stages[st]}`);
     st++;
@@ -82,14 +92,23 @@ export function updateGoals(state) {
   return out;
 }
 
+// 목표와 어울리는 특성 가운데 지금 가진 것 (긍정·열쇠만. 부정 특성은 '이겨 낼 이유'로 따로 보여 준다)
+export function goalTraitsOf(state, id) {
+  return (GOAL_TRAITS[id] || []).filter(t => TRAITS[t].kind !== 'negative' && hasTrait(state, t));
+}
+export function goalTraitList(id) {
+  return (GOAL_TRAITS[id] || []).map(t => ({ id: t, name: TRAITS[t].name, kind: TRAITS[t].kind, icon: TRAITS[t].icon }));
+}
+
 export function goalView(state) {
   if (!state.goal) return null;
   const id = state.goal.id;
   const st = state.goalProgress?.[id] || 0;
-  return { id, name: GOALS[id].name, stage: st, stages: GOALS[id].stages, reward: GOALS[id].reward, done: st >= 3 };
+  return { id, name: GOALS[id].name, stage: st, stages: GOALS[id].stages, reward: GOALS[id].reward, done: st >= 3,
+    traits: goalTraitList(id).map(t => ({ ...t, owned: hasTrait(state, t.id) })) };
 }
 
-// ───────── 업적 (1차 빌드에서 실제로 달성 가능한 24개) ─────────
+// ───────── 업적 (모두 실제로 달성 가능하다) ─────────
 export const ACHIEVEMENTS = [
   { id: 'A001', name: '첫 번째 연말', grade: 'D', desc: '첫 연말 결산을 저장한다.', test: s => s.stats.yearsEnded >= 1 },
   { id: 'A002', name: '내가 고른 길', grade: 'D', desc: '주 활동을 직접 선택하고 그해 결과를 받는다.', test: s => s.history.mains.length >= 1 && s.stats.yearsEnded >= 1 },
@@ -114,6 +133,10 @@ export const ACHIEVEMENTS = [
   { id: 'A068', name: '다시 맞물린 금속', grade: 'C', desc: '금속 친화 또는 정렬 공구로 부품 재사용 제작 3건을 완료한다.', test: s => (s.stats.metalCrafts || 0) >= 3 },
   { id: 'A073', name: '다시 쥔 공구', grade: 'D', desc: '사용 가능한 상태로 기본 공구 하나를 수리한다.', test: s => !!s.flags.toolRepaired },
   { id: 'A091', name: '첫불의 이웃', grade: 'C', desc: '첫불 축제에서 자원 또는 실무로 공동 과제 하나에 기여한다.', test: s => !!s.flags.festivalContrib },
+  { id: 'A140', name: '이겨 낸 그림자', grade: 'C', desc: '부정 특성 하나를 극복해 지운다.', test: s => (s.ch.lostTraits || []).some(t => TRAITS[t.id]?.kind === 'negative') },
+  { id: 'A141', name: '등을 맡기는 사이', grade: 'C', desc: '토마·세라·사빈·엘리안 가운데 한 명과 「믿는 사이」가 된다.', test: s => ['toma', 'sera', 'sabine', 'elian'].some(id => s.npcs[id]?.met && tierOf(s.npcs[id]) >= 4) },
+  { id: 'A142', name: '평생의 인연', grade: 'B', desc: '보호자를 뺀 세 사람과 「평생의 인연」이 된다.', test: s => Object.values(s.npcs).filter(n => n.met && n.id !== 'p_guardian' && tierOf(n) >= 5).length >= 3 },
+  { id: 'A143', name: '열쇠가 연 길', grade: 'B', desc: '갈림길 사건에서 인연이나 열쇠로만 얻는 특성을 하나 얻는다.', test: s => ['pos_lamp_keeper', 'pos_solidarity', 'pos_archivist', 'pos_partner', 'kw_rivet_partner'].some(t => hasTrait(s, t)) },
   { id: 'A133', name: '한 사람의 끝맺음', grade: 'C', desc: '완주 기준을 만족한 삶을 처음으로 결산한다.', test: s => !!s.ending && (s.age >= 28 || Object.keys(s.flags).some(k => k.startsWith('goalDone_'))) },
 ];
 export const GRADE_SCORE = { D: 5, C: 10, B: 20, A: 35, S: 60, SS: 100 };
@@ -144,17 +167,24 @@ export const ENDINGS = {
     text: s => `{fullme}는 ${s.stats.dutiesDone}개의 약속을 날짜 안에 지켰다. 그중 어떤 것은 기록에 남지 않았다. 장례식 날, 기록에 없던 약속을 기억하는 사람이 한 명 더 찾아왔다.` },
   warm_window: { name: '따뜻한 창문', scene: '겨울 저녁 식탁에 모인 사람들', test: s => (s.ch.lifeClass >= 1 || !s.ch.independent) && Object.values(s.npcs).filter(n => n.alive && n.trust >= 40).length >= 3,
     text: () => '마지막 겨울에도 {fullme}의 창문에는 불이 켜져 있었다. 식탁에는 의자가 모자랐고, 사람들은 서서 수프를 먹었다. 대단한 일을 하지 않아도 사람이 모이는 집이 있다는 것을, 그 골목은 알고 있었다.' },
+  // 특성과 인연이 연 길의 끝
+  shadow_broker: { name: '그림자 장부', scene: '법 밖의 장부를 정직하게 닫음', test: s => hasTrait(s, 'kw_rivet_partner') && (s.rep.rivet || 0) >= 10,
+    text: s => `{fullme}의 이름은 시정청 장부 어디에도 크게 적히지 않았다. 대신 검은 리벳의 진짜 장부 한쪽에 ${s.npcs.sera?.alive ? '세라의 서명과 나란히' : '세라가 남긴 서명 아래'} 끝까지 남았다. 은행이 등을 돌린 사람들에게 두 번째 기회를 팔았고, 값은 정직하게 매겼다. 장례식 날 이름을 밝히지 않은 사람들이 꽃을 두고 갔다.` },
+  red_band: { name: '붉은 완장의 행렬', scene: '교대한 밤을 기억하는 사람들의 행렬', test: s => hasTrait(s, 'pos_solidarity') && (s.rep.union || 0) >= 30,
+    text: () => '마지막 행진 날, 공업대의 사이렌이 한 번 길게 울렸다. 붉은 완장을 찬 사람들이 {fullme}의 관을 따라 걸었다. 누가 대신 견디는 걸 그냥 두지 않았던 사람. 행렬 맨 앞의 완장에는 교대한 사람의 표시인 실 한 줄이 덧대어져 있었다.' },
 };
-const ENDING_ORDER = ['local_lamp', 'city_witness', 'named_artisan', 'price_of_trade', 'kept_promise', 'warm_window'];
+const ENDING_ORDER = ['local_lamp', 'city_witness', 'named_artisan', 'price_of_trade', 'kept_promise', 'warm_window', 'shadow_broker', 'red_band'];
 
 // 여러 조건을 달성하면 가장 두드러진 결말을 주 결말로, 나머지는 추가 장면으로 보여준다
 const ENDING_SCORE = {
-  local_lamp: s => (s.stats.localProjects || 0) * 30,
-  city_witness: s => (s.stats.recordsPublished || 0) * 18,
+  local_lamp: s => (s.stats.localProjects || 0) * 30 + (hasTrait(s, 'pos_lamp_keeper') ? 30 : 0),
+  city_witness: s => (s.stats.recordsPublished || 0) * (hasTrait(s, 'pos_archivist') ? 36 : 18),
   named_artisan: s => (Math.max(s.ch.skills.repair, s.ch.skills.trade, s.ch.skills.record) - 3) * 18 + (s.stats.signatureWorks || 0) * 4,
   price_of_trade: s => s.ch.lifeClass * 14 + (s.ch.workshop ? 16 : 0),
   kept_promise: s => (s.stats.dutiesDone || 0) * 9,
   warm_window: s => Object.values(s.npcs).filter(n => n.alive && n.trust >= 40).length * 16,
+  shadow_broker: s => 40 + (s.rep.rivet || 0),
+  red_band: s => 40 + (s.rep.union || 0),
 };
 
 export function evaluateEndings(state) {
@@ -171,8 +201,13 @@ export function funeralAttendees(state) {
 function funeralLine(state, n) {
   const me = shortName(state.ch.name);
   const done = n.duties.filter(d => d.done).length;
+  if ((n.id === 'toma' || n.heirOf === 'toma') && hasTrait(state, 'pos_lamp_keeper')) return `"난로 장부 둘째 서명 칸은 비워 두기로 했어. 거긴 ${me} 자리니까."`;
+  if ((n.id === 'sabine' || n.heirOf === 'sabine') && hasTrait(state, 'pos_solidarity')) return `"그 겨울 밤 교대를 맡아 준 사람이에요. 이번엔 제가 끝까지 서 있을게요."`;
+  if ((n.id === 'elian' || n.heirOf === 'elian') && hasTrait(state, 'pos_archivist')) return `"맨 아래 서랍의 열쇠는 ${me}의 목에서 내려와 다시 제 손에 있습니다. 서랍은 한 번도 잘못 열리지 않았어요."`;
+  if (n.role === 'friend' && hasTrait(state, 'pos_partner')) return `"간판에서 ${me}의 이름은 안 지울 거야. 골목 끝에서 한 약속이니까."`;
   if (n.id === 'toma' || n.heirOf === 'toma') return state.flags.project_ash_boiler ? `"난로 점검표 맨 위 칸은 아직도 ${me}의 이름이야."` : `"${me}는 배관을 두드리는 소리만 듣고도 어디가 아픈지 알았지."`;
   if (n.id === 'sabine' || n.heirOf === 'sabine') return `"${me}는 누가 대신 견디는 걸 그냥 두지 않았어요."`;
+  if ((n.id === 'sera' || n.heirOf === 'sera') && hasTrait(state, 'kw_rivet_partner')) return `"장부 한쪽이 비었네. 그래도 값은 정직하게 매길 거야. 그 사람이 그랬듯이."`;
   if (n.id === 'sera' || n.heirOf === 'sera') return state.stats.bigLoanRepaid ? `"끝까지 갚은 사람은 드물어. 그래서 기억해."` : `"계약서는 깔끔했지. 그 사람다웠어."`;
   if (n.id === 'elian' || n.heirOf === 'elian') return `"약속 장부에 ${me}의 이름은 ${done ? '지킨 쪽에' : '깨끗하게'} 남아 있습니다."`;
   if (n.role === 'friend') return `"같이 배달하던 길, 아직도 그 순서대로 걸어."`;
@@ -205,6 +240,8 @@ export function buildEnding(state, type) {
       goalsDone: Object.keys(state.flags).filter(k => k.startsWith('goalDone_')).map(k => GOALS[k.slice(9)].name),
     },
     moments: pickKey.slice(0, 8),
+    traits: ch.traits.map(t => ({ id: t.id, name: TRAITS[t.id].name, kind: TRAITS[t.id].kind, icon: TRAITS[t.id].icon, age: t.age })),
+    overcome: (ch.lostTraits || []).filter(t => TRAITS[t.id].kind === 'negative').map(t => ({ id: t.id, name: TRAITS[t.id].name, icon: TRAITS[t.id].icon })),
   };
   state.phase = 'ended';
   checkAchievements(state);

@@ -1,11 +1,15 @@
 // 완료 기준 (H)·(U) 항목을 Node에서 검증한다. 사용법: node tests/sim.test.mjs [--quick]
 import * as G from '../js/core/game.js';
 import { playLife, POLICIES } from './play.mjs';
-import { computeChance, setJob } from '../js/core/rules.js';
+import { computeChance, setJob, applyEffects } from '../js/core/rules.js';
 import { eventWeight } from '../js/core/director.js';
 import { EVENTS } from '../js/data/events/index.js';
 import { BACKGROUNDS, APTITUDES, ITEMS } from '../js/data/world.js';
 import { deepClone } from '../js/core/util.js';
+import { startEvent, getChoices as dirChoices, choose as dirChoose } from '../js/core/director.js';
+import { TRAITS, BOND_PERKS, hasTrait, tierOf, gainTrait } from '../js/core/traits.js';
+import { BACKGROUND_KEYWORD } from '../js/data/traits.js';
+import { migrateState } from '../js/core/state.js';
 
 const QUICK = process.argv.includes('--quick');
 const N_LIVES = QUICK ? 1000 : 10000;
@@ -56,12 +60,16 @@ const t0 = Date.now();
 // ───────── 한 해의 루프 ─────────
 {
   const s = G.createGame('chance-test');
+  s.ch.traits = []; // 특성 보정 없이 기본 공식만 본다
   Object.assign(s.ch.attrs, { craft: 6 });
   s.ch.skills.repair = 2;
   s.ch.items = ['tool_basic']; s.ch.equipment = { tool: 'tool_basic', guard: null, aux: null };
   s.ch.stress = 20; s.ch.health = 80; s.ch.load = 0;
   const { chance, parts } = computeChance(s, { attr: 'craft', diff: 6, skill: 'repair', prep: 5 });
   check('기교 6·난도 6·수리 2·공구 +5·준비 +5 → 76%', chance === 76 && ITEMS.tool_basic.bonus.repair === 5, `${chance}% ${JSON.stringify(parts)}`);
+  gainTrait(s, 'pos_dexterous', null, 'test');
+  const withTrait = computeChance(s, { attr: 'craft', diff: 6, skill: 'repair', prep: 5 });
+  check('긍정 특성 「섬세한 손끝」 → 같은 판정 82% (기교 +6%p, 내역에 표시)', withTrait.chance === 82 && withTrait.parts.trait === 6 && withTrait.parts.traitNotes.length === 1, `${withTrait.chance}% · ${withTrait.parts.traitNotes.join(', ')}`);
 }
 {
   // 같은 토큰으로 두 번 선택해도 비용은 한 번만
@@ -87,6 +95,8 @@ const t0 = Date.now();
 {
   const s = playLife('econ-24', 'safe', { stopAtAge: 18 }).s;
   s.ch.home = 'brass'; s.ch.cash = 50; s.ch.debts = []; s.ch.workshop = null;
+  s.ch.traits = []; delete s.flags.guardianHome; // 특성·인연 보정 없는 기준 경제
+  for (const n of Object.values(s.npcs)) { n.trust = 0; n.affinity = 0; }
   setJob(s, 'plumber', 0, null);
   s.city.global.price = 100; s.city.districts.brass.jobs = 60; s.city.factions.union.striking = false;
   s.city.supplyBase = 130; s.city.clocks.supplyChain = 0; s.city.blackout = null; s.flags.tempShelter = null;
@@ -166,7 +176,7 @@ function scanLife(s) {
 check('같은 사건 ID가 5년 안에 다시 나온 경우 0건', lifeStats.repeats === 0, `${lifeStats.repeats}건`);
 check('연속 사건 A: ①→②→③→④, ④는 ② 뒤 2~4년', lifeStats.chainSeen > 0 && lifeStats.chainBad.length === 0, `완결 ${lifeStats.chainSeen}회${lifeStats.chainBad.length ? ' · ' + lifeStats.chainBad.slice(0, 3).join(' / ') : ''}`);
 check('비발현 비전투 정책으로 엔딩 3종 이상 도달', lifeStats.nonAbilityEndings.size >= 3, `${[...lifeStats.nonAbilityEndings].join(', ')} · 한 삶 최대 ${lifeStats.maxEndingsOneLife}개`);
-check('사건 34종이 모두 한 번 이상 등장', lifeStats.eventIds.size >= Object.keys(EVENTS).length, `${lifeStats.eventIds.size}/${Object.keys(EVENTS).length}`);
+check(`사건 ${Object.keys(EVENTS).length}종이 모두 한 번 이상 등장 (열쇠·인연 루트 포함)`, lifeStats.eventIds.size >= Object.keys(EVENTS).length, `${lifeStats.eventIds.size}/${Object.keys(EVENTS).length}`);
 
 // ───────── 사건과 결과: 주입 시험 ─────────
 {
@@ -227,6 +237,97 @@ check('사건 34종이 모두 한 번 이상 등장', lifeStats.eventIds.size >=
   s.city.shortage = 0.02; const w1 = eventWeight(s, def);
   s.city.shortage = 0.06; const w2 = eventWeight(s, def);
   check('공급 부족률 0.05 초과 → 정전 사건 가중치 상승', w2 > w1, `${w1.toFixed(1)} → ${w2.toFixed(1)}`);
+}
+
+// ───────── 특성과 인연 ─────────
+{
+  // 출생 특성: 긍정 ≤1 · 부정 ≤1 · 배경 열쇠 1개, 모두 정의된 특성
+  let bad = 0, pos = 0, neg = 0;
+  const n = QUICK ? 3000 : 20000;
+  for (let i = 0; i < n; i++) {
+    const s = G.createGame('trait-birth-' + i);
+    const ids = s.ch.traits.map(t => t.id);
+    const k = (kind) => ids.filter(id => TRAITS[id]?.kind === kind).length;
+    if (ids.some(id => !TRAITS[id]) || k('positive') > 1 || k('negative') > 1 || !ids.includes(BACKGROUND_KEYWORD[s.ch.background])) bad++;
+    pos += k('positive'); neg += k('negative');
+  }
+  check(`${n} 출생: 긍정 ≤1 · 부정 ≤1 · 배경 열쇠 1개`, bad === 0, `위반 ${bad} · 긍정 ${(pos / n * 100).toFixed(0)}% · 부정 ${(neg / n * 100).toFixed(0)}%`);
+}
+{
+  // 모든 특성은 설명과 효과(또는 여는 길)를 갖고, 모든 열쇠는 실제로 어딘가를 연다
+  const used = new Set();
+  const add = (v) => (Array.isArray(v) ? v : v ? [v] : []).forEach(id => used.add(id));
+  for (const def of Object.values(EVENTS)) {
+    add(def.cond?.trait); add(def.cond?.allTraits); add(def.keys);
+    const nodes = [{ choices: def.choices }, ...Object.values(def.nodes || {})];
+    for (const nd of nodes) for (const c of nd.choices || []) { add(c.trait); add(c.cond?.trait); add(Object.keys(c.check?.traits || {})); }
+  }
+  for (const id of ['kw_market_kid', 'kw_rivet_contact', 'kw_shop_heir', 'kw_paper_house', 'kw_rivet_partner']) if (TRAITS[id]) used.add(id); // 주 활동·공방·채용·대출에서 쓰인다
+  const keys = Object.keys(TRAITS).filter(id => TRAITS[id].kind === 'keyword');
+  const idle = keys.filter(id => !used.has(id));
+  const thin = Object.entries(TRAITS).filter(([, d]) => !d.name || !d.desc || (d.kind === 'keyword' ? !d.opens : !d.effects?.length));
+  check(`열쇠 특성 ${keys.length}개가 모두 사건·활동의 조건으로 쓰인다`, idle.length === 0, idle.join(', ') || `특성 ${Object.keys(TRAITS).length}개`);
+  check('모든 특성에 묘사와 효과(열쇠는 여는 길) 설명', thin.length === 0, thin.map(x => x[0]).join(', '));
+}
+{
+  // 인연이 결정적인 선택지: 「친분」이면 잠기고, 「믿는 사이」가 되면 열려 고유 특성을 준다
+  const s = playLife('bond-gate', 'safe', { stopAtAge: 26 }).s;
+  s.ch.traits = s.ch.traits.filter(t => TRAITS[t.id].kind !== 'keyword' && t.id !== 'pos_lamp_keeper');
+  const toma = s.npcs.toma; toma.alive = true; toma.met = true; toma.retired = false; toma.trust = 30; toma.affinity = 25;
+  s.ch.cash = 100;
+  const def = EVENTS.evt_toma_ledger;
+  startEvent(s, def, { toma: 'toma' }, [], { cause: 'test' });
+  const noKey = dirChoices(s);
+  const auditHidden = !noKey.some(c => c.id === 'audit' && !c.locked);
+  s.phase = 'plan'; s.current = null;
+  gainTrait(s, 'kw_old_ledgers', null, 'test');
+  startEvent(s, def, { toma: 'toma' }, [], { cause: 'test' });
+  const t3 = dirChoices(s);
+  const share3 = t3.find(c => c.id === 'share');
+  const refused = dirChoose(s, 'share', s.current.token);
+  toma.trust = 55; toma.affinity = 25;
+  const t4 = dirChoices(s);
+  const share4 = t4.find(c => c.id === 'share');
+  const r = dirChoose(s, 'share', s.current.token);
+  check('인연 잠금: 토마와 「친분」이면 결정적 선택지가 잠기고 고를 수 없다', share3 && share3.locked === 'bond' && share3.disabled && refused.reason === 'locked' && auditHidden, `친분 ${tierOf({ trust: 30, affinity: 25 })} · ${share3?.disabled} · ${refused.reason}`);
+  check('「믿는 사이」가 되면 열리고, 고르면 「등불지기」를 얻는다', share4 && !share4.locked && r.ok && hasTrait(s, 'pos_lamp_keeper') && r.traits.some(t => t.id === 'pos_lamp_keeper'), `${share4?.rewards.map(x => x.name).join(',')} · ${r.traits?.map(t => t.id).join(',')}`);
+}
+{
+  // 단계가 오르면 기록되고 열쇠 선물이 건네진다
+  const s = playLife('bond-gift', 'safe', { stopAtAge: 22 }).s;
+  const sabine = s.npcs.sabine; sabine.alive = true; sabine.met = true; sabine.trust = 45; sabine.affinity = 18;
+  s.ch.traits = s.ch.traits.filter(t => t.id !== 'kw_red_band');
+  applyEffects(s, [{ t: 'rel', who: 'sabine', trust: 10, aff: 6 }], { cause: 'test' });
+  const logged = s.yearLog.bondChanges.some(b => b.npc === 'sabine' && b.to === 4);
+  check('인연 단계 상승 → 결산 기록 + 「붉은 완장」 선물', tierOf(sabine) === 4 && logged && hasTrait(s, 'kw_red_band'), `단계 ${tierOf(sabine)} · 기록 ${logged}`);
+}
+{
+  // 여러 정책의 삶에서 특성이 실제로 생기고 사라지며, 루트 전용 특성이 모두 한 번 이상 나온다
+  const per = QUICK ? 120 : 400;
+  const seen = new Set(), lost = new Set();
+  let gainedAdult = 0, total = 0;
+  for (const pol of ['safe', 'skill', 'social', 'risky']) for (let i = 0; i < per; i++) {
+    const { s } = playLife(`trait-${pol}-${i}`, pol);
+    total++;
+    for (const t of s.ch.traits) seen.add(t.id);
+    for (const t of s.ch.lostTraits || []) lost.add(t.id);
+    if (s.ch.traits.some(t => t.age >= 14) || (s.ch.lostTraits || []).length) gainedAdult++;
+  }
+  const routeOnly = ['pos_lamp_keeper', 'pos_solidarity', 'pos_archivist', 'pos_partner', 'kw_rivet_partner'];
+  const missing = routeOnly.filter(id => !seen.has(id));
+  check('삶 대부분(≥90%)에서 성장 중 특성이 새로 생긴다', gainedAdult / total >= 0.9, `${gainedAdult}/${total}`);
+  check('루트 전용 특성 5종이 모두 실제 플레이에서 나온다', missing.length === 0, missing.join(', ') || `보유 특성 ${seen.size}종 · 극복 ${lost.size}종`);
+  check('부정 특성이 극복되어 사라지는 삶이 있다', [...lost].some(id => TRAITS[id]?.kind === 'negative'), [...lost].join(', '));
+}
+{
+  // 1차 빌드 저장(특성 칸 없음)도 불러와 끝까지 이어 할 수 있다
+  const s = playLife('old-save', 'safe', { stopAtAge: 24 }).s;
+  const old = deepClone(s);
+  delete old.ch.traits; delete old.ch.lostTraits; delete old.yearLog.traitChanges; delete old.yearLog.bondChanges; delete old.yearLog.traitFx;
+  migrateState(old);
+  let ok = true, why = '';
+  try { continueLife(old, 'safe', 999); } catch (e) { ok = false; why = e.message; }
+  check('특성 없는 옛 저장 → 이전(migrate) 후 끝까지 진행', ok && old.phase === 'ended', why || `${old.age}세 결산`);
 }
 
 const failed = results.filter(r => !r.ok);
