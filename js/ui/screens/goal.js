@@ -53,7 +53,8 @@ export default function goal(ui, root, opts = {}) {
   };
   const confirm = () => {
     if (!sel) return;
-    if (chooseGoal(s, sel)) { ui.autosave(); ui.go('main'); }
+    // 본 게임 직전에 출생 배경 소개를 한 번 보여 준다. 그 화면에서 앱을 닫아도 이어하기가 다시 그 화면으로 연다.
+    if (chooseGoal(s, sel)) { s.flags.originBrief = true; ui.autosave(); ui.go('origin'); }
   };
   root.addEventListener('click', (e) => {
     const t = e.target.closest('.ticket');

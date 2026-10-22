@@ -150,6 +150,8 @@ const ready = (page) => page.waitForSelector('.title-menu .menu-item', { state: 
   for (let i = 0; i < 3; i++) { await page.waitForSelector('.memory-card .choice:not(:disabled)', { state: 'visible' }); await page.waitForTimeout(200); await page.locator('.memory-card .choice').first().tap(); await page.waitForTimeout(500); }
   await page.waitForSelector('.ticket'); await page.locator('.ticket').first().tap();
   await page.tap('[data-act="confirm"]');
+  await page.waitForSelector('.origin-screen [data-act="start"]');
+  await page.tap('.origin-screen [data-act="start"]');
   await page.waitForSelector('.plan-modal [data-act="submit"]');
   await page.evaluate(() => window.__ui.setSetting('speed', 8));
   let ledger = false;

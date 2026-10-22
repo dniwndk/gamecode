@@ -5,6 +5,7 @@ import { stagger } from '../motion.js';
 import * as store from '../store.js';
 import { openSettings, openArchive, installFlow } from './panels.js';
 import * as pwa from '../pwa.js';
+import { needsOrigin } from './origin.js';
 
 export default function title(ui, root) {
   const last = store.latestSlot();
@@ -92,5 +93,6 @@ export function resume(ui, st) {
   if (ph === 'childhood') ui.go('childhood');
   else if (ph === 'goal') ui.go('goal');
   else if (ph === 'ended') ui.go('ending');
+  else if (needsOrigin(st)) ui.go('origin');
   else ui.go('main');
 }
