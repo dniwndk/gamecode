@@ -1,5 +1,5 @@
 // 본 게임 화면: 상단 계기판, 연대기, 오른쪽 메뉴, 하단 진행 장치. 연초 계획·사건·연말 결산은 겹창으로 연다.
-import { esc, icon, frame, btn, chips, sentences, portrait, gauge, updateGauge, divider } from '../dom.js';
+import { esc, icon, frame, btn, chips, sentences, portrait, gauge, updateGauge, divider, touchy } from '../dom.js';
 import { stagger, countUp, shake, reduced } from '../motion.js';
 import { seasonDial, skyline, eventArt, CAT_ICON } from '../art.js';
 import * as G from '../../core/game.js';
@@ -124,7 +124,7 @@ export default function main(ui, root) {
     root.querySelector('[data-act="speed"]').innerHTML = `${icon('fast')}<span>${speed}×</span>`;
     root.querySelector('[data-act="step"]').disabled = !running || stepping;
     const st = root.querySelector('.ctl-status');
-    st.textContent = running ? (paused ? '멈춤 · Space로 재개' : `${SEASONS[s.season]} 진행 중`) : s.phase === 'plan' ? '연초 계획을 세우는 중' : s.phase === 'event' ? '사건 진행 중' : s.phase === 'yearEnd' ? '연말 결산' : '';
+    st.textContent = running ? (paused ? (touchy() ? '멈춤 · ▶ 버튼으로 재개' : '멈춤 · Space로 재개') : `${SEASONS[s.season]} 진행 중`) : s.phase === 'plan' ? '연초 계획을 세우는 중' : s.phase === 'event' ? '사건 진행 중' : s.phase === 'yearEnd' ? '연말 결산' : '';
     const gv = goalView(s);
     root.querySelector('.ctl-goal').innerHTML = gv ? `<span class="cg-label">${icon('star')}${esc(gv.name)}</span><span class="cg-pips">${[0, 1, 2].map(i => `<i class="${i < gv.stage ? 'on' : ''}" data-tip="${esc(gv.stages[i])}"></i>`).join('')}</span>` : '';
     root.querySelector('.dial-holder svg')?.classList.toggle('is-running', running && !paused);
@@ -256,7 +256,7 @@ export default function main(ui, root) {
       const b = s.brief;
       const tabs = [['plan', '계획', 'scroll'], ['news', '소식', 'bell', b.news.length + b.plans.length], ['shop', '상점', 'wrench'], ['money', '금융·치료', 'coin'], ['goal', '목표', 'star']];
       return `
-        <div class="plan-tabs" role="tablist">${tabs.map(([k, l, ic, n]) => `<button class="ptab ${tab === k ? 'on' : ''}" role="tab" aria-selected="${tab === k}" data-act="tab" data-tab="${k}">${icon(ic)}<span>${l}</span>${n ? `<b>${n}</b>` : ''}</button>`).join('')}</div>
+        <div class="plan-tabs scroll-x" role="tablist">${tabs.map(([k, l, ic, n]) => `<button class="ptab ${tab === k ? 'on' : ''}" role="tab" aria-selected="${tab === k}" data-act="tab" data-tab="${k}">${icon(ic)}<span>${l}</span>${n ? `<b>${n}</b>` : ''}</button>`).join('')}</div>
         <div class="body scroll plan-body">${tab === 'plan' ? planTab() : tab === 'news' ? newsTab() : tab === 'shop' ? shopTab() : tab === 'money' ? moneyTab() : goalTab()}</div>
         <div class="plan-foot">${planSummary()}${btn('한 해를 시작한다', 'submit', { cls: 'btn--brass', gems: 'red', attrs: 'data-silent="1" autofocus' })}</div>`;
     };

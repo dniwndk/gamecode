@@ -145,20 +145,22 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   background: linear-gradient(180deg, #3a2c1f, #221912 60%, #1a130d);
   box-shadow: inset 0 0 0 1px var(--b), inset 0 0 0 2px #0a0705, inset 0 1px 0 2px rgba(255, 230, 170, .1), 0 3px 8px rgba(0, 0, 0, .5);
   letter-spacing: .04em;
-  transition: transform var(--t-press) var(--ease-out), box-shadow var(--t-fade), filter var(--t-fade), color var(--t-fade);
+  transition: translate var(--t-hover) var(--ease-soft), scale var(--t-press) var(--ease-out), box-shadow var(--t-fade), filter var(--t-fade), color var(--t-fade);
   user-select: none; -webkit-tap-highlight-color: transparent;
   overflow: hidden;
 }
 :root[data-theme="ivory"] .btn { background: linear-gradient(180deg, #fbf3e1, #ead9b6); color: #2c2015; border-color: #6b4f2c; box-shadow: inset 0 0 0 1px #c39a4f, inset 0 1px 0 2px rgba(255, 255, 255, .6), 0 3px 8px rgba(70, 45, 15, .25); }
-.btn:hover:not(:disabled) { filter: brightness(1.15); box-shadow: inset 0 0 0 1px var(--brass-hi), inset 0 0 0 2px #0a0705, inset 0 1px 0 2px rgba(255, 230, 170, .14), 0 3px 8px rgba(0, 0, 0, .5), var(--glow); }
-.btn:active:not(:disabled), .btn.is-pressed { transform: translateY(1px) scale(.97); filter: brightness(.92); }
+.btn:hover:not(:disabled) { filter: brightness(1.15); translate: 0 -1px; box-shadow: inset 0 0 0 1px var(--brass-hi), inset 0 0 0 2px #0a0705, inset 0 1px 0 2px rgba(255, 230, 170, .14), 0 6px 14px rgba(var(--umbra), .55), var(--glow); }
+.btn:active:not(:disabled), .btn.is-pressed { translate: 0 1px; scale: .97; filter: brightness(.92); }
 .btn:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.4); }
 .btn--brass {
   color: #2a1a06; text-shadow: 0 1px 0 rgba(255, 240, 200, .5);
   background: linear-gradient(180deg, #f6dc8f, #d0a24a 40%, #a47326 70%, #c99a3e);
-  box-shadow: inset 0 0 0 1px #fff0c0, inset 0 -2px 0 1px rgba(80, 50, 10, .45), 0 4px 10px rgba(0, 0, 0, .55);
+  box-shadow: inset 0 0 0 1px #fff0c0, inset 0 -2px 0 1px rgba(80, 50, 10, .45), 0 4px 10px rgba(var(--umbra), .6);
   border-color: #3d2808;
 }
+/* 주 행동 버튼은 화면에서 가장 먼저 눈에 들어와야 한다: 황동 테두리 고리와 올렸을 때의 빛 */
+.btn--brass:hover:not(:disabled) { filter: brightness(1.08) saturate(1.05); box-shadow: inset 0 0 0 1px #fff6d8, inset 0 -2px 0 1px rgba(80, 50, 10, .4), 0 0 0 3px rgba(242, 217, 142, .22), 0 8px 20px rgba(var(--umbra), .6), 0 0 26px rgba(242, 200, 110, .38); }
 :root[data-theme="ivory"] .btn--brass { color: #2a1a06; background: linear-gradient(180deg, #f6dc8f, #d0a24a 40%, #a47326 70%, #c99a3e); border-color: #3d2808; }
 .btn--copper { background: linear-gradient(180deg, #8a3d1f, #5a2410 70%); box-shadow: inset 0 0 0 1px var(--copper-hi), inset 0 0 0 2px #200b04, 0 3px 8px rgba(0, 0, 0, .5); color: #ffe9d8; }
 .btn--ghost { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
@@ -267,11 +269,33 @@ input[type="range"].slider { -webkit-appearance: none; appearance: none; width: 
 .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -9px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff1c2, #c99a3e 45%, #5e3f12); border: 1px solid #2a1a06; box-shadow: 0 2px 4px rgba(0, 0, 0, .6); }
 .slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff1c2, #c99a3e 45%, #5e3f12); border: 1px solid #2a1a06; }
 
+/* ───────── 겹창 장식 (참고 1·3) ───────── */
+/* 옆면 보석 받침: 큰 겹창 좌우 가운데. 보석 뒤의 빛이 천천히 숨 쉰다 */
+/* 그림자 필터는 그림(svg)에만: 숨 쉬는 빛까지 필터 안에 두면 매 프레임 필터를 다시 그린다 */
+.finial { position: absolute; top: 50%; z-index: 4; width: 32px; height: 110px; margin-top: -55px; pointer-events: none; animation: fade-in 500ms var(--ease-out) 200ms both; }
+.finial svg { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(var(--umbra), .75)); }
+.finial.l { left: -25px; }
+.finial.r { right: -25px; transform: scaleX(-1); }
+.finial::after { content: ''; position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 214, 130, .4), rgba(240, 165, 48, .1) 45%, transparent 70%); will-change: opacity, transform; animation: gem-breathe 3.6s ease-in-out infinite; }
+@keyframes gem-breathe { 0%, 100% { opacity: .45; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.12); } }
+:root[data-theme="ivory"] .finial::after { opacity: .5; }
+@media (max-width: 900px) { .finial { display: none; } }
+
+/* 테두리 리벳 줄: 위아래 황동 띠 안쪽에 일정한 간격으로 박힌 징 */
+.modal.frame::after, .drawer.frame::after {
+  content: ''; position: absolute; left: 52px; right: 52px; top: 8px; bottom: 8px; pointer-events: none; z-index: 1;
+  --rv: radial-gradient(circle at 50% 50%, #fff1c2 0 .8px, #c99a3e 1.4px, #5e3f12 2.3px, rgba(0, 0, 0, .5) 2.8px, transparent 3.2px);
+  background: var(--rv) center top / 38px 7px repeat-x, var(--rv) center bottom / 38px 7px repeat-x;
+  opacity: .6;
+}
+:root[data-theme="ivory"] .modal.frame::after, :root[data-theme="ivory"] .drawer.frame::after { opacity: .45; }
+
 /* ───────── 서랍·모달 ───────── */
-.scrim { position: fixed; inset: 0; z-index: 40; background: rgba(6, 4, 2, .62); backdrop-filter: blur(2px); }
+/* 가림막은 한 가지 색: 흐림(backdrop-filter) 위에 그라디언트를 얹으면 뒤 화면이 움직일 때마다 다시 그려 끊긴다 */
+.scrim { position: fixed; inset: 0; z-index: 40; background: rgba(var(--umbra), .64); backdrop-filter: blur(2px); }
 :root[data-theme="ivory"] .scrim { background: rgba(60, 40, 15, .35); }
 .modal-wrap { position: fixed; inset: 0; z-index: 41; display: grid; place-items: center; padding: 28px 16px; pointer-events: none; }
-.modal { pointer-events: auto; width: min(760px, 100%); max-height: calc(100dvh - 56px); display: flex; flex-direction: column; padding: 34px 22px 20px; }
+.modal { pointer-events: auto; min-width: 0; width: min(760px, 100%); max-height: calc(100dvh - 56px); display: flex; flex-direction: column; padding: 34px 22px 20px; }
 .modal > .body { flex: 1; min-height: 0; }
 .drawer {
   position: fixed; z-index: 41; top: 12px; bottom: 12px; right: 12px; width: min(520px, calc(100vw - 24px));

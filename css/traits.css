@@ -264,7 +264,7 @@
 .birth-traits > small { display: flex; align-items: center; gap: 6px; font-size: .8em; color: var(--brass-hi); letter-spacing: .08em; }
 .birth-traits > small .muted { letter-spacing: 0; font-size: .9em; }
 .pop-chip { animation: tk-pop 700ms var(--ease-spring) both; animation-delay: calc(1600ms + var(--i, 0) * 140ms); }
-.mc-traits { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: -4px 0 12px; }
+.mc-traits { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 16px 0 14px; padding-top: 12px; border-top: 1px dashed rgba(90, 60, 20, .3); }
 .mc-traits small { font-size: .74em; letter-spacing: .2em; color: var(--parchment-dim); }
 .mc-traits .opt-traits { justify-content: center; }
 .choice--paper .c-main { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
