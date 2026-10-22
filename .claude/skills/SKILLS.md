@@ -1,7 +1,7 @@
 # 게임 개발 스킬 모음 — 설명과 사용법
 
 기획서를 첨부해 게임을 빌드할 때 쓰는 Claude Code 스킬 모음. 기존 스킬 3개(`game-blueprint`, `self-check`, `redesign`)에
-공개 저장소 7곳에서 고른 스킬 47개를 더했다. 모두 `.claude/skills/<이름>/SKILL.md`에 있어 이 저장소에서 Claude Code를 열면 바로 쓰인다.
+공개 저장소 8곳에서 고른 스킬 48개를 더했다. 모두 `.claude/skills/<이름>/SKILL.md`에 있어 이 저장소에서 Claude Code를 열면 바로 쓰인다.
 
 ## 쓰는 법
 
@@ -87,6 +87,16 @@
 | `ux-designer` | 일반 UX 지침 + 참고 문서 30개(모바일 UX, WCAG 2.2, 문구, 온보딩, 다국어, 알림 등). 검토·제작·조언 세 모드 | szilu/ux-designer-skill |
 | `ui-ux-pro-max` | 스타일 79종·팔레트 192개·글꼴 조합 74개·UX 지침 119개를 검색하는 로컬 데이터. 웹 게임의 메뉴·소개 페이지 디자인 시스템 뽑기용 (Python 3 필요, 외부 패키지 없음) | ui-ux-pro-max-skill |
 
+| `impeccable` | 디자인 감독 스킬. 제품 정보 인터뷰(PRODUCT.md) → 무작위 방향 배정(concept-seed)으로 뻔한 디자인 회피 → 제작 → 자동 검사기(AI 티 나는 패턴 27종) → 마감 검토 에이전트 → DESIGN.md 기록. 명령 23개(`critique`, `audit`, `polish`, `typeset`, `layout`, `bolder`, `quieter` 등) | pbakaus/impeccable |
+
+`impeccable` 쓰는 법
+- `/impeccable` — 상황에 맞는 명령 메뉴. 새 화면은 그냥 "메인 화면 디자인해 줘"라고 하면 인터뷰부터 시작한다.
+- `/impeccable critique <파일>`, `/impeccable audit <파일>`, `/impeccable polish <파일>` — 기존 화면 검토·감사·마감.
+- 자동 검사기만 돌리기: `.claude/skills/impeccable/scripts/impeccable detect <파일 또는 폴더>`
+- 처음 실행할 때 보조 실행 파일을 공식 GitHub 릴리스에서 받는다(sha256 검증). Node 불필요.
+- 파일을 고칠 때마다 검사기가 자동으로 도는 훅은 **꺼 둔 상태**다. 켜려면 `/impeccable hooks on`.
+- 보조 에이전트 4개(`impeccable-finish-reviewer` 등)는 `.claude/agents/`에 있다. 설치 후 새로 연 세션부터 잡힌다.
+
 `ui-ux-pro-max` 직접 검색 예: `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "dark gothic game menu" --design-system -p "게임 이름"`
 
 **요청 예시**
@@ -118,6 +128,7 @@
 | [AlterLab-IEU/AlterLab_GameForge](https://github.com/AlterLab-IEU/AlterLab_GameForge) | 5f5148d | MIT (`_licenses/`) | game-ux-designer, game-accessibility-specialist |
 | [szilu/ux-designer-skill](https://github.com/szilu/ux-designer-skill) | c869d32 | MIT (`_licenses/`) | ux-designer |
 | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | 623a9a9 | MIT (`_licenses/`) | ui-ux-pro-max |
+| [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | 8644175 | Apache-2.0 (`_licenses/`) | impeccable + `.claude/agents/impeccable-*` 4개 |
 
 수정한 곳: `router/SKILL.md` 맨 위에 "이 저장소에서는 스킬이 `.claude/skills/<이름>/`에 평평하게 설치돼 있다"는 안내를 덧붙였다. 또 다음을 고쳤다.
 - `game-ux-designer`·`game-accessibility-specialist`: 원본 저장소의 `docs/` 문서(게임 디자인 이론 등)를 각 스킬의 `references/`에 함께 넣고 경로를 바꿨다.
