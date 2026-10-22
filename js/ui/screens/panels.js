@@ -1,6 +1,7 @@
 // 서랍 패널: 나·인물·도시·장부·기록·설정, 그리고 타이틀의 기록 보관소.
 import { esc, icon, frame, btn, bar, portrait, divider } from '../dom.js';
 import * as store from '../store.js';
+import * as pwa from '../pwa.js';
 import { SKILL_XP } from '../../core/rules.js';
 import { goalView, ACHIEVEMENTS, ENDINGS } from '../../core/progress.js';
 import { totalDebt, promotionStatus, annualCost } from '../../core/game.js';
@@ -222,6 +223,7 @@ export function openSettings(ui) {
       <div class="set-row col"><b>내보내기 · 가져오기</b><textarea id="io" class="input io" rows="3" placeholder="저장 문자열을 붙여 넣거나, 내보내기를 누른다"></textarea>
         <div class="row">${ui.state ? btn('내보내기', 'export', { cls: 'btn--sm', ico: 'copy' }) : ''}${ui.state ? btn('파일로', 'download', { cls: 'btn--sm', ico: 'save' }) : ''}${btn('가져오기', 'import', { cls: 'btn--sm', ico: 'door' })}<label class="btn btn--sm file-btn">${icon('scroll')}<span>파일 열기</span><input type="file" accept=".json,application/json" hidden data-file="1"></label></div></div>
     </section>
+    ${deviceHtml()}
     ${ui.screen !== 'title' ? `<div class="set-foot">${btn('타이틀로 돌아가기', 'title', { cls: 'btn--ghost', ico: 'home' })}</div>` : ''}`;
   const entry = ui.open(frame(`<div class="body scroll panel-body settings">${html()}</div>`, { title: '환경 설정', close: true }), {
     kind: 'drawer', title: '환경 설정',
@@ -240,12 +242,16 @@ export function openSettings(ui) {
       if (k === 'download') download(ui);
       if (k === 'import') doImport(body().querySelector('#io').value);
       if (k === 'title') { ui.quicksave(); ui.go('title'); return; }
+      if (k === 'install') { installFlow(ui); return; }
+      if (k === 'update') { ui.quicksave(); pwa.applyUpdate(); return; }
       if (['tog', 'theme', 'motion', 'save'].includes(k)) redraw();
     },
   });
   entry.panel = 'settings';
   const body = () => entry.box.querySelector('.panel-body');
   const redraw = () => { const sc = body().scrollTop; body().innerHTML = html(); body().scrollTop = sc; };
+  // 설치 요청·새 판본이 서랍을 연 뒤에 도착해도 기기 칸이 바로 바뀐다
+  const off = pwa.onChange(() => { if (entry.box.isConnected) redraw(); else off(); });
   entry.box.addEventListener('input', (e) => {
     const k = e.target.dataset.set;
     if (!k) return;
@@ -268,6 +274,45 @@ export function openSettings(ui) {
     ui.toast(`${r.state.ch.name}의 삶을 불러왔다`, { ico: 'door' });
     import('./title.js').then(m => m.resume(ui, r.state));
   }
+  return entry;
+}
+
+// 기기 칸: 배포 빌드(오프라인·설치 가능)이거나 브라우저가 설치를 제안할 때만 보인다
+function deviceHtml() {
+  if (!pwa.version && !pwa.canPrompt()) return '';
+  let row;
+  if (pwa.standalone()) row = `<div class="set-row"><div><b>설치된 앱으로 실행 중</b><small>홈 화면 아이콘으로 열렸다. 인터넷 없이도 이어 할 수 있다</small></div></div>`;
+  else if (pwa.canPrompt()) row = `<div class="set-row"><div><b>기기에 설치</b><small>홈 화면·바탕화면에 아이콘을 두고 전체 화면으로 연다</small></div>${btn('설치', 'install', { cls: 'btn--sm btn--brass', ico: 'plus' })}</div>`;
+  else if (pwa.ios()) row = `<div class="set-row"><div><b>홈 화면에 추가</b><small>사파리 공유 버튼에서 「홈 화면에 추가」를 누른다</small></div>${btn('방법', 'install', { cls: 'btn--sm', ico: 'share' })}</div>`;
+  else row = `<div class="set-row"><div><b>기기에 설치</b><small>브라우저 메뉴의 「앱 설치」나 「홈 화면에 추가」로 아이콘을 둘 수 있다</small></div></div>`;
+  const upd = pwa.updateReady() ? `<div class="set-row"><div><b>새 판본 도착</b><small>저장하고 다시 열어 적용한다</small></div>${btn('적용', 'update', { cls: 'btn--sm btn--brass', ico: 'gear' })}</div>` : '';
+  const ver = pwa.version ? `<p class="small muted set-ver">판본 ${esc(pwa.version)} · 한 번 연 뒤에는 오프라인으로도 플레이할 수 있다</p>` : '';
+  return `<section class="set-group"><h4 class="sec-title">${icon('home')}기기</h4>${row}${upd}${ver}</section>`;
+}
+
+// 설치: 크롬 계열은 브라우저 설치 창을 띄우고, iOS 사파리는 단계 안내 서랍을 연다
+export async function installFlow(ui) {
+  if (pwa.canPrompt()) {
+    const r = await pwa.promptInstall();
+    if (r === 'dismissed') ui.toast('설치를 미뤘다', { ico: 'home', sub: '환경 설정 · 기기 칸에서 언제든 다시 할 수 있다' });
+    return;
+  }
+  openInstallGuide(ui);
+}
+
+export function openInstallGuide(ui) {
+  const top = ui.top();
+  if (top?.panel === 'install') { ui.close(top); return; }
+  if (top?.kind === 'drawer') ui.close(top, true);
+  const steps = pwa.ios()
+    ? [['share', '사파리 아래(아이패드는 위) 막대의 <b>공유</b> 버튼을 누른다.'], ['plus', '목록을 내려 <b>「홈 화면에 추가」</b>를 고른다.'], ['check', '오른쪽 위 <b>「추가」</b>를 누르면 황동 톱니 아이콘이 생긴다.']]
+    : [['settings', '브라우저 오른쪽 위 <b>메뉴(⋮)</b>를 연다.'], ['plus', '<b>「앱 설치」</b> 또는 <b>「홈 화면에 추가」</b>를 고른다.'], ['check', '홈 화면·바탕화면의 황동 톱니 아이콘으로 연다.']];
+  const entry = ui.open(frame(`<div class="body scroll panel-body install-guide">
+      <div class="ig-hero"><img src="icons/icon-192.png" width="96" height="96" alt=""><div><b>황동의 생애</b><small>아이콘으로 열면 주소창 없이 전체 화면으로 돌아가고, 한 번 연 뒤에는 인터넷 없이도 이어 할 수 있다.</small></div></div>
+      <ol class="ig-steps">${steps.map(([ico, t], i) => `<li class="opt"><span class="ig-no">${i + 1}</span>${icon(ico)}<span>${t}</span></li>`).join('')}</ol>
+      <p class="small muted">저장은 이 기기의 브라우저 안에 남는다. 브라우저와 설치한 앱은 저장을 따로 쓰므로, 옮길 때는 환경 설정 · 내보내기로 저장 문자열을 옮긴다.</p>
+    </div>`, { title: '홈 화면에 두기', close: true }), { kind: 'drawer', title: '홈 화면에 두기' });
+  entry.panel = 'install';
   return entry;
 }
 

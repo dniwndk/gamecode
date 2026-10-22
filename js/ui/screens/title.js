@@ -3,7 +3,8 @@ import { esc, icon } from '../dom.js';
 import { astrolabe, skyline } from '../art.js';
 import { stagger } from '../motion.js';
 import * as store from '../store.js';
-import { openSettings, openArchive } from './panels.js';
+import { openSettings, openArchive, installFlow } from './panels.js';
+import * as pwa from '../pwa.js';
 
 export default function title(ui, root) {
   const last = store.latestSlot();
@@ -15,6 +16,13 @@ export default function title(ui, root) {
     { act: 'archive', label: '기록 보관소', en: 'ARCHIVE', ico: 'codex', sub: ui.account.lives ? `지나온 삶 ${ui.account.lives} · 업적 ${ui.account.achievements.length}` : '' },
     { act: 'settings', label: '환경 설정', en: 'SETTINGS', ico: 'settings' },
   ];
+  // 홈 화면 설치: 브라우저가 설치를 제안했거나 iOS 사파리일 때만, 설치해서 연 뒤에는 숨긴다
+  const install = { act: 'install', label: '기기에 설치', en: 'INSTALL', ico: 'plus', sub: pwa.ios() && !pwa.canPrompt() ? '홈 화면에 두고 전체 화면으로' : '아이콘 하나로 바로 열기' };
+  const menuItem = (it, i) => `
+          <button class="menu-item${it.act === 'install' ? ' menu-item--install' : ''}" data-act="${it.act}" ${it.disabled ? 'disabled' : ''} ${i === (lastInfo ? 0 : 1) ? 'autofocus' : ''}>
+            <span class="mi-text"><span class="mi-label">${esc(it.label)}</span><span class="mi-en">${it.en}</span>${it.sub ? `<span class="mi-sub">${esc(it.sub)}</span>` : ''}</span>
+            <span class="mi-ico">${icon(it.ico)}</span>
+          </button>`;
   root.innerHTML = `
     <div class="title-screen">
       <div class="title-bg" aria-hidden="true">
@@ -34,15 +42,22 @@ export default function title(ui, root) {
         <p class="tagline">열세 살의 봄부터 마지막 겨울까지.<br>한 사람의 선택이 한 골목의 온도를 바꾼다.</p>
       </header>
       <nav class="title-menu" aria-label="주 메뉴">
-        ${items.map((it, i) => `
-          <button class="menu-item" data-act="${it.act}" ${it.disabled ? 'disabled' : ''} ${i === (lastInfo ? 0 : 1) ? 'autofocus' : ''}>
-            <span class="mi-text"><span class="mi-label">${esc(it.label)}</span><span class="mi-en">${it.en}</span>${it.sub ? `<span class="mi-sub">${esc(it.sub)}</span>` : ''}</span>
-            <span class="mi-ico">${icon(it.ico)}</span>
-          </button>`).join('')}
+        ${items.map(menuItem).join('')}${pwa.installable() ? menuItem(install, items.length) : ''}
       </nav>
       <footer class="title-foot">같은 씨앗과 같은 선택은 언제나 같은 삶을 만든다 · 글꼴 리디바탕</footer>
     </div>`;
   stagger(root, '.menu-item');
+  // 설치 요청은 화면이 그려진 뒤에 올 때가 많다: 그때 메뉴 끝에 한 줄을 떠오르게 붙이고, 설치되면 걷는다
+  const nav = root.querySelector('.title-menu');
+  const off = pwa.onChange(() => {
+    const cur = nav.querySelector('[data-act="install"]');
+    if (pwa.installable() && !cur) {
+      nav.insertAdjacentHTML('beforeend', menuItem(install, items.length));
+      stagger(nav, '.menu-item--install');
+    } else if (!pwa.installable() && cur) {
+      cur.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateX(12px)' }], { duration: 240, fill: 'forwards' }).finished.then(() => cur.remove());
+    }
+  });
 
   root.addEventListener('click', (e) => {
     const a = e.target.closest('[data-act]');
@@ -56,10 +71,12 @@ export default function title(ui, root) {
     }
     if (act === 'archive') openArchive(ui, { onLoad: (st) => resume(ui, st) });
     if (act === 'settings') openSettings(ui);
+    if (act === 'install') installFlow(ui);
   });
 
   return {
     particles: 'embers',
+    dispose: off,
     keys(e) {
       const list = [...root.querySelectorAll('.menu-item:not(:disabled)')];
       const i = list.indexOf(document.activeElement);

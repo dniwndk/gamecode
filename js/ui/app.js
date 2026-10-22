@@ -4,6 +4,7 @@ import { $, $$, el, esc, frame, icon, finials } from './dom.js';
 import { iris, irisIntro, stagger, Particles, reduced } from './motion.js';
 import { Sfx } from './audio.js';
 import * as store from './store.js';
+import * as pwa from './pwa.js';
 import { ACHIEVEMENTS } from '../core/progress.js';
 import title from './screens/title.js';
 import birth from './screens/birth.js';
@@ -35,6 +36,10 @@ class UI {
     if (params.has('seed')) this.pendingSeed = params.get('seed');
     this.intro = irisIntro(document.fonts?.ready);
     this.go('title', {}, true);
+    pwa.initPwa({
+      onUpdate: () => this.toast('새 판본이 도착했다', { ico: 'gear', sub: '지금 적용하면 저장하고 다시 연다', stay: true, action: { label: '적용', run: () => { this.quicksave(); pwa.applyUpdate(); } } }),
+      onInstalled: () => this.toast('기기에 설치했다', { ico: 'home', sub: '이제 홈 화면에서 바로 열린다' }),
+    });
   }
 
   // ───────── 설정 ─────────
@@ -134,13 +139,31 @@ class UI {
   top() { return this.stack[this.stack.length - 1]; }
 
   // ───────── 알림 ─────────
-  toast(text, { ico = 'bell', sub = '', medal = false } = {}) {
+  // action이 있으면 버튼을 단다. stay면 누를 때까지 남는다(새 판본 알림처럼 놓치면 안 되는 것).
+  // 한꺼번에 몰린 알림(업적 여러 개 등)은 화면을 덮지 않게 줄을 세운다: 휴대폰 2장, 큰 화면 3장까지
+  toast(text, opts = {}) {
+    const max = matchMedia('(max-width: 760px)').matches ? 2 : 3;
+    this.toastQ ||= [];
+    if (($$('.toast-zone > .toast:not(.leaving)').length >= max || this.toastQ.length) && !opts.action) { this.toastQ.push([text, opts]); return; }
+    this.showToast(text, opts);
+  }
+  nextToast() {
+    const n = this.toastQ?.shift();
+    if (n) this.showToast(...n);
+  }
+  showToast(text, { ico = 'bell', sub = '', medal = false, action = null, stay = false } = {}) {
     let zone = $('.toast-zone');
     if (!zone) { zone = el('<div class="toast-zone" aria-live="polite"></div>'); document.body.appendChild(zone); }
-    const t = el(frame(`${medal ? `<svg class="medal" aria-hidden="true"><use href="#gear-small"/></svg>` : icon(ico)}<div><div class="t-main">${esc(text)}</div>${sub ? `<div class="t-sub">${esc(sub)}</div>` : ''}</div>`, { cls: 'toast frame--sm frame--dark', tag: 'div' }));
+    const t = el(frame(`${medal ? `<svg class="medal" aria-hidden="true"><use href="#gear-small"/></svg>` : icon(ico)}<div class="t-text"><div class="t-main">${esc(text)}</div>${sub ? `<div class="t-sub">${esc(sub)}</div>` : ''}</div>${action ? `<button class="btn btn--sm btn--brass t-act"><span>${esc(action.label)}</span></button>${stay ? `<button class="t-x" aria-label="닫기">${icon('close')}</button>` : ''}` : ''}`, { cls: `toast frame--sm frame--dark${action ? ' toast--act' : ''}`, tag: 'div' }));
     zone.appendChild(t);
     t.animate([{ opacity: 0, transform: 'translateY(-18px) scale(.95)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' });
-    setTimeout(() => { t.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 300, fill: 'forwards' }).finished.then(() => t.remove()); }, 3600);
+    let gone = false;
+    const dismiss = () => { if (gone) return; gone = true; t.classList.add('leaving'); t.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 300, fill: 'forwards' }).finished.then(() => { t.remove(); this.nextToast(); }); };
+    if (action) {
+      t.querySelector('.t-act').addEventListener('click', () => { this.sfx.play('click'); dismiss(); action.run(); });
+      t.querySelector('.t-x')?.addEventListener('click', () => { this.sfx.play('click'); dismiss(); });
+    }
+    if (!stay) setTimeout(dismiss, action ? 8000 : 3600);
   }
   announceAchievements(ids) {
     for (const id of ids || []) {

@@ -695,3 +695,24 @@ p, .ev-text, .mc-text, .ep-text, .c-hint, .opt-desc { text-wrap: pretty; }
   .menu-item.side { min-height: 60px; }
   .menu-item.side .mi-ico { width: 36px; height: 36px; }
 }
+
+/* ───────── 기기 설치 · 새 판본 ───────── */
+.menu-item--install .mi-ico { color: var(--copper-hi); }
+.menu-item--install .mi-en { color: var(--copper); }
+.toast .t-text { flex: 1; min-width: 0; }
+.toast--act { padding-right: 8px; }
+.toast .t-act { flex: none; }
+.toast .t-x { flex: none; display: grid; place-items: center; width: 40px; height: 44px; margin-left: -4px; border: 0; background: none; color: var(--text-faint); cursor: pointer; border-radius: 8px; transition: color 160ms; }
+.toast .t-x:hover, .toast .t-x:focus-visible { color: var(--brass-hi); }
+.toast .t-x .ico { width: 18px; height: 18px; }
+.set-ver { margin: 8px 0 0; }
+.install-guide .ig-hero { display: flex; align-items: center; gap: 16px; padding: 4px 0 14px; border-bottom: 1px dotted var(--line); margin-bottom: 14px; }
+.install-guide .ig-hero img { flex: none; width: 84px; height: 84px; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .55)); animation: spin 40s linear infinite; }
+.install-guide .ig-hero b { display: block; font-weight: 400; font-size: 1.15em; color: var(--brass-hi); letter-spacing: .06em; }
+.install-guide .ig-hero small { display: block; margin-top: 4px; font-size: .82em; color: var(--text-dim); }
+.ig-steps { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ig-steps .opt { flex-direction: row; align-items: center; gap: 12px; }
+.ig-steps .ig-no { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-size: .85em; color: #2a1a06; background: radial-gradient(circle at 35% 30%, #fff1c2, #d7ac55 45%, #7a531a); box-shadow: 0 0 0 1px #2c1d08; }
+.ig-steps .ico { flex: none; width: 22px; height: 22px; color: var(--brass-hi); }
+.ig-steps b { font-weight: 400; color: var(--brass-hi); }
+:root[data-motion="reduced"] .install-guide .ig-hero img { animation: none; }

@@ -1,0 +1,60 @@
+# 검사 → 배포 빌드 → GitHub Pages 공개.
+# PR에서는 검사와 빌드까지만, main에 들어오면 https://<사용자>.github.io/<저장소>/ 에 올린다.
+name: 빌드·배포
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 검사와 빌드
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 규칙·시뮬레이션 검사 (headless 기준 · 감사)
+        run: npm test
+      - name: 배포 빌드
+        run: npm run build
+      - name: 브라우저 준비
+        run: npx playwright install --with-deps chromium
+      - name: 배포본 검사 (설치형 웹앱 · 오프라인 · 휴대폰 플레이)
+        run: node tests/dist.spec.mjs
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        with:
+          path: dist
+
+  deploy:
+    name: GitHub Pages 공개
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+        continue-on-error: true
+        with:
+          enablement: true
+      - id: deployment
+        uses: actions/deploy-pages@v4
