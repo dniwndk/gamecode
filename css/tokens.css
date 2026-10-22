@@ -1,0 +1,136 @@
+/* 디자인 토큰: 색·글꼴·간격·모션. 테마는 data-theme(dark|ivory), 대비는 data-contrast. */
+@font-face {
+  font-family: 'RIDIBatang';
+  src: url('../fonts/RIDIBatang.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@property --iris {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+@property --fill {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+:root {
+  --font-body: 'RIDIBatang', 'Noto Serif KR', 'Nanum Myeongjo', serif;
+  --fs: 17px;
+  --lh: 1.75;
+
+  /* 잉크와 가죽 */
+  --ink-0: #0b0806;
+  --ink-1: #15110d;
+  --ink-2: #1e1711;
+  --ink-3: #2a2017;
+  --leather: #3b2a1b;
+  --leather-hi: #57402a;
+  --wood: #4a3322;
+  --wood-dark: #2b1d13;
+
+  /* 금속 */
+  --brass: #c9a24a;
+  --brass-hi: #f2d98e;
+  --brass-mid: #a47a2c;
+  --brass-lo: #5e3f12;
+  --copper: #b4532e;
+  --copper-hi: #e08a5c;
+  --iron: #3a3632;
+  --iron-hi: #6d665e;
+
+  /* 공명과 위험 */
+  --teal: #7cc4bb;
+  --teal-dim: #2f6b64;
+  --rose: #c8507a;
+  --danger: #d0603a;
+  --ok: #8fbf6a;
+
+  /* 종이 */
+  --parchment: #e6d6b4;
+  --parchment-2: #d5bf93;
+  --parchment-3: #b89c6c;
+  --parchment-ink: #2e2114;
+  --parchment-dim: #6a5236;
+
+  /* 문자 */
+  --text: #efe4cc;
+  --text-dim: #b9a888;
+  --text-faint: #85765d;
+
+  --bg: var(--ink-1);
+  --panel: var(--ink-2);
+  --panel-raised: var(--ink-3);
+  --line: rgba(201, 162, 74, .38);
+  --line-strong: rgba(242, 217, 142, .7);
+  --shadow: 0 18px 40px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .5);
+  --glow: 0 0 18px rgba(242, 217, 142, .35);
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+
+  --gap: 16px;
+  --tap: 44px;
+
+  /* 모션 (motion.css에서 줄임 동작으로 덮어쓴다) */
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-in: cubic-bezier(.55, 0, .7, .2);
+  --t-press: 120ms;
+  --t-fade: 180ms;
+  --t-rise: 320ms;
+  --t-btn: 280ms;
+  --t-stagger: 60ms;
+  --t-gauge: 600ms;
+
+  --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.012 .09' numOctaves='4' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .1  0 0 0 0 .06  0 0 0 0 .02  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  --stain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.006' numOctaves='4' seed='11' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .3  0 0 0 0 .12  0 0 0 1.1 -.42'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>");
+
+  color-scheme: dark;
+}
+
+/* 상아 주간 테마: 밝은 종이 책상 위의 황동 */
+:root[data-theme="ivory"] {
+  --ink-0: #cdbb96;
+  --ink-1: #e9dcc0;
+  --ink-2: #f4ead6;
+  --ink-3: #fbf4e4;
+  --leather: #c9b28a;
+  --leather-hi: #dccaa5;
+  --wood: #b59670;
+  --wood-dark: #8b6c49;
+  --text: #2c2015;
+  --text-dim: #5b4630;
+  --text-faint: #8a7356;
+  --line: rgba(110, 76, 22, .38);
+  --line-strong: rgba(110, 76, 22, .75);
+  --brass-hi: #a8782a;
+  --brass: #94681f;
+  --teal: #2c7d73;
+  --rose: #a23561;
+  --danger: #a8401f;
+  --ok: #4f7f2c;
+  --shadow: 0 14px 30px rgba(70, 45, 15, .25), 0 2px 5px rgba(70, 45, 15, .2);
+  --glow: 0 0 14px rgba(168, 120, 42, .25);
+  color-scheme: light;
+}
+
+/* 고대비: 장식보다 판독성 */
+:root[data-contrast="high"] {
+  --text: #fff8e8;
+  --text-dim: #e8dcc0;
+  --text-faint: #c9b994;
+  --line: rgba(242, 217, 142, .8);
+  --parchment-dim: #3e2c18;
+}
+:root[data-theme="ivory"][data-contrast="high"] {
+  --text: #120b04;
+  --text-dim: #2c1e10;
+  --text-faint: #4a3720;
+}

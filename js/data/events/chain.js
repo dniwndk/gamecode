@@ -1,0 +1,72 @@
+// 연속 사건 A 「빌려 온 겨울」: ① 공동 난로의 마지막 압력 → ② 불법 열 우회로 → ③ 제보자의 이름 → ④ 지역 보일러의 주인
+
+export default [
+  {
+    id: 'evt_heater_last_pressure', title: '공동 난로의 마지막 압력', category: 'chain', tags: ['ash', 'G07', 'plumber', 'shortage'], base: 24, cooldown: 5,
+    // 18세 이상, 재의 골목 거주 또는 방문(상호회 일), 상호회 접점 인물 생존, 겨울, 5년 내 미발생
+    cond: { minAge: 18, seasons: [3], notFlags: ['chainA_started'], when: s => s.ch.home === 'ash' || (s.stats.communityYears || 0) >= 1 || (s.ch.job?.id === 'plumber' && s.city.districts.ash.heat < 55) },
+    roles: { contact: 'toma' },
+    text: '저녁 배급을 앞두고 공동 난로의 압력계가 멎었다. {@contact|가} 장갑을 벗어 배관 위에 올린다. 계기판은 차갑지만 벽 너머에서는 금속이 얇게 우는 소리가 난다. 주민들은 오늘 밤 열이 돌아올지 묻고 있다.',
+    choices: [
+      { id: 'hire', label: '전문 수리공을 부른다', cost: { cash: 12 }, hint: '확정 비용 · 난로 복구',
+        ok: { text: '수리공은 두 시간 만에 압력계를 갈았다. {@contact|는} 다음 점검 날짜 옆에 당신 이름을 적었다. "공동 운영 이야기를 언제 한번 하자."', effects: [{ t: 'rel', who: 'contact', trust: 6, aff: 3 }, { t: 'goal', k: 'survey' }, { t: 'flag', k: 'chainA_started' }, { t: 'schedule', ev: 'evt_heat_bypass', after: [1, 2], invalid: '{@contact}에게서 편지가 왔다. 난로 문제는 상호회가 다른 경로로 정리했다고 한다.' }], cause: '공동 난로 수리비를 냈다' } },
+      { id: 'self', label: '내가 압력계를 고친다', check: { attr: 'craft', diff: 6, skill: 'repair' }, failHint: '실패 시 도구 수선비 4C · 스트레스 +6 · 압력 기록 단서',
+        ok: { text: '당신이 새 압력계를 끼우자 바늘이 천천히 돌아왔다. {@contact|는} 다음 달 점검 날짜 옆에 당신의 이름을 적었다.', effects: [{ t: 'rel', who: 'contact', trust: 8, aff: 5 }, { t: 'work' }, { t: 'skill', k: 'repair', xp: 2 }, { t: 'goal', k: 'survey' }, { t: 'flag', k: 'chainA_started' }, { t: 'schedule', ev: 'evt_heat_bypass', after: [1, 2], invalid: '{@contact}에게서 편지가 왔다. 난로 문제는 상호회가 다른 경로로 정리했다고 한다.' }], cause: '공동 난로 수리로 토마의 신뢰가 높아졌다' },
+        fail: { text: '바늘은 끝내 움직이지 않았다. 대신 압력 기록지에서 이상한 파형을 찾았다. 밤에는 주민들이 이웃집으로 흩어져 잤다.', effects: [{ t: 'cash', v: -4 }, { t: 'stat', k: 'stress', v: 6 }, { t: 'flag', k: 'pressureClue' }, { t: 'goal', k: 'survey' }, { t: 'flag', k: 'chainA_started' }, { t: 'schedule', ev: 'evt_heat_bypass', after: [1, 2] }] } },
+      { id: 'gather', label: '주민을 모아 지원을 요청한다', check: { attr: 'speech', diff: 6 }, failHint: '실패 시 시간만 쓴다',
+        ok: { text: '골목 회의에서 상호회 예비비를 쓰기로 했다. 비용은 면제되었고, 그 회의록이 골목의 첫 공식 장부가 되었다.', effects: [{ t: 'rel', who: 'contact', trust: 5, aff: 3 }, { t: 'rep', f: 'mutual', v: 5 }, { t: 'goal', k: 'survey' }, { t: 'contrib' }, { t: 'flag', k: 'chainA_started' }, { t: 'schedule', ev: 'evt_heat_bypass', after: [1, 2] }] },
+        fail: { text: '사람들은 모였지만 결정은 나지 않았다. 다음 날 {@contact|가} 자기 돈으로 부품을 샀다.', effects: [{ t: 'stat', k: 'stress', v: 3 }, { t: 'goal', k: 'survey' }, { t: 'flag', k: 'chainA_started' }, { t: 'schedule', ev: 'evt_heat_bypass', after: [1, 2] }] } },
+      { id: 'evac', label: '임시 대피를 돕는다', cost: { sub: true }, hint: '무상 · 주민 안전, 난로는 미복구',
+        ok: { text: '노인과 아이들을 공장 기숙사 휴게실로 옮겼다. 난로는 사흘 뒤 다른 기관이 고쳤다. 그 사흘 동안 아무도 아프지 않았다.', effects: [{ t: 'district', d: 'ash', k: 'safety', v: 2 }, { t: 'rel', who: 'contact', trust: 4, aff: 5 }, { t: 'goal', k: 'survey' }, { t: 'flag', k: 'chainA_started' }, { t: 'schedule', ev: 'evt_heat_bypass', after: [1, 2] }] } },
+    ],
+  },
+  {
+    id: 'evt_heat_bypass', title: '벽 너머로 새는 열', category: 'chain', tags: ['ash', 'brass'], chainOnly: true, cooldown: 0,
+    cond: { minAge: 18 },
+    roles: { contact: 'toma', union: 'sabine', clerk: 'elian', witness: 'p_senior' },
+    text: '공동 난로는 또 고장 났다. 이번에는 {@contact|가} 압력 기록을 몇 달 치 모아 왔다. 밤 열한 시만 되면 압력이 똑같이 떨어진다. 그 시각은 옆 공장 야간조가 시작되는 때다. 누군가 골목의 열을 몰래 공장 쪽으로 돌리고 있다.',
+    choices: [
+      { id: 'audit', label: '기록을 정리해 공식 감사를 요청한다', check: { attr: 'lore', diff: 6, skill: 'record', support: 'clerk' }, failHint: '실패 시 감사가 늦어진다',
+        ok: { text: '{@clerk|이} 기록 원본에 봉인을 찍었다. 감사 청구서는 다음 주에 접수되었다.', effects: [{ t: 'flag', k: 'bypass_audit' }, { t: 'rel', who: 'clerk', trust: 5 }, { t: 'rep', f: 'sanctum', v: 3 }], next: 'witness' },
+        fail: { text: '서류 양식이 맞지 않았다. 감사는 한 계절 늦어지겠지만 길은 열려 있다.', effects: [{ t: 'flag', k: 'bypass_audit' }, { t: 'stat', k: 'stress', v: 3 }], next: 'witness' } },
+      { id: 'negotiate', label: '주민과 공장의 비용 분담 협상을 준비한다', check: { attr: 'speech', diff: 8, support: 'union' }, failHint: '실패 시 노동연맹과 공장 사이 긴장',
+        ok: { text: '{@union|이} 공장 노동자 대표를 데려왔다. 그들도 우회로의 존재를 몰랐다. 협상 테이블에 공장장이 앉기로 했다.', effects: [{ t: 'flag', k: 'bypass_negotiate' }, { t: 'rel', who: 'union', trust: 6 }, { t: 'rep', f: 'union', v: 4 }], next: 'witness' },
+        fail: { text: '공장장은 만나 주지 않았다. 노동연맹 안에서도 의견이 갈렸다.', effects: [{ t: 'flag', k: 'bypass_negotiate' }, { t: 'global', k: 'tension', v: 2 }], next: 'witness' } },
+      { id: 'cut', label: '우회 밸브를 임시로 잠근다', irreversible: true, hint: '골목 열 즉시 회복 · 공장 일자리 영향',
+        ok: { text: '밸브를 잠그자 그날 밤 난로가 빨갛게 달아올랐다. 다음 날 아침, 공장 야간조 열두 명이 일감 없이 돌아갔다.', effects: [{ t: 'flag', k: 'bypass_cut' }, { t: 'district', d: 'ash', k: 'heat', v: 4 }, { t: 'district', d: 'brass', k: 'jobs', v: -3 }, { t: 'rep', f: 'guild', v: -4 }], next: 'witness' } },
+      { id: 'listen', label: '배관에 귀를 대고 우회로의 위치를 짚는다', cond: { abilityOrDevice: ['pressure'] }, cost: { load: 8 }, tag: 'resonance',
+        ok: { text: '벽 속 흐름이 두 갈래로 갈라지는 지점이 또렷하게 들렸다. 분필 표시 하나로 반나절 걸릴 조사가 끝났다. 증거는 충분했다.', effects: [{ t: 'count', k: 'pressureFinds' }, { t: 'flag', k: 'bypass_audit' }, { t: 'work' }], next: 'witness' } },
+    ],
+    nodes: {
+      witness: {
+        text: '조사 도중 공장 배관 반장 {@witness|가} 몰래 찾아왔다. 우회로를 설치하라는 지시서를 직접 봤다고 한다. 그가 증언하면 사건은 빨리 끝난다. 그러나 반장의 이름이 알려지면 그는 내일부터 일자리가 없다.',
+        choices: [
+          { id: 'expose', label: '실명 증언을 부탁한다', irreversible: true, hint: '빠른 해결 · 제보자 위험',
+            ok: { text: '{@witness|는} 이름을 걸었다. 감사는 한 달 만에 끝났다. 그리고 그는 정말로 다음 주에 해고 통지를 받았다.', effects: [{ t: 'flag', k: 'witnessExposed' }, { t: 'rel', who: 'witness', trust: -6, aff: -4 }, { t: 'district', d: 'ash', k: 'heat', v: 2 }, { t: 'schedule', ev: 'evt_boiler_decision', after: [2, 4], invalid: '지역 보일러 문제는 시정청이 직접 처리했다는 통지가 왔다.' }], cause: '제보자의 실명 증언으로 우회로가 드러났다' } },
+          { id: 'anon', label: '익명 증거로 정리해 기록소에 맡긴다', check: { attr: 'lore', diff: 6, skill: 'record' }, failHint: '실패 시 조사가 길어진다',
+            ok: { text: '지시서 사본과 압력 기록, 근무표를 맞대니 이름 없이도 설명이 되었다. 기록소 원본에는 제보자 칸이 검게 칠해졌다.', effects: [{ t: 'record' }, { t: 'rel', who: 'witness', trust: 10, aff: 6 }, { t: 'rep', f: 'sanctum', v: 4 }, { t: 'schedule', ev: 'evt_boiler_decision', after: [2, 4], invalid: '지역 보일러 문제는 시정청이 직접 처리했다는 통지가 왔다.' }], cause: '제보자를 보호한 채 우회로 증거를 공개했다' },
+            fail: { text: '증거 하나가 부족했다. 조사는 해를 넘겼지만, 제보자는 무사했다.', effects: [{ t: 'rel', who: 'witness', trust: 6 }, { t: 'stat', k: 'stress', v: 4 }, { t: 'schedule', ev: 'evt_boiler_decision', after: [3, 4] }] } },
+          { id: 'myself', label: '내가 본 것만으로 대신 증언한다', hint: '스트레스 +8 · 노동연맹 평판',
+            ok: { text: '청문회장에서 당신은 압력 기록과 직접 들은 소리만 말했다. 반장의 이름은 끝까지 나오지 않았다. 나오는 길에 손이 떨렸다.', effects: [{ t: 'stat', k: 'stress', v: 8 }, { t: 'rep', f: 'union', v: 6 }, { t: 'rel', who: 'witness', trust: 8, aff: 6 }, { t: 'record' }, { t: 'schedule', ev: 'evt_boiler_decision', after: [2, 4] }], cause: '직접 청문회에서 증언했다' } },
+        ],
+      },
+    },
+  },
+  {
+    id: 'evt_boiler_decision', title: '지역 보일러의 주인', category: 'chain', tags: ['ash', 'G07'], chainOnly: true, cooldown: 0,
+    cond: { minAge: 18 },
+    roles: { contact: 'toma', clerk: 'elian', sera: 'sera' },
+    text: '우회로 사건이 정리되고 몇 해가 지났다. 재의 골목에 새 지역 보일러를 들일 예산이 생겼다. 누가 운영하느냐가 문제다. 주민 협동 운영에는 기술자와 회계 담당이, 시정청 편입에는 공개 장부가, 기업 계약에는 가격 상한 협상이 필요하다. {@contact|는} 당신을 바라본다.',
+    choices: [
+      { id: 'coop', label: '주민 협동 운영을 꾸린다', check: { attr: 'lore', diff: 6, skill: 'repair', support: 'contact' }, failHint: '실패 시 임시 지원만 남는다',
+        ok: { text: '기술은 당신이, 회계는 {@contact}의 상호회가 맡았다. 첫 겨울, 보일러 앞에 주민 서른 명의 이름이 새겨진 동판이 걸렸다.', effects: [{ t: 'project', id: 'ash_boiler', name: '재의 골목 협동 보일러' }, { t: 'districtBonus', d: 'ash', v: 10 }, { t: 'district', d: 'ash', k: 'heat', v: 6 }, { t: 'rep', f: 'mutual', v: 10 }, { t: 'rel', who: 'contact', trust: 10, aff: 8 }, { t: 'work' }], cause: '재의 골목 보일러를 주민 협동으로 세웠다' },
+        fail: { text: '회계 담당을 구하지 못했다. 보일러 예산은 다음 해로 넘어갔고, 그 겨울은 임시 지원 열로 버텼다. 몇 집은 다른 구역으로 이사했다.', effects: [{ t: 'district', d: 'ash', k: 'heat', v: 2 }, { t: 'stat', k: 'stress', v: 5 }, { t: 'loss' }, { t: 'schedule', ev: 'evt_boiler_decision', after: [1, 2], invalid: '보일러 예산은 결국 시정청 일반 회계로 돌아갔다.' }] } },
+      { id: 'office', label: '공개 장부를 조건으로 시정청에 편입한다', check: { attr: 'lore', diff: 6, skill: 'record', support: 'clerk' }, failHint: '실패 시 편입이 1년 늦어진다',
+        ok: { text: '보일러는 시정청 자산이 되었고, 운영 장부는 매 계절 골목 게시판에 붙는다. {@clerk|이} 장부 양식을 직접 그려 주었다.', effects: [{ t: 'project', id: 'ash_boiler', name: '재의 골목 공영 보일러' }, { t: 'districtBonus', d: 'ash', v: 8 }, { t: 'district', d: 'ash', k: 'heat', v: 5 }, { t: 'rep', f: 'office', v: 8 }, { t: 'record' }], cause: '공개 장부 조건으로 보일러를 공영화했다' },
+        fail: { text: '시정청 심사가 해를 넘겼다. 그사이 골목은 다시 공동 난로에 기댔다.', effects: [{ t: 'stat', k: 'stress', v: 4 }, { t: 'schedule', ev: 'evt_boiler_decision', after: [1, 2] }] } },
+      { id: 'contract', label: '가격 상한을 걸고 기업과 계약한다', check: { attr: 'speech', diff: 8, skill: 'trade' }, failHint: '실패 시 상한 없는 계약',
+        ok: { text: '동업회 계열 회사가 보일러를 세웠다. 계약서 11조에 "열 요금 연 3% 이상 인상 금지"가 들어갔다. 빠르고, 깔끔하고, 조금 낯설었다.', effects: [{ t: 'project', id: 'ash_boiler', name: '재의 골목 계약 보일러' }, { t: 'districtBonus', d: 'ash', v: 8 }, { t: 'district', d: 'ash', k: 'heat', v: 6 }, { t: 'rep', f: 'guild', v: 8 }, { t: 'rep', f: 'mutual', v: -3 }], cause: '가격 상한을 걸고 보일러 계약을 맺었다' },
+        fail: { text: '상한 조항은 빠졌다. 보일러는 들어왔지만 두 번째 겨울에 요금이 올랐다.', effects: [{ t: 'districtBonus', d: 'ash', v: 5 }, { t: 'global', k: 'price', v: 2 }, { t: 'rep', f: 'mutual', v: -5 }, { t: 'loss' }] } },
+    ],
+  },
+];
