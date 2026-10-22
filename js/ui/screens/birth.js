@@ -1,4 +1,5 @@
-// 출생 기록: 운명 카드 네 장이 차례로 뒤집힌다. 이름과 씨앗을 정하고 삶을 시작한다.
+// 출생 기록: 추첨으로 정해진 운명 카드 네 장이 차례로 뒤집히고 「확정」 봉인이 찍힌다.
+// 배경을 포함한 출생 결과는 다시 뽑거나 씨앗으로 바꿀 수 없다. 플레이어가 정하는 것은 이름뿐이다.
 import { esc, icon, frame, btn, divider, touchy } from '../dom.js';
 import { stagger, reduced } from '../motion.js';
 import { createGame } from '../../core/game.js';
@@ -9,7 +10,8 @@ import { BACKGROUNDS, FAMILIES, APTITUDES, ABILITIES, DISTRICTS, OTHER_DISTRICTS
 const placeName = (id) => DISTRICTS[id]?.name || OTHER_DISTRICTS[id] || id;
 
 export default function birth(ui, root) {
-  let seed = ui.pendingSeed ? normalizeSeed(ui.pendingSeed) : freshSeed();
+  // 주소의 ?seed=는 시험·재현용 통로다. 화면에서는 씨앗을 고치거나 다시 뽑을 수 없다.
+  const seed = ui.pendingSeed ? normalizeSeed(ui.pendingSeed) : freshSeed();
   ui.pendingSeed = null;
   let name = '';
   let s = createGame(seed);
@@ -33,11 +35,11 @@ export default function birth(ui, root) {
     return `<li><span class="a-name">${esc(label)}</span><span class="pips" aria-label="${esc(label)} ${v}">${Array.from({ length: 6 }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}</span><span class="a-val">${v}</span></li>`;
   }).join('');
 
-  const draw = (animate = true) => {
+  const draw = () => {
     const cs = cards(s);
     root.innerHTML = `
       <div class="birth-screen">
-        <header class="screen-head rise"><div class="plaque">출생 기록 · 171년</div><p class="head-sub">도시는 당신이 태어난 자리부터 정해 두었다. 나머지는 당신이 고른다.</p></header>
+        <header class="screen-head rise"><div class="plaque">출생 기록 · 171년</div><p class="head-sub">태어날 자리는 고를 수 없다. 도시의 추첨기가 찍어 낸 출발선 위에서, 이름만이 당신의 몫이다.</p></header>
         <div class="fate-row">
           ${cs.map((c, i) => `
             <article class="flip-card ${c.rare ? 'is-rare' : ''}" style="--i:${i}" aria-label="${esc(c.k)}: ${esc(c.title)}">
@@ -48,6 +50,7 @@ export default function birth(ui, root) {
                   <h3>${esc(c.title)}</h3>
                   <ul>${c.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
                   <div class="tf-foot">${esc(c.foot)}</div>
+                  <span class="fc-seal" aria-hidden="true">${icon('lock')}<b>확정</b></span>
                 </div>
               </div>
             </article>`).join('')}
@@ -56,18 +59,20 @@ export default function birth(ui, root) {
           ${frame(`<ul class="attr-list">${attrsHtml(s)}</ul><p class="muted small">능력치 합계 24 · 주 자질 ${esc(APTITUDES[s.ch.aptitude].name)}</p>${birthTraits(s)}`, { cls: 'attr-panel frame--sm', title: '타고난 능력' })}
           ${frame(`
             <div class="field"><label for="nm">이름</label><input id="nm" class="input" maxlength="16" placeholder="${esc(s.ch.name)}" value="${esc(name)}" autocomplete="off"></div>
-            <div class="field"><label for="sd">출생 씨앗</label><div class="seed-row"><input id="sd" class="input mono" value="${esc(seed)}" spellcheck="false" autocomplete="off"><button class="btn btn--sm btn--icon" data-act="apply-seed" aria-label="씨앗 적용" data-tip="입력한 씨앗으로 다시 태어난다">${icon('check')}</button></div></div>
-            <p class="muted small">같은 씨앗과 같은 선택은 언제나 같은 삶을 만든다.</p>
+            <div class="field"><span class="field-label" id="sd-label">출생 씨앗</span><div class="seed-lock" role="group" aria-labelledby="sd-label">${icon('lock')}<code id="sd" class="mono">${esc(seed)}</code></div></div>
+            <p class="muted small">배경과 가정, 자질과 공명은 추첨으로 정해졌고 다시 뽑을 수 없다. 시작하기 전에 배경이 어떤 삶을 여는지 한 번 더 짚어 준다.</p>
             ${divider()}
-            <div class="birth-actions">${btn('다른 운명', 'reroll', { ico: 'dice', cls: 'btn--ghost' })}${btn('이 삶을 시작한다', 'start', { cls: 'btn--brass', gems: 'red' })}</div>
+            <div class="birth-actions">${btn('이 삶을 시작한다', 'start', { cls: 'btn--brass', gems: 'red' })}</div>
           `, { cls: 'name-panel frame--sm', title: '서명' })}
         </div>
         <button class="btn btn--ghost btn--sm back-btn" data-act="back">${icon('chevron')}<span>타이틀</span></button>
       </div>`;
     const flips = [...root.querySelectorAll('.flip-card')];
-    if (animate && !reduced()) {
+    if (!reduced()) {
       flips.forEach((f, i) => setTimeout(() => { f.classList.add('is-flipped'); ui.sfx.play(f.classList.contains('is-rare') ? 'bell' : 'page'); }, 420 + i * 300));
-    } else flips.forEach(f => f.classList.add('is-flipped'));
+      // 넷이 다 뒤집히면 봉인이 차례로 찍힌다
+      setTimeout(() => { flips.forEach(f => f.classList.add('is-sealed')); ui.sfx.play('stamp'); }, 420 + flips.length * 300 + 420);
+    } else flips.forEach(f => f.classList.add('is-flipped', 'is-sealed'));
     stagger(root, '.birth-actions .btn');
   };
   draw();
@@ -76,20 +81,10 @@ export default function birth(ui, root) {
   root.addEventListener('input', (e) => {
     if (e.target.id === 'nm') { name = e.target.value.trim().slice(0, 16); rebuild(); }
   });
-  root.addEventListener('keydown', (e) => {
-    if (e.target.id === 'sd' && e.key === 'Enter') { e.preventDefault(); applySeed(); }
-  });
-  const applySeed = () => {
-    const v = root.querySelector('#sd').value.trim();
-    if (!v) return;
-    seed = normalizeSeed(v); rebuild(); draw();
-  };
   root.addEventListener('click', (e) => {
     const a = e.target.closest('[data-act]');
     if (!a) return;
     const act = a.dataset.act;
-    if (act === 'reroll') { seed = freshSeed(); rebuild(); draw(); ui.sfx.play('gear'); }
-    if (act === 'apply-seed') applySeed();
     if (act === 'start') { ui.state = s; ui.go('childhood'); }
     if (act === 'back') ui.go('title');
   });

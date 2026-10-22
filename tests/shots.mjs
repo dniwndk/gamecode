@@ -58,6 +58,10 @@ for (const [tag, v] of Object.entries(VIEWS)) {
   await page.waitForTimeout(500);
   await shot('04-goal');
   await click('[data-act="confirm"]');
+  await page.waitForSelector('.origin-screen');
+  await page.waitForTimeout(2200);
+  await shot('04b-origin');
+  await click('.origin-screen [data-act="start"]');
 
   // 40대의 삶을 만들어 본 화면을 본다
   await page.waitForSelector('.plan-modal');

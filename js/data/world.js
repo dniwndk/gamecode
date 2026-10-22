@@ -25,25 +25,32 @@ export const OTHER_DISTRICTS = {
 };
 
 // 기본 배경 6종 (만분율 가중치). 구역 후보는 [구역, 가중치, 1차 생활 구역]
+// 배경은 출생 때 추첨으로 정해지고 플레이어가 바꿀 수 없다. icon·intro는 본 게임 전 배경 소개 화면에 쓴다.
 export const BACKGROUNDS = {
   factory: { name: '공장 노동자 가구', w: 3000, cash: 12, perk: '견습 추천인', household: 1,
     origins: [['brass', 70, 'brass'], ['ash', 30, 'ash']], subSkills: ['repair', 'transport'],
-    strength: '기술 인맥과 견습 기회', burden: '공해 노출과 불안정한 고용' },
+    strength: '기술 인맥과 견습 기회', burden: '공해 노출과 불안정한 고용',
+    icon: 'gear', intro: '교대 사이렌이 하루를 셋으로 나누는 집. 보호자의 작업복에는 늘 기름과 매연 냄새가 배어 있었다.' },
   workshop: { name: '소규모 공방 가구', w: 2000, cash: 25, perk: '공용 작업 도구', household: 1,
     origins: [['market', 70, 'market'], ['brass', 30, 'brass']], subSkills: ['repair', 'trade'],
-    strength: '제작 경험과 단골', burden: '가족 사업의 부채' },
+    strength: '제작 경험과 단골', burden: '가족 사업의 부채',
+    icon: 'wrench', intro: '가게 앞 작업대가 곧 식탁이었다. 단골이 맡긴 고장 난 물건이 그달의 끼니를 정했다.' },
   admin: { name: '행정직 가구', w: 1200, cash: 45, perk: '문서 교육', household: 2,
     origins: [['hill', 60, 'market'], ['sanctum', 40, 'market']], subSkills: ['record', 'trade'],
-    strength: '문서 능력과 제도 정보', burden: '높은 기대와 평판 압력' },
+    strength: '문서 능력과 제도 정보', burden: '높은 기대와 평판 압력',
+    icon: 'quill', intro: '서랍마다 서식이 쌓인 집. 도장 하나의 무게와 빈칸 하나의 값을 일찍 배웠다.' },
   transport: { name: '운송 노동자 가구', w: 1800, cash: 18, perk: '운송조합 인연', household: 1,
     origins: [['dock', 60, 'market'], ['rail', 40, 'brass']], subSkills: ['transport', 'trade'],
-    strength: '이동과 외부 소식', burden: '보호자의 장기 부재' },
+    strength: '이동과 외부 소식', burden: '보호자의 장기 부재',
+    icon: 'anchor', intro: '보호자는 화물을 따라 떠났다가 계절이 바뀌어야 돌아왔다. 집에는 먼 곳의 소식이 사람보다 먼저 닿았다.' },
   migrant: { name: '이주민 공동가구', w: 1200, cash: 10, perk: '공동 돌봄', household: 0,
     origins: [['ash', 60, 'ash'], ['dock', 40, 'ash']], subSkills: ['trade', 'medicine'],
-    strength: '강한 상호부조', burden: '시민 서류와 거주 불안' },
+    strength: '강한 상호부조', burden: '시민 서류와 거주 불안',
+    icon: 'people', intro: '여러 가족이 한 지붕과 한 난로를 나눠 쓰는 집. 서류는 늘 모자랐고 내미는 손은 늘 넉넉했다.' },
   sponsor: { name: '후원기관 양육', w: 800, cash: 8, perk: '기본 숙식과 교육', household: 0,
     origins: [['bell', 60, 'ash'], ['garden', 40, 'market']], subSkills: ['medicine', 'record'],
-    strength: '교육 지원과 동료', burden: '후원 계약과 진로 제한' },
+    strength: '교육 지원과 동료', burden: '후원 계약과 진로 제한',
+    icon: 'shield', intro: '후원원의 긴 기숙사에서 자랐다. 종소리에 맞춰 먹고, 배우고, 잠들었다.' },
 };
 
 export const FAMILIES = {

@@ -53,6 +53,9 @@ async function toPlan(page, seed) {
   await page.waitForSelector('.ticket');
   await page.locator('.ticket').first().click();
   await page.click('[data-act="confirm"]');
+  // 본 게임 직전 출생 배경 소개 (한 번)
+  await page.waitForSelector('.origin-screen [data-act="start"]');
+  await page.click('.origin-screen [data-act="start"]');
   await page.waitForSelector('.plan-modal [data-act="submit"]');
 }
 // 자동 진행을 끝까지 돌리며 사건·결산을 처리한다
@@ -78,18 +81,58 @@ async function playYears(page, years, onEvent, onLedger) {
   await page.goto(`${BASE}?seed=E2E-SEED-ONE`);
   await page.click('[data-act="new"]');
   await page.waitForSelector('.birth-screen');
-  const seed1 = await page.inputValue('#sd');
+  const seed1 = (await page.textContent('#sd')).trim();
   const cards1 = await page.locator('.fc-front h3').allTextContents();
   await page.reload();
   await page.click('[data-act="new"]');
   await page.waitForSelector('.birth-screen');
-  const seed2 = await page.inputValue('#sd');
+  const seed2 = (await page.textContent('#sd')).trim();
   const cards2 = await page.locator('.fc-front h3').allTextContents();
   check('출생 화면에 시드 표시, 새로고침해도 같은 출생 결과', /^[0-9A-F]{4}(-[0-9A-F]{4}){7}$/.test(seed1) && seed1 === seed2 && cards1.join() === cards2.join(), `${seed1} · ${cards1.join('/')}`);
+  // 출생 배경은 추첨으로 정해진다: 다시 뽑기·씨앗 입력이 없고, 이름 칸만 고칠 수 있다
+  const lock = await page.evaluate(() => ({ reroll: !!document.querySelector('[data-act="reroll"], [data-act="apply-seed"]'), seedInput: !!document.querySelector('.birth-screen input#sd'), inputs: [...document.querySelectorAll('.birth-screen input')].map(i => i.id) }));
+  await page.waitForFunction(() => document.querySelectorAll('.flip-card.is-sealed').length === 4, null, { timeout: 5000 }).catch(() => {});
+  const sealed = await page.locator('.flip-card.is-sealed').count();
+  check('출생 배경은 추첨으로 확정: 다시 뽑기·씨앗 입력 없음, 이름만 입력, 확정 봉인', !lock.reroll && !lock.seedInput && lock.inputs.join() === 'nm' && sealed === 4, JSON.stringify({ ...lock, sealed }));
 
   // 글꼴
   const font = await page.evaluate(async () => { await document.fonts.ready; return { fam: getComputedStyle(document.querySelector('.fc-front h3')).fontFamily, ok: document.fonts.check('16px RIDIBatang') }; });
   check('본문 글꼴 RIDIBatang · document.fonts.check', /RIDIBatang/.test(font.fam) && font.ok, `${font.fam} · ${font.ok}`);
+  await ctx.close();
+}
+
+// ───────── 1b. 본 게임 전 출생 배경 소개: 추첨된 배경을 한 번만 보여 준다 ─────────
+{
+  const { ctx, page } = await newPage();
+  await page.goto(`${BASE}?seed=E2E-ORIGIN`);
+  await page.click('[data-act="new"]');
+  await page.waitForSelector('.birth-screen');
+  const bgTitle = (await page.locator('.fc-front h3').first().textContent()).trim();
+  await page.click('[data-act="start"]');
+  for (let i = 0; i < 3; i++) { await page.waitForSelector('.memory-card .choice:not(:disabled)', { state: 'visible' }); await page.waitForTimeout(150); await page.locator('.memory-card .choice').first().click(); await page.waitForTimeout(450); }
+  await page.waitForSelector('.ticket');
+  await page.locator('.ticket').first().click();
+  await page.click('[data-act="confirm"]');
+  await page.waitForSelector('.origin-screen');
+  await page.waitForTimeout(1600);
+  const info = await page.evaluate(() => ({
+    name: document.querySelector('.od-name')?.textContent.trim(), facts: document.querySelectorAll('.od-facts li').length,
+    fx: document.querySelectorAll('.ofx').length, traits: document.querySelectorAll('.origin-traits .tcard').length,
+    sealed: document.querySelector('.od-seal')?.classList.contains('is-on'), cash: document.querySelector('.od-cash')?.textContent, real: window.__ui.state.ch.cash,
+  }));
+  check('목표 다음, 본 게임 전에 추첨된 배경 소개(배경·출발선·강점·부담·성향·확정 봉인)', info.name === bgTitle && info.facts === 5 && info.fx >= 3 && info.traits >= 1 && info.sealed && info.cash === `${info.real}C`, JSON.stringify(info));
+  // 소개 화면에서 앱을 닫았다 열면 이어하기가 다시 소개로, 시작한 뒤에는 바로 본 게임으로
+  await page.reload();
+  await page.click('[data-act="continue"]');
+  const again = await page.waitForSelector('.origin-screen', { timeout: 5000 }).then(() => true, () => false);
+  await page.click('.origin-screen [data-act="start"]');
+  await page.waitForSelector('.plan-modal [data-act="submit"]');
+  await page.reload();
+  await page.click('[data-act="continue"]');
+  await page.waitForSelector('.screen--main');
+  await page.waitForTimeout(500);
+  const skipped = await page.evaluate(() => !document.querySelector('.origin-screen') && !window.__ui.state.flags.originBrief);
+  check('배경 소개는 한 번만: 시작 전 이어하기는 소개로, 시작 후 이어하기는 본 게임으로', again && skipped, `소개로 복귀 ${again} · 이후 건너뜀 ${skipped}`);
   await ctx.close();
 }
 
@@ -277,6 +320,10 @@ async function playYears(page, years, onEvent, onLedger) {
   for (let i = 0; i < 3; i++) { await page.waitForSelector('.memory-card .choice:not(:disabled)'); await press('1', 900); }
   await page.waitForSelector('.ticket');
   await press('1'); await press('Enter', 1300);
+  // 출생 배경 소개: 시작 버튼에 초점이 있어 Enter로 넘어간다
+  await page.waitForSelector('.origin-screen');
+  const originFocus = await page.evaluate(() => document.activeElement?.dataset?.act);
+  await press('Enter', 1300);
   await page.waitForSelector('.plan-modal [data-act="submit"]');
   await page.waitForTimeout(400);
   await press('Enter', 600);
@@ -292,7 +339,7 @@ async function playYears(page, years, onEvent, onLedger) {
     else await page.waitForTimeout(100);
   }
   const back = await page.evaluate(() => window.__ui.state.phase);
-  check('키보드만으로 출생 → 1년 진행 → 사건 선택 → 결산', sawLedger && back === 'plan', `사건 ${sawEvent} · 결산 ${sawLedger} · 다음 단계 ${back}`);
+  check('키보드만으로 출생 → 배경 소개 → 1년 진행 → 사건 선택 → 결산', originFocus === 'start' && sawLedger && back === 'plan', `소개 초점 ${originFocus} · 사건 ${sawEvent} · 결산 ${sawLedger} · 다음 단계 ${back}`);
   await ctx.close();
 }
 
@@ -315,6 +362,8 @@ async function playYears(page, years, onEvent, onLedger) {
   for (let i = 0; i < 3; i++) { await page.waitForSelector('.memory-card .choice:not(:disabled)'); await page.locator('.memory-card .choice').first().click(); await page.waitForTimeout(500); }
   await page.waitForSelector('.ticket'); await page.waitForTimeout(600); await measure('목표');
   await page.locator('.ticket').first().click(); await page.click('[data-act="confirm"]');
+  await page.waitForSelector('.origin-screen'); await page.waitForTimeout(1600); await measure('배경 소개');
+  await page.click('.origin-screen [data-act="start"]');
   await page.waitForSelector('.plan-modal [data-act="submit"]'); await page.waitForTimeout(700); await measure('연초 계획');
   for (const t of ['news', 'shop', 'money', 'goal']) { await page.click(`[data-tab="${t}"]`); await page.waitForTimeout(250); await measure('계획:' + t); }
   await page.click('[data-tab="plan"]'); await page.click('.plan-modal [data-act="submit"]');

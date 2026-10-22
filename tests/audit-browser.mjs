@@ -186,6 +186,10 @@ for (const [tag, vp, touch] of [['desk', { width: 1366, height: 860 }, false], [
   await page.screenshot({ path: join(OUT, '07-m-goal.png') });
   await page.locator('.ticket').first().tap();
   await page.tap('[data-act="confirm"]');
+  await page.waitForSelector('.origin-screen [data-act="start"]');
+  await page.waitForTimeout(1800);
+  await page.screenshot({ path: join(OUT, '07b-m-origin.png'), fullPage: true });
+  await page.tap('.origin-screen [data-act="start"]');
   await page.waitForSelector('.plan-modal [data-act="submit"]');
   await page.waitForTimeout(700);
   await page.screenshot({ path: join(OUT, '08-m-plan.png') });

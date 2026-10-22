@@ -10,10 +10,11 @@ import title from './screens/title.js';
 import birth from './screens/birth.js';
 import childhood from './screens/childhood.js';
 import goal from './screens/goal.js';
+import origin from './screens/origin.js';
 import main from './screens/main.js';
 import ending from './screens/ending.js';
 
-const SCREENS = { title, birth, childhood, goal, main, ending };
+const SCREENS = { title, birth, childhood, goal, origin, main, ending };
 
 class UI {
   constructor() {
