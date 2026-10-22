@@ -69,7 +69,7 @@ const ready = (page) => page.waitForSelector('.title-menu .menu-item', { state: 
   await page.goto(BASE); await ready(page);
   const controlled = await until(page, async () => { const r = await navigator.serviceWorker.getRegistration(); return !!r?.active; }, 15000);
   const cached = await page.evaluate(async () => { const keys = await caches.keys(); const c = await caches.open(keys.find(k => k.startsWith('brass-life-'))); return (await c.keys()).length; });
-  check('서비스 워커 활성 · 사전 캐시 채움', controlled && cached >= 10, `캐시 ${cached}개`);
+  check('서비스 워커 활성 · 사전 캐시 채움', controlled && cached >= 7, `캐시 ${cached}개`);
 
   await ctx.setOffline(true); offline = true;
   await page.reload(); await ready(page);

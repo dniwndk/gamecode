@@ -64,12 +64,17 @@ if (!html.includes(jsName) || !html.includes(cssName)) throw new Error('index.ht
 await writeFile(join(DIST, 'index.html'), html);
 
 // ── 서비스 워커: 판본마다 캐시 하나. 첫 방문 때 전부 받아 두고 이후엔 캐시에서 연다(오프라인 플레이)
-const precache = ['./', ...files.filter(f => f !== 'index.html'), 'index.html'];
+// 큰 설치용 아이콘(512·maskable·iOS)은 운영체제가 설치할 때 따로 받으므로 오프라인 캐시에서 뺀다
+const SKIP = /^icons\/(icon-512|maskable-|apple-touch)/;
+const precache = ['./', ...files.filter(f => f !== 'index.html' && !SKIP.test(f)), 'index.html'];
 const sw = `// 황동의 생애 서비스 워커 · 판본 ${version} (tools/build.mjs가 만든다)
 const CACHE = 'brass-life-${tag}';
 const ASSETS = ${JSON.stringify(precache)};
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))));
+  // 지문 붙은 묶음·글꼴·아이콘은 방금 페이지가 받은 HTTP 캐시를 그대로 쓰고(첫 방문에 두 번 받지 않게),
+  // 이름이 고정된 문서·매니페스트만 서버에 다시 확인한다
+  const fresh = (u) => u === './' || u.endsWith('.html') || u.endsWith('.webmanifest');
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: fresh(u) ? 'no-cache' : 'default' })))));
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith('brass-life-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));

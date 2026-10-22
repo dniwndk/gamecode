@@ -19,7 +19,8 @@ const server = createServer(async (req, res) => {
   try {
     // 배포본에 없는 원본 모듈(검사 코드가 직접 import하는 js/core 등)은 저장소 루트에서 내준다
     const body = await readFile(join(SITE, path || 'index.html')).catch(() => readFile(join(ROOT, path)));
-    res.writeHead(200, { 'content-type': TYPES[extname(path)] || 'application/octet-stream' });
+    // 배포본은 GitHub Pages와 같은 캐시 머리(max-age=600)로 내준다
+    res.writeHead(200, { 'content-type': TYPES[extname(path)] || 'application/octet-stream', ...(process.env.GAME_ROOT ? { 'cache-control': 'max-age=600' } : {}) });
     res.end(body);
   } catch { res.writeHead(404); res.end(); }
 });
