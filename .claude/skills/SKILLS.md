@@ -1,7 +1,7 @@
 # 게임 개발 스킬 모음 — 설명과 사용법
 
 기획서를 첨부해 게임을 빌드할 때 쓰는 Claude Code 스킬 모음. 기존 스킬 3개(`game-blueprint`, `self-check`, `redesign`)에
-공개 저장소 8곳에서 고른 스킬 48개를 더했다. 모두 `.claude/skills/<이름>/SKILL.md`에 있어 이 저장소에서 Claude Code를 열면 바로 쓰인다.
+공개 저장소 9곳에서 고른 스킬 52개를 더했다. 모두 `.claude/skills/<이름>/SKILL.md`에 있어 이 저장소에서 Claude Code를 열면 바로 쓰인다.
 
 ## 쓰는 법
 
@@ -106,6 +106,29 @@
 - "이 메뉴 화면 스크린숏 리뷰해 줘" → `ux-designer`, `game-ui-design`
 - "타이틀 화면 색·글꼴 조합 추천" → `ui-ux-pro-max`, `frontend-design`
 
+### 한국어 문장 다듬기 (AI 문체 제거)
+| 스킬 | 하는 일 | 출처 |
+|---|---|---|
+| `humanize-korean` (= `/humanize`) | AI가 쓴 한국어의 티(번역투, 피동 남용, 접속사 남발, 기계적 나열, 쉼표 과다, 균일한 리듬 등 10개 분류 85종)를 찾아 내용은 그대로 두고 문체만 고친다. 글 상태에 따라 가벼움·표준·정밀 경로를 고르고, 의미 보존과 변경 비율을 스크립트로 검사한다 | im-not-ai |
+| `humanize-scan` | 고치기 전에 AI 티가 얼마나 있는지만 재고 몇 문장을 시범으로 고쳐 보여 준다. 파일을 만들지 않는다 | im-not-ai |
+| `humanize-redo` | 직전 윤문을 특정 분류만, 또는 강도를 바꿔 다시 돌린다 | im-not-ai |
+
+보조 에이전트 4개(`humanize-monolith`·`humanize-diagnostician`·`humanize-finalizer`·`korean-ai-tell-taxonomist`)는 `.claude/agents/`에 있다. 작업 기록은 실행한 폴더의 `_workspace/`에 쌓인다.
+
+**게임 대사·지문에 쓸 때 (중요)**
+
+이 스킬은 에세이·칼럼·리포트용이라 소설·게임 장르 규칙이 없다. 그대로 돌리면 의도한 구어체나 문학적 문장까지 '고칠 것'으로 볼 수 있다. 다음 조건을 붙여 부른다.
+- 지문(서술)만 대상으로 한다. 대사는 따옴표 안을 한 글자도 바꾸지 않게 한다.
+- 보수적으로, 문학적 문체·비유·의도된 문장 끊김은 유지하라고 명시한다.
+- 바뀐 결과는 원문과 나란히 비교하고, 대사가 바뀌었으면 되돌린다.
+
+요청 예시
+- "이 사건 지문 AI 티 있나 봐줘" → `humanize-scan`
+- "/humanize 가볍게. 지문만 윤문하고 대사(따옴표 안)는 한 글자도 바꾸지 마. 문학적 문체는 유지." → `humanize-korean`
+- "방금 결과에서 번역투 분류만 다시" → `humanize-redo`
+
+이 운용 방식은 한국어 소설 도구 [novel_worker](https://github.com/ilhae-ai/novel_worker)의 `/novel-humanize`가 im-not-ai를 쓰는 방식을 따랐다. 대사의 캐릭터별 말투를 맞춰 주는 스킬은 아직 없다.
+
 ### 품질·검수·배포
 | 스킬 | 하는 일 | 출처 |
 |---|---|---|
@@ -128,6 +151,7 @@
 | [AlterLab-IEU/AlterLab_GameForge](https://github.com/AlterLab-IEU/AlterLab_GameForge) | 5f5148d | MIT (`_licenses/`) | game-ux-designer, game-accessibility-specialist |
 | [szilu/ux-designer-skill](https://github.com/szilu/ux-designer-skill) | c869d32 | MIT (`_licenses/`) | ux-designer |
 | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | 623a9a9 | MIT (`_licenses/`) | ui-ux-pro-max |
+| [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai) | b37e020 | MIT (`_licenses/`) | humanize-korean, humanize, humanize-scan, humanize-redo + `.claude/agents/` 4개 (공식 `install.sh --copy`로 설치) |
 | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | 8644175 | Apache-2.0 (`_licenses/`) | impeccable + `.claude/agents/impeccable-*` 4개 |
 
 수정한 곳: `router/SKILL.md` 맨 위에 "이 저장소에서는 스킬이 `.claude/skills/<이름>/`에 평평하게 설치돼 있다"는 안내를 덧붙였다. 또 다음을 고쳤다.

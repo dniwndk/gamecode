@@ -2,3 +2,6 @@ node_modules/
 test-results/
 tests/out/
 dist/
+
+# humanize-korean 스킬의 실행 기록
+_workspace/
