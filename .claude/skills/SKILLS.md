@@ -1,7 +1,7 @@
 # 게임 개발 스킬 모음 — 설명과 사용법
 
 기획서를 첨부해 게임을 빌드할 때 쓰는 Claude Code 스킬 모음. 기존 스킬 3개(`game-blueprint`, `self-check`, `redesign`)에
-공개 저장소 3곳에서 고른 스킬 42개를 더했다. 모두 `.claude/skills/<이름>/SKILL.md`에 있어 이 저장소에서 Claude Code를 열면 바로 쓰인다.
+공개 저장소 7곳에서 고른 스킬 47개를 더했다. 모두 `.claude/skills/<이름>/SKILL.md`에 있어 이 저장소에서 Claude Code를 열면 바로 쓰인다.
 
 ## 쓰는 법
 
@@ -78,6 +78,24 @@
 | `algorithmic-art` | p5.js 시드 기반 생성 아트 (배경·타이틀·절차적 그림) | Anthropic 공식 |
 | `redesign` | 랜딩 페이지(게임 소개 페이지) 고급화 | 기존 |
 
+### 게임 UI/UX 디자인 전문
+| 스킬 | 하는 일 | 출처 |
+|---|---|---|
+| `game-ui-design` | 게임 UI 전문가. HUD·체력바·미니맵·조준점·데미지 숫자·쿨다운·원형 메뉴·화면 속 UI·컨트롤러/터치. 참고 문서 3개: 만드는 법(`patterns`), 흔한 실패(`sharp_edges`), 검증 규칙(`validations`) | skills-for-antigravity |
+| `game-ux-designer` | 온보딩(플레이어 유형별), 화면별 UI 명세 양식, 사용성 테스트, 색약 모드. 서브에이전트(fork)로 돈다 | AlterLab GameForge |
+| `game-accessibility-specialist` | 게임 접근성 감사: 운동·시각·청각·인지 각 25점, 보정 옵션 표, EAA·CVAA 대응 | AlterLab GameForge |
+| `ux-designer` | 일반 UX 지침 + 참고 문서 30개(모바일 UX, WCAG 2.2, 문구, 온보딩, 다국어, 알림 등). 검토·제작·조언 세 모드 | szilu/ux-designer-skill |
+| `ui-ux-pro-max` | 스타일 79종·팔레트 192개·글꼴 조합 74개·UX 지침 119개를 검색하는 로컬 데이터. 웹 게임의 메뉴·소개 페이지 디자인 시스템 뽑기용 (Python 3 필요, 외부 패키지 없음) | ui-ux-pro-max-skill |
+
+`ui-ux-pro-max` 직접 검색 예: `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "dark gothic game menu" --design-system -p "게임 이름"`
+
+**요청 예시**
+- "메인 화면 HUD 구성 잡아 줘" → `game-ui-design`, `game-ui-ux`
+- "전투 화면 UI 명세서 써 줘", "튜토리얼 흐름 설계해 줘" → `game-ux-designer`
+- "접근성 감사해 줘", "색약 모드 넣자" → `game-accessibility-specialist`
+- "이 메뉴 화면 스크린숏 리뷰해 줘" → `ux-designer`, `game-ui-design`
+- "타이틀 화면 색·글꼴 조합 추천" → `ui-ux-pro-max`, `frontend-design`
+
 ### 품질·검수·배포
 | 스킬 | 하는 일 | 출처 |
 |---|---|---|
@@ -96,8 +114,16 @@
 | [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills) | 38a4c25 | Apache-2.0 (`_licenses/`) | router + 31개 |
 | [obra/superpowers](https://github.com/obra/superpowers) | 2ce8aa1 | MIT (`_licenses/`) | 7개 |
 | [anthropics/skills](https://github.com/anthropics/skills) | dbd4588 | Apache-2.0 (각 폴더 LICENSE.txt) | 3개 |
+| [omer-metin/skills-for-antigravity](https://github.com/omer-metin/skills-for-antigravity) | e8dcf4e | Apache-2.0 (`_licenses/`) | game-ui-design |
+| [AlterLab-IEU/AlterLab_GameForge](https://github.com/AlterLab-IEU/AlterLab_GameForge) | 5f5148d | MIT (`_licenses/`) | game-ux-designer, game-accessibility-specialist |
+| [szilu/ux-designer-skill](https://github.com/szilu/ux-designer-skill) | c869d32 | MIT (`_licenses/`) | ux-designer |
+| [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | 623a9a9 | MIT (`_licenses/`) | ui-ux-pro-max |
 
-수정한 곳: `router/SKILL.md` 맨 위에 "이 저장소에서는 스킬이 `.claude/skills/<이름>/`에 평평하게 설치돼 있다"는 안내를 덧붙였다. 나머지는 원본 그대로다.
+수정한 곳: `router/SKILL.md` 맨 위에 "이 저장소에서는 스킬이 `.claude/skills/<이름>/`에 평평하게 설치돼 있다"는 안내를 덧붙였다. 또 다음을 고쳤다.
+- `game-ux-designer`·`game-accessibility-specialist`: 원본 저장소의 `docs/` 문서(게임 디자인 이론 등)를 각 스킬의 `references/`에 함께 넣고 경로를 바꿨다.
+- `ui-ux-pro-max`: 플러그인용 경로(`${CLAUDE_PLUGIN_ROOT}/...`)를 이 저장소 경로(`.claude/skills/ui-ux-pro-max/scripts/search.py`)로 바꾸고, 개발용 `scripts/tests/`는 뺐다.
+
+나머지는 원본 그대로다.
 
 ## 넣지 않은 것과 더 받는 법
 
