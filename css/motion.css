@@ -33,6 +33,11 @@
 /* 등장 연출은 transform을 쥐고 끝나므로, 올림·누름 반응은 따로 노는 translate·scale·rotate 속성으로 준다 */
 .btn-in { animation: btn-in var(--t-btn) var(--ease-soft) both; animation-delay: calc(var(--i, 0) * var(--t-stagger)); }
 .cascade { animation: rise 420ms var(--ease-soft) both; animation-delay: calc(80ms + var(--ci, 0) * 45ms); }
+/* 터치 화면은 누른 뒤에도 :hover가 남는다: 올림 이동은 마우스가 있을 때만 */
+@media (hover: none) {
+  .btn:hover:not(.is-pressed), .menu-item:hover:not(:focus-visible), .choice:hover:not(.is-chosen):not(:focus-visible),
+  .ticket:hover:not(.is-selected):not(:focus-visible), .opt:hover { translate: none; }
+}
 .fade-in { animation: fade-in var(--t-rise) var(--ease-out) both; }
 .sent { display: inline; animation: sentence var(--t-fade) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 70ms); }
 .spin-slow { animation: spin 40s linear infinite; }

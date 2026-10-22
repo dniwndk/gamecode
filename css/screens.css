@@ -671,7 +671,8 @@ p, .ev-text, .mc-text, .ep-text, .c-hint, .opt-desc { text-wrap: pretty; }
   .ledger-top { grid-template-columns: 1fr 1fr 1fr; }
   .eq-row { gap: 6px; }
   /* 계획 탭은 한 줄로: 넘치면 옆으로 민다 */
-  .plan-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding-inline: 4px; }
+  /* overflow를 주면 세로 줄기둥(flex column) 안에서 줄어들 수 있게 되므로 flex: none으로 높이를 지킨다 */
+  .plan-tabs { flex: none; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding-inline: 4px; }
   .plan-tabs::-webkit-scrollbar { display: none; }
   .ptab { flex: none; padding: 6px 10px; }
   .ptab span { font-size: .9em; }
