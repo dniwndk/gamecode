@@ -37,7 +37,7 @@ export const CHILDHOOD = [
     },
     choices: [
       { id: 'guardian', label: '보호자 {@guardian}의 일을 거들었다', effects: [{ t: 'rel', who: 'p_guardian', trust: 12, aff: 15 }, { t: 'attr', k: 'will', xp: 3 }, { t: 'trait', id: 'kw_guardian_back' }] },
-      { id: 'friend', label: '친구 {@friend}와 해가 질 때까지 쏘다녔다', effects: [{ t: 'rel', who: 'p_friend', trust: 15, aff: 20 }, { t: 'attr', k: 'body', xp: 3 }, { t: 'trait', id: 'kw_old_promise' }] },
+      { id: 'friend', label: '친구 {@friend|와} 해가 질 때까지 쏘다녔다', effects: [{ t: 'rel', who: 'p_friend', trust: 15, aff: 20 }, { t: 'attr', k: 'body', xp: 3 }, { t: 'trait', id: 'kw_old_promise' }] },
       { id: 'workbench', label: '{@mentor}의 작업대 옆에 쭈그려 앉아 있었다', effects: [{ t: 'rel', who: 'mentor', trust: 15, aff: 12 }, { t: 'skill', k: 'repair', xp: 2 }, { t: 'trait', id: 'kw_workbench' }] },
     ],
   },

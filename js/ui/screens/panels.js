@@ -41,7 +41,7 @@ function copy(ui, text) {
 // ───────── 나 ─────────
 function meHtml(ui, s) {
   const ch = s.ch;
-  const attr = Object.entries(ATTRS).map(([k, l]) => `<li><span class="a-name">${l}</span><span class="pips">${Array.from({ length: 8 }, (_, i) => `<i class="${i < ch.attrs[k] ? 'on' : ''}"></i>`).join('')}</span><span class="a-val">${ch.attrs[k]}</span></li>`).join('');
+  const attr = Object.entries(ATTRS).map(([k, l]) => `<li><span class="a-name">${l}</span><span class="pips">${Array.from({ length: 10 }, (_, i) => `<i class="${i < ch.attrs[k] ? 'on' : ''}"></i>`).join('')}</span><span class="a-val">${ch.attrs[k]}</span></li>`).join('');
   const skills = Object.entries(SKILLS).map(([k, l]) => {
     const lv = ch.skills[k], xp = ch.skillXp[k];
     const lo = SKILL_XP[lv] ?? 0, hi = SKILL_XP[lv + 1];

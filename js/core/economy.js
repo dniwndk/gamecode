@@ -2,7 +2,7 @@
 import { JOBS, ITEMS, DISTRICTS, PROMOTION, RANKS, SUB_COMMITMENTS, SKILLS, ABILITIES } from '../data/world.js';
 import { gainSkillXp, gainAttrXp, addStat, changeRel, addRep, setJob, computeChance, rollCheck, hasAbilityOrDevice, workDistrict } from './rules.js';
 import { withRng } from './rng.js';
-import { clamp, shortName } from './util.js';
+import { clamp, shortName, josa } from './util.js';
 import { hasTrait, traitMul, traitFx, traitName, bondPerk, traitMods, traitIdsWith } from './traits.js';
 
 export const BASE_COST = { housing: 24, food: 24, heat: 12, commute: 12 }; // 합계 72C
@@ -150,7 +150,7 @@ export function availableMains(state) {
   if (ch.job) out.push({ id: 'work' });
   if (ch.job && resonanceJobFit(state)) out.push({ id: 'work_res' });
   if (ch.workshop) out.push({ id: 'workshop' });
-  for (const j of Object.keys(JOBS)) if (!ch.job || ch.job.id !== j) out.push({ id: 'jobhunt', target: j, label: ch.job ? `${JOBS[j].name}로 전직 준비` : `${JOBS[j].name} 구직` });
+  for (const j of Object.keys(JOBS)) if (!ch.job || ch.job.id !== j) out.push({ id: 'jobhunt', target: j, label: ch.job ? `${josa(JOBS[j].name, '으로')} 전직 준비` : `${JOBS[j].name} 구직` });
   for (const j of Object.keys(JOBS)) out.push({ id: 'school', target: j, label: `${SKILLS[JOBS[j].skill]} 야간교육` });
   out.push({ id: 'community' });
   if (hasTrait(state, 'kw_market_kid')) out.push({ id: 'night_market' });
@@ -188,7 +188,7 @@ function decorate(state, o) {
   if (o.id === 'school') r.desc = `12C를 내고 ${SKILLS[JOBS[o.target].skill]} 과정을 1년 듣는다. 시간제 일 48C, 숙련이 크게 오른다.`;
   if (o.id === 'work' || o.id === 'work_res') {
     const j = JOBS[state.ch.job.id];
-    r.desc = `${j.name} ${RANKS[state.ch.job.rank]}으로 일한다. ${o.id === 'work_res' ? '공명/장치를 함께 써서 수입 +10%, 공명부하가 쌓인다.' : `주 업무: ${j.activity}.`}`;
+    r.desc = `${j.name} ${josa(RANKS[state.ch.job.rank], '으로')} 일한다. ${o.id === 'work_res' ? '공명/장치를 함께 써서 수입 +10%, 공명부하가 쌓인다.' : `주 업무: ${j.activity}.`}`;
   }
   if (o.id === 'school' && state.ch.cash < 12) { r.disabled = '수업료 12C가 부족하다'; }
   return r;
@@ -442,7 +442,7 @@ export function yearEndActivities(state) {
       d.done = true; state.stats.dutiesDone = (state.stats.dutiesDone || 0) + 1;
       changeRel(state, n, 6, 4, log, '약속을 지켰다');
       log.push(`약속을 지켰다: ${d.text}`);
-      state.yearLog.causes.push(`${shortName(n.name)}와의 약속을 지켰다: ${d.text}`);
+      state.yearLog.causes.push(`${josa(shortName(n.name), '와')}의 약속을 지켰다: ${d.text}`);
     }
   }
   return log;
@@ -470,7 +470,7 @@ export function yearEndDebts(state) {
       if (d.overdue === 1) addStat(state, 'stress', 5, log);
       if (d.overdue >= 3) {
         const sell = ch.items.find(i => !['tool_basic'].includes(i) && ITEMS[i].slot !== 'consumable');
-        if (sell) { ch.items = ch.items.filter(i => i !== sell); for (const s in ch.equipment) if (ch.equipment[s] === sell) ch.equipment[s] = null; d.principal = Math.max(0, d.principal - Math.round(ITEMS[sell].price * 0.6)); log.push(`담보로 ${ITEMS[sell].name}을 넘겼다`); state.yearLog.causes.push(`연체가 길어져 ${ITEMS[sell].name}을 담보로 처분했다. 기본 공구와 숙식은 남았다.`); }
+        if (sell) { ch.items = ch.items.filter(i => i !== sell); for (const s in ch.equipment) if (ch.equipment[s] === sell) ch.equipment[s] = null; d.principal = Math.max(0, d.principal - Math.round(ITEMS[sell].price * 0.6)); log.push(`담보로 ${josa(ITEMS[sell].name, '을')} 넘겼다`); state.yearLog.causes.push(`연체가 길어져 ${josa(ITEMS[sell].name, '을')} 담보로 처분했다. 기본 공구와 숙식은 남았다.`); }
         d.overdue = 1;
       }
     }
@@ -524,7 +524,7 @@ export function tryPromotion(state) {
     if (!open) { st.reasons.push(`자리가 비지 않았다 (${DISTRICTS[workDistrict(state)].name} 일자리 ${jobs})`); return st; }
   }
   ch.job.rank += 1;
-  state.yearLog.causes.push(`${JOBS[ch.job.id].name} ${RANKS[ch.job.rank]}으로 승진했다`);
+  state.yearLog.causes.push(`${JOBS[ch.job.id].name} ${josa(RANKS[ch.job.rank], '으로')} 승진했다`);
   state.yearLog.jobChanges.push(`${RANKS[ch.job.rank]} 승진`);
   return { promoted: RANKS[ch.job.rank], reasons: [] };
 }

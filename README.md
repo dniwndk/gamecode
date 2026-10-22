@@ -38,7 +38,11 @@ python3 -m http.server 8000
 node tests/sim.test.mjs --quick   # headless 기준 (특성·인연 포함, 1천 생애)
 node tests/sim.test.mjs           # 전체 (1만 생애 · 10만 출생, 약 2분)
 node tests/e2e.spec.mjs           # 브라우저 기준 (Playwright Chromium 필요)
+node tests/audit.mjs [--quick]    # 최종 감사: 무작위 플레이 2천 회 · 상태 불변식 · 문장(조사) 검사 · 도달 가능성
+node tests/audit-browser.mjs      # 최종 감사: 성능 예산 · 서랍 7종×두 테마×360px · 터치 흐름 (스크린숏 tests/out/audit/)
 ```
+
+검수 기록은 [progress.txt](progress.txt)에 쌓는다.
 
 ## 구조
 
