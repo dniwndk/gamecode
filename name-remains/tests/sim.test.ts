@@ -45,6 +45,7 @@ describe('대량 시뮬레이션', () => {
     const causes: Record<string, number> = {};
     let violent = 0;
     const mstSum: Record<string, number> = {};
+    const aptSum: Record<string, number> = {};
     let minHp = 0;
     let clears = 0;
     let majors = 0;
@@ -68,6 +69,7 @@ describe('대량 시뮬레이션', () => {
       causes[c] = (causes[c] ?? 0) + 1;
       if (s.run.person.body_death_history.length) violent++;
       for (const [k, v] of Object.entries(s.run.person.masteries)) mstSum[k] = (mstSum[k] ?? 0) + v / N;
+      for (const [k, v] of Object.entries(s.run.person.aptitudes)) aptSum[k] = (aptSum[k] ?? 0) + v / N;
       minHp += s.run.person.min_hp_in_run / N;
       clears += (s.run.counters.clears ?? 0) / N;
       majors += s.run.incident_history.filter((h) => h.incident_id.startsWith('EVT')).length / N;
@@ -85,6 +87,7 @@ describe('대량 시뮬레이션', () => {
       endpoints,
       violentShare: violent / N,
       mstSum,
+      aptSum,
       minHp,
       minHpB,
       clears,

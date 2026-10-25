@@ -33,7 +33,7 @@ function offer(id: string, title: string, place: string, eligible: IncidentDef['
             tag: '거절',
             text: '지금은 내 삶을 그쪽으로 묶고 싶지 않다. 정중히 거절한다.',
             check: 'rule',
-            success: { text: declineText, effects: { flags: { [`declined_${id}`]: true } }, end: 'declined' },
+            success: { text: declineText, effects: { flags: { [`declined_${id}`]: true }, FAT: -4, aptChance: [{ apt: 'PRC', p: 0.1 }] }, end: 'declined' },
           },
         ],
       },
@@ -147,7 +147,7 @@ export const CALLS: IncidentDef[] = [
         prompt: '녹음기의 빨간 불이 깜빡입니다.',
         choices: [
           { id: 'promise', tag: '약속', text: '녹음기에 대고 약속한다. "꼭 돌아올게. 못 오면 문이라도 세 번 두드릴게."', check: 'rule', success: { text: '{ally|이} 녹음 파일을 보내 주었습니다. 파일 이름은 \'귀가\'였습니다.', effects: { contracts: [{ id: 'CTR_RETURN_PROMISE', status: 'active' }], flags: { has_recorder: true }, trust: { NPC_NEIGHBOR: 8 } }, end: 'promised' } },
-          { id: 'laugh', tag: '웃어넘김', text: '"무슨 그런 말을 해." 웃으며 캔을 부딪친다.', check: 'rule', success: { text: '{ally|도} 웃었습니다. 녹음은 저장되지 않았습니다.', effects: { flags: { declined_CALL_PROMISE: true } }, end: 'laughed' } },
+          { id: 'laugh', tag: '웃어넘김', text: '"무슨 그런 말을 해." 웃으며 캔을 부딪친다.', check: 'rule', success: { text: '{ally|도} 웃었습니다. 녹음은 저장되지 않았습니다.', effects: { flags: { declined_CALL_PROMISE: true }, FAT: -3, trust: { NPC_NEIGHBOR: 2 } }, end: 'laughed' } },
         ],
       },
     },

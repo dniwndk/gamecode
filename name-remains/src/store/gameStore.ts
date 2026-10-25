@@ -13,7 +13,8 @@ import { playCue, setVolume } from '../audio';
 
 export type Screen = 'title' | 'life' | 'ending' | 'codex' | 'archive';
 export type Speed = 1 | 2 | 4 | 8;
-export const SPEED_MS: Record<Speed, number> = { 1: 1800, 2: 900, 4: 450, 8: 200 };
+/** 한 번 흐를 때 한 해가 지나간다 */
+export const SPEED_MS: Record<Speed, number> = { 1: 2600, 2: 1300, 4: 650, 8: 280 };
 
 export interface Settings {
   sound: boolean;

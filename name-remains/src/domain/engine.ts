@@ -1,6 +1,7 @@
 // 자동 진행 엔진. 순수 함수처럼 RunState를 받아 그 자리에서 고치고, 이번에 생긴 기록·업적을 돌려준다.
 // 화면 속도(1x~8x)는 advance를 부르는 간격만 바꿀 뿐 결과에는 영향이 없다.
 import type { AchievementFact, ChoiceDef, Effects, IncidentDef, NodeDef } from './contentTypes';
+import type { Apt, Mst } from './types';
 import type {
   CrisisPriorityType,
   DecisionChoiceSnapshot,
@@ -10,11 +11,12 @@ import type {
   ThreatTag,
   TimelineLog,
 } from './types';
-import { MINUTES_PER_YEAR, describeCond, evalCond } from './conditions';
+import { APT_LABEL, MINUTES_PER_YEAR, MST_LABEL, RES_LABEL, describeCond, evalCond } from './conditions';
 import { chance, int, next, pick, weighted } from './rng';
 import { STEP_MINUTES } from './runFactory';
 import { fill, won } from './text';
 import {
+  addSnapshotDiff,
   applyEffects,
   checkAutoGrants,
   checkPromotion,
@@ -24,6 +26,7 @@ import {
   maxHp,
   newCtx,
   setForm,
+  takeSnapshot,
   type Ctx,
 } from './engineContext';
 import { monthlyCost, recordRent, runActivity, summarizeBundle } from './lifePlanner';
@@ -35,15 +38,22 @@ import { CALLS, MAJOR_INCIDENTS, POSTMORTEM_SCENES, sceneById } from '../content
 import { MINOR_EVENTS } from '../content/minorEvents';
 import { AMBIENT_NOTICES, FORGED_NOTICES } from '../content/notices';
 import { POSTMORTEMS, endpointById } from '../content/progression';
+import { CHILD_CHOICES, DAILY_CHOICES, childYearLine } from '../content/lifeChoices';
+import { SIDE_ACTIONS, sideById, type SideActionDef } from '../content/sideActions';
 
 const YEAR = MINUTES_PER_YEAR;
-/** 조용한 보름을 최대 몇 개까지 한 번에 묶는가(약 두 달) */
-export const BUNDLE_MAX_STEPS = 4;
 /** 생활권 위험도 × 이 값 = 보름마다 주요 사건이 터질 확률 */
 const INCIDENT_RATE = 0.03;
 const MAJOR_GAP_YEARS = 0.6;
 const CALL_RATE = 0.07;
-const MINOR_RATE = 0.35;
+const MINOR_RATE = 0.2;
+/** 보름마다 일상 선택 사건이 찾아올 확률(쿨다운이 지난 뒤). 대략 1~2년에 한 번. */
+const DAILY_RATE = 0.045;
+const DAILY_GAP_YEARS = 0.5;
+/** 어린 시절, 한 해에 선택 사건이 찾아올 확률 */
+const CHILD_CHOICE_RATE = 0.6;
+/** 작은 행동으로 쌓을 수 있는 판정 보정의 상한 */
+const SIDE_BONUS_CAP = 0.15;
 const NOTICE_RATE = 0.045;
 /** 늙지 않는 형태 */
 export const AGELESS_FORMS = ['FORM_04_ABYSS_ENVOY', 'FORM_06_SANCTUARY', 'FORM_07_STORY_ECHO', 'FORM_11_CONCEPT'];
@@ -69,7 +79,6 @@ function ctxFor(s: RunState, stream: 'world' | 'action' = 'world'): Ctx {
 }
 
 function finish(ctx: Ctx): StepResult {
-  flushActivity(ctx);
   const achievements = evaluateAchievements(ctx);
   ctx.s.run.revision += 1;
   return { logs: ctx.newLogs, achievements, facts: ctx.facts };
@@ -112,24 +121,37 @@ function lastResultLog(ctx: Ctx): TimelineLog | undefined {
 
 // ---------------------------------------------------------------- 공개 동작
 
-/** 한 묶음(최대 약 두 달)을 진행한다. 결정 대기나 종료 상태면 아무것도 하지 않는다. */
+const isAdult = (s: RunState) => (s.run.counters.childhood ?? 0) >= 4;
+
+/** 한 해를 진행한다. 해가 바뀌거나 선택이 열리면 멈춘다. 결정 대기나 종료 상태면 아무것도 하지 않는다. */
 export function advance(s: RunState): StepResult {
   const ctx = ctxFor(s);
   const r = s.run;
   if (r.run_status !== 'playing' || r.pending_decision) return finish(ctx);
-  if (r.clock.virtual_minute < r.clock.adult_start_minute || (r.counters.childhood ?? 0) < 4) {
-    childhoodStep(ctx);
+  if (!isAdult(s)) {
+    childhoodTick(ctx);
     return finish(ctx);
   }
-  for (let i = 0; i < BUNDLE_MAX_STEPS; i++) {
+  const year = Math.floor(r.clock.current_age_years + 1e-9);
+  for (let i = 0; i < 40; i++) {
     stepOnce(ctx);
-    if (ctx.notable || r.pending_decision || r.run_status !== 'playing') break;
+    if (r.run_status !== 'playing') break;
+    if (Math.floor(r.clock.current_age_years + 1e-9) > year) {
+      closeYear(ctx, year);
+      break;
+    }
+    if (r.pending_decision) break;
   }
   return finish(ctx);
 }
 
+/** 한 해의 생활을 연말 정리 한 줄로 남긴다 */
+function closeYear(ctx: Ctx, year: number) {
+  flushActivity(ctx, { age_years: year, month: 12 });
+}
+
 /** 다음 선택(또는 종점)까지 건너뛴다 */
-export function skipToDecision(s: RunState, maxBundles = 800): StepResult {
+export function skipToDecision(s: RunState, maxBundles = 400): StepResult {
   const all: StepResult = { logs: [], achievements: [], facts: [] };
   for (let i = 0; i < maxBundles; i++) {
     if (s.run.run_status !== 'playing' || s.run.pending_decision) break;
@@ -155,24 +177,61 @@ export function abandonRun(s: RunState) {
   s.run.revision += 1;
 }
 
-// ---------------------------------------------------------------- 유년기
+// ---------------------------------------------------------------- 어린 시절(0세부터 한 해씩)
 
-const CHILDHOOD_FRACTIONS = [0.27, 0.55, 0.8];
+const KOR_UNITS: Record<string, number> = { 한: 1, 두: 2, 세: 3, 네: 4, 다섯: 5, 여섯: 6, 일곱: 7, 여덟: 8, 아홉: 9 };
 
-function childhoodStep(ctx: Ctx) {
+/** '열두 살,'처럼 나이로 시작하는 출생 배경 문장에서 나이를 읽는다 */
+export function leadingAge(text: string): number | null {
+  const m = /^(열|스물|스무|서른)?\s?(한|두|세|네|다섯|여섯|일곱|여덟|아홉)?\s?살/.exec(text);
+  if (!m || (!m[1] && !m[2])) return null;
+  const tens = m[1] === '열' ? 10 : m[1] === '스물' || m[1] === '스무' ? 20 : m[1] === '서른' ? 30 : 0;
+  return tens + (m[2] ? KOR_UNITS[m[2]] : 0);
+}
+
+/** 출생 배경의 어린 시절 세 장면이 놓이는 나이 */
+export function childhoodSceneAges(bgLines: string[], startAge: number): number[] {
+  const fallback = [0.27, 0.55, 0.8];
+  const ages: number[] = [];
+  bgLines.forEach((line, i) => {
+    let a = leadingAge(line) ?? Math.round(startAge * fallback[i]);
+    a = Math.max(1, Math.min(startAge - 1, a));
+    while (ages.includes(a) && a < startAge - 1) a += 1;
+    ages.push(a);
+  });
+  return ages;
+}
+
+function childhoodTick(ctx: Ctx) {
   const s = ctx.s;
   const r = s.run;
   const bg = bgById(r.person.background_id);
-  const i = r.counters.childhood ?? 0;
-  if (i < 3) {
-    setClock(s, Math.round(r.clock.adult_start_minute * CHILDHOOD_FRACTIONS[i]));
-    r.counters.childhood = i + 1;
-    log(ctx, 'childhood', bg.childhood[i], { tone: 'quiet' });
+  const startAge = Math.round(r.clock.adult_start_minute / YEAR);
+  const y = r.counters.child_year ?? Math.ceil(r.clock.current_age_years);
+  if (y >= startAge) {
+    setClock(s, r.clock.adult_start_minute);
+    r.counters.childhood = 4;
+    log(ctx, 'milestone', bg.startLog, { title: '이야기의 시작', tone: 'boundary', sound: 'silence', place: regionById(r.person.region_id).name });
     return;
   }
-  setClock(s, r.clock.adult_start_minute);
-  r.counters.childhood = 4;
-  log(ctx, 'milestone', bg.startLog, { title: '이야기의 시작', tone: 'boundary', sound: 'silence', place: regionById(r.person.region_id).name });
+  setClock(s, y * YEAR);
+  r.counters.child_year = y + 1;
+  const sceneIdx = childhoodSceneAges(bg.childhood, startAge).indexOf(y);
+  if (sceneIdx >= 0) {
+    log(ctx, 'childhood', bg.childhood[sceneIdx], { tone: 'quiet', title: '기억에 남은 해' });
+  } else {
+    const line = childYearLine(s, y, startAge);
+    const e = log(ctx, 'childhood', line.text, { tone: 'quiet' });
+    const d = applyEffects(ctx, line.effects);
+    if (d.length) e.deltas = d;
+  }
+  // 네 살부터는 한 해에 한 번쯤 작은 갈림길이 찾아온다
+  if (y >= 4 && chance(s.rng, 'world', CHILD_CHOICE_RATE)) {
+    const done = new Set(r.incident_history.map((h) => h.incident_id));
+    const pool = CHILD_CHOICES.filter((d) => !done.has(d.id) && evalCond(s, d.eligible));
+    const def = weighted(s.rng, 'world', pool, (d) => (typeof d.weight === 'function' ? d.weight(s) : d.weight));
+    if (def) startIncident(ctx, def, 'voluntary', 'A');
+  }
 }
 
 // ---------------------------------------------------------------- 14일 한 칸
@@ -187,6 +246,7 @@ function stepOnce(ctx: Ctx) {
   fact(ctx, { type: 'step' });
 
   // 1) 생활 활동과 생활비
+  const snap = takeSnapshot(s);
   const { earned } = runActivity(ctx);
   const cost = Math.round((monthlyCost(s) * 14) / 30);
   res.KRW -= cost;
@@ -197,6 +257,7 @@ function stepOnce(ctx: Ctx) {
   res.FAT = Math.max(0, res.FAT - 4);
   if (res.FAT < 60) res.HP = Math.min(maxHp(s), res.HP + 2);
   if (p.form_id === 'FORM_02_NIGHT_HUNTER') res.HP = Math.min(maxHp(s), res.HP + 6);
+  addSnapshotDiff(ctx, snap);
   rechargeGuards(s);
 
   // 3) 탈진
@@ -302,6 +363,7 @@ function direct(ctx: Ctx) {
   }
 
   if (rollMajor(ctx)) return;
+  if (r.life_status === 'active' && rollDaily(ctx)) return;
   if (rollMinor(ctx)) return;
   if (r.life_status === 'active' && rollCall(ctx)) return;
   rollNotice(ctx);
@@ -372,6 +434,22 @@ function rollMajor(ctx: Ctx): boolean {
     return true;
   }
   startIncident(ctx, def, def.entry, variant);
+  return true;
+}
+
+/** 일상 속 작은 갈림길: 고르는 대로 능력치와 자원이 조금씩 바뀐다 */
+function rollDaily(ctx: Ctx): boolean {
+  const s = ctx.s;
+  const r = s.run;
+  const now = r.clock.virtual_minute;
+  if ((r.cooldowns.__daily ?? 0) > now) return false;
+  if (!chance(s.rng, 'world', DAILY_RATE)) return false;
+  const pool = DAILY_CHOICES.filter((d) => (r.cooldowns[d.id] ?? 0) <= now && evalCond(s, d.eligible));
+  const def = weighted(s.rng, 'world', pool, (d) => (typeof d.weight === 'function' ? d.weight(s) : d.weight));
+  if (!def) return false;
+  r.cooldowns.__daily = now + Math.round(YEAR * DAILY_GAP_YEARS);
+  r.cooldowns[def.id] = now + Math.round(YEAR * 15);
+  startIncident(ctx, def, 'voluntary', 'A');
   return true;
 }
 
@@ -464,7 +542,8 @@ export function startIncident(ctx: Ctx, def: IncidentDef, entry: 'involuntary' |
   const badges: string[] = [];
   if (def.kind === 'major') badges.push(entry === 'involuntary' ? '비자발적 진입' : '자발적 진입');
   if (def.clock) badges.push(`멈춘 시계 ${def.clock}`);
-  const header = log(ctx, def.kind === 'postmortem' ? 'postmortem' : 'incident_auto', first?.kind === 'auto' ? tx(s, first.text) : '', {
+  const headerKind = def.kind === 'postmortem' ? 'postmortem' : def.kind === 'minor' ? (isAdult(s) ? 'minor_event' : 'childhood') : 'incident_auto';
+  const header = log(ctx, headerKind, first?.kind === 'auto' ? tx(s, first.text) : '', {
     title: def.title,
     place: def.place,
     badges,
@@ -524,7 +603,7 @@ function runNodes(ctx: Ctx) {
       return;
     }
     if (node.kind === 'auto') {
-      const e = log(ctx, def.kind === 'postmortem' ? 'postmortem' : 'incident_auto', tx(s, node.text), { title: node.title, sound: node.sound, accessibility_caption: node.caption, tone: def.kind === 'major' ? 'danger' : 'plain' });
+      const e = log(ctx, def.kind === 'postmortem' ? 'postmortem' : def.kind === 'minor' ? 'incident_result' : 'incident_auto', tx(s, node.text), { title: node.title, sound: node.sound, accessibility_caption: node.caption, tone: def.kind === 'major' ? 'danger' : 'plain' });
       e.deltas = applyEffects(ctx, node.effects);
       inc.current_node_id = node.next;
       if (s.run.person.resources.HP <= 0 && resolveDeath(ctx, `${def.title}에서`, def) !== 'survived') return;
@@ -567,7 +646,9 @@ export function successChance(s: RunState, def: IncidentDef, c: ChoiceDef): numb
   const mRel = mAvg - 15 * tier;
   const threat = 0.02 * (tier - 1);
   const fatigue = p.resources.FAT >= 80 ? 0.15 : 0;
-  const P = ch.base + 0.04 * aRel + 0.004 * mRel + prep + ally + push - threat - fatigue;
+  // 사건 도중 작은 행동으로 쌓은 보정
+  const side = Math.min(SIDE_BONUS_CAP, Number(s.run.incident?.local_flags.__bonus ?? 0));
+  const P = ch.base + 0.04 * aRel + 0.004 * mRel + prep + ally + push + side - threat - fatigue;
   return Math.max(0.05, Math.min(0.95, P));
 }
 
@@ -593,6 +674,40 @@ function affordable(s: RunState, cost: Effects | undefined): boolean {
   return true;
 }
 
+/** 선택이 건드리는 능력치·자원의 이름 */
+function effectLabels(list: Array<Effects | undefined>): string[] {
+  const out = new Set<string>();
+  for (const e of list) {
+    if (!e) continue;
+    (['HP', 'FAT', 'KRW', 'SUP'] as const).forEach((k) => e[k] && out.add(RES_LABEL[k]));
+    for (const k of Object.keys(e.apt ?? {}) as Apt[]) out.add(APT_LABEL[k]);
+    for (const a of e.aptChance ?? []) out.add(APT_LABEL[a.apt]);
+    for (const k of Object.keys(e.mst ?? {}) as Mst[]) out.add(MST_LABEL[k]);
+    if (e.trust || e.meet || e.allyLost) out.add('인연');
+    if (e.clues) out.add('단서');
+    if (e.caps) out.add('능력');
+    if (e.contracts) out.add('계약');
+    if (e.joinPath) out.add('성장 경로');
+    if (e.region) out.add('사는 곳');
+    if (e.form) out.add('존재 형태');
+    if (e.defense) out.add('다음 사건 방어');
+    if (e.beacons) out.add('귀환 표식');
+  }
+  return [...out];
+}
+
+/** 괴담 사건 속 선택은 결과와 별개로 경험을 남긴다: 판정에 쓰인 숙련이 오르고 긴장으로 조금 지친다 */
+function experienceOf(def: IncidentDef, c: ChoiceDef, ok: boolean): Effects | undefined {
+  if (def.kind !== 'major' && def.kind !== 'postmortem') return undefined;
+  const msts: Mst[] = c.chance?.mst?.length ? c.chance.mst : [c.check === 'rule' ? 'MST_RULE' : 'MST_FIELD'];
+  const apts: Apt[] = c.chance?.apt ?? [];
+  return {
+    mst: Object.fromEntries(msts.map((m) => [m, ok ? 2 : 1])) as Partial<Record<Mst, number>>,
+    aptChance: apts.map((a) => ({ apt: a, p: 0.04 })),
+    FAT: 2,
+  };
+}
+
 function snapshotChoice(s: RunState, def: IncidentDef, c: ChoiceDef): DecisionChoiceSnapshot {
   const p = s.run.person;
   const reqOk = evalCond(s, c.requires);
@@ -615,7 +730,109 @@ function snapshotChoice(s: RunState, def: IncidentDef, c: ChoiceDef): DecisionCh
     odds_label: c.check === 'chance' ? oddsLabel(successChance(s, def, c)) : '판정 없음',
     is_available: reqOk && costOk,
     unavailable_reason: !reqOk ? `조건: ${describeCond(c.requires)}` : !costOk ? '물자나 자금이 모자랍니다' : undefined,
+    effect_hint: effectLabels([c.cost, c.success.effects, c.fail?.effects, experienceOf(def, c, true)]),
   };
+}
+
+// ---------------------------------------------------------------- 작은 행동
+
+/** 사건 도중 결정을 미루고 끼워 넣는 작은 행동이 열리는 사건 */
+const hasSideActions = (def: IncidentDef) => def.kind === 'major' || def.kind === 'postmortem';
+
+function sideChance(s: RunState, def: IncidentDef, sa: SideActionDef): number {
+  const p = s.run.person;
+  const apts = sa.chance?.apt ?? [];
+  const aAvg = apts.length ? apts.reduce((a, k) => a + p.aptitudes[k], 0) / apts.length : 4;
+  const P = (sa.chance?.base ?? 1) + 0.05 * (aAvg - 4) - 0.03 * Math.max(0, def.tier - 1) - (p.resources.FAT >= 80 ? 0.1 : 0);
+  return Math.max(0.1, Math.min(0.95, P));
+}
+
+/** 이 결정 자리에서 쓸 수 있는 작은 행동 세 가지(한 번 정하면 그 자리에서는 바뀌지 않는다) */
+function sideActionsFor(ctx: Ctx, def: IncidentDef, nodeId: string): SideActionDef[] {
+  const s = ctx.s;
+  const local = s.run.incident!.local_flags;
+  const key = `__sides_${nodeId}`;
+  if (typeof local[key] !== 'string') {
+    const threats = def.threats;
+    const fits = SIDE_ACTIONS.filter((a) => a.id !== 'side_look' && (!a.threats || a.threats.some((t) => threats.includes(t))));
+    const chosen = ['side_look'];
+    for (let i = 0; i < 2; i++) {
+      const pick1 = weighted(s.rng, ctx.stream, fits.filter((a) => !chosen.includes(a.id)), (a) => a.weight * (a.threats ? 1.5 : 1));
+      if (pick1) chosen.push(pick1.id);
+    }
+    local[key] = chosen.join(',');
+  }
+  return String(local[key])
+    .split(',')
+    .filter((id) => !local[`__used_${nodeId}_${id}`])
+    .map((id) => sideById(id)!)
+    .filter(Boolean);
+}
+
+function snapshotSide(s: RunState, def: IncidentDef, sa: SideActionDef): DecisionChoiceSnapshot {
+  const reqOk = evalCond(s, sa.requires);
+  const costOk = affordable(s, sa.cost);
+  const hint = effectLabels([sa.cost, sa.success.effects, sa.fail?.effects]);
+  if (sa.success.bonus) hint.push('이번 사건 판정');
+  if (sa.success.clue) hint.push('단서');
+  if (sa.success.allyTrust) hint.push('인연');
+  return {
+    id: `side:${sa.id}`,
+    tag: sa.tag,
+    text: tx(s, sa.text),
+    known_costs_label: costLabels(sa.cost),
+    required_badges: [],
+    odds_label: sa.chance ? oddsLabel(sideChance(s, def, sa)) : '판정 없음',
+    is_available: reqOk && costOk,
+    unavailable_reason: !reqOk ? `조건: ${describeCond(sa.requires)}` : !costOk ? '물자나 자금이 모자랍니다' : undefined,
+    minor: true,
+    effect_hint: [...new Set(hint)],
+  };
+}
+
+/** 지금 사건에 함께 휘말린 사람의 id */
+function allyId(s: RunState): string | null {
+  const rels = s.run.relationships;
+  if (rels.NPC_NEIGHBOR?.is_alive) return 'NPC_NEIGHBOR';
+  const best = Object.entries(rels)
+    .filter(([, r]) => r.is_alive && r.met)
+    .sort((a, b) => b[1].trust - a[1].trust)[0];
+  return best?.[0] ?? null;
+}
+
+function runSideAction(ctx: Ctx, def: IncidentDef, nodeId: string, node: Extract<NodeDef, { kind: 'decision' }>, sa: SideActionDef) {
+  const s = ctx.s;
+  const r = s.run;
+  const inc = r.incident!;
+  const p = r.person;
+  log(ctx, 'decision_taken', tx(s, sa.text), { title: `작은 행동 · ${sa.tag}`, tone: 'plain' });
+  const deltas = applyEffects(ctx, sa.cost);
+  const ok = sa.chance ? next(s.rng, 'action') < sideChance(s, def, sa) : true;
+  const out = ok ? sa.success : sa.fail ?? sa.success;
+  const e = log(ctx, 'incident_result', tx(s, out.text), { tone: ok ? 'good' : 'danger', badges: sa.chance ? [ok ? '판정 성공' : '판정 실패'] : undefined });
+  deltas.push(...applyEffects(ctx, out.effects));
+  if (ok) {
+    const sb = sa.success;
+    if (sb.bonus) {
+      const before = Number(inc.local_flags.__bonus ?? 0);
+      const after = Math.min(SIDE_BONUS_CAP, before + sb.bonus);
+      inc.local_flags.__bonus = Math.round(after * 100) / 100;
+      if (after > before) deltas.push(`이번 사건 판정 +${Math.round((after - before) * 100)}%`);
+    }
+    if (sb.clue) {
+      const clue = def.relevantClues?.find((c) => !p.knowledge_observations.includes(c));
+      deltas.push(...applyEffects(ctx, clue ? { clues: [clue] } : { mst: { MST_FIELD: 1 } }));
+    }
+    if (sb.allyTrust) {
+      const id = allyId(s);
+      if (id) deltas.push(...applyEffects(ctx, { trust: { [id]: sb.allyTrust } }));
+    }
+    if (sb.stealth) inc.local_flags.used_stealth = true;
+  }
+  e.deltas = deltas;
+  inc.local_flags[`__used_${nodeId}_${sa.id}`] = true;
+  if (p.resources.HP <= 0 && resolveDeath(ctx, `${def.title}에서`, def) !== 'survived') return;
+  if (r.incident && r.run_status === 'playing') openDecision(ctx, def, nodeId, node);
 }
 
 function openDecision(ctx: Ctx, def: IncidentDef, nodeId: string, node: Extract<NodeDef, { kind: 'decision' }>) {
@@ -623,6 +840,7 @@ function openDecision(ctx: Ctx, def: IncidentDef, nodeId: string, node: Extract<
   const r = s.run;
   const p = r.person;
   const choices = node.choices.filter((c) => evalCond(s, c.showIf)).map((c) => snapshotChoice(s, def, c));
+  if (hasSideActions(def)) choices.push(...sideActionsFor(ctx, def, nodeId).map((sa) => snapshotSide(s, def, sa)));
   const obs = (def.relevantClues ?? []).filter((c) => p.knowledge_observations.includes(c)).map((c) => clueById(c)?.text ?? c);
   if (r.milestones[`notice_${def.id}`] && def.notice) obs.push(`미리 받은 안내: ${def.notice.text}`);
   r.pending_decision = {
@@ -652,6 +870,13 @@ export function choose(s: RunState, choiceId: string): StepResult {
   const def = sceneById(inc.incident_id)!;
   const node = def.nodes[pd.scene_node_id];
   if (node?.kind !== 'decision') return finish(ctx);
+  if (snap.minor) {
+    const sa = sideById(choiceId.slice('side:'.length));
+    if (!sa) return finish(ctx);
+    r.pending_decision = null;
+    runSideAction(ctx, def, pd.scene_node_id, node, sa);
+    return finish(ctx);
+  }
   const c = node.choices.find((x) => x.id === choiceId)!;
   r.pending_decision = null;
 
@@ -671,6 +896,8 @@ export function choose(s: RunState, choiceId: string): StepResult {
   const resultBadges = c.check === 'chance' ? [ok ? '판정 성공' : '판정 실패'] : undefined;
   const e = log(ctx, 'incident_result', tx(s, out.text), { tone: ok ? 'good' : 'danger', sound: out.sound, accessibility_caption: out.caption, badges: resultBadges });
   e.deltas = applyEffects(ctx, out.effects, { damageScale: scale });
+  const xp = experienceOf(def, c, ok);
+  if (xp) e.deltas.push(...applyEffects(ctx, xp));
   if (ok && c.stealth && r.incident) r.incident.local_flags.used_stealth = true;
   if (c.usesSupplies) fact(ctx, { type: 'action_resolved', incident_id: def.id, data: { suppliesSpent: true, success: ok } });
 
@@ -840,6 +1067,7 @@ export function commitEndpoint(ctx: Ctx, type: EndpointType, cause: string, natu
   r.pending_decision = null;
   r.incident = null;
   r.endpoint = { endpoint_type: type, committed_at_minute: r.clock.virtual_minute, epilogue_text: text, cause };
+  flushActivity(ctx);
   log(ctx, 'endpoint', text, { title: endpointById(type)?.name ?? type, tone: type === 'death' || type === 'dissolution' ? 'quiet' : 'gold', sound: type === 'death' ? 'silence' : 'bell' });
   fact(ctx, { type: 'endpoint_committed', endpoint_type: type, local: local ?? {}, data: { natural } });
 }
@@ -854,10 +1082,18 @@ export function autoChoice(s: RunState): string | null {
   const def = sceneById(inc.incident_id)!;
   const node = def.nodes[pd.scene_node_id];
   if (node?.kind !== 'decision') return null;
-  const avail = pd.choices.filter((c) => c.is_available);
+  const avail = pd.choices.filter((c) => c.is_available && !c.minor);
   if (!avail.length) return null;
   // 인물·조직의 제안은 받아들이는 쪽(첫 선택지)이 기본
   if (def.kind === 'call') return avail[0].id;
+  // 일상·어린 시절의 갈림길은 그때그때 마음 가는 대로
+  if (def.kind === 'minor') {
+    const safe = avail.filter((c) => !c.warning_badge);
+    return pick(s.rng, 'action', safe.length ? safe : avail).id;
+  }
+  // 크게 다친 채라면 먼저 응급처치부터
+  const aid = pd.choices.find((c) => c.id === 'side:side_aid' && c.is_available);
+  if (aid && s.run.person.resources.HP < 40) return aid.id;
   const defOf = (id: string) => node.choices.find((c) => c.id === id)!;
   const crisis = s.run.life_plan.crisis_priority;
   // 1) 조건을 갖춘 확정 선택(능력·규칙 파훼). 함정 의심은 피한다.

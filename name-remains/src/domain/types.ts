@@ -55,6 +55,17 @@ export interface DecisionChoiceSnapshot {
   odds_label?: string;
   is_available: boolean;
   unavailable_reason?: string;
+  /** 사건 도중 언제든 끼워 넣는 작은 행동(고른 뒤에도 같은 선택이 이어진다) */
+  minor?: boolean;
+  /** 이 선택이 건드리는 능력치·자원 이름 */
+  effect_hint?: string[];
+}
+
+/** 한 해 동안의 생활 활동 누적(연말에 한 줄로 정리한다) */
+export interface YearAccumulator {
+  acts: Record<string, number>;
+  texts: Record<string, string>;
+  sum: Record<string, number>;
 }
 
 export interface PendingDecisionSnapshot {
@@ -217,6 +228,7 @@ export interface RunState {
       focus: FocusType;
       crisis_priority: CrisisPriorityType;
     };
+    year_acc?: YearAccumulator;
     current_activity: {
       activity_id: string;
       started_at_minute: number;

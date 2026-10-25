@@ -1,6 +1,6 @@
 // 엔진 공용 작업대: 로그 쓰기, 효과 적용, 능력 부여, 경로 입문·승급. 판정 사실(facts)은 모아 두었다가 업적 판정기가 한 번에 본다.
 import type { AchievementFact, Effects } from './contentTypes';
-import type { LogKind, RunState, TimelineLog } from './types';
+import type { LogKind, RunState, TimelineLog, YearAccumulator } from './types';
 import { APT_LABEL, MINUTES_PER_YEAR, MST_LABEL, evalCond } from './conditions';
 import { chance, type StreamName } from './rng';
 import { CAPABILITIES, capName } from '../content/capabilities';
@@ -14,13 +14,8 @@ interface Snapshot {
   mst: Record<string, number>;
 }
 
-/** 조용한 보름들을 한 줄로 묶기 위한 누적기 */
-export interface BundleAcc {
-  acts: Record<string, number>;
-  texts: Record<string, string>;
-  snap: Snapshot | null;
-  startMinute: number;
-}
+/** 한 해의 생활을 한 줄로 묶기 위한 누적기. 결정 때문에 해가 끊겨도 이어지도록 상태에 둔다. */
+export type BundleAcc = YearAccumulator;
 
 export interface Ctx {
   s: RunState;
@@ -29,12 +24,13 @@ export interface Ctx {
   notable: boolean;
   stream: StreamName;
   bundle: BundleAcc;
-  /** 묶음 요약 문장 작성기(lifePlanner가 채운다) */
+  /** 한 해 요약 문장 작성기(lifePlanner가 채운다) */
   summarize?: (ctx: Ctx) => { title: string; body: string } | null;
 }
 
 export function newCtx(s: RunState, stream: StreamName = 'world'): Ctx {
-  return { s, facts: [], newLogs: [], notable: false, stream, bundle: { acts: {}, texts: {}, snap: null, startMinute: s.run.clock.virtual_minute } };
+  s.run.year_acc ??= { acts: {}, texts: {}, sum: {} };
+  return { s, facts: [], newLogs: [], notable: false, stream, bundle: s.run.year_acc };
 }
 
 export function takeSnapshot(s: RunState): Snapshot {
@@ -42,40 +38,47 @@ export function takeSnapshot(s: RunState): Snapshot {
   return { res: { ...p.resources }, apt: { ...p.aptitudes }, mst: { ...p.masteries } };
 }
 
-export function snapshotDeltas(s: RunState, snap: Snapshot): string[] {
-  const p = s.run.person;
+const SUM_ORDER: Array<[string, string]> = [
+  ['res.HP', '건강'],
+  ['res.FAT', '피로'],
+  ['res.KRW', '자금'],
+  ['res.SUP', '물자'],
+  ...(Object.entries(APT_LABEL).map(([k, v]) => [`apt.${k}`, v]) as Array<[string, string]>),
+  ...(Object.entries(MST_LABEL).map(([k, v]) => [`mst.${k}`, v]) as Array<[string, string]>),
+];
+
+/** 스냅숏 이후 생활로 바뀐 만큼을 한 해 누적치에 더한다 */
+export function addSnapshotDiff(ctx: Ctx, snap: Snapshot) {
+  const p = ctx.s.run.person;
+  const sum = ctx.bundle.sum;
+  const add = (k: string, v: number) => {
+    if (v) sum[k] = (sum[k] ?? 0) + v;
+  };
+  for (const k of Object.keys(p.resources) as Array<keyof typeof p.resources>) add(`res.${k}`, p.resources[k] - snap.res[k]);
+  for (const k of Object.keys(p.aptitudes) as Array<keyof typeof p.aptitudes>) add(`apt.${k}`, p.aptitudes[k] - snap.apt[k]);
+  for (const k of Object.keys(p.masteries) as Array<keyof typeof p.masteries>) add(`mst.${k}`, p.masteries[k] - snap.mst[k]);
+}
+
+function sumDeltas(sum: Record<string, number>): string[] {
   const out: string[] = [];
-  const res = p.resources;
-  const d = (a: number, b: number) => a - b;
-  const hp = d(res.HP, snap.res.HP);
-  const fat = d(res.FAT, snap.res.FAT);
-  const krw = d(res.KRW, snap.res.KRW);
-  const sup = d(res.SUP, snap.res.SUP);
-  if (hp) out.push(`건강 ${hp > 0 ? '+' : ''}${hp}`);
-  if (fat) out.push(`피로 ${fat > 0 ? '+' : ''}${fat}`);
-  if (krw) out.push(`자금 ${krw > 0 ? '+' : ''}${won(krw)}`);
-  if (sup) out.push(`물자 ${sup > 0 ? '+' : ''}${sup}`);
-  for (const k of Object.keys(p.aptitudes) as Array<keyof typeof APT_LABEL>) {
-    const v = p.aptitudes[k] - snap.apt[k];
-    if (v) out.push(`${APT_LABEL[k]} ${v > 0 ? '+' : ''}${v}`);
-  }
-  for (const k of Object.keys(p.masteries) as Array<keyof typeof MST_LABEL>) {
-    const v = p.masteries[k] - snap.mst[k];
-    if (v) out.push(`${MST_LABEL[k]} ${v > 0 ? '+' : ''}${v}`);
+  for (const [k, label] of SUM_ORDER) {
+    const v = sum[k];
+    if (!v) continue;
+    out.push(`${label} ${v > 0 ? '+' : ''}${k === 'res.KRW' ? won(v) : v}`);
   }
   return out;
 }
 
-/** 쌓인 생활 기록을 요약 한 줄로 내보낸다 */
-export function flushActivity(ctx: Ctx) {
+/** 쌓인 한 해의 생활을 요약 한 줄로 내보낸다 */
+export function flushActivity(ctx: Ctx, extra: Partial<TimelineLog> = {}) {
   const b = ctx.bundle;
   if (!Object.keys(b.acts).length) return;
   const sum = ctx.summarize?.(ctx);
-  const deltas = b.snap ? snapshotDeltas(ctx.s, b.snap) : [];
+  const deltas = sumDeltas(b.sum);
   b.acts = {};
   b.texts = {};
-  b.snap = null;
-  if (sum) log(ctx, 'auto_activity', sum.body, { title: sum.title, deltas, tone: 'plain' });
+  b.sum = {};
+  if (sum) log(ctx, 'auto_activity', sum.body, { title: sum.title, deltas, tone: 'plain', ...extra });
 }
 
 export function monthOf(minute: number): number {
@@ -83,7 +86,6 @@ export function monthOf(minute: number): number {
 }
 
 export function log(ctx: Ctx, kind: LogKind, body: string, extra: Partial<TimelineLog> = {}): TimelineLog {
-  if (kind !== 'auto_activity') flushActivity(ctx);
   const r = ctx.s.run;
   r.auto_sequence += 1;
   const entry: TimelineLog = {
@@ -182,7 +184,11 @@ export function applyEffects(ctx: Ctx, eff: Effects | undefined, opts: ApplyOpts
   }
   if (eff.aptChance) {
     for (const a of eff.aptChance) {
-      if (p.aptitudes[a.apt] < 10 && chance(s.rng, ctx.stream, a.p)) {
+      // 적성은 높을수록 오르기 어렵다(7을 넘기면 거의 오르지 않는다)
+      const room = (10 - p.aptitudes[a.apt]) / 10;
+      // 일상 활동은 보름마다 쌓이므로 사건·선택보다 훨씬 느리게 반영한다
+      const pace = opts.diminish ? 0.25 : 1;
+      if (p.aptitudes[a.apt] < 10 && chance(s.rng, ctx.stream, a.p * pace * room ** 2)) {
         p.aptitudes[a.apt] += 1;
         out.push(`${APT_LABEL[a.apt]} +1`);
       }

@@ -143,7 +143,7 @@ export interface OverrideDef {
   outcome: string;
 }
 
-export type IncidentKind = 'major' | 'call' | 'postmortem';
+export type IncidentKind = 'major' | 'call' | 'postmortem' | 'minor';
 
 export interface IncidentDef {
   id: string;

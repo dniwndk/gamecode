@@ -41,6 +41,14 @@ function Badges({ items, tone = 'gold' }: { items?: string[]; tone?: 'gold' | 'r
   );
 }
 
+function lifeStage(age: number): string {
+  if (age <= 2) return '갓난아기';
+  if (age <= 6) return '어린 시절';
+  if (age <= 12) return '초등학생';
+  if (age <= 18) return '청소년기';
+  return '사회에 나오기 전';
+}
+
 const LogItem = memo(function LogItem({ log }: { log: TimelineLog }) {
   switch (log.kind) {
     case 'birth':
@@ -53,14 +61,18 @@ const LogItem = memo(function LogItem({ log }: { log: TimelineLog }) {
     case 'childhood':
       return (
         <div className="tl-item tl-quiet">
-          <div className="tl-title">유년기 · {log.age_years}세</div>
+          <div className="tl-title">
+            {lifeStage(log.age_years)}
+            {log.title ? ` · ${log.title}` : ''}
+          </div>
           <p className="tl-body m-0">{log.body}</p>
+          <Deltas items={log.deltas} />
         </div>
       );
     case 'auto_activity':
       return (
         <div className="tl-item tl-quiet">
-          <div className="tl-title">{log.month}월 · {log.title}</div>
+          <div className="tl-title">{log.title?.startsWith('한 해') ? log.title : `${log.month}월 · ${log.title}`}</div>
           <p className="tl-body m-0">{log.body}</p>
           <Deltas items={log.deltas} />
         </div>
@@ -191,8 +203,8 @@ function withDividers(logs: TimelineLog[]) {
   const out: Array<{ key: string; age?: number; log?: TimelineLog }> = [];
   let lastAge = -1;
   for (const l of logs) {
-    if (l.kind !== 'birth' && l.kind !== 'childhood' && l.age_years !== lastAge) out.push({ key: `age-${l.log_id}`, age: l.age_years });
-    if (l.kind !== 'childhood') lastAge = l.age_years;
+    if (l.kind !== 'birth' && l.age_years !== lastAge) out.push({ key: `age-${l.log_id}`, age: l.age_years });
+    lastAge = l.age_years;
     out.push({ key: l.log_id, log: l });
   }
   return out;

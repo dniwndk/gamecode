@@ -74,6 +74,68 @@ describe('일시정지와 속도', () => {
   });
 });
 
+describe('한 해씩 흐르는 삶', () => {
+  it('0세부터 마지막 해까지 건너뛰는 나이 없이 기록이 남는다', () => {
+    const s = createRun({ seed: 'years-1', name: '' });
+    playOut(s);
+    const seen = new Set(s.run.timeline_logs.map((l) => l.age_years));
+    const last = Math.floor(s.run.clock.current_age_years);
+    for (let a = 0; a < last; a++) expect(seen.has(a), `${a}세 기록`).toBe(true);
+  });
+
+  it('한 번 흐를 때 한 해(또는 선택이 열릴 때까지)만 진행한다', () => {
+    const s = createRun({ seed: 'years-2', name: '' });
+    for (let i = 0; i < 60 && s.run.run_status === 'playing'; i++) {
+      if (s.run.pending_decision) {
+        choose(s, autoChoice(s)!);
+        continue;
+      }
+      const before = s.run.clock.current_age_years;
+      advance(s);
+      expect(s.run.clock.current_age_years - before).toBeLessThanOrEqual(1.05);
+    }
+  });
+
+  it('작은 행동은 고른 뒤에도 같은 결정을 열어 둔다', () => {
+    let found = false;
+    for (let i = 0; i < 40 && !found; i++) {
+      const s = createRun({ seed: `side-${i}`, name: '' });
+      for (let k = 0; k < 400 && s.run.run_status === 'playing'; k++) {
+        const pd = s.run.pending_decision;
+        const side = pd?.choices.find((c) => c.minor && c.is_available);
+        if (pd && side) {
+          const node = pd.scene_node_id;
+          choose(s, side.id);
+          if (s.run.run_status !== 'playing') break;
+          expect(s.run.pending_decision?.scene_node_id).toBe(node);
+          expect(s.run.pending_decision?.choices.some((c) => c.id === side.id)).toBe(false);
+          found = true;
+          break;
+        }
+        if (pd) choose(s, autoChoice(s)!);
+        else advance(s);
+      }
+    }
+    expect(found).toBe(true);
+  });
+
+  it('모든 선택지는 어떤 능력치·자원에 영향을 주는지 보여 준다', () => {
+    const s = createRun({ seed: 'hint-1', name: '' });
+    let checked = 0;
+    for (let k = 0; k < 3000 && s.run.run_status === 'playing'; k++) {
+      const pd = s.run.pending_decision;
+      if (pd) {
+        for (const c of pd.choices) {
+          expect(c.effect_hint?.length, `${pd.title} · ${c.tag}`).toBeGreaterThan(0);
+          checked++;
+        }
+        choose(s, autoChoice(s)!);
+      } else advance(s);
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
+});
+
 describe('업적 공개 규칙', () => {
   it('얻지 못한 업적은 해금 설명(revealed)을 내보내지 않는다', () => {
     const views = achievementViews(emptyProfile(), null);

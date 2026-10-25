@@ -6,7 +6,7 @@ import { pick, weighted } from './rng';
 import { ACTIVITIES, actById } from '../content/activities';
 import { regionById } from '../content/world';
 import { pathById } from '../content/progression';
-import { applyEffects, fact, takeSnapshot, type Ctx } from './engineContext';
+import { applyEffects, fact, type Ctx } from './engineContext';
 
 type Tag = ActivityDef['tags'][number];
 
@@ -81,10 +81,6 @@ export function runActivity(ctx: Ctx) {
   const s = ctx.s;
   const a = chooseActivity(s);
   const b = ctx.bundle;
-  if (!Object.keys(b.acts).length) {
-    b.snap = takeSnapshot(s);
-    b.startMinute = s.run.clock.virtual_minute;
-  }
   b.acts[a.id] = (b.acts[a.id] ?? 0) + 1;
   b.texts[a.id] = pick(s.rng, 'world', a.texts);
 
@@ -115,17 +111,16 @@ export function recordRent(ctx: Ctx, earned: boolean) {
   fact(ctx, { type: 'activity_completed', data: { earned: true, rentPaid: s.run.person.resources.KRW >= 0 } });
 }
 
-/** 묶인 활동들을 한 단락으로 */
+/** 한 해의 활동들을 한 단락으로 */
 export function summarizeBundle(ctx: Ctx): { title: string; body: string } | null {
   const b = ctx.bundle;
   const ids = Object.keys(b.acts);
   if (!ids.length) return null;
   ids.sort((x, y) => b.acts[y] - b.acts[x]);
   const main = actById(ids[0])!;
-  const weeks = Object.values(b.acts).reduce((a, c) => a + c, 0) * 2;
-  const others = ids.slice(1).map((id) => actById(id)!.name);
-  const body = b.texts[ids[0]] + (others.length ? ` 틈틈이 ${others.join(', ')}도 했습니다.` : '');
-  return { title: `${weeks}주 · ${main.name}`, body };
+  const others = ids.slice(1, 4).map((id) => `${actById(id)!.name} ${b.acts[id] * 2}주`);
+  const body = b.texts[ids[0]] + (others.length ? ` 그 밖에 ${others.join(', ')}를 보냈습니다.` : '');
+  return { title: `한 해 · ${main.name} ${b.acts[ids[0]] * 2}주`, body };
 }
 
 export function pathMasteries(pathId: string | null): string[] {
