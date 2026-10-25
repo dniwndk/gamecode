@@ -26,6 +26,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            name-remains/package-lock.json
       - run: npm ci
       - name: 규칙·시뮬레이션 검사 (headless 기준 · 감사)
         run: npm test
@@ -35,6 +38,18 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: 배포본 검사 (설치형 웹앱 · 오프라인 · 휴대폰 플레이)
         run: node tests/dist.spec.mjs
+      - name: 「이름이 남는 동안」 검사·빌드 (name-remains/)
+        working-directory: name-remains
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm test
+          npm run build
+      - name: 「이름이 남는 동안」 브라우저 검사 (데스크톱·휴대폰 한 생애)
+        working-directory: name-remains
+        run: node tests/e2e/play.e2e.mjs test-results/e2e
+      - name: 「이름이 남는 동안」을 배포본 하위 경로(/name-remains/)에 싣기
+        run: cp -r name-remains/dist dist/name-remains
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:

@@ -1,0 +1,34 @@
+{
+  "name": "name-remains",
+  "private": true,
+  "version": "1.0.0",
+  "description": "이름이 남는 동안 — 괴담이 일상인 도시에서 한 사람의 생애를 자동으로 살아 보는 텍스트 인생 시뮬레이션",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "npm run build && node tests/e2e/play.e2e.mjs"
+  },
+  "dependencies": {
+    "idb": "8.0.3",
+    "lucide-react": "0.545.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "zustand": "5.0.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.1.14",
+    "@types/node": "22.18.8",
+    "@types/react": "19.1.13",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "4.7.0",
+    "fake-indexeddb": "6.2.2",
+    "tailwindcss": "4.1.14",
+    "typescript": "5.9.3",
+    "vite": "6.4.5",
+    "vitest": "5.0.5"
+  }
+}
