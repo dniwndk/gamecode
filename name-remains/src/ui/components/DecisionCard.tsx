@@ -28,6 +28,7 @@ function ChoiceButton({ c, n, onChoose }: { c: DecisionChoiceSnapshot; n: number
         </span>
         <span className="txt block">{c.text}</span>
         <Hint items={c.effect_hint} />
+        {c.injury_note && <span className="hint hint-hurt mt-1 block">{c.injury_note}</span>}
         {!c.is_available && c.unavailable_reason && <span className="label mt-1 block">{c.unavailable_reason}</span>}
       </span>
     </button>

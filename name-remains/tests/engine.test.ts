@@ -9,6 +9,8 @@ import { josa, fill, won } from '../src/domain/text';
 import type { RunState } from '../src/domain/types';
 import { playOut } from './sim.test';
 import { sceneById } from '../src/content/incidents';
+import { INCIDENT_TOLLS, injuryById } from '../src/content/injuries';
+import { sideUsesOf, usesOf } from '../src/content/bodyUse';
 
 const clone = (s: RunState): RunState => JSON.parse(JSON.stringify(s));
 
@@ -76,22 +78,72 @@ describe('일시정지와 속도', () => {
 });
 
 describe('고등급 괴담의 대가', () => {
-  it('4등급 이상 괴담에서 살아 돌아오면 최선의 선택을 해도 상해나 대가가 남는다', () => {
-    let survivedHigh = 0;
+  it('대가 표에 오른 고등급 괴담만, 최선의 선택을 해도 상해나 대가를 남긴다', () => {
+    let survivedToll = 0;
     let tolls = 0;
+    let survivedOtherHigh = 0;
     for (let i = 0; i < 60; i++) {
       const s = createRun({ seed: `toll-${i}`, name: '' });
       playOut(s, 20000, 'auto');
-      survivedHigh += s.run.incident_history.filter((h) => {
+      for (const h of s.run.incident_history) {
         const d = sceneById(h.incident_id);
-        return d?.kind === 'major' && d.tier >= 4 && h.survived;
-      }).length;
+        if (d?.kind !== 'major' || !h.survived) continue;
+        if (INCIDENT_TOLLS[d.id]) survivedToll++;
+        else if (d.tier >= 4) survivedOtherHigh++;
+      }
       tolls += s.run.timeline_logs.filter((l) => l.title === '살아 돌아온 대가').length;
     }
-    expect(survivedHigh).toBeGreaterThan(0);
-    expect(tolls).toBeLessThanOrEqual(survivedHigh);
-    // 능력으로 규칙을 덮어쓴 드문 경우만 대가를 피한다
-    expect(tolls).toBeGreaterThanOrEqual(Math.floor(survivedHigh * 0.85));
+    expect(Object.keys(INCIDENT_TOLLS).every((id) => (sceneById(id)?.tier ?? 0) >= 4)).toBe(true);
+    expect(survivedToll).toBeGreaterThan(0);
+    expect(survivedOtherHigh).toBeGreaterThan(0);
+    // 대가 표에 없는 고등급 괴담에서는 대가가 붙지 않는다. 능력으로 규칙을 덮어쓴 드문 경우만 대가를 피한다.
+    expect(tolls).toBeLessThanOrEqual(survivedToll);
+    expect(tolls).toBeGreaterThanOrEqual(Math.floor(survivedToll * 0.85));
+  });
+});
+
+describe('다친 부위', () => {
+  it('막는 상해가 있으면 그 부위를 쓰는 선택은 고를 수 없고, 불리한 선택에는 표시가 붙는다', () => {
+    let blockedSeen = 0;
+    let notedSeen = 0;
+    for (let i = 0; i < 40; i++) {
+      const s = createRun({ seed: `hurt-${i}`, name: '' });
+      let lcg = 7;
+      for (let k = 0; k < 20000 && s.run.run_status === 'playing'; k++) {
+        const pd = s.run.pending_decision;
+        if (!pd) {
+          advance(s);
+          continue;
+        }
+        const sid = s.run.incident!.incident_id;
+        const owned = (s.run.person.injuries ?? []).map((id) => injuryById(id)!);
+        for (const c of pd.choices) {
+          const uses = c.minor ? sideUsesOf(c.id.slice('side:'.length)) : usesOf(sid, c.id);
+          const blocker = owned.find((inj) => inj.blocks?.some((b) => uses.includes(b)));
+          const hinder = owned.find((inj) => inj.hinders?.some((h) => uses.includes(h)));
+          if (blocker) {
+            if (!c.is_available) {
+              // 조건·비용이 먼저 막았으면 그 이유가 먼저 보인다
+              if (!/^조건|모자랍니다/.test(c.unavailable_reason ?? '')) expect(c.unavailable_reason).toContain(blocker.name);
+              blockedSeen++;
+            } else {
+              // 고를 길이 하나도 없을 때만 막힌 길이 부담을 안고 열린다
+              expect(c.minor).toBeFalsy();
+              expect(c.injury_note).toContain(blocker.name);
+            }
+          } else if (hinder && c.is_available) {
+            expect(c.injury_note).toContain('다친 곳');
+            notedSeen++;
+          }
+        }
+        const avail = pd.choices.filter((c) => c.is_available);
+        expect(avail.length).toBeGreaterThan(0);
+        lcg = (lcg * 1103515245 + 12345) & 0x7fffffff;
+        choose(s, avail[lcg % avail.length].id);
+      }
+    }
+    expect(blockedSeen).toBeGreaterThan(0);
+    expect(notedSeen).toBeGreaterThan(0);
   });
 });
 

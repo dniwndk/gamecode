@@ -59,6 +59,8 @@ export interface DecisionChoiceSnapshot {
   minor?: boolean;
   /** 이 선택이 건드리는 능력치·자원 이름 */
   effect_hint?: string[];
+  /** 영구 상해로 다친 부위를 쓰는 선택일 때의 불리함 */
+  injury_note?: string;
 }
 
 /** 한 해 동안의 생활 활동 누적(연말에 한 줄로 정리한다) */

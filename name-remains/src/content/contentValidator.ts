@@ -5,6 +5,8 @@ import { BACKGROUNDS } from './backgrounds';
 import { CAPABILITIES } from './capabilities';
 import { ALL_SCENES, MAJOR_INCIDENTS } from './incidents';
 import { MINOR_EVENTS } from './minorEvents';
+import { ALL_SCENE_USES } from './bodyUse';
+import { INCIDENT_TOLLS, injuryById } from './injuries';
 import { ENDPOINTS, FORMS, PATHS, POSTMORTEMS } from './progression';
 
 /** showIf가 서로 반대인 짝(X / not X)이 있으면 둘 중 하나는 늘 보인다 */
@@ -54,6 +56,20 @@ export function validateContent(): string[] {
         }
       }
     }
+  }
+  // 다친 부위 표와 대가 표가 실제 장면·선택지·상해를 가리키는지
+  for (const [sid, map] of Object.entries(ALL_SCENE_USES)) {
+    const def = ALL_SCENES.find((d) => d.id === sid);
+    if (!def) {
+      errors.push(`부위 표: 없는 장면 ${sid}`);
+      continue;
+    }
+    const ids = new Set(Object.values(def.nodes).flatMap((n) => (n.kind === 'decision' ? n.choices.map((c) => c.id) : [])));
+    for (const cid of Object.keys(map)) if (!ids.has(cid)) errors.push(`부위 표: ${sid}에 없는 선택지 ${cid}`);
+  }
+  for (const [sid, tolls] of Object.entries(INCIDENT_TOLLS)) {
+    if (!MAJOR_INCIDENTS.some((d) => d.id === sid)) errors.push(`대가 표: 없는 주요 사건 ${sid}`);
+    for (const t of tolls) if (t.effects.injury && !injuryById(t.effects.injury)) errors.push(`대가 표: 없는 상해 ${t.effects.injury}`);
   }
   return errors;
 }
