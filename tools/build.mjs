@@ -83,6 +83,8 @@ self.addEventListener('message', (e) => { if (e.data && e.data.type === 'skip-wa
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  // 같은 사이트의 다른 게임(name-remains/)은 이 서비스 워커가 건드리지 않는다
+  if (new URL(req.url).pathname.includes('/name-remains/')) return;
   // 화면 요청(?seed= 같은 주소 포함)은 언제나 이 판본의 index.html로 연다
   if (req.mode === 'navigate') {
     e.respondWith(caches.open(CACHE).then((c) => c.match('index.html')).then((r) => r || fetch(req)));
