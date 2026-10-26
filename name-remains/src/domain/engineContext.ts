@@ -223,15 +223,43 @@ export function applyEffects(ctx: Ctx, eff: Effects | undefined, opts: ApplyOpts
       const room = (10 - p.aptitudes[a.apt]) / 10;
       // 일상 활동은 보름마다 쌓이므로 사건·선택보다 훨씬 느리게 반영한다
       const pace = opts.diminish ? 0.25 : 1;
-      if (p.aptitudes[a.apt] < 10 && chance(s.rng, ctx.stream, a.p * pace * room ** 2)) {
+      if (p.aptitudes[a.apt] >= 10) continue;
+      if (opts.diminish) {
+        if (chance(s.rng, ctx.stream, a.p * pace * room ** 2)) {
+          p.aptitudes[a.apt] += 1;
+          out.push(`${APT_LABEL[a.apt]} +1`);
+        }
+        continue;
+      }
+      // 선택의 결과는 운에 맡기지 않고 경험으로 쌓는다: 경험이 다 차면 적성이 1 오른다
+      const xp = (p.apt_xp ??= {});
+      const gain = Math.max(0.01, a.p * room ** 2);
+      const total = (xp[a.apt] ?? 0) + gain;
+      if (total >= 1) {
         p.aptitudes[a.apt] += 1;
+        xp[a.apt] = Math.round((total - 1) * 1000) / 1000;
         out.push(`${APT_LABEL[a.apt]} +1`);
+      } else {
+        xp[a.apt] = Math.round(total * 1000) / 1000;
+        out.push(`${APT_LABEL[a.apt]} 경험 +${Math.max(1, Math.round(gain * 100))}%`);
       }
     }
   }
   if (eff.mst) {
     for (const [k, v] of Object.entries(eff.mst) as Array<[keyof typeof MST_LABEL, number]>) {
       const before = p.masteries[k];
+      if (v > 0 && !opts.diminish) {
+        // 선택의 결과는 운에 맡기지 않는다: 1에 못 미치는 몫은 경험으로 남겨 다음에 더한다
+        const xp = (p.mst_xp ??= {});
+        const inc = v * Math.max(0.01, (1 - before / 100) ** 2);
+        const g = inc + (xp[k] ?? 0);
+        const whole = Math.floor(g);
+        xp[k] = Math.round((g - whole) * 1000) / 1000;
+        p.masteries[k] = clamp(before + whole, 0, 100);
+        const real = p.masteries[k] - before;
+        out.push(real > 0 ? `${MST_LABEL[k]} +${real}` : `${MST_LABEL[k]} 경험 +${Math.max(1, Math.round(inc * 100))}%`);
+        continue;
+      }
       const gain = masteryGain(s, ctx.stream, before, v, opts.diminish ? 0.12 : 1);
       p.masteries[k] = clamp(before + gain, 0, 100);
       const real = p.masteries[k] - before;

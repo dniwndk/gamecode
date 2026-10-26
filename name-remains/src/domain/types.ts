@@ -57,9 +57,7 @@ export interface DecisionChoiceSnapshot {
   unavailable_reason?: string;
   /** 사건 도중 언제든 끼워 넣는 작은 행동(고른 뒤에도 같은 선택이 이어진다) */
   minor?: boolean;
-  /** 이 선택이 건드리는 능력치·자원 이름 */
-  effect_hint?: string[];
-  /** 영구 상해로 다친 부위를 쓰는 선택일 때의 불리함 */
+  /** 영구 상해로 다친 부위를 써야 하는 선택이라는 표시(얼마나 불리한지는 보여 주지 않는다) */
   injury_note?: string;
 }
 
@@ -162,6 +160,10 @@ export interface PersonState {
   relic_guard_ready: boolean;
   beacons: number;
   aptitudes: Record<Apt, number>;
+  /** 선택으로 쌓인, 다음 적성 1까지의 경험(0~1) */
+  apt_xp?: Partial<Record<Apt, number>>;
+  /** 선택으로 쌓인, 다음 숙련 1까지의 경험(0~1) */
+  mst_xp?: Partial<Record<Mst, number>>;
   resources: Record<Res, number>;
   masteries: Record<Mst, number>;
   capabilities: string[];

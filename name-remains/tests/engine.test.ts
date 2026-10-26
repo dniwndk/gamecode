@@ -192,20 +192,31 @@ describe('한 해씩 흐르는 삶', () => {
     expect(found).toBe(true);
   });
 
-  it('모든 선택지는 어떤 능력치·자원에 영향을 주는지 보여 준다', () => {
-    const s = createRun({ seed: 'hint-1', name: '' });
+  it('선택지에는 영향이 미리 적히지 않고, 고른 직후 결과에 수치 변화가 남는다', () => {
+    const misses: string[] = [];
     let checked = 0;
-    for (let k = 0; k < 3000 && s.run.run_status === 'playing'; k++) {
-      const pd = s.run.pending_decision;
-      if (pd) {
-        for (const c of pd.choices) {
-          expect(c.effect_hint?.length, `${pd.title} · ${c.tag}`).toBeGreaterThan(0);
-          checked++;
+    for (let i = 0; i < 20; i++) {
+      const s = createRun({ seed: `hint-${i}`, name: '' });
+      let lcg = 11 + i;
+      for (let k = 0; k < 20000 && s.run.run_status === 'playing'; k++) {
+        const pd = s.run.pending_decision;
+        if (!pd) {
+          advance(s);
+          continue;
         }
-        choose(s, autoChoice(s)!);
-      } else advance(s);
+        for (const c of pd.choices) expect(JSON.stringify(c)).not.toContain('영향 ·');
+        const avail = pd.choices.filter((c) => c.is_available);
+        lcg = (lcg * 1103515245 + 12345) & 0x7fffffff;
+        const c = avail[lcg % avail.length];
+        const before = s.run.timeline_logs.length;
+        choose(s, c.id);
+        const after = s.run.timeline_logs.slice(before);
+        checked++;
+        if (!after.some((l) => l.deltas?.length)) misses.push(`${pd.title} · ${c.tag}`);
+      }
     }
-    expect(checked).toBeGreaterThan(20);
+    expect(checked).toBeGreaterThan(200);
+    expect([...new Set(misses)]).toEqual([]);
   });
 });
 

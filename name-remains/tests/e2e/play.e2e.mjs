@@ -104,10 +104,11 @@ async function playOnce(browser, name, viewport, isMobile) {
   for (let i = 0; i < 400; i++) {
     if (await page.getByRole('button', { name: '결말 보기' }).count()) break;
     const card = page.locator('section.decision');
+    // 자동 결정이 켜져 있어 카드가 눌리기 전에 사라질 수 있다. 그럴 땐 다음 바퀴에서 다시 본다.
     if (await card.count()) {
-      await card.locator('button.choice:not([disabled])').first().click();
+      await card.locator('button.choice:not([disabled])').first().click({ timeout: 2000 }).catch(() => {});
     } else {
-      await page.getByRole('button', { name: /다음 선택까지/ }).first().click();
+      await page.getByRole('button', { name: /다음 선택까지/ }).first().click({ timeout: 2000 }).catch(() => {});
     }
     await page.waitForTimeout(120);
   }

@@ -170,7 +170,7 @@ export const CALLS: IncidentDef[] = [
         prompt: '자정까지 세 시간 남았습니다.',
         choices: [
           { id: 'go_labor', tag: '노역 수행', text: '통지대로 창고에 가서 시키는 일을 한다. 빚의 일부가 깎인다.', check: 'chance', chance: { base: 0.6, apt: ['PRC'], mst: ['MST_FIELD'] }, success: { text: '창고 안에서 무엇을 옮겼는지는 기억하고 싶지 않습니다. 새벽에 나오자 빚 문서의 숫자가 줄어 있었습니다.', effects: { KRW: 450, FAT: 30, HP: -10 }, end: 'labored' }, fail: { text: '창고 안의 것이 당신을 옮기려 했습니다. 새벽까지 버틴 대가로 빚은 줄었지만 왼팔이 잘 올라가지 않습니다.', effects: { KRW: 450, FAT: 30, HP: -35 }, end: 'labored' } },
-          { id: 'negotiate', tag: '교섭', text: '집행인에게 상환 계획서를 내밀며 기한을 늦춰 달라고 설득한다.', requires: { apt: 'NEG', min: 4 }, check: 'chance', chance: { base: 0.55, apt: ['NEG'], mst: ['MST_RULE'] }, success: { text: '집행인이 계획서를 훑어보더니 봉투를 도로 가져갔습니다. "다음 분기엔 안 봐줍니다."', end: 'delayed' }, fail: { text: '집행인은 계획서를 찢었습니다. 그날 밤 꿈에 창고가 나왔고, 아침에 일어나니 몸이 몹시 무거웠습니다.', effects: { HP: -20, FAT: 25 }, end: 'delayed' } },
+          { id: 'negotiate', tag: '교섭', text: '집행인에게 상환 계획서를 내밀며 기한을 늦춰 달라고 설득한다.', requires: { apt: 'NEG', min: 4 }, check: 'chance', chance: { base: 0.55, apt: ['NEG'], mst: ['MST_RULE'] }, success: { text: '집행인이 계획서를 훑어보더니 봉투를 도로 가져갔습니다. "다음 분기엔 안 봐줍니다."', effects: { FAT: 8, aptChance: [{ apt: 'NEG', p: 0.3 }], mst: { MST_RULE: 2 } }, end: 'delayed' }, fail: { text: '집행인은 계획서를 찢었습니다. 그날 밤 꿈에 창고가 나왔고, 아침에 일어나니 몸이 몹시 무거웠습니다.', effects: { HP: -20, FAT: 25 }, end: 'delayed' } },
           { id: 'clause', tag: '독소 조항 식별', text: '통지서의 조항을 읽어 집행 근거가 없는 줄을 찾아낸다.', requires: { cap: 'CAP_04_CLAUSE_AUDIT' }, check: 'ability', success: { text: '통지서의 집행 장소가 계약서상 \'채무자 거주지 반경 10킬로미터 이내\'를 벗어났습니다. 그 줄을 짚어 주자 봉투가 재가 되었습니다.', effects: { mst: { MST_RULE: 4 } }, end: 'voided' } },
         ],
       },

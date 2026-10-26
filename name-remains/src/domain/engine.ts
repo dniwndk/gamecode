@@ -11,7 +11,7 @@ import type {
   ThreatTag,
   TimelineLog,
 } from './types';
-import { APT_LABEL, MINUTES_PER_YEAR, MST_LABEL, RES_LABEL, describeCond, evalCond } from './conditions';
+import { MINUTES_PER_YEAR, describeCond, evalCond } from './conditions';
 import { chance, int, next, pick, weighted } from './rng';
 import { STEP_MINUTES } from './runFactory';
 import { fill, won } from './text';
@@ -66,14 +66,14 @@ const INJURY_HP_LINE = 25;
 const INJURY_ON_SIDE_FAIL = 0.3;
 const INJURY_ON_LOW_HP = 0.5;
 /** 어른이 된 뒤 일상·소사건에서 판정이 틀어졌을 때 */
-const INJURY_ON_MINOR_FAIL = 0.18;
+const INJURY_ON_MINOR_FAIL = 0.12;
 /** 다친 부위를 쓰는 선택: 상해 하나당 성공률 감소(최대치까지) */
 const INJURY_HINDER = 0.15;
 const INJURY_HINDER_CAP = 0.3;
 /** 다친 부위를 쓰는 판정 없는 선택: 상해 하나당 몸에 오는 부담 */
 const INJURY_STRAIN: Effects = { HP: -4, FAT: 6 };
 /** 판정 실패 피해 배율의 바닥값(등급마다 +0.5) */
-const FAIL_DAMAGE_BASE = 1.55;
+const FAIL_DAMAGE_BASE = 1.22;
 const NOTICE_RATE = 0.045;
 /** 늙지 않는 형태 */
 export const AGELESS_FORMS = ['FORM_04_ABYSS_ENVOY', 'FORM_06_SANCTUARY', 'FORM_07_STORY_ECHO', 'FORM_11_CONCEPT'];
@@ -672,18 +672,20 @@ function impairment(s: RunState, uses: BodyPart[]): Impairment {
 
 const hinderPenalty = (imp: Impairment) => Math.min(INJURY_HINDER_CAP, INJURY_HINDER * imp.hindered.length);
 
-function impairmentNote(imp: Impairment, uses: BodyPart[], chance: boolean): string | undefined {
+/** 다친 부위를 써야 하는 선택이라는 것만 알린다. 얼마나 불리한지는 고른 뒤 결과로 겪어서 안다. */
+function impairmentNote(imp: Impairment): string | undefined {
   if (!imp.hindered.length) return undefined;
-  const names = imp.hindered.map((i) => i.name).join(', ');
-  const parts = [...new Set(imp.hindered.flatMap((i) => (i.hinders ?? []).filter((h) => uses.includes(h))))].map((h) => PART_LABEL[h]).join('·');
-  if (chance) return `다친 곳 · ${names}: ${parts} 쓰기 불리, 성공률 −${Math.round(hinderPenalty(imp) * 100)}%`;
-  const n = imp.hindered.length;
-  return `다친 곳 · ${names}: ${parts} 쓰기 불리, 건강 ${(INJURY_STRAIN.HP ?? 0) * n} · 피로 +${(INJURY_STRAIN.FAT ?? 0) * n}`;
+  return `다친 곳을 써야 합니다 · ${imp.hindered.map((i) => i.name).join(', ')}`;
 }
 
 function blockReason(imp: Impairment): string | undefined {
   const b = imp.blocked;
   return b ? `${b.injury.name} · ${BLOCK_REASON[b.part] ?? `${PART_LABEL[b.part]}을 쓸 수 없습니다`}` : undefined;
+}
+
+/** 다친 부위 때문에 판정이 불리했음을 결과에 남긴다 */
+function noteHindered(imp: Impairment, out: string[]) {
+  if (imp.hindered.length) out.push(`다친 곳 때문에 판정 -${Math.round(hinderPenalty(imp) * 100)}% · ${imp.hindered.map((i) => i.name).join(', ')}`);
 }
 
 /** 다친 부위로 판정 없이 밀어붙인 값 */
@@ -744,29 +746,6 @@ function affordable(s: RunState, cost: Effects | undefined): boolean {
   return true;
 }
 
-/** 선택이 건드리는 능력치·자원의 이름 */
-function effectLabels(list: Array<Effects | undefined>): string[] {
-  const out = new Set<string>();
-  for (const e of list) {
-    if (!e) continue;
-    (['HP', 'FAT', 'KRW', 'SUP'] as const).forEach((k) => e[k] && out.add(RES_LABEL[k]));
-    for (const k of Object.keys(e.apt ?? {}) as Apt[]) out.add(APT_LABEL[k]);
-    for (const a of e.aptChance ?? []) out.add(APT_LABEL[a.apt]);
-    for (const k of Object.keys(e.mst ?? {}) as Mst[]) out.add(MST_LABEL[k]);
-    if (e.trust || e.meet || e.allyLost) out.add('인연');
-    if (e.clues) out.add('단서');
-    if (e.caps) out.add('능력');
-    if (e.contracts) out.add('계약');
-    if (e.joinPath) out.add('성장 경로');
-    if (e.region) out.add('사는 곳');
-    if (e.form) out.add('존재 형태');
-    if (e.defense) out.add('다음 사건 방어');
-    if (e.beacons) out.add('귀환 표식');
-    if (e.injury) out.add('영구 상해');
-  }
-  return [...out];
-}
-
 /** 괴담 사건 속 선택은 결과와 별개로 경험을 남긴다: 판정에 쓰인 숙련이 오르고 긴장으로 조금 지친다 */
 function experienceOf(def: IncidentDef, c: ChoiceDef, ok: boolean): Effects | undefined {
   if (def.kind !== 'major' && def.kind !== 'postmortem') return undefined;
@@ -805,8 +784,7 @@ function snapshotChoice(s: RunState, def: IncidentDef, c: ChoiceDef, allowBlocke
     odds_label: c.check === 'chance' ? oddsLabel(successChance(s, def, c)) : '판정 없음',
     is_available: reqOk && costOk && !blocked,
     unavailable_reason: !reqOk ? `조건: ${describeCond(c.requires)}` : !costOk ? '물자나 자금이 모자랍니다' : blocked ? blockReason(imp) : undefined,
-    effect_hint: [...effectLabels([c.cost, c.success.effects, c.fail?.effects, experienceOf(def, c, true)]), ...(def.kind === 'major' && c.check === 'chance' ? ['실패 시 상해 위험'] : [])],
-    injury_note: blocked ? undefined : impairmentNote(imp, uses, c.check === 'chance'),
+    injury_note: blocked ? undefined : impairmentNote(imp),
   };
 }
 
@@ -852,11 +830,6 @@ function snapshotSide(s: RunState, def: IncidentDef, sa: SideActionDef): Decisio
   const uses = sideUsesOf(sa.id);
   const imp = impairment(s, uses);
   const blocked = !!imp.blocked;
-  const hint = effectLabels([sa.cost, sa.success.effects, sa.fail?.effects]);
-  if (sa.success.bonus) hint.push('이번 사건 판정');
-  if (sa.success.clue) hint.push('단서');
-  if (sa.success.allyTrust) hint.push('인연');
-  if (sa.chance && def.kind === 'major') hint.push('실패 시 상해 위험');
   return {
     id: `side:${sa.id}`,
     tag: sa.tag,
@@ -867,8 +840,7 @@ function snapshotSide(s: RunState, def: IncidentDef, sa: SideActionDef): Decisio
     is_available: reqOk && costOk && !blocked,
     unavailable_reason: !reqOk ? `조건: ${describeCond(sa.requires)}` : !costOk ? '물자나 자금이 모자랍니다' : blocked ? blockReason(imp) : undefined,
     minor: true,
-    effect_hint: [...new Set(hint)],
-    injury_note: blocked ? undefined : impairmentNote(imp, uses, !!sa.chance),
+    injury_note: blocked ? undefined : impairmentNote(imp),
   };
 }
 
@@ -893,7 +865,9 @@ function runSideAction(ctx: Ctx, def: IncidentDef, nodeId: string, node: Extract
   const out = ok ? sa.success : sa.fail ?? sa.success;
   const e = log(ctx, 'incident_result', tx(s, out.text), { tone: ok ? 'good' : 'danger', badges: sa.chance ? [ok ? '판정 성공' : '판정 실패'] : undefined });
   deltas.push(...applyEffects(ctx, out.effects));
-  if (!sa.chance) applyStrain(ctx, impairment(s, sideUsesOf(sa.id)), deltas);
+  const imp = impairment(s, sideUsesOf(sa.id));
+  if (sa.chance) noteHindered(imp, deltas);
+  else applyStrain(ctx, imp, deltas);
   if (!ok && def.kind === 'major') maybeInjure(ctx, INJURY_ON_SIDE_FAIL, deltas);
   if (ok) {
     const sb = sa.success;
@@ -969,7 +943,7 @@ export function choose(s: RunState, choiceId: string): StepResult {
 
   log(ctx, 'decision_taken', snap.text, { title: c.tag, badges: snap.required_badges.length ? snap.required_badges : undefined, tone: 'plain' });
   const pv = c.check === 'chance' ? successChance(s, def, c) : 1;
-  if (c.cost) applyEffects(ctx, c.cost);
+  const costDeltas = c.cost ? applyEffects(ctx, c.cost) : [];
 
   let ok: boolean;
   if (c.failIf === true || (c.failIf && evalCond(s, c.failIf))) ok = false;
@@ -982,13 +956,14 @@ export function choose(s: RunState, choiceId: string): StepResult {
   const scale = ok ? undefined : tierScale * (crisis === 'CRISIS_EGRESS_FIRST' ? 0.75 : crisis === 'CRISIS_PUSH_OBJECTIVE' ? 1.2 : 1);
   const resultBadges = c.check === 'chance' ? [ok ? '판정 성공' : '판정 실패'] : undefined;
   const e = log(ctx, 'incident_result', tx(s, out.text), { tone: ok ? 'good' : 'danger', sound: out.sound, accessibility_caption: out.caption, badges: resultBadges });
-  e.deltas = applyEffects(ctx, out.effects, { damageScale: scale });
+  e.deltas = [...costDeltas, ...applyEffects(ctx, out.effects, { damageScale: scale })];
   const xp = experienceOf(def, c, ok);
   if (xp) e.deltas.push(...applyEffects(ctx, xp));
-  if (c.check !== 'chance') {
+  {
     const imp = impairment(s, usesOf(def.id, c.id));
     if (imp.blocked) imp.hindered.push(imp.blocked.injury);
-    applyStrain(ctx, imp, e.deltas);
+    if (c.check !== 'chance') applyStrain(ctx, imp, e.deltas);
+    else noteHindered(imp, e.deltas);
   }
   if (!ok && def.kind === 'major') maybeInjure(ctx, INJURY_ON_FAIL + INJURY_PER_TIER * def.tier, e.deltas);
   else if (!ok && def.kind === 'minor' && c.check === 'chance' && s.run.clock.current_age_years >= 18) maybeInjure(ctx, INJURY_ON_MINOR_FAIL, e.deltas);

@@ -1,11 +1,6 @@
 import { AlertTriangle, Clock3, Hand, Lock, Search } from 'lucide-react';
 import type { DecisionChoiceSnapshot, PendingDecisionSnapshot } from '../../domain/types';
 
-function Hint({ items }: { items?: string[] }) {
-  if (!items?.length) return null;
-  return <span className="hint mt-1 block">영향 · {items.join(' · ')}</span>;
-}
-
 function ChoiceButton({ c, n, onChoose }: { c: DecisionChoiceSnapshot; n: number; onChoose: (id: string) => void }) {
   return (
     <button className={`choice ${c.minor ? 'choice-minor' : ''}`} disabled={!c.is_available} onClick={() => onChoose(c.id)} aria-keyshortcuts={String(n)}>
@@ -27,7 +22,6 @@ function ChoiceButton({ c, n, onChoose }: { c: DecisionChoiceSnapshot; n: number
           ))}
         </span>
         <span className="txt block">{c.text}</span>
-        <Hint items={c.effect_hint} />
         {c.injury_note && <span className="hint hint-hurt mt-1 block">{c.injury_note}</span>}
         {!c.is_available && c.unavailable_reason && <span className="label mt-1 block">{c.unavailable_reason}</span>}
       </span>
