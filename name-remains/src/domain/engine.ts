@@ -22,6 +22,7 @@ import {
   checkPromotion,
   fact,
   flushActivity,
+  grantInjury,
   log,
   maxHp,
   newCtx,
@@ -40,6 +41,7 @@ import { AMBIENT_NOTICES, FORGED_NOTICES } from '../content/notices';
 import { POSTMORTEMS, endpointById } from '../content/progression';
 import { CHILD_CHOICES, DAILY_CHOICES, childYearLine } from '../content/lifeChoices';
 import { SIDE_ACTIONS, sideById, type SideActionDef } from '../content/sideActions';
+import { PHYSICAL_INJURIES, TOLLS } from '../content/injuries';
 
 const YEAR = MINUTES_PER_YEAR;
 /** 생활권 위험도 × 이 값 = 보름마다 주요 사건이 터질 확률 */
@@ -54,6 +56,20 @@ const DAILY_GAP_YEARS = 0.5;
 const CHILD_CHOICE_RATE = 0.6;
 /** 작은 행동으로 쌓을 수 있는 판정 보정의 상한 */
 const SIDE_BONUS_CAP = 0.15;
+/** 괴담 사건에서 판정에 실패했을 때 영구 상해가 남을 확률: 기본 + 등급당 */
+const INJURY_ON_FAIL = 0.25;
+const INJURY_PER_TIER = 0.06;
+/** 사건 도중 건강이 이 아래로 떨어지면 한 번 더 상해를 굴린다 */
+const INJURY_HP_LINE = 25;
+/** 작은 행동이 실패했을 때 */
+const INJURY_ON_SIDE_FAIL = 0.3;
+const INJURY_ON_LOW_HP = 0.5;
+/** 어른이 된 뒤 일상·소사건에서 판정이 틀어졌을 때 */
+const INJURY_ON_MINOR_FAIL = 0.15;
+/** 이 등급 이상의 괴담은 살아 돌아와도 대가를 남긴다 */
+const TOLL_TIER = 4;
+/** 판정 실패 피해 배율의 바닥값(등급마다 +0.5) */
+const FAIL_DAMAGE_BASE = 1.55;
 const NOTICE_RATE = 0.045;
 /** 늙지 않는 형태 */
 export const AGELESS_FORMS = ['FORM_04_ABYSS_ENVOY', 'FORM_06_SANCTUARY', 'FORM_07_STORY_ECHO', 'FORM_11_CONCEPT'];
@@ -583,6 +599,7 @@ export function startIncident(ctx: Ctx, def: IncidentDef, entry: 'involuntary' |
       const e = log(ctx, 'power_override', tx(s, ov.text), { title: `권능 발동 · ${ov.label}`, tone: 'gold', sound: 'bell', badges: ['보유 능력 작동'] });
       e.deltas = applyEffects(ctx, ov.effects);
       fact(ctx, { type: 'power_override_triggered', incident_id: def.id });
+      if (r.incident) r.incident.local_flags.__override = true;
       completeIncident(ctx, ov.outcome);
       return;
     }
@@ -692,6 +709,7 @@ function effectLabels(list: Array<Effects | undefined>): string[] {
     if (e.form) out.add('존재 형태');
     if (e.defense) out.add('다음 사건 방어');
     if (e.beacons) out.add('귀환 표식');
+    if (e.injury) out.add('영구 상해');
   }
   return [...out];
 }
@@ -730,7 +748,7 @@ function snapshotChoice(s: RunState, def: IncidentDef, c: ChoiceDef): DecisionCh
     odds_label: c.check === 'chance' ? oddsLabel(successChance(s, def, c)) : '판정 없음',
     is_available: reqOk && costOk,
     unavailable_reason: !reqOk ? `조건: ${describeCond(c.requires)}` : !costOk ? '물자나 자금이 모자랍니다' : undefined,
-    effect_hint: effectLabels([c.cost, c.success.effects, c.fail?.effects, experienceOf(def, c, true)]),
+    effect_hint: [...effectLabels([c.cost, c.success.effects, c.fail?.effects, experienceOf(def, c, true)]), ...(def.kind === 'major' && c.check === 'chance' ? ['실패 시 상해 위험'] : [])],
   };
 }
 
@@ -776,6 +794,7 @@ function snapshotSide(s: RunState, def: IncidentDef, sa: SideActionDef): Decisio
   if (sa.success.bonus) hint.push('이번 사건 판정');
   if (sa.success.clue) hint.push('단서');
   if (sa.success.allyTrust) hint.push('인연');
+  if (sa.chance && def.kind === 'major') hint.push('실패 시 상해 위험');
   return {
     id: `side:${sa.id}`,
     tag: sa.tag,
@@ -811,6 +830,7 @@ function runSideAction(ctx: Ctx, def: IncidentDef, nodeId: string, node: Extract
   const out = ok ? sa.success : sa.fail ?? sa.success;
   const e = log(ctx, 'incident_result', tx(s, out.text), { tone: ok ? 'good' : 'danger', badges: sa.chance ? [ok ? '판정 성공' : '판정 실패'] : undefined });
   deltas.push(...applyEffects(ctx, out.effects));
+  if (!ok && def.kind === 'major') maybeInjure(ctx, INJURY_ON_SIDE_FAIL, deltas);
   if (ok) {
     const sb = sa.success;
     if (sb.bonus) {
@@ -891,13 +911,16 @@ export function choose(s: RunState, choiceId: string): StepResult {
   const out = ok ? c.success : c.fail ?? c.success;
   const crisis = r.life_plan.crisis_priority;
   // 상위 등급 괴담일수록 같은 실패도 더 깊게 벤다
-  const tierScale = def.kind === 'major' ? 1 + 0.5 * Math.max(0, def.tier - 1) : 1;
+  const tierScale = def.kind === 'major' ? FAIL_DAMAGE_BASE + 0.5 * Math.max(0, def.tier - 1) : 1;
   const scale = ok ? undefined : tierScale * (crisis === 'CRISIS_EGRESS_FIRST' ? 0.75 : crisis === 'CRISIS_PUSH_OBJECTIVE' ? 1.2 : 1);
   const resultBadges = c.check === 'chance' ? [ok ? '판정 성공' : '판정 실패'] : undefined;
   const e = log(ctx, 'incident_result', tx(s, out.text), { tone: ok ? 'good' : 'danger', sound: out.sound, accessibility_caption: out.caption, badges: resultBadges });
   e.deltas = applyEffects(ctx, out.effects, { damageScale: scale });
   const xp = experienceOf(def, c, ok);
   if (xp) e.deltas.push(...applyEffects(ctx, xp));
+  if (!ok && def.kind === 'major') maybeInjure(ctx, INJURY_ON_FAIL + INJURY_PER_TIER * def.tier, e.deltas);
+  else if (!ok && def.kind === 'minor' && c.check === 'chance' && s.run.clock.current_age_years >= 18) maybeInjure(ctx, INJURY_ON_MINOR_FAIL, e.deltas);
+  if (def.kind === 'major') checkLowHpInjury(ctx, e.deltas);
   if (ok && c.stealth && r.incident) r.incident.local_flags.used_stealth = true;
   if (c.usesSupplies) fact(ctx, { type: 'action_resolved', incident_id: def.id, data: { suppliesSpent: true, success: ok } });
 
@@ -934,6 +957,7 @@ function completeIncident(ctx: Ctx, outcome: string) {
   const survived = !died && r.run_status === 'playing';
   const now = r.clock.virtual_minute;
 
+  if (def.kind === 'major' && survived && def.tier >= TOLL_TIER && !inc.local_flags.__override) payToll(ctx, def);
   if (def.kind === 'major' && survived) {
     r.counters.clears = (r.counters.clears ?? 0) + 1;
     if (inc.entry_mode === 'involuntary') p.involuntary_survivals_count += 1;
@@ -968,6 +992,36 @@ function completeIncident(ctx: Ctx, outcome: string) {
   r.current_activity = null;
   const ep = def.outcomeEndpoints?.[outcome];
   if (ep && r.run_status === 'playing') commitEndpoint(ctx, ep, def.title, false, local);
+}
+
+// ---------------------------------------------------------------- 영구 상해와 대가
+
+/** 몸에 남는 상해 하나를 확률로 남긴다 */
+function maybeInjure(ctx: Ctx, p: number, out: string[]) {
+  const s = ctx.s;
+  if (s.run.person.resources.HP <= 0 || !chance(s.rng, ctx.stream, p)) return;
+  const owned = s.run.person.injuries ?? [];
+  const pool = PHYSICAL_INJURIES.filter((id) => !owned.includes(id));
+  if (pool.length) grantInjury(ctx, pick(s.rng, ctx.stream, pool), out);
+}
+
+/** 크게 다친 채 버틴 사건은 한 번 더 상해를 굴린다(사건마다 한 번) */
+function checkLowHpInjury(ctx: Ctx, out: string[]) {
+  const inc = ctx.s.run.incident;
+  const hp = ctx.s.run.person.resources.HP;
+  if (!inc || inc.local_flags.__lowhp || hp <= 0 || hp >= INJURY_HP_LINE) return;
+  inc.local_flags.__lowhp = true;
+  maybeInjure(ctx, INJURY_ON_LOW_HP, out);
+}
+
+/** 고등급 괴담에서 살아 돌아온 대가: 위협 갈래에 맞는 상해나 값비싼 손실 */
+function payToll(ctx: Ctx, def: IncidentDef) {
+  const s = ctx.s;
+  const owned = s.run.person.injuries ?? [];
+  const pool = def.threats.flatMap((t) => TOLLS[t] ?? []).filter((t) => !t.effects.injury || !owned.includes(t.effects.injury));
+  const toll = pool.length ? pick(s.rng, ctx.stream, pool) : { text: '살아 돌아왔지만 몸과 마음 어딘가가 영영 그곳에 남았습니다.', effects: { lifespan: -2, FAT: 15 } };
+  const e = log(ctx, 'incident_result', toll.text, { tone: 'danger', title: '살아 돌아온 대가', badges: ['고등급 괴담의 대가'] });
+  e.deltas = applyEffects(ctx, toll.effects);
 }
 
 // ---------------------------------------------------------------- 죽음과 종점

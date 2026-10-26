@@ -77,6 +77,8 @@ export interface Effects {
   marks?: string[];
   /** 다음 사건 방어 보너스(확률 판정에 더함) */
   defense?: number;
+  /** 영구 상해(content/injuries.ts의 id) */
+  injury?: string;
 }
 
 export interface Outcome {

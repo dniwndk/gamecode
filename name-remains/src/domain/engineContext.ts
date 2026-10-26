@@ -7,6 +7,7 @@ import { CAPABILITIES, capName } from '../content/capabilities';
 import { clueById, npcLabel, regionById } from '../content/world';
 import { formById, pathById } from '../content/progression';
 import { won } from './text';
+import { injuryById } from '../content/injuries';
 
 interface Snapshot {
   res: Record<string, number>;
@@ -114,7 +115,41 @@ export function maxHp(s: RunState): number {
   const base = s.run.person.form_id === 'FORM_09_RELIC_HOST' ? 130 : 100;
   if (AGELESS.includes(s.run.person.form_id)) return base;
   const age = s.run.clock.current_age_years;
-  return Math.max(50, Math.round(base - Math.max(0, age - 50) * 1.2));
+  const penalty = s.run.person.max_hp_penalty ?? 0;
+  return Math.max(30, Math.max(50, Math.round(base - Math.max(0, age - 50) * 1.2)) - penalty);
+}
+
+/** 영구 상해를 남긴다. 이미 같은 상해가 있거나 개념체라면 아무 일도 없다. */
+export function grantInjury(ctx: Ctx, id: string, out: string[]): boolean {
+  const s = ctx.s;
+  const p = s.run.person;
+  const def = injuryById(id);
+  if (!def || p.form_id === 'FORM_11_CONCEPT') return false;
+  p.injuries ??= [];
+  if (p.injuries.includes(id)) return false;
+  p.injuries.push(id);
+  out.push(`영구 상해: ${def.name}`);
+  for (const [k, v] of Object.entries(def.apt ?? {}) as Array<[keyof typeof APT_LABEL, number]>) {
+    const before = p.aptitudes[k];
+    p.aptitudes[k] = clamp(before + v, 0, 10);
+    if (p.aptitudes[k] !== before) out.push(`${APT_LABEL[k]} ${p.aptitudes[k] - before}`);
+  }
+  if (def.maxHp) {
+    p.max_hp_penalty = (p.max_hp_penalty ?? 0) + def.maxHp;
+    out.push(`최대 건강 -${def.maxHp}`);
+    p.resources.HP = Math.min(p.resources.HP, maxHp(s));
+  }
+  if (def.lifespan) {
+    s.run.clock.max_lifespan_years -= def.lifespan;
+    out.push(`수명 한계 -${def.lifespan}년`);
+  }
+  for (const [k, v] of Object.entries(def.mst ?? {}) as Array<[keyof typeof MST_LABEL, number]>) {
+    const before = p.masteries[k];
+    p.masteries[k] = clamp(before + v, 0, 100);
+    if (p.masteries[k] !== before) out.push(`${MST_LABEL[k]} ${p.masteries[k] - before}`);
+  }
+  fact(ctx, { type: 'action_resolved', data: { injury: id } });
+  return true;
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -253,9 +288,10 @@ export function applyEffects(ctx: Ctx, eff: Effects | undefined, opts: ApplyOpts
     if (next !== p.beacons) out.push(`귀환 표식 ${next}개`);
     p.beacons = next;
   }
+  if (eff.injury) grantInjury(ctx, eff.injury, out);
   if (eff.lifespan) {
     s.run.clock.max_lifespan_years += eff.lifespan;
-    out.push(`수명 한계 +${eff.lifespan}년`);
+    out.push(`수명 한계 ${eff.lifespan > 0 ? '+' : ''}${eff.lifespan}년`);
   }
   if (eff.region && eff.region !== p.region_id) {
     p.region_id = eff.region;

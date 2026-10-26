@@ -9,7 +9,7 @@ function Deltas({ items }: { items?: string[] }) {
   return (
     <div className="tl-deltas">
       {items.map((d, i) => {
-        const neg = /\s-/.test(d) || d.includes('실종') || d.includes('상실');
+        const neg = /\s-/.test(d) || d.includes('실종') || d.includes('상실') || d.startsWith('영구 상해');
         const pos = /\s\+/.test(d) && !d.startsWith('피로');
         const fatigueUp = d.startsWith('피로 +');
         return (

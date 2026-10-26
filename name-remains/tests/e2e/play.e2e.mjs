@@ -2,6 +2,7 @@
 // 사용법: npm run build && node tests/e2e/play.e2e.mjs [스크린샷 폴더]
 import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -11,8 +12,16 @@ mkdirSync(OUT, { recursive: true });
 const PORT = 4317;
 const URL = `http://127.0.0.1:${PORT}/`;
 
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort', '--host', '127.0.0.1'], { stdio: 'pipe' });
-const stop = () => server.kill('SIGTERM');
+// npx를 거치면 kill이 손자 프로세스(vite)까지 닿지 않아 CI가 끝나지 않는다. vite를 직접, 별도 프로세스 그룹으로 띄운다.
+const VITE = fileURLToPath(new globalThis.URL('../../node_modules/vite/bin/vite.js', import.meta.url));
+const server = spawn(process.execPath, [VITE, 'preview', '--port', String(PORT), '--strictPort', '--host', '127.0.0.1'], { stdio: 'ignore', detached: true });
+const stop = () => {
+  try {
+    process.kill(-server.pid, 'SIGTERM');
+  } catch {
+    server.kill('SIGTERM');
+  }
+};
 
 async function waitServer() {
   for (let i = 0; i < 60; i++) {
@@ -130,4 +139,5 @@ try {
   process.exitCode = 1;
 } finally {
   stop();
+  process.exit(process.exitCode ?? 0);
 }

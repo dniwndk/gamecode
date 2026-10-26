@@ -165,6 +165,10 @@ export interface PersonState {
   capabilities: string[];
   knowledge_observations: string[];
   scars_and_marks: string[];
+  /** 영구 상해 id 목록(content/injuries.ts) */
+  injuries?: string[];
+  /** 영구 상해로 깎인 최대 건강 */
+  max_hp_penalty?: number;
   initial_debt: number;
   initial_debt_cleared: boolean;
   min_hp_in_run: number;

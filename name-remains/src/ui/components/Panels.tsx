@@ -116,6 +116,19 @@ export function PersonPanel({ s }: { s: RunState }) {
           )}
         </div>
       )}
+      {v.injuries.length > 0 && (
+        <div className="card p-4" style={{ borderColor: 'color-mix(in srgb, var(--red) 45%, var(--line))' }}>
+          <div className="label mb-1.5" style={{ color: 'var(--red)' }}>영구 상해 {v.injuries.length}</div>
+          <div className="flex flex-col gap-1">
+            {v.injuries.map((j) => (
+              <div key={j.id} className="flex justify-between gap-2 text-[13px]">
+                <span>{j.name}</span>
+                <span className="muted tabular-nums">{j.effect}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {v.marks.length > 0 && (
         <div className="card p-4">
           <div className="label mb-1.5">흔적</div>

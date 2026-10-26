@@ -44,6 +44,8 @@ describe('대량 시뮬레이션', () => {
     let ages = 0;
     const causes: Record<string, number> = {};
     let violent = 0;
+    let injured = 0;
+    let injuries = 0;
     const mstSum: Record<string, number> = {};
     const aptSum: Record<string, number> = {};
     let minHp = 0;
@@ -68,6 +70,8 @@ describe('대량 시뮬레이션', () => {
       const c = s.run.endpoint!.cause;
       causes[c] = (causes[c] ?? 0) + 1;
       if (s.run.person.body_death_history.length) violent++;
+      if (s.run.person.injuries?.length) injured++;
+      injuries += (s.run.person.injuries?.length ?? 0) / N;
       for (const [k, v] of Object.entries(s.run.person.masteries)) mstSum[k] = (mstSum[k] ?? 0) + v / N;
       for (const [k, v] of Object.entries(s.run.person.aptitudes)) aptSum[k] = (aptSum[k] ?? 0) + v / N;
       minHp += s.run.person.min_hp_in_run / N;
@@ -86,6 +90,8 @@ describe('대량 시뮬레이션', () => {
     const report = {
       endpoints,
       violentShare: violent / N,
+      injuredShare: injured / N,
+      avgInjuries: injuries,
       mstSum,
       aptSum,
       minHp,

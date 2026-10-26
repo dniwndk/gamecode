@@ -1,5 +1,6 @@
 // 화면이 읽는 값은 모두 여기서 나간다. 아직 얻지 못한 업적의 해금 조건 원문, 숨은 판정 수치는 내보내지 않는다.
 import type { Cond } from './contentTypes';
+import { injuryById } from '../content/injuries';
 import type { ProfileArchive, RunState } from './types';
 import { APT_LABEL, MST_LABEL, describeCond, evalCond } from './conditions';
 import { maxHp } from './engineContext';
@@ -68,6 +69,7 @@ export function personView(s: RunState) {
       .map((r) => ({ id: r.npc_id, label: r.label, trust: r.trust, alive: r.is_alive })),
     contracts: s.run.contracts.map((c) => ({ id: c.contract_id, label: CONTRACT_LABEL[c.contract_id] ?? c.contract_id, status: CONTRACT_STATUS[c.status] ?? c.status, active: c.status === 'active' })),
     marks: p.scars_and_marks,
+    injuries: (p.injuries ?? []).map((id) => ({ id, name: injuryById(id)?.name ?? id, effect: injuryById(id)?.effect ?? '' })),
     focus: FOCUS_LABEL[s.run.life_plan.focus],
     crisis: CRISIS_LABEL[s.run.life_plan.crisis_priority],
   };

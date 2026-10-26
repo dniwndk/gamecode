@@ -8,6 +8,7 @@ import { loadAll, parseImport, buildExport, saveAll } from '../src/store/persist
 import { josa, fill, won } from '../src/domain/text';
 import type { RunState } from '../src/domain/types';
 import { playOut } from './sim.test';
+import { sceneById } from '../src/content/incidents';
 
 const clone = (s: RunState): RunState => JSON.parse(JSON.stringify(s));
 
@@ -71,6 +72,26 @@ describe('일시정지와 속도', () => {
     if (locked) choose(s, locked.id);
     expect(s.run.timeline_logs.length).toBe(before);
     expect(s.run.pending_decision).not.toBeNull();
+  });
+});
+
+describe('고등급 괴담의 대가', () => {
+  it('4등급 이상 괴담에서 살아 돌아오면 최선의 선택을 해도 상해나 대가가 남는다', () => {
+    let survivedHigh = 0;
+    let tolls = 0;
+    for (let i = 0; i < 60; i++) {
+      const s = createRun({ seed: `toll-${i}`, name: '' });
+      playOut(s, 20000, 'auto');
+      survivedHigh += s.run.incident_history.filter((h) => {
+        const d = sceneById(h.incident_id);
+        return d?.kind === 'major' && d.tier >= 4 && h.survived;
+      }).length;
+      tolls += s.run.timeline_logs.filter((l) => l.title === '살아 돌아온 대가').length;
+    }
+    expect(survivedHigh).toBeGreaterThan(0);
+    expect(tolls).toBeLessThanOrEqual(survivedHigh);
+    // 능력으로 규칙을 덮어쓴 드문 경우만 대가를 피한다
+    expect(tolls).toBeGreaterThanOrEqual(Math.floor(survivedHigh * 0.85));
   });
 });
 
