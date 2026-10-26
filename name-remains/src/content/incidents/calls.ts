@@ -112,12 +112,13 @@ export const CALLS: IncidentDef[] = [
     'CALL_FIXER',
     '중개인의 명단',
     '항구 포장마차 뒤편',
-    { all: [noPath, { age: { min: 20 } }, { any: [{ trust: 'NPC_BROKER', min: 20 }, { counter: 'fixer_errands', min: 3 }, { all: [{ bg: 'BG_04_DEBTOR' }, { counter: 'steps', min: 20 }] }] }] },
+    // 뒷골목은 사람을 오래 지켜본 뒤에야 명단을 내민다: 서른 줄 가까이, 위험 외주를 여러 번 넘기고 괴담 하나는 살아 나와야 한다
+    { all: [noPath, { age: { min: 25 } }, { counter: 'clears', min: 1 }, { any: [{ all: [{ trust: 'NPC_BROKER', min: 40 }, { counter: 'fixer_errands', min: 8 }] }, { all: [{ bg: 'BG_04_DEBTOR' }, { counter: 'fixer_errands', min: 5 }] }] }] },
     '중개인이 국물 그릇을 밀어 주며 낡은 수첩을 펼쳤습니다. 해결사 명단입니다. 빈 줄이 하나 있습니다. "심부름은 이제 그만하자. 당신 이름으로 의뢰를 받아."',
     '중개인이 볼펜을 건넵니다.',
     { tag: '해결사 입문', text: '빈 줄에 내 이름을 적는다.', result: '이름을 적자 중개인이 수첩을 덮었습니다. "이제 당신한테 오는 의뢰는 당신이 값을 매기는 거야."', path: 'PATH_08_FIXER_SYNDICATE', extra: { meet: ['NPC_BROKER'], trust: { NPC_BROKER: 10 } } },
     '중개인은 어깨를 으쓱했습니다. "빈 줄은 오래 안 비어 있어."',
-    10,
+    6,
   ),
   offer(
     'CALL_RUMOR',

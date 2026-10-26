@@ -30,7 +30,7 @@ import {
   takeSnapshot,
   type Ctx,
 } from './engineContext';
-import { monthlyCost, recordRent, runActivity, summarizeBundle } from './lifePlanner';
+import { DEEP_ARREARS, arrears, monthlyCost, recordRent, runActivity, summarizeBundle } from './lifePlanner';
 import { evaluateAchievements } from './achievementEvaluator';
 import { buildEpilogue } from './summary';
 import { bgById } from '../content/backgrounds';
@@ -39,7 +39,7 @@ import { CALLS, MAJOR_INCIDENTS, POSTMORTEM_SCENES, sceneById } from '../content
 import { MINOR_EVENTS } from '../content/minorEvents';
 import { AMBIENT_NOTICES, FORGED_NOTICES } from '../content/notices';
 import { POSTMORTEMS, endpointById } from '../content/progression';
-import { CHILD_CHOICES, DAILY_CHOICES, childYearLine } from '../content/lifeChoices';
+import { CHILD_CHOICES, DAILY_CHOICES, THREAT_CHOICES, childYearLine } from '../content/lifeChoices';
 import { SIDE_ACTIONS, sideById, type SideActionDef } from '../content/sideActions';
 import { INCIDENT_TOLLS, PHYSICAL_INJURIES, injuryById, type InjuryDef } from '../content/injuries';
 import { BLOCK_REASON, PART_LABEL, sideUsesOf, usesOf, type BodyPart } from '../content/bodyUse';
@@ -47,12 +47,32 @@ import { BLOCK_REASON, PART_LABEL, sideUsesOf, usesOf, type BodyPart } from '../
 const YEAR = MINUTES_PER_YEAR;
 /** 생활권 위험도 × 이 값 = 보름마다 주요 사건이 터질 확률 */
 const INCIDENT_RATE = 0.03;
+/** 피로 한계(100이 완전 탈진). 이 위에 머무는 칸마다 몸이 깎이고, 오래 머물면 죽는다 */
+const EXHAUSTED_FAT = 90;
+const EXHAUSTED_WARN = 4;
+const EXHAUSTED_DEATH = 13;
+/** 깊은 빚. 이 아래에 오래 머물면 빚에 짓눌려 죽는다(약 2년) */
+const DEEP_DEBT = -DEEP_ARREARS;
+const DEBT_WARN = 8;
+const DEBT_DEATH = 52;
+const PENSION_AGE = 65;
+const DEBT_BEATINGS = [
+  '빚을 받으러 온 사람들이 골목에서 기다리고 있었습니다. 돈이 없다고 하자 대답 대신 주먹이 날아왔습니다.',
+  '사채업자가 현관문을 걷어차고 들어와 집 안을 뒤졌습니다. 막아서다 벽에 부딪혔습니다.',
+  '퇴근길에 승합차가 옆에 섰습니다. 한 시간 뒤 강가에 내려졌을 때, 갈비뼈가 욱신거렸습니다.',
+];
 const MAJOR_GAP_YEARS = 0.6;
 const CALL_RATE = 0.07;
 const MINOR_RATE = 0.2;
 /** 보름마다 일상 선택 사건이 찾아올 확률(쿨다운이 지난 뒤). 대략 1~2년에 한 번. */
 const DAILY_RATE = 0.045;
 const DAILY_GAP_YEARS = 0.5;
+/** 몸을 노리는 직접적인 위협: 칸당 확률과 최소 간격(년) */
+const THREAT_RATE = 0.035;
+const THREAT_GAP_YEARS = 1.5;
+const THREAT_REPEAT_YEARS = 6;
+/** 직접적인 위협에서 판정에 지면 상해가 남을 확률(등급마다 더한다) */
+const INJURY_ON_THREAT_FAIL = 0.08;
 /** 어린 시절, 한 해에 선택 사건이 찾아올 확률 */
 const CHILD_CHOICE_RATE = 0.6;
 /** 작은 행동으로 쌓을 수 있는 판정 보정의 상한 */
@@ -75,6 +95,13 @@ const INJURY_STRAIN: Effects = { HP: -4, FAT: 6 };
 /** 판정 실패 피해 배율의 바닥값(등급마다 +0.5) */
 const FAIL_DAMAGE_BASE = 1.22;
 const NOTICE_RATE = 0.045;
+/** 능력·단서로 괴담을 파훼하는 선택도 확정이 아니다: 판정 바닥값(등급이 오를수록 공식이 깎는다) */
+const ABILITY_BASE = 0.92;
+const RULE_BASE = 0.88;
+/** 신화 업적 '네 번의 달이 바뀔 동안'이 세는 재앙 네 계열 */
+const HIGH_THREAT_FAMILIES: ThreatTag[] = ['TH_RULE', 'TH_PREDATOR', 'TH_INFECTION', 'TH_DOMAIN'];
+/** 괴담을 풀어낸 것이 아니라 빠져나오거나 버텨 낸 결말 */
+const ESCAPE_OUTCOMES = new Set(['escaped', 'escaped_alone', 'escaped_with_ally', 'escaped_blockade', 'chased_escape', 'fled', 'withdrew', 'turned_back', 'turned_away', 'waited', 'hidden', 'hurt', 'endured', 'endured_hurt', 'stalled', 'gaze_endured', 'gaze_outlasted', 'raid_failed', 'apex_op_failed', 'lost_returned', 'returned', 'exposed', 'answered', 'stamped', 'partly_broken', 'partial_rescue', 'own_debt_burned']);
 /** 늙지 않는 형태 */
 export const AGELESS_FORMS = ['FORM_04_ABYSS_ENVOY', 'FORM_06_SANCTUARY', 'FORM_07_STORY_ECHO', 'FORM_11_CONCEPT'];
 const POSTMORTEM_YEARS = 6;
@@ -280,13 +307,49 @@ function stepOnce(ctx: Ctx) {
   addSnapshotDiff(ctx, snap);
   rechargeGuards(s);
 
-  // 3) 탈진
+  // 3) 탈진: 피로가 한계에 닿으면 크게 앓고, 한계 근처에 오래 머물면 몸이 꺾인다
   if (res.FAT >= 100) {
-    const e = log(ctx, 'minor_event', '몸이 더는 버티지 못했습니다. 출근길 계단에서 주저앉아 한참을 일어나지 못했고, 며칠을 꼬박 앓았습니다.', { title: '탈진', tone: 'quiet', sound: 'heartbeat', accessibility_caption: '심장 소리가 귓가에서 크게 울린다.' });
-    e.deltas = applyEffects(ctx, { HP: -15 });
-    res.FAT = 60;
+    const e = log(ctx, 'minor_event', '몸이 더는 버티지 못했습니다. 출근길 계단에서 주저앉아 한참을 일어나지 못했고, 며칠을 꼬박 앓았습니다.', { title: '탈진', tone: 'danger', sound: 'heartbeat', accessibility_caption: '심장 소리가 귓가에서 크게 울린다.' });
+    e.deltas = applyEffects(ctx, { HP: -24, KRW: -40 });
+    maybeInjure(ctx, 0.08, e.deltas);
+    res.FAT = 80;
     if (res.HP <= 0 && resolveDeath(ctx, '과로로 쓰러진 뒤', null) !== 'survived') return;
   }
+  if (res.FAT >= EXHAUSTED_FAT) {
+    const n = (r.counters.exhausted_steps = (r.counters.exhausted_steps ?? 0) + 1);
+    res.HP -= 3;
+    if (n === EXHAUSTED_WARN) log(ctx, 'minor_event', '잠을 자도 피로가 빠지지 않습니다. 손이 떨리고, 심장이 이상한 박자로 뜁니다. 이대로라면 오래 못 갑니다.', { title: '한계', tone: 'danger', sound: 'heartbeat' });
+    if (n >= EXHAUSTED_DEATH) {
+      res.HP = 0;
+      if (resolveDeath(ctx, '쉬지 못한 몸이 끝내 멈춰', null) !== 'survived') return;
+      r.counters.exhausted_steps = 0;
+    } else if (res.HP <= 0 && resolveDeath(ctx, '과로로 쓰러진 뒤', null) !== 'survived') return;
+  } else r.counters.exhausted_steps = 0;
+
+  // 3-1) 빚: 갚지 못한 돈은 몸을 갉아먹고, 깊은 빚에 오래 잠기면 살아남지 못한다
+  // 빚을 안고 태어난 사람은 그 빚 위로 더 진 만큼만 센다
+  const owed = arrears(s);
+  if (owed > 0) {
+    res.FAT = Math.min(100, res.FAT + (owed >= -DEEP_DEBT ? 4 : 2));
+    res.HP -= owed >= -DEEP_DEBT ? 2 : 1;
+  }
+  // 연금을 받는 나이부터는 빚 독촉이 목숨까지 오지는 않는다
+  if (owed >= -DEEP_DEBT && r.clock.current_age_years < PENSION_AGE) {
+    const n = (r.counters.deep_debt_steps = (r.counters.deep_debt_steps ?? 0) + 1);
+    if (n === DEBT_WARN)
+      log(ctx, 'minor_event', '독촉장이 문틈마다 끼워져 있습니다. 밤마다 누군가 현관을 두드리고, 낯선 번호가 하루에도 몇 번씩 울립니다.', { title: '빚의 무게', tone: 'danger' });
+    if (n > DEBT_WARN && n % 8 === 0) {
+      const e = log(ctx, 'minor_event', pick(s.rng, 'world', DEBT_BEATINGS), { title: '빚 독촉', tone: 'danger', sound: 'heartbeat' });
+      e.deltas = applyEffects(ctx, { HP: -int(s.rng, 'world', 10, 18), FAT: 8 });
+      maybeInjure(ctx, 0.2, e.deltas);
+    }
+    if (n >= DEBT_DEATH) {
+      res.HP = 0;
+      if (resolveDeath(ctx, '빚에 짓눌려', null) !== 'survived') return;
+      r.counters.deep_debt_steps = 0;
+    } else if (res.HP <= 0 && resolveDeath(ctx, '빚에 쫓기다', null) !== 'survived') return;
+  } else r.counters.deep_debt_steps = 0;
+  if (res.HP <= 0 && resolveDeath(ctx, '버틸 힘이 다해', null) !== 'survived') return;
 
   // 4) 노화
   const age = r.clock.current_age_years;
@@ -383,6 +446,7 @@ function direct(ctx: Ctx) {
   }
 
   if (rollMajor(ctx)) return;
+  if (r.life_status === 'active' && rollThreat(ctx)) return;
   if (r.life_status === 'active' && rollDaily(ctx)) return;
   if (rollMinor(ctx)) return;
   if (r.life_status === 'active' && rollCall(ctx)) return;
@@ -454,6 +518,23 @@ function rollMajor(ctx: Ctx): boolean {
     return true;
   }
   startIncident(ctx, def, def.entry, variant);
+  return true;
+}
+
+/** 일상 사이로 끼어드는 직접적인 위협: 어느 길을 골라도 다치거나 잃을 수 있다 */
+function rollThreat(ctx: Ctx): boolean {
+  const s = ctx.s;
+  const r = s.run;
+  const now = r.clock.virtual_minute;
+  if ((r.cooldowns.__threat ?? 0) > now) return false;
+  const risk = regionById(r.person.region_id).risk;
+  if (!chance(s.rng, 'world', THREAT_RATE * (0.6 + 0.4 * risk))) return false;
+  const pool = THREAT_CHOICES.filter((d) => (r.cooldowns[d.id] ?? 0) <= now && evalCond(s, d.eligible));
+  const def = weighted(s.rng, 'world', pool, (d) => (typeof d.weight === 'function' ? d.weight(s) : d.weight));
+  if (!def) return false;
+  r.cooldowns.__threat = now + Math.round(YEAR * THREAT_GAP_YEARS);
+  r.cooldowns[def.id] = now + Math.round(YEAR * THREAT_REPEAT_YEARS);
+  startIncident(ctx, def, 'voluntary', 'A');
   return true;
 }
 
@@ -696,10 +777,20 @@ function applyStrain(ctx: Ctx, imp: Impairment, out: string[]) {
   out.push(...applyEffects(ctx, { HP: (INJURY_STRAIN.HP ?? 0) * n, FAT: (INJURY_STRAIN.FAT ?? 0) * n }));
 }
 
+/** 괴담 속에서 조건을 갖춰야 열리는 능력·규칙 파훼 선택. 확정이 아니라 판정을 거친다. */
+const isAttempt = (def: IncidentDef, c: ChoiceDef) =>
+  !!c.requires &&
+  (((def.kind === 'major' || def.kind === 'postmortem') && (c.check === 'rule' || c.check === 'ability')) ||
+    // 호출에서 능력으로 상대를 꺾는 길도 마찬가지(제안을 받아들이는 길은 판정이 아니다)
+    (def.kind === 'call' && c.check === 'ability'));
+/** 판정을 거치는 선택인가 */
+const isRolled = (def: IncidentDef, c: ChoiceDef) => c.check === 'chance' || isAttempt(def, c);
+const triedKey = (nodeId: string, c: ChoiceDef) => `__tried_${nodeId}_${c.id}`;
+
 /** 확률 판정 성공률(명세 07.4의 P 공식) */
 export function successChance(s: RunState, def: IncidentDef, c: ChoiceDef): number {
   const p = s.run.person;
-  const ch = c.chance ?? { base: 0.5 };
+  const ch = c.chance ?? (isAttempt(def, c) ? { base: c.check === 'ability' ? ABILITY_BASE : RULE_BASE } : { base: 0.5 });
   const apts = ch.apt ?? [];
   const msts = ch.mst ?? [];
   const aAvg = apts.length ? apts.reduce((a, k) => a + p.aptitudes[k], 0) / apts.length : 4;
@@ -715,12 +806,17 @@ export function successChance(s: RunState, def: IncidentDef, c: ChoiceDef): numb
   const aRel = aAvg - (3 + tier);
   const mRel = mAvg - 15 * tier;
   const threat = 0.02 * (tier - 1);
-  const fatigue = p.resources.FAT >= 80 ? 0.15 : 0;
+  const fatigue = p.resources.FAT >= EXHAUSTED_FAT ? 0.2 : p.resources.FAT >= 80 ? 0.15 : 0;
+  // 빚에 쫓기는 마음은 판단을 흐린다
+  const owed = arrears(s);
+  const debt = owed >= -DEEP_DEBT ? 0.08 : owed > 0 ? 0.03 : 0;
   // 사건 도중 작은 행동으로 쌓은 보정
   const side = Math.min(SIDE_BONUS_CAP, Number(s.run.incident?.local_flags.__bonus ?? 0));
   // 영구 상해로 다친 부위를 쓰는 선택
   const hurt = hinderPenalty(impairment(s, usesOf(def.id, c.id)));
-  const P = ch.base + 0.04 * aRel + 0.004 * mRel + prep + ally + push + side - threat - fatigue - hurt;
+  // 능력·규칙 파훼는 숙련 대신 등급만큼 어긋날 여지가 커진다
+  const skill = isAttempt(def, c) && !c.chance ? -0.03 * Math.max(0, tier - 1) : 0.04 * aRel + 0.004 * mRel - threat;
+  const P = ch.base + skill + prep + ally + push + side - fatigue - debt - hurt;
   return Math.max(0.05, Math.min(0.95, P));
 }
 
@@ -758,8 +854,9 @@ function experienceOf(def: IncidentDef, c: ChoiceDef, ok: boolean): Effects | un
   };
 }
 
-function snapshotChoice(s: RunState, def: IncidentDef, c: ChoiceDef, allowBlocked = false): DecisionChoiceSnapshot {
+function snapshotChoice(s: RunState, def: IncidentDef, c: ChoiceDef, nodeId: string, allowBlocked = false): DecisionChoiceSnapshot {
   const p = s.run.person;
+  const tried = !allowBlocked && !!s.run.incident?.local_flags[triedKey(nodeId, c)];
   const reqOk = evalCond(s, c.requires);
   const costOk = affordable(s, c.cost);
   const uses = usesOf(def.id, c.id);
@@ -768,11 +865,11 @@ function snapshotChoice(s: RunState, def: IncidentDef, c: ChoiceDef, allowBlocke
   if (allowBlocked && imp.blocked) imp.hindered.push(imp.blocked.injury);
   const badges: string[] = [];
   if (c.requires && reqOk) {
-    if (c.capBadge) badges.push(`보유 능력 작동 · ${c.capBadge}`);
-    else if (c.check === 'ability') badges.push('보유 능력 작동');
-    else if (c.check === 'rule') badges.push('규칙 파훼 확정');
+    if (c.capBadge) badges.push(`보유 능력 · ${c.capBadge}`);
+    else if (c.check === 'ability') badges.push('보유 능력');
+    else if (c.check === 'rule' && isAttempt(def, c)) badges.push('규칙 파훼 시도');
     else badges.push('조건 충족');
-  } else if (c.capBadge && reqOk) badges.push(`보유 능력 작동 · ${c.capBadge}`);
+  } else if (c.capBadge && reqOk) badges.push(`보유 능력 · ${c.capBadge}`);
   const spotted = c.trap && (p.capabilities.includes('CAP_04_CLAUSE_AUDIT') || p.aptitudes.OBS >= 6);
   return {
     id: c.id,
@@ -781,9 +878,9 @@ function snapshotChoice(s: RunState, def: IncidentDef, c: ChoiceDef, allowBlocke
     known_costs_label: costLabels(c.cost),
     required_badges: badges,
     warning_badge: spotted ? '함정 의심' : undefined,
-    odds_label: c.check === 'chance' ? oddsLabel(successChance(s, def, c)) : '판정 없음',
-    is_available: reqOk && costOk && !blocked,
-    unavailable_reason: !reqOk ? `조건: ${describeCond(c.requires)}` : !costOk ? '물자나 자금이 모자랍니다' : blocked ? blockReason(imp) : undefined,
+    odds_label: isRolled(def, c) ? oddsLabel(successChance(s, def, c)) : '판정 없음',
+    is_available: reqOk && costOk && !blocked && !tried,
+    unavailable_reason: !reqOk ? `조건: ${describeCond(c.requires)}` : !costOk ? '물자나 자금이 모자랍니다' : blocked ? blockReason(imp) : tried ? '한 번 시도했다가 어긋났습니다' : undefined,
     injury_note: blocked ? undefined : impairmentNote(imp),
   };
 }
@@ -898,9 +995,9 @@ function openDecision(ctx: Ctx, def: IncidentDef, nodeId: string, node: Extract<
   const r = s.run;
   const p = r.person;
   const shown = node.choices.filter((c) => evalCond(s, c.showIf));
-  let choices = shown.map((c) => snapshotChoice(s, def, c));
-  // 다친 몸 때문에 고를 수 있는 길이 하나도 없으면, 막힌 길도 부담을 안고 고를 수 있게 연다
-  if (!choices.some((c) => c.is_available)) choices = shown.map((c) => snapshotChoice(s, def, c, true));
+  let choices = shown.map((c) => snapshotChoice(s, def, c, nodeId));
+  // 다친 몸이나 어긋난 시도 때문에 고를 수 있는 길이 하나도 없으면, 막힌 길도 부담을 안고 다시 고를 수 있게 연다
+  if (!choices.some((c) => c.is_available)) choices = shown.map((c) => snapshotChoice(s, def, c, nodeId, true));
   if (hasSideActions(def)) choices.push(...sideActionsFor(ctx, def, nodeId).map((sa) => snapshotSide(s, def, sa)));
   const obs = (def.relevantClues ?? []).filter((c) => p.knowledge_observations.includes(c)).map((c) => clueById(c)?.text ?? c);
   if (r.milestones[`notice_${def.id}`] && def.notice) obs.push(`미리 받은 안내: ${def.notice.text}`);
@@ -942,19 +1039,22 @@ export function choose(s: RunState, choiceId: string): StepResult {
   r.pending_decision = null;
 
   log(ctx, 'decision_taken', snap.text, { title: c.tag, badges: snap.required_badges.length ? snap.required_badges : undefined, tone: 'plain' });
-  const pv = c.check === 'chance' ? successChance(s, def, c) : 1;
+  const pv = isRolled(def, c) ? successChance(s, def, c) : 1;
   const costDeltas = c.cost ? applyEffects(ctx, c.cost) : [];
+  if ((c.check === 'ability' || c.capBadge) && s.run.incident) s.run.incident.local_flags.__used_ability = true;
 
   let ok: boolean;
   if (c.failIf === true || (c.failIf && evalCond(s, c.failIf))) ok = false;
-  else if (c.check === 'chance') ok = next(s.rng, 'action') < pv;
+  else if (isRolled(def, c)) ok = next(s.rng, 'action') < pv;
   else ok = true;
+  // 능력·규칙 파훼가 어긋나면 반동을 맞고, 같은 자리에서 다른 길을 찾아야 한다
+  if (!ok && isAttempt(def, c) && !c.fail) return failAttempt(ctx, def, pd.scene_node_id, node, c, costDeltas);
   const out = ok ? c.success : c.fail ?? c.success;
   const crisis = r.life_plan.crisis_priority;
   // 상위 등급 괴담일수록 같은 실패도 더 깊게 벤다
   const tierScale = def.kind === 'major' ? FAIL_DAMAGE_BASE + 0.5 * Math.max(0, def.tier - 1) : 1;
   const scale = ok ? undefined : tierScale * (crisis === 'CRISIS_EGRESS_FIRST' ? 0.75 : crisis === 'CRISIS_PUSH_OBJECTIVE' ? 1.2 : 1);
-  const resultBadges = c.check === 'chance' ? [ok ? '판정 성공' : '판정 실패'] : undefined;
+  const resultBadges = isRolled(def, c) ? [ok ? '판정 성공' : '판정 실패'] : undefined;
   const e = log(ctx, 'incident_result', tx(s, out.text), { tone: ok ? 'good' : 'danger', sound: out.sound, accessibility_caption: out.caption, badges: resultBadges });
   e.deltas = [...costDeltas, ...applyEffects(ctx, out.effects, { damageScale: scale })];
   const xp = experienceOf(def, c, ok);
@@ -962,10 +1062,11 @@ export function choose(s: RunState, choiceId: string): StepResult {
   {
     const imp = impairment(s, usesOf(def.id, c.id));
     if (imp.blocked) imp.hindered.push(imp.blocked.injury);
-    if (c.check !== 'chance') applyStrain(ctx, imp, e.deltas);
+    if (!isRolled(def, c)) applyStrain(ctx, imp, e.deltas);
     else noteHindered(imp, e.deltas);
   }
   if (!ok && def.kind === 'major') maybeInjure(ctx, INJURY_ON_FAIL + INJURY_PER_TIER * def.tier, e.deltas);
+  else if (!ok && def.kind === 'minor' && def.tier >= 2) maybeInjure(ctx, INJURY_ON_THREAT_FAIL * def.tier, e.deltas);
   else if (!ok && def.kind === 'minor' && c.check === 'chance' && s.run.clock.current_age_years >= 18) maybeInjure(ctx, INJURY_ON_MINOR_FAIL, e.deltas);
   if (def.kind === 'major') checkLowHpInjury(ctx, e.deltas);
   if (ok && c.stealth && r.incident) r.incident.local_flags.used_stealth = true;
@@ -982,6 +1083,29 @@ export function choose(s: RunState, choiceId: string): StepResult {
     checkAutoGrants(ctx);
     checkPromotion(ctx);
   }
+  return finish(ctx);
+}
+
+const ATTEMPT_FAIL_TEXT = {
+  ability: '힘을 끌어올렸지만 그것이 한발 빨랐습니다. 빗나간 힘의 반동이 몸을 긁고 지나갔습니다.',
+  rule: '규칙을 짚었지만 어딘가 한 줄이 달랐습니다. 틀린 답의 대가가 먼저 몸에 닿았습니다.',
+};
+
+function failAttempt(ctx: Ctx, def: IncidentDef, nodeId: string, node: Extract<NodeDef, { kind: 'decision' }>, c: ChoiceDef, costDeltas: string[]): StepResult {
+  const s = ctx.s;
+  const r = s.run;
+  const tier = Math.max(1, def.tier);
+  const e = log(ctx, 'incident_result', ATTEMPT_FAIL_TEXT[c.check === 'ability' ? 'ability' : 'rule'], { tone: 'danger', badges: ['판정 실패'], sound: 'heartbeat' });
+  e.deltas = [...costDeltas, ...applyEffects(ctx, { HP: -(6 + 7 * tier), FAT: 8 + 2 * tier })];
+  const imp = impairment(s, usesOf(def.id, c.id));
+  noteHindered(imp, e.deltas);
+  if (def.kind === 'major') {
+    maybeInjure(ctx, INJURY_ON_FAIL + INJURY_PER_TIER * tier, e.deltas);
+    checkLowHpInjury(ctx, e.deltas);
+  }
+  if (r.incident) r.incident.local_flags[triedKey(nodeId, c)] = true;
+  if (r.person.resources.HP <= 0 && resolveDeath(ctx, `${def.title}에서`, def) !== 'survived') return finish(ctx);
+  if (r.incident && r.run_status === 'playing') openDecision(ctx, def, nodeId, node);
   return finish(ctx);
 }
 
@@ -1008,10 +1132,11 @@ function completeIncident(ctx: Ctx, outcome: string) {
   if (def.kind === 'major' && survived) {
     r.counters.clears = (r.counters.clears ?? 0) + 1;
     if (inc.entry_mode === 'involuntary') p.involuntary_survivals_count += 1;
-    if (def.tier >= 3) {
-      for (const t of def.threats) {
-        if (['TH_RULE', 'TH_PREDATOR', 'TH_INFECTION', 'TH_DOMAIN'].includes(t) && !p.cleared_threat_tags.includes(t)) p.cleared_threat_tags.push(t);
-      }
+    // '잠재웠다'로 치려면 상급(3등급 이상) 괴담을 도망치거나 버텨서가 아니라 정면으로 풀어내야 한다
+    // '맨손과 기술로'이니 능력을 쓴 해결은 치지 않고, 한 사건은 한 계열로만 친다
+    if (def.tier >= 3 && !ESCAPE_OUTCOMES.has(outcome) && !inc.local_flags.__used_ability) {
+      const t = def.threats.find((x) => HIGH_THREAT_FAMILIES.includes(x) && !p.cleared_threat_tags.includes(x));
+      if (t) p.cleared_threat_tags.push(t);
       p.cleared_high_threats_count = p.cleared_threat_tags.length;
     }
     if (def.threats.includes('TH_DOMAIN') || def.threats.includes('TH_BOUNDARY')) r.milestones.domain_survivor = true;
@@ -1198,18 +1323,21 @@ export function autoChoice(s: RunState): string | null {
   const defOf = (id: string) => node.choices.find((c) => c.id === id)!;
   const crisis = s.run.life_plan.crisis_priority;
   // 1) 조건을 갖춘 확정 선택(능력·규칙 파훼). 함정 의심은 피한다.
-  const sure = avail.filter((c) => {
-    const d = defOf(c.id);
-    return !!d.requires && d.check !== 'chance' && !c.warning_badge && !d.failIf;
-  });
-  if (sure.length) return sure[0].id;
+  const sure = avail
+    .filter((c) => {
+      const d = defOf(c.id);
+      return isAttempt(def, d) && !c.warning_badge && !d.failIf;
+    })
+    .map((c) => ({ c, p: successChance(s, def, defOf(c.id)) }))
+    .sort((a, b) => b.p - a.p);
+  if (sure.length && sure[0].p >= 0.5) return sure[0].c.id;
   // 2) 성공률이 가장 높은 확률 판정
   const chances = avail
-    .filter((c) => defOf(c.id).check === 'chance')
+    .filter((c) => isRolled(def, defOf(c.id)))
     .map((c) => ({ c, p: successChance(s, def, defOf(c.id)) }))
     .sort((a, b) => b.p - a.p);
   // 3) 조건 없는 확정 선택: 위기 원칙에 맞는 쪽
-  const plain = avail.filter((c) => defOf(c.id).check !== 'chance' && !c.warning_badge && !defOf(c.id).failIf);
+  const plain = avail.filter((c) => !isRolled(def, defOf(c.id)) && !c.warning_badge && !defOf(c.id).failIf);
   const prefer = (c: DecisionChoiceSnapshot) => {
     const t = c.tag + c.text;
     if (crisis === 'CRISIS_PROTECT_ALLY') return /구조|동행|함께|부축|보호|약속/.test(t) ? 2 : 0;

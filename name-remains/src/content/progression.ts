@@ -14,8 +14,8 @@ export const PATHS: PathDef[] = [
       { name: '일반 시민', position_id: 'POS_CITIZEN', blurb: '아무 직함도 없는 시민.' },
       { name: '외부 협력요원', position_id: 'POS_AGENCY_PARTNER', grants: ['CAP_05_AGENCY_CLEARANCE'], blurb: '재난청과 계약한 외부 인력. 통행증과 고정 급여가 나온다.' },
       { name: '현장지휘관', position_id: 'POS_FIELD_COMMANDER', req: { all: [{ mst: 'MST_FIELD', min: 35 }, clears(3)] }, grants: ['CAP_07_TACTICAL_DISPATCH'], blurb: '현장에서 기동대 한 분대를 움직인다.' },
-      { name: '권역책임자', position_id: 'POS_SECTOR_CHIEF', req: { all: [{ mst: 'MST_FIELD', min: 55 }, { mst: 'MST_RULE', min: 30 }, { apt: 'NEG', min: 5 }, clears(5)] }, blurb: '한 권역의 봉쇄선과 대피 계획을 책임진다.' },
-      { name: '특별재난청 총감', position_id: 'POS_DIRECTOR_GENERAL', req: { all: [{ mst: 'MST_FIELD', min: 70 }, { apt: 'NEG', min: 6 }, clears(7)] }, grants: ['CAP_14_SUPREME_COMMAND'], blurb: '도시의 모든 재난 대응을 지휘하는 자리.' },
+      { name: '권역책임자', position_id: 'POS_SECTOR_CHIEF', req: { all: [{ mst: 'MST_FIELD', min: 55 }, { mst: 'MST_RULE', min: 30 }, { apt: 'NEG', min: 4 }, clears(5)] }, blurb: '한 권역의 봉쇄선과 대피 계획을 책임진다.' },
+      { name: '특별재난청 총감', position_id: 'POS_DIRECTOR_GENERAL', req: { all: [{ mst: 'MST_FIELD', min: 85 }, { mst: 'MST_RULE', min: 50 }, { apt: 'NEG', min: 6 }, clears(10)] }, grants: ['CAP_14_SUPREME_COMMAND'], blurb: '도시의 모든 재난 대응을 지휘하는 자리.' },
     ],
   },
   {
@@ -41,9 +41,9 @@ export const PATHS: PathDef[] = [
     tiers: [
       { name: '계약 표적', position_id: 'POS_CONTRACT_TARGET', blurb: '사절들이 눈여겨보는 사람.' },
       { name: '하급 계약자', position_id: 'POS_MINOR_CONTRACTOR', blurb: '미완의 계약 조항 하나에 서명한 사람.' },
-      { name: '심연 대행자', position_id: 'POS_ABYSS_AGENT', req: { all: [{ mst: 'MST_RULE', min: 30 }, { apt: 'NEG', min: 5 }, clears(2)] }, grants: ['CAP_13_TEMP_UNDYING'], effects: { form: 'FORM_04_ABYSS_ENVOY' }, blurb: '사절의 일을 대신 집행하는 몸. 늙지 않지만 계약을 어기면 흩어진다.' },
-      { name: '계약 재정관', position_id: 'POS_CONTRACT_ARBITER', req: { all: [{ mst: 'MST_RULE', min: 50 }, { apt: 'NEG', min: 6 }, clears(4)] }, grants: ['CAP_11_ENVOY_COMMAND'], blurb: '계약의 해석과 집행을 판정하는 자리.' },
-      { name: '심연의 섭정', position_id: 'POS_ABYSS_REGENT', req: { all: [{ mst: 'MST_RULE', min: 70 }, { apt: 'NEG', min: 7 }, clears(6)] }, blurb: '사절단의 이름으로 도시와 거래하는 섭정.' },
+      { name: '심연 대행자', position_id: 'POS_ABYSS_AGENT', req: { all: [{ mst: 'MST_RULE', min: 30 }, { apt: 'NEG', min: 4 }, clears(2)] }, grants: ['CAP_13_TEMP_UNDYING'], effects: { form: 'FORM_04_ABYSS_ENVOY' }, blurb: '사절의 일을 대신 집행하는 몸. 늙지 않지만 계약을 어기면 흩어진다.' },
+      { name: '계약 재정관', position_id: 'POS_CONTRACT_ARBITER', req: { all: [{ mst: 'MST_RULE', min: 50 }, { apt: 'NEG', min: 5 }, clears(4)] }, grants: ['CAP_11_ENVOY_COMMAND'], blurb: '계약의 해석과 집행을 판정하는 자리.' },
+      { name: '심연의 섭정', position_id: 'POS_ABYSS_REGENT', req: { all: [{ mst: 'MST_RULE', min: 70 }, { apt: 'NEG', min: 6 }, clears(6)] }, blurb: '사절단의 이름으로 도시와 거래하는 섭정.' },
     ],
   },
   {
@@ -111,8 +111,8 @@ export const PATHS: PathDef[] = [
     tiers: [
       { name: '심부름꾼', position_id: 'POS_RUNNER', blurb: '상자 안을 묻지 않는 배달꾼.' },
       { name: '뒷골목 해결사', position_id: 'POS_FIXER', blurb: '중개인의 명단에 이름이 오른 해결사.' },
-      { name: '중개 거두', position_id: 'POS_BROKER_BOSS', req: { all: [{ apt: 'NEG', min: 6 }, { mst: 'MST_FIELD', min: 30 }, { res: 'KRW', min: 300 }] }, grants: ['CAP_22_BLACK_MARKET_VIP'], blurb: '의뢰가 당신을 거쳐 흐른다.' },
-      { name: '암시장 지배자', position_id: 'POS_MARKET_LORD', req: { all: [{ apt: 'NEG', min: 7 }, { res: 'KRW', min: 500 }, clears(4)] }, grants: ['CAP_23_HIRED_ESCORT'], blurb: '항구 지하의 물건 값은 당신이 정한다.' },
+      { name: '중개 거두', position_id: 'POS_BROKER_BOSS', req: { all: [{ apt: 'NEG', min: 4 }, { mst: 'MST_FIELD', min: 35 }, { res: 'KRW', min: 300 }, clears(2)] }, grants: ['CAP_22_BLACK_MARKET_VIP'], blurb: '의뢰가 당신을 거쳐 흐른다.' },
+      { name: '암시장 지배자', position_id: 'POS_MARKET_LORD', req: { all: [{ apt: 'NEG', min: 5 }, { res: 'KRW', min: 500 }, clears(4)] }, grants: ['CAP_23_HIRED_ESCORT'], blurb: '항구 지하의 물건 값은 당신이 정한다.' },
       { name: '그림자 조합주', position_id: 'POS_SHADOW_SYNDICATE_HEAD', req: { flag: 'syndicate_war_won' }, blurb: '재난청 공문보다 빠르게 문을 여는 서명.' },
     ],
   },

@@ -42,6 +42,16 @@ export function monthlyCost(s: RunState): number {
   return regionById(s.run.person.region_id).monthlyCost;
 }
 
+/** 이만큼 밀리면 깊은 빚이다 */
+export const DEEP_ARREARS = 500;
+
+/** 갚지 못하고 밀린 돈. 처음부터 진 빚(배경)은 빼고 센다 */
+export function arrears(s: RunState): number {
+  const p = s.run.person;
+  const base = p.initial_debt > 0 && !p.initial_debt_cleared ? p.initial_debt : 0;
+  return Math.max(0, -p.resources.KRW - base);
+}
+
 export function chooseActivity(s: RunState): ActivityDef {
   const p = s.run.person;
   const r = p.resources;
@@ -50,7 +60,9 @@ export function chooseActivity(s: RunState): ActivityDef {
 
   // 위급 상황
   if (r.HP < 45) return has('ACT_07_CLINIC_CARE') ?? has('ACT_06_REST_HOME') ?? pool[0];
-  if (r.FAT >= 75) return has('ACT_06_REST_HOME') ?? pool[0];
+  // 깊은 빚에 쫓기면 쉬는 것도 사치다. 쓰러지기 직전까지 일하러 나간다.
+  const hounded = arrears(s) >= DEEP_ARREARS;
+  if (r.FAT >= (hounded ? 95 : 75)) return has('ACT_06_REST_HOME') ?? pool[0];
   if (r.SUP < 1 && r.KRW >= 150 && has('ACT_08_BUY_SUPPLIES')) return has('ACT_08_BUY_SUPPLIES')!;
 
   const fw = FOCUS_WEIGHTS[s.run.life_plan.focus];
@@ -62,6 +74,7 @@ export function chooseActivity(s: RunState): ActivityDef {
     if (a.tags.includes('work') && broke) w *= r.KRW < 0 ? 10 : 4;
     if (r.KRW < 0 && !a.tags.includes('work')) w *= 0.4;
     if (a.tags.includes('rest') && r.FAT < 25 && r.HP >= 85) w *= 0.2;
+    if (a.tags.includes('rest') && hounded) w *= 0.2;
     if (a.id === 'ACT_07_CLINIC_CARE' && r.HP >= 70) w *= 0.3;
     if (a.id === 'ACT_08_BUY_SUPPLIES' && r.SUP >= 6) w *= 0.2;
     if (a.trains && pathMst.includes(a.trains)) w *= 1.6;

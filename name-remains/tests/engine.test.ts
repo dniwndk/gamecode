@@ -147,6 +147,109 @@ describe('다친 부위', () => {
   });
 });
 
+describe('확정 파훼 없음', () => {
+  it('능력·규칙 파훼도 판정을 거치고, 어긋나면 반동을 맞은 뒤 다른 길을 골라야 한다', () => {
+    let attempts = 0;
+    let misses = 0;
+    let lockedAfterMiss = 0;
+    for (let i = 0; i < 60; i++) {
+      const s = createRun({ seed: `attempt-${i}`, name: '' });
+      for (let k = 0; k < 20000 && s.run.run_status === 'playing'; k++) {
+        const pd = s.run.pending_decision;
+        if (!pd) {
+          advance(s);
+          continue;
+        }
+        for (const c of pd.choices) {
+          expect(c.required_badges.join(' ')).not.toContain('확정');
+          if (c.required_badges.some((b) => b.startsWith('규칙 파훼 시도') || b.startsWith('보유 능력')) && c.is_available) {
+            expect(c.odds_label, `${s.run.incident?.incident_id} ${c.id} ${c.required_badges}`).not.toBe('판정 없음');
+            attempts++;
+          }
+          if (c.unavailable_reason === '한 번 시도했다가 어긋났습니다') lockedAfterMiss++;
+        }
+        const before = s.run.timeline_logs.length;
+        choose(s, autoChoice(s)!);
+        misses += s.run.timeline_logs.slice(before).filter((l) => /^(힘을 끌어올렸지만|규칙을 짚었지만)/.test(l.body)).length;
+      }
+    }
+    expect(attempts).toBeGreaterThan(0);
+    expect(misses).toBeGreaterThan(0);
+    expect(lockedAfterMiss).toBeGreaterThan(0);
+  });
+});
+
+/** 성인이 되어 선택을 기다리지 않는 상태까지 진행한다 */
+function adultRun(seed: string): RunState | null {
+  const s = createRun({ seed, name: '' });
+  for (let k = 0; k < 20000 && s.run.run_status === 'playing'; k++) {
+    if (s.run.pending_decision) choose(s, autoChoice(s)!);
+    else if (s.run.clock.current_age_years >= 30 && !s.run.incident) return s;
+    else advance(s);
+  }
+  return null;
+}
+
+describe('빚과 탈진', () => {
+  it('깊은 빚에 오래 머물면 빚에 짓눌려 죽는다', () => {
+    let debtDeaths = 0;
+    for (let i = 0; i < 10; i++) {
+      const s = adultRun(`debt-${i}`);
+      if (!s || s.run.clock.current_age_years >= 64) continue;
+      s.run.person.initial_debt = 0;
+      s.run.person.resources.KRW = -20000;
+      s.run.counters.deep_debt_steps = 51;
+      for (let k = 0; k < 50 && s.run.run_status === 'playing' && s.run.life_status === 'active'; k++) {
+        if (s.run.pending_decision) choose(s, autoChoice(s)!);
+        else advance(s);
+      }
+      if (s.run.endpoint?.cause.includes('빚') || s.run.person.body_death_history.length) debtDeaths++;
+    }
+    expect(debtDeaths).toBeGreaterThan(5);
+  });
+
+  it('깊은 빚에 쫓기면 쉬지 못하고, 한계 피로에 오래 머문 몸은 멈춘다', () => {
+    let stopped = 0;
+    for (let i = 0; i < 10; i++) {
+      const s = adultRun(`fat-${i}`);
+      if (!s || s.run.clock.current_age_years >= 64) continue;
+      s.run.person.initial_debt = 0;
+      s.run.person.resources.KRW = -20000;
+      s.run.person.resources.FAT = 92;
+      s.run.counters.exhausted_steps = 12;
+      for (let k = 0; k < 5 && s.run.life_status === 'active' && s.run.run_status === 'playing'; k++) {
+        if (s.run.pending_decision) choose(s, autoChoice(s)!);
+        else advance(s);
+      }
+      if (s.run.person.body_death_history.length) stopped++;
+    }
+    expect(stopped).toBeGreaterThan(5);
+  });
+});
+
+describe('직접적인 위협', () => {
+  it('어른의 삶에는 몸을 노리는 위협이 끼어들고, 어느 선택이든 결과에 수치 변화가 남는다', () => {
+    let seen = 0;
+    for (let i = 0; i < 20; i++) {
+      const s = createRun({ seed: `threat-${i}`, name: '' });
+      for (let k = 0; k < 20000 && s.run.run_status === 'playing'; k++) {
+        if (!s.run.pending_decision) {
+          advance(s);
+          continue;
+        }
+        const id = s.run.incident!.incident_id;
+        const before = s.run.timeline_logs.length;
+        choose(s, autoChoice(s)!);
+        if (!id.startsWith('TH_')) continue;
+        seen++;
+        const res = s.run.timeline_logs.slice(before).find((l) => l.kind === 'incident_result');
+        expect(res?.deltas?.length ?? 0).toBeGreaterThan(0);
+      }
+    }
+    expect(seen).toBeGreaterThan(20);
+  });
+});
+
 describe('한 해씩 흐르는 삶', () => {
   it('0세부터 마지막 해까지 건너뛰는 나이 없이 기록이 남는다', () => {
     const s = createRun({ seed: 'years-1', name: '' });

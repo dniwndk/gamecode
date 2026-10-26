@@ -47,7 +47,7 @@ export const ACTIVITIES: ActivityDef[] = [
     name: '특별재난청 실무·순찰 근무',
     eligible: { path: 'PATH_01_AUTHORITY', tier: 1 },
     cost: { FAT: 15 },
-    reward: { mst: { MST_FIELD: 4 }, SUP: 1 },
+    reward: { mst: { MST_FIELD: 4 }, SUP: 1, aptChance: [{ apt: 'NEG', p: 0.12 }] },
     wage: (s) => 150 + (s.run.person.position_tier - 1) * 80,
     tags: ['work', 'train'],
     trains: 'MST_FIELD',
@@ -62,7 +62,7 @@ export const ACTIVITIES: ActivityDef[] = [
     name: '뒷골목 해결사 위험 외주',
     eligible: { any: [{ trust: 'NPC_BROKER', min: 10 }, { res: 'KRW', max: -1 }, { path: 'PATH_08_FIXER_SYNDICATE' }] },
     cost: { FAT: 22, HP: -8 },
-    reward: { KRW: 260, mst: { MST_FIELD: 3, MST_RULE: 2 }, trust: { NPC_BROKER: 3 }, counters: { fixer_errands: 1 } },
+    reward: { KRW: 260, mst: { MST_FIELD: 3, MST_RULE: 2 }, trust: { NPC_BROKER: 3 }, counters: { fixer_errands: 1 }, aptChance: [{ apt: 'NEG', p: 0.15 }] },
     wage: (s) => (s.run.person.path_id === 'PATH_08_FIXER_SYNDICATE' ? 260 + s.run.person.position_tier * 90 : 260),
     tags: ['work'],
     texts: [
@@ -171,7 +171,7 @@ export const ACTIVITIES: ActivityDef[] = [
     name: '이웃 안부 확인 및 복도 점검',
     eligible: { not: { form: 'FORM_11_CONCEPT' } },
     cost: { FAT: 8, KRW: -20 },
-    reward: { trust: { NPC_NEIGHBOR: 8 }, domain: 3, counters: { care: 1 } },
+    reward: { trust: { NPC_NEIGHBOR: 8 }, domain: 3, counters: { care: 1 }, aptChance: [{ apt: 'NEG', p: 0.2 }] },
     tags: ['care'],
     texts: [
       '옆집 이웃과 비상식량을 나누고 복도 창문의 잠금장치를 함께 고쳤습니다. 위험한 밤이 오면 서로 문을 열어주기로 약속했습니다.',

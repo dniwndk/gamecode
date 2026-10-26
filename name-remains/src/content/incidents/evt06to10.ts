@@ -396,8 +396,9 @@ export const EVT_10: IncidentDef = {
   entry: 'involuntary',
   tier: 5,
   place: '도시 상공, 갈라진 하늘 아래',
-  eligible: { all: [{ age: { min: 28 } }, { any: [{ tierMin: 2 }, { counter: 'clears', min: 5 }] }] },
-  weight: 3,
+  // 신의 시선은 이름이 충분히 알려진 사람에게만 닿는다
+  eligible: { all: [{ age: { min: 40 } }, { any: [{ tierMin: 4 }, { counter: 'clears', min: 10 }] }] },
+  weight: 2,
   relevantClues: ['CLU_REFLECTION'],
   notice: { from: '기상청 이상 현상 속보', text: '[기상청 속보] 오늘 밤 하늘의 일부가 갈라져 보이는 현상이 예보되었습니다. 거울, 유리창, 물웅덩이 등 반사면을 모두 가리십시오. 반사면을 통해서만 내려다봅니다.', clue: 'CLU_REFLECTION' },
   nodes: {
@@ -467,7 +468,7 @@ export const EVT_10: IncidentDef = {
           text: '눈을 감고, 내가 누구인지 속으로 계속 되뇐다.',
           check: 'chance',
           chance: { base: 0.35, apt: ['RES'], mst: ['MST_BOUND'] },
-          success: { text: '자기 이름을 천 번쯤 되뇌었을 때 시선이 떠났습니다. 이름의 몇 글자가 조금 낯설게 느껴졌습니다.', effects: { local: { gaze_severed: true }, HP: -15 }, end: 'gaze_severed' },
+          success: { text: '자기 이름을 천 번쯤 되뇌었을 때 시선이 떠났습니다. 이름의 몇 글자가 조금 낯설게 느껴졌습니다.', effects: { local: { gaze_outlasted: true }, HP: -15 }, end: 'gaze_outlasted' },
           fail: { text: '시선이 이름을 찾았습니다.', effects: { HP: -70 }, end: 'gaze_endured' },
         },
       ],
