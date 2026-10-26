@@ -188,6 +188,16 @@ const SCENE_USES: Record<string, Record<string, BodyPart[]>> = {
   DY_28_OLD_FRIEND: { DY_28_OLD_FRIEND_c2: ['voice', 'recall'] },
   DY_29_FORGOTTEN_NAME: { DY_29_FORGOTTEN_NAME_c1: ['eye', 'hand'], DY_29_FORGOTTEN_NAME_c2: ['recall'] },
   DY_30_VOLUNTEER: { DY_30_VOLUNTEER_c1: ['carry'] },
+  TH_01_STAIRWELL_HAND: { TH_01_STAIRWELL_HAND_c1: ['run'], TH_01_STAIRWELL_HAND_c2: ['hand', 'shout'], TH_01_STAIRWELL_HAND_c3: ['hand'] },
+  TH_02_MARKET_KNIFE: { TH_02_MARKET_KNIFE_c1: ['run'], TH_02_MARKET_KNIFE_c2: ['voice', 'eye'], TH_02_MARKET_KNIFE_c3: ['hand'] },
+  TH_03_SUBWAY_PLATFORM: { TH_03_SUBWAY_PLATFORM_c1: ['run'], TH_03_SUBWAY_PLATFORM_c2: ['hand'], TH_03_SUBWAY_PLATFORM_c3: ['hand'] },
+  TH_04_DOG_PACK: { TH_04_DOG_PACK_c1: ['eye', 'focus'], TH_04_DOG_PACK_c2: ['hand'], TH_04_DOG_PACK_c3: ['climb'] },
+  TH_05_GAS_LEAK: { TH_05_GAS_LEAK_c1: ['hand', 'breath'], TH_05_GAS_LEAK_c2: ['hold'], TH_05_GAS_LEAK_c3: ['voice', 'focus'] },
+  TH_06_COLLECTOR_ALLEY: { TH_06_COLLECTOR_ALLEY_c2: ['voice'], TH_06_COLLECTOR_ALLEY_c3: ['run'] },
+  TH_07_FALLING_SIGN: { TH_07_FALLING_SIGN_c1: ['run'], TH_07_FALLING_SIGN_c2: ['carry', 'run'], TH_07_FALLING_SIGN_c3: ['eye', 'focus'] },
+  TH_08_FLOOD_UNDERPASS: { TH_08_FLOOD_UNDERPASS_c1: ['hand', 'hold'], TH_08_FLOOD_UNDERPASS_c2: ['climb'], TH_08_FLOOD_UNDERPASS_c3: ['hand'] },
+  TH_09_HOME_INTRUDER: { TH_09_HOME_INTRUDER_c1: ['voice', 'name', 'recall'], TH_09_HOME_INTRUDER_c2: ['run'], TH_09_HOME_INTRUDER_c3: ['eye', 'hand'] },
+  TH_10_HOSPITAL_NIGHT: { TH_10_HOSPITAL_NIGHT_c1: ['breath', 'focus'], TH_10_HOSPITAL_NIGHT_c2: ['hand'], TH_10_HOSPITAL_NIGHT_c3: ['run'] },
 };
 
 /** 작은 행동이 쓰는 부위 */

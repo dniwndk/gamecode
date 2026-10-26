@@ -28,6 +28,8 @@ interface SceneSpec {
   place: string;
   eligible?: Cond;
   weight?: number;
+  /** 위협 등급. 1은 일상, 2 이상은 몸을 노리는 직접적인 위협 */
+  tier?: number;
   intro: string;
   prompt: string;
   opts: Opt[];
@@ -52,7 +54,7 @@ function scene(spec: SceneSpec): IncidentDef {
     title: spec.title,
     threats: [],
     entry: 'voluntary',
-    tier: 1,
+    tier: spec.tier ?? 1,
     place: spec.place,
     eligible: spec.eligible ?? { all: [] },
     weight: spec.weight ?? 10,
@@ -488,7 +490,7 @@ export const DAILY_CHOICES: IncidentDef[] = [
     intro: '현관 앞에 옆집으로 가야 할 택배가 놓여 있었습니다. 상자가 미세하게 따뜻했고, 안에서 째깍거리는 소리가 났습니다.',
     prompt: '송장에는 옆집 호수가 적혀 있습니다.',
     opts: [
-      { tag: '전해 준다', text: '옆집 문을 두드려 직접 전해 준다.', result: '옆집 이웃은 상자를 받자마자 표정이 굳더니 고맙다며 귤 한 봉지를 내밀었습니다.', effects: { trust: { NPC_NEIGHBOR: 4 }, SUP: 1 } },
+      { tag: '전해 준다', text: '옆집 문을 두드려 직접 전해 준다.', result: '옆집 이웃은 상자를 받자마자 표정이 굳더니 고맙다며 귤 한 봉지를 내밀었습니다.', effects: { trust: { NPC_NEIGHBOR: 4 }, SUP: 1, FAT: 2 } },
       { tag: '경비실에', text: '경비실에 맡기고 관리소에 알린다.', result: '경비 아저씨는 상자를 보더니 장갑을 끼고 받았습니다. 절차대로 처리하는 게 마음이 편했습니다.', effects: { mst: { MST_RULE: 1 }, FAT: 2 } },
       { tag: '열어 본다', text: '송장이 잘못됐을 수도 있으니 살짝 열어 본다.', chance: { base: 0.45, apt: ['OBS'] }, result: '안에는 낡은 회중시계가 들어 있었습니다. 시계는 내가 상자를 열자 거꾸로 돌기 시작했다가, 닫자 멈췄습니다. 조용히 다시 테이프를 붙였습니다.', effects: { aptChance: [{ apt: 'OBS', p: 0.15 }], mst: { MST_FIELD: 1 } }, fail: { text: '상자를 여는 순간 째깍 소리가 내 손목으로 옮겨 왔습니다. 일주일 동안 맥박이 시계 소리처럼 들렸습니다.', effects: { HP: -6, FAT: 6 } } },
     ],
@@ -839,6 +841,158 @@ export const DAILY_CHOICES: IncidentDef[] = [
       { tag: '신청한다', text: '한 달 동안 주말마다 봉사한다.', result: '고맙다는 말을 셀 수 없이 들었습니다. 무너진 집에서 건진 사진들을 주인에게 돌려줄 때마다 마음이 단단해졌습니다.', effects: { FAT: 10, aptChance: [{ apt: 'NEG', p: 0.1 }, { apt: 'RES', p: 0.08 }], mst: { MST_FIELD: 2 } } },
       { tag: '물품 기부', text: '대신 집에 있는 방재용품을 기부한다.', requires: { res: 'SUP', min: 1 }, result: '담당자가 꼭 필요하던 물건이라며 고마워했습니다.', effects: { SUP: -1, aptChance: [{ apt: 'NEG', p: 0.08 }], defense: 0.03 } },
       { tag: '다음 기회에', text: '이번에는 넘긴다.', result: '마감 공고가 내려갔습니다. 주말 내내 집에서 쉬었습니다.', effects: { FAT: -5 } },
+    ],
+  }),
+];
+
+// ---------------------------------------------------------------- 몸을 노리는 직접적인 위협
+// 어른이 된 뒤 일상 사이로 끼어드는 짧은 위협. 어느 길을 골라도 무언가를 잃거나 다칠 수 있다.
+
+const adult = ages(18, 200);
+
+export const THREAT_CHOICES: IncidentDef[] = [
+  scene({
+    id: 'TH_01_STAIRWELL_HAND',
+    title: '계단참의 손',
+    place: '아파트 비상계단',
+    tier: 2,
+    eligible: adult,
+    intro: '엘리베이터 점검 날, 비상계단을 오르다 7층 계단참에서 발목을 붙잡혔습니다. 난간 사이로 회색 손이 뻗어 나와 있었습니다.',
+    prompt: '손아귀가 점점 조여 옵니다.',
+    opts: [
+      { tag: '걷어찬다', text: '다른 발로 손목을 힘껏 걷어찬다.', chance: { base: 0.55, apt: ['RES'] }, result: '뼈 부러지는 소리가 나고 손이 떨어져 나갔습니다. 발목에는 시퍼런 손자국이 남았습니다.', effects: { HP: -4, FAT: 6, aptChance: [{ apt: 'RES', p: 0.12 }] }, fail: { text: '발이 미끄러졌습니다. 손은 나를 계단 아래로 끌어내렸고, 몇 층을 구른 뒤에야 멈췄습니다.', effects: { HP: -22, FAT: 12 } } },
+      { tag: '난간을 잡는다', text: '난간을 붙들고 버티며 소리쳐 사람을 부른다.', chance: { base: 0.5, apt: ['NEG'] }, result: '위층 사람이 문을 열자 손이 스르르 풀렸습니다. 손바닥이 난간에 쓸려 벗겨졌습니다.', effects: { HP: -6, trust: { NPC_NEIGHBOR: 3 } }, fail: { text: '아무도 나오지 않았습니다. 손을 놓친 순간 몸이 난간 사이로 반쯤 빨려 들어갔다가 튕겨 나왔습니다.', effects: { HP: -18, FAT: 10 } } },
+      { tag: '신발을 버린다', text: '신발 끈을 풀어 신발째 내주고 빠져나온다.', result: '손은 신발을 쥔 채 난간 아래로 사라졌습니다. 맨발로 계단을 내려오다 유리 조각을 밟았습니다.', effects: { HP: -8, KRW: -6, mst: { MST_RULE: 1 } } },
+    ],
+  }),
+  scene({
+    id: 'TH_02_MARKET_KNIFE',
+    title: '시장의 칼잡이',
+    place: '새벽 수산시장',
+    tier: 2,
+    eligible: adult,
+    intro: '새벽 시장 골목에서 앞치마를 두른 사람이 길을 막았습니다. 얼굴이 없었고, 손에는 생선 칼이 들려 있었습니다. "손님, 어디를 손질해 드릴까요."',
+    prompt: '칼끝이 내 쪽으로 기웁니다.',
+    opts: [
+      { tag: '달아난다', text: '등을 돌려 사람 많은 큰길로 뛴다.', chance: { base: 0.5, apt: ['PRC'] }, result: '큰길에 닿자 발소리가 끊겼습니다. 숨이 턱까지 찼습니다.', effects: { FAT: 12, aptChance: [{ apt: 'PRC', p: 0.12 }] }, fail: { text: '골목이 끝나지 않았습니다. 등 뒤에서 칼이 옷과 살을 함께 갈랐습니다.', effects: { HP: -24, FAT: 12 } } },
+      { tag: '주문한다', text: '"생선 한 마리요" 하고 지갑을 연다.', chance: { base: 0.55, apt: ['OBS'] }, result: '칼잡이는 고개를 끄덕이더니 좌판의 생선을 손질해 내밀었습니다. 값은 터무니없이 비쌌습니다.', effects: { KRW: -30, mst: { MST_RULE: 2 } }, fail: { text: '"손님이 고르신 건 그게 아닌데요." 칼이 손등을 스쳤습니다.', effects: { HP: -14, KRW: -15 } } },
+      { tag: '맞선다', text: '좌판의 갈고리를 집어 들고 맞선다.', chance: { base: 0.4, apt: ['RES'] }, result: '갈고리가 앞치마를 꿰자 그것은 물웅덩이로 무너졌습니다. 팔에 깊은 상처가 남았습니다.', effects: { HP: -10, mst: { MST_FIELD: 3 }, aptChance: [{ apt: 'RES', p: 0.15 }] }, fail: { text: '갈고리가 허공을 갈랐습니다. 칼은 정확히 손질하듯 내 몸을 지나갔습니다.', effects: { HP: -30, FAT: 10 } } },
+    ],
+  }),
+  scene({
+    id: 'TH_03_SUBWAY_PLATFORM',
+    title: '등을 미는 손',
+    place: '지하철 승강장',
+    tier: 2,
+    eligible: adult,
+    intro: '막차를 기다리는데 스크린도어가 고장 난 칸 앞이었습니다. 열차가 들어오는 소리와 함께 누군가 등을 두 손으로 밀었습니다.',
+    prompt: '몸이 선로 쪽으로 기웁니다.',
+    opts: [
+      { tag: '주저앉는다', text: '무릎을 꺾어 바닥에 주저앉는다.', chance: { base: 0.55, apt: ['PRC'] }, result: '무릎이 깨졌지만 몸은 승강장 위에 남았습니다. 돌아보니 아무도 없었습니다.', effects: { HP: -6, FAT: 4 }, fail: { text: '주저앉는 몸이 그대로 선로 쪽으로 미끄러졌습니다. 겨우 가장자리를 붙잡았지만 열차가 어깨를 스쳤습니다.', effects: { HP: -28, FAT: 10 } } },
+      { tag: '뒤로 잡는다', text: '팔을 뒤로 뻗어 미는 손목을 붙잡는다.', chance: { base: 0.45, apt: ['RES'] }, result: '차가운 손목을 잡아 비틀자 그것은 비명을 지르며 흩어졌습니다.', effects: { HP: -4, mst: { MST_FIELD: 2 } }, fail: { text: '손목은 연기처럼 빠져나갔고 나는 균형을 잃었습니다. 선로 자갈에 떨어졌다가 역무원에게 끌려 올라왔습니다.', effects: { HP: -24, FAT: 14 } } },
+      { tag: '비상벨', text: '기둥의 비상벨을 친다.', result: '경보와 함께 열차가 급정거했습니다. 미는 힘은 사라졌지만 기둥에 머리를 박았습니다. 역에서 운행 방해로 경위서를 쓰게 했습니다.', effects: { HP: -8, KRW: -10, FAT: 6 } },
+    ],
+  }),
+  scene({
+    id: 'TH_04_DOG_PACK',
+    title: '목줄 없는 개들',
+    place: '재개발 구역 공터',
+    tier: 2,
+    eligible: adult,
+    intro: '지름길로 공터를 가로지르는데 철거된 집터마다 개들이 고개를 들었습니다. 눈이 사람처럼 생긴 개들이었습니다.',
+    prompt: '개들이 원을 좁혀 옵니다.',
+    opts: [
+      { tag: '천천히 물러난다', text: '눈을 피하지 않고 한 걸음씩 물러난다.', chance: { base: 0.5, apt: ['NEG'] }, result: '우두머리가 먼저 고개를 돌렸습니다. 공터를 벗어날 때까지 등이 젖었습니다.', effects: { FAT: 8, aptChance: [{ apt: 'NEG', p: 0.12 }] }, fail: { text: '한 마리가 다리를 물자 나머지가 한꺼번에 덤볐습니다.', effects: { HP: -26, FAT: 10 } } },
+      { tag: '먹이를 던진다', text: '가방 속 도시락을 멀리 던진다.', requires: { res: 'SUP', min: 1 }, result: '개들이 도시락으로 몰려갔습니다. 마지막 한 마리가 지나가며 종아리를 물고 갔습니다.', effects: { SUP: -1, HP: -6 } },
+      { tag: '담을 넘는다', text: '무너진 담장 위로 기어오른다.', chance: { base: 0.45, apt: ['PRC'] }, result: '담장 위에서 개들이 짖다가 흩어지는 걸 보았습니다. 철근에 손바닥이 찢어졌습니다.', effects: { HP: -6, FAT: 10, aptChance: [{ apt: 'PRC', p: 0.1 }] }, fail: { text: '담장이 무너지며 개들 한가운데로 떨어졌습니다.', effects: { HP: -30, FAT: 12 } } },
+    ],
+  }),
+  scene({
+    id: 'TH_05_GAS_LEAK',
+    title: '숨 쉬는 가스',
+    place: '반지하 집',
+    tier: 2,
+    eligible: adult,
+    intro: '자다가 깼습니다. 방 안에 단내가 가득했고, 가스레인지 밸브가 저절로 돌아가 있었습니다. 냄새가 말을 걸었습니다. "조금만 더 자."',
+    prompt: '머리가 무겁게 가라앉습니다.',
+    opts: [
+      { tag: '창문을 깬다', text: '의자로 창문을 깨고 밖으로 나간다.', chance: { base: 0.55, apt: ['RES'] }, result: '유리 조각에 팔이 긁혔지만 바깥 공기가 폐를 찢고 들어왔습니다. 창문 값은 내가 물었습니다.', effects: { HP: -8, KRW: -25 }, fail: { text: '의자를 드는 순간 무릎이 꺾였습니다. 깨어난 곳은 병원이었습니다.', effects: { HP: -26, FAT: 20, KRW: -40 } } },
+      { tag: '밸브를 잠근다', text: '숨을 참고 부엌까지 기어가 밸브를 잠근다.', chance: { base: 0.5, apt: ['RES'] }, result: '밸브가 잠기자 냄새가 투덜거리며 흩어졌습니다. 며칠 동안 두통이 가시지 않았습니다.', effects: { HP: -10, FAT: 8, mst: { MST_RULE: 1 } }, fail: { text: '부엌은 기어도 기어도 멀어졌습니다. 이웃이 문을 부수고 들어왔을 때 나는 바닥에 엎드려 있었습니다.', effects: { HP: -28, FAT: 16 } } },
+      { tag: '대답한다', text: '"싫어. 일어날 거야." 소리 내어 거절한다.', chance: { base: 0.4, apt: ['RES'] }, result: '냄새가 잠깐 망설이더니 환풍구로 빠져나갔습니다. 목이 쉬어 있었습니다.', effects: { HP: -4, aptChance: [{ apt: 'RES', p: 0.15 }] }, fail: { text: '대답하는 사이 숨을 크게 들이켰습니다. 그 뒤로 기억이 없습니다.', effects: { HP: -30, FAT: 18 } } },
+    ],
+  }),
+  scene({
+    id: 'TH_06_COLLECTOR_ALLEY',
+    title: '골목의 수금원',
+    place: '귀갓길 골목',
+    tier: 2,
+    eligible: adult,
+    weight: 8,
+    intro: '골목 끝에 검은 양복 두 사람이 서 있었습니다. "이 동네 통행세 걷습니다. 사람이든 아니든."',
+    prompt: '한 사람이 손을 내밉니다.',
+    opts: [
+      { tag: '낸다', text: '지갑에 있는 돈을 다 낸다.', result: '그들은 돈을 세어 보더니 길을 비켜 주었습니다. 다음 달에도 오겠다고 했습니다.', effects: { KRW: -45, FAT: 4 } },
+      { tag: '흥정한다', text: '가진 게 이것뿐이라며 절반만 내민다.', chance: { base: 0.5, apt: ['NEG'] }, result: '한 사람이 웃더니 반만 받아 갔습니다.', effects: { KRW: -20, aptChance: [{ apt: 'NEG', p: 0.15 }] }, fail: { text: '"우리가 거지로 보여?" 주먹이 먼저 왔고 지갑은 그다음에 털렸습니다.', effects: { HP: -20, KRW: -45 } } },
+      { tag: '뚫고 간다', text: '어깨로 밀치고 지나간다.', chance: { base: 0.35, apt: ['RES'] }, result: '두 사람은 비틀거리며 물러났습니다. 등 뒤로 욕설이 한참 따라왔습니다.', effects: { HP: -6, mst: { MST_FIELD: 2 } }, fail: { text: '골목에 쓰러진 채 한참을 맞았습니다. 그들은 지갑과 신발까지 가져갔습니다.', effects: { HP: -32, KRW: -50, FAT: 10 } } },
+    ],
+  }),
+  scene({
+    id: 'TH_07_FALLING_SIGN',
+    title: '떨어지는 간판',
+    place: '번화가',
+    tier: 2,
+    eligible: adult,
+    intro: '바람 한 점 없는 낮이었는데 머리 위에서 쇠 비틀리는 소리가 났습니다. 올려다보니 간판이 웃는 얼굴을 하고 있었습니다.',
+    prompt: '간판의 나사가 하나씩 풀려 떨어집니다.',
+    opts: [
+      { tag: '옆 가게로', text: '가까운 가게 안으로 뛰어든다.', chance: { base: 0.55, apt: ['PRC'] }, result: '등 뒤에서 간판이 박살 났습니다. 파편이 종아리에 박혔습니다.', effects: { HP: -6, FAT: 6 }, fail: { text: '문턱에 걸려 넘어진 순간 간판 모서리가 등을 내리찍었습니다.', effects: { HP: -30, FAT: 10 } } },
+      { tag: '사람을 끈다', text: '아래를 지나던 아이를 끌어안고 구른다.', chance: { base: 0.45, apt: ['PRC', 'RES'] }, result: '아이는 무사했습니다. 내 팔은 한동안 들리지 않았습니다. 아이 엄마가 몇 번이고 고개를 숙였습니다.', effects: { HP: -12, trust: { NPC_NEIGHBOR: 4 }, aptChance: [{ apt: 'RES', p: 0.1 }] }, fail: { text: '아이는 밀어냈지만 나는 피하지 못했습니다.', effects: { HP: -34, FAT: 12 } } },
+      { tag: '노려본다', text: '간판의 얼굴을 똑바로 노려본다.', chance: { base: 0.4, apt: ['RES'] }, result: '간판이 겸연쩍게 웃음을 거두고 제자리에 걸렸습니다. 다리가 풀려 한참 주저앉아 있었습니다.', effects: { FAT: 12, aptChance: [{ apt: 'RES', p: 0.12 }] }, fail: { text: '간판은 더 크게 웃으며 떨어졌습니다.', effects: { HP: -30, FAT: 8 } } },
+    ],
+  }),
+  scene({
+    id: 'TH_08_FLOOD_UNDERPASS',
+    title: '차오르는 지하차도',
+    place: '지하차도',
+    tier: 3,
+    eligible: ages(20, 200),
+    weight: 6,
+    intro: '폭우가 쏟아지던 퇴근길, 버스가 지하차도에 갇혔습니다. 물은 빗물이 아니었습니다. 따뜻했고, 손가락처럼 창문을 더듬었습니다.',
+    prompt: '물이 무릎까지 차올랐습니다.',
+    opts: [
+      { tag: '창문으로', text: '비상 망치로 창을 깨고 헤엄쳐 나간다.', chance: { base: 0.45, apt: ['RES', 'PRC'] }, result: '출구 쪽 계단에 닿았을 때 손톱이 몇 개 빠져 있었습니다. 뒤를 돌아보지 않았습니다.', effects: { HP: -12, FAT: 16 }, fail: { text: '물속의 손가락들이 발목을 감았습니다. 끌려가다 버스 바퀴에 걸려 겨우 멈췄습니다.', effects: { HP: -36, FAT: 18 } } },
+      { tag: '지붕 위로', text: '사람들과 버스 지붕에 올라 구조를 기다린다.', chance: { base: 0.5, apt: ['RES'] }, result: '새벽에 구조대가 왔습니다. 밤새 지붕 아래에서 무언가 긁는 소리를 들었습니다.', effects: { FAT: 20, HP: -6, trust: { NPC_NEIGHBOR: 2 } }, fail: { text: '물이 지붕까지 올라왔습니다. 옆 사람의 손을 놓쳤고, 나도 한 번 가라앉았다 떠올랐습니다.', effects: { HP: -30, FAT: 20 } } },
+      { tag: '부적을 띄운다', text: '품속의 부적을 물 위에 띄운다.', requires: { res: 'SUP', min: 2 }, chance: { base: 0.6 }, result: '물이 부적을 피해 갈라졌습니다. 그 틈으로 사람들을 데리고 걸어 나왔습니다.', effects: { SUP: -2, mst: { MST_RULE: 2 } }, fail: { text: '부적이 녹아 물에 섞였습니다. 물은 더 따뜻해졌습니다.', effects: { SUP: -2, HP: -28, FAT: 14 } } },
+    ],
+  }),
+  scene({
+    id: 'TH_09_HOME_INTRUDER',
+    title: '집 안의 낯선 사람',
+    place: '내 방',
+    tier: 3,
+    eligible: ages(20, 200),
+    weight: 6,
+    intro: '퇴근해 불을 켜니 식탁에 내가 앉아 있었습니다. 내 옷을 입고, 내 밥을 먹으며. "늦었네. 이제 네 자리는 없어."',
+    prompt: '그것이 수저를 내려놓고 일어섭니다.',
+    opts: [
+      { tag: '이름을 댄다', text: '내 이름과 생일, 어머니 이름을 또박또박 말한다.', chance: { base: 0.5, apt: ['RES'] }, result: '그것의 얼굴이 조금씩 흐려지더니 의자째 사라졌습니다. 식탁 위 밥은 차갑게 식어 있었습니다.', effects: { FAT: 10, aptChance: [{ apt: 'RES', p: 0.12 }], mst: { MST_RULE: 1 } }, fail: { text: '그것이 나보다 먼저, 더 정확하게 대답했습니다. 내 목을 조르는 손은 내 손과 똑같았습니다.', effects: { HP: -30, FAT: 14 } } },
+      { tag: '도망친다', text: '현관문을 박차고 나가 경비실로 달린다.', chance: { base: 0.5, apt: ['PRC'] }, result: '경비원과 돌아왔을 때 집은 비어 있었습니다. 일주일을 여관에서 잤습니다.', effects: { KRW: -35, FAT: 10 }, fail: { text: '현관문 손잡이가 돌아가지 않았습니다. 등 뒤에서 내 목소리가 웃었습니다.', effects: { HP: -28, FAT: 12 } } },
+      { tag: '거울을 든다', text: '현관 거울을 떼어 그것에게 비춘다.', chance: { base: 0.45, apt: ['OBS'] }, result: '거울 속에는 아무것도 비치지 않았습니다. 그것은 비명을 지르며 거울 속으로 빨려 들어갔고, 거울은 금이 갔습니다.', effects: { HP: -6, mst: { MST_FIELD: 2 }, aptChance: [{ apt: 'OBS', p: 0.12 }] }, fail: { text: '거울 속의 그것이 손을 뻗어 내 손목을 잡았습니다. 거울이 깨지며 손을 길게 그었습니다.', effects: { HP: -26, FAT: 10 } } },
+    ],
+  }),
+  scene({
+    id: 'TH_10_HOSPITAL_NIGHT',
+    title: '병동의 야간 회진',
+    place: '종합병원 입원실',
+    tier: 3,
+    eligible: ages(25, 200),
+    weight: 5,
+    intro: '검사차 하룻밤 입원했습니다. 새벽 세 시, 커튼 너머로 바퀴 소리가 멈췄습니다. "회진입니다. 수술 준비할게요." 오늘 수술 예정은 없었습니다.',
+    prompt: '커튼이 천천히 젖혀집니다.',
+    opts: [
+      { tag: '자는 척', text: '눈을 감고 숨을 고르게 쉰다.', chance: { base: 0.5, apt: ['RES'] }, result: '차가운 손이 이마를 짚고 지나갔습니다. "이 환자는 아니네." 바퀴 소리가 멀어졌습니다.', effects: { FAT: 14 }, fail: { text: '"깨어 있네요." 팔에 바늘이 꽂혔습니다. 아침에 깨어났을 때 옆구리에 낯선 봉합 자국이 있었습니다.', effects: { HP: -32, FAT: 16 } } },
+      { tag: '호출 버튼', text: '간호사 호출 버튼을 누르고 버틴다.', chance: { base: 0.45, apt: ['NEG'] }, result: '진짜 간호사가 뛰어오자 그것은 침대 밑으로 사라졌습니다. 다음 날 바로 퇴원했습니다.', effects: { KRW: -20, FAT: 8 }, fail: { text: '호출 버튼에서 같은 목소리가 대답했습니다. "네, 지금 갑니다."', effects: { HP: -28, FAT: 14 } } },
+      { tag: '창밖으로', text: '링거를 뽑고 비상구로 빠져나간다.', chance: { base: 0.45, apt: ['PRC'] }, result: '맨발로 병원을 빠져나왔습니다. 팔에서 피가 흘렀고, 병원비 독촉장이 뒤따라왔습니다.', effects: { HP: -8, KRW: -40, FAT: 10 }, fail: { text: '비상구 계단이 수술실로 이어져 있었습니다.', effects: { HP: -34, FAT: 18 } } },
     ],
   }),
 ];
