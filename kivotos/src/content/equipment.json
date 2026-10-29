@@ -1,0 +1,242 @@
+[
+  {
+    "id": "eq_tactical_watch",
+    "name": "밀레니엄제 전술 손목시계",
+    "zone": "both",
+    "stats": {
+      "critBps": 1500,
+      "critDamageBps": 2500,
+      "spd": 8
+    },
+    "effectIds": [
+      "eff_eq_watch"
+    ],
+    "uniquePerUnit": true,
+    "chapters": [
+      1,
+      2,
+      3
+    ],
+    "recommendation": "추천: 스트라이커/어설트 전방 딜러(`u_iori`, `u_aru`, `u_mika`, `u_wakamo`) / 비추천: 순수 탱커",
+    "description": "치명타 확률과 치명타 피해, 속도를 고르게 높이고 전투 시작 시 에너지를 15 부여합니다."
+  },
+  {
+    "id": "eq_peroro_feather",
+    "name": "페로로지라의 행운 깃털 배지",
+    "zone": "front",
+    "stats": {
+      "hp": 350,
+      "def": 25
+    },
+    "effectIds": [
+      "eff_eq_peroro"
+    ],
+    "uniquePerUnit": true,
+    "chapters": [
+      1,
+      2,
+      3
+    ],
+    "recommendation": "추천: 전방 탱커 및 브루저(`u_yuuka`, `u_tsubaki`, `u_hoshino`, `u_haruka`) / 비추천: 후방 지원가",
+    "description": "전방 유닛의 체력과 방어력을 높이고, 전투 시작 시 최대 HP 20%의 보호막(2턴)을 부여합니다."
+  },
+  {
+    "id": "eq_schale_fountain_pen",
+    "name": "샬레의 만년필 (지휘관 인장)",
+    "zone": "rear",
+    "stats": {
+      "atk": 35,
+      "spd": 12
+    },
+    "effectIds": [
+      "eff_eq_pen"
+    ],
+    "uniquePerUnit": true,
+    "chapters": [
+      1,
+      2,
+      3
+    ],
+    "recommendation": "추천: 후방 지원가 전원(`u_ako`, `u_himari`, `u_serina`, `u_ayane`) / 비추천: 전방 전용 유닛",
+    "description": "후방 지원가의 첫 정기 지원(`rear_action`) 시 팀 SP를 1 회복하고 전방 전원의 에너지를 10 채웁니다(전투당 1회)."
+  },
+  {
+    "id": "eq_abydos_goggles",
+    "name": "아비도스 방진 고글",
+    "zone": "front",
+    "stats": {
+      "atk": 30,
+      "critBps": 1200
+    },
+    "effectIds": [
+      "eff_eq_goggles"
+    ],
+    "uniquePerUnit": false,
+    "chapters": [
+      1,
+      2,
+      3
+    ],
+    "recommendation": "추천: 기본 공격/연사 중심 어설트(`u_shiroko`, `u_serika`, `u_izuna`, `u_neru`)",
+    "description": "기본 공격 해소 시(`basic_resolved`) 자신의 에너지를 8 추가 회복하고 가하는 피해가 +12% 증가합니다."
+  },
+  {
+    "id": "eq_gehenna_hot_sauce",
+    "name": "급양부 특제 초매운맛 소스",
+    "zone": "front",
+    "stats": {
+      "atk": 45,
+      "hp": 150
+    },
+    "effectIds": [
+      "eff_eq_hotsauce"
+    ],
+    "uniquePerUnit": true,
+    "chapters": [
+      1,
+      2,
+      3
+    ],
+    "recommendation": "추천: 광역 스킬/필살기 딜러(`u_nonomi`, `u_mutsuki`, `u_hina`, `u_aru`)",
+    "description": "전투 스킬 및 필살기로 가하는 피해가 +20% 증가하며, 필살기 사용 시 적에게 2턴간 화상(`st_burn`)을 부여합니다."
+  },
+  {
+    "id": "eq_trinity_rosary",
+    "name": "구호기사단의 은빛 로자리오",
+    "zone": "both",
+    "stats": {
+      "atk": 30,
+      "def": 20
+    },
+    "effectIds": [
+      "eff_eq_rosary"
+    ],
+    "uniquePerUnit": false,
+    "chapters": [
+      1,
+      2,
+      3
+    ],
+    "recommendation": "추천: 치유 지원가(`u_serina`, `u_fuuka`, `u_koharu`, `u_ayane`)",
+    "description": "소유자의 치유량이 +25% 증가하며, 치유 적용 시(`healed`) 대상의 디버프 1개를 50% 확률로 해제합니다."
+  },
+  {
+    "id": "eq_veritas_jammer",
+    "name": "베리타스 개조 전파 재머",
+    "zone": "rear",
+    "stats": {
+      "spd": 15,
+      "atk": 25
+    },
+    "effectIds": [
+      "eff_eq_jammer"
+    ],
+    "uniquePerUnit": true,
+    "chapters": [
+      1,
+      2,
+      3
+    ],
+    "recommendation": "추천: 후방 제어/디버프 요원(`u_hare`, `u_suzumi`, `u_kotama`, `u_rio`)",
+    "description": "후방 정기 지원 시 적 전방 최전열 대상의 다음 행동 시간을 15% 밀어내고(`delay_action`) 2턴간 받는 피해를 +12% 늘립니다."
+  },
+  {
+    "id": "eq_heavy_ballistic_plate",
+    "name": "아이언 호루스 예비 장갑판",
+    "zone": "front",
+    "stats": {
+      "hp": 500,
+      "def": 40
+    },
+    "effectIds": [
+      "eff_eq_plate"
+    ],
+    "uniquePerUnit": true,
+    "chapters": [
+      2,
+      3
+    ],
+    "recommendation": "추천: 1번 슬롯 메인 탱커(`u_hoshino`, `u_tsubaki`, `u_yuuka`)",
+    "description": "받는 최종 피해가 15% 감소하며, 전투 중 최초로 HP가 50% 이하가 될 때 최대 HP 30%를 즉시 회복합니다(전투당 1회)."
+  },
+  {
+    "id": "eq_supernova_capacitor",
+    "name": "초신성 광자 축전기",
+    "zone": "both",
+    "stats": {
+      "atk": 50,
+      "critDamageBps": 3000
+    },
+    "effectIds": [
+      "eff_eq_capacitor"
+    ],
+    "uniquePerUnit": true,
+    "chapters": [
+      2,
+      3
+    ],
+    "recommendation": "추천: 필살기 비중이 높은 메인 캐리(`u_aris`, `u_wakamo`, `u_hina`, `u_mika`)",
+    "description": "전투 시작 시 초기 에너지 +30을 얻고, 필살기 해소 후 에너지를 20 즉시 환급받습니다(전투당 2회)."
+  },
+  {
+    "id": "eq_hyakkiyako_mask",
+    "name": "백야제 여우 가면",
+    "zone": "front",
+    "stats": {
+      "spd": 14,
+      "atk": 35,
+      "critBps": 1000
+    },
+    "effectIds": [
+      "eff_eq_mask"
+    ],
+    "uniquePerUnit": true,
+    "chapters": [
+      1,
+      2,
+      3
+    ],
+    "recommendation": "추천: 고속 행동 딜러(`u_izuna`, `u_asuna`, `u_neru`, `u_wakamo`)",
+    "description": "자신의 전투 스킬 해소 시 다음 행동 시간을 20% 당기고(`advance_action`) 1턴간 ATK +15%를 얻습니다."
+  },
+  {
+    "id": "eq_cc_maid_headband",
+    "name": "C&C 전술 메이드 헤드밴드",
+    "zone": "front",
+    "stats": {
+      "atk": 40,
+      "spd": 10
+    },
+    "effectIds": [
+      "eff_eq_headband"
+    ],
+    "uniquePerUnit": false,
+    "chapters": [
+      1,
+      2,
+      3
+    ],
+    "recommendation": "추천: 후속 공격 보유 전방 딜러(`u_shiroko`, `u_iori`, `u_izuna`, `u_hina`)",
+    "description": "후속 공격(`followup_attack`)으로 가하는 피해가 +35% 증가하고, 후속 공격 적중 시 자신의 HP를 최대 HP의 8%만큼 회복합니다."
+  },
+  {
+    "id": "eq_prefect_armband",
+    "name": "선도부 집행위원 완장",
+    "zone": "both",
+    "stats": {
+      "atk": 45,
+      "def": 20,
+      "critBps": 1000
+    },
+    "effectIds": [
+      "eff_eq_armband"
+    ],
+    "uniquePerUnit": true,
+    "chapters": [
+      2,
+      3
+    ],
+    "recommendation": "추천: 대보스 결전 딜러 및 하이브리드(`u_iori`, `u_azusa`, `u_mika`, `u_rio`)",
+    "description": "공격 적중 시 대상의 현재 DEF를 2턴간 20% 감소(`st_def_down`)시키고, 디버프가 있는 적에게 가하는 피해가 +18% 증가합니다."
+  }
+]

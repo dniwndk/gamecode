@@ -1,0 +1,82 @@
+[
+  {
+    "id": "st_atk_down",
+    "rule": "모든 출처 중 가장 강한 감소율 하나를 유효 적용. 약한 항목도 만료까지 보관하여 강한 항목 만료 후 승계"
+  },
+  {
+    "id": "st_atk_up",
+    "rule": null
+  },
+  {
+    "id": "st_burn",
+    "rule": "기본 2차례, 출처별 1개, 서로 다른 출처 최대 2개. 계수는 부여 효과가 지정, 미지정 45% ATK. 데몰리션 2단계는 40%. 세 번째 출처는 틱 기대 기준량이 가장 약한 항목보다 강할 때 교체"
+  },
+  {
+    "id": "st_charge_aris",
+    "rule": "전방 아리스의 자기 차례 시작 +1, 최대3, 중첩당 피해+12%, 전투 종료까지"
+  },
+  {
+    "id": "st_crit_up",
+    "rule": null
+  },
+  {
+    "id": "st_damage_reduction",
+    "rule": null
+  },
+  {
+    "id": "st_damage_up",
+    "rule": null
+  },
+  {
+    "id": "st_def_down",
+    "rule": "출처별 1개, 같은 출처는 갱신, 다른 출처 감소율 합산. 원래 DEF에 비율 적용, 최종 0 이상"
+  },
+  {
+    "id": "st_def_up",
+    "rule": null
+  },
+  {
+    "id": "st_delayed",
+    "rule": null
+  },
+  {
+    "id": "st_healing_received_down",
+    "rule": null
+  },
+  {
+    "id": "st_hot",
+    "rule": "출처별 갱신, 서로 다른 출처는 각각 틱. 세리나 기본 40% ATK/차례, 아츠코는 명시 60% ATK, 전략은 대상 최대 HP 6%"
+  },
+  {
+    "id": "st_next_crit",
+    "rule": null
+  },
+  {
+    "id": "st_rage_neru",
+    "rule": "2차례, ATK +30%와 피해감소20%. 네루 필살기의 추가 피해 조건으로 참조"
+  },
+  {
+    "id": "st_silence",
+    "rule": "필살기·스킬만 봉쇄, 기본 공격 허용"
+  },
+  {
+    "id": "st_spd_down",
+    "rule": null
+  },
+  {
+    "id": "st_spd_up",
+    "rule": null
+  },
+  {
+    "id": "st_stun",
+    "rule": "해당 정상 차례를 건너뜀. 끝에 지속 감소. 동일 적이 기절 차례를 마치면 다음 자기 차례 종료까지 재기절 확률 50% 계수 적용"
+  },
+  {
+    "id": "st_taunt",
+    "rule": "피도발 대상에게 `tauntedBy=도발자 instanceId`. 정상 단일 적대 행동의 주 대상 선택을 강제. 도발자 전투불능이면 무시"
+  },
+  {
+    "id": "st_vuln",
+    "rule": "출처별 갱신, 다른 출처 합산, 총 +50% 상한. 조건부 동일 계열 증폭도 이 상한에 포함"
+  }
+]

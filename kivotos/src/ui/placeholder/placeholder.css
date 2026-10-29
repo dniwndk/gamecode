@@ -1,0 +1,21 @@
+/* 임시 화면 전용. 정식 UI가 오면 함께 지운다. 13.4: 밝은 전술 단말기, 청색·백색, 위험은 주황·적색. */
+:root { color-scheme: light; --ink: #0f172a; --muted: #475569; --line: #cbd5e1; --bg: #f1f5f9; --card: #fff; --accent: #2563eb; --bad: #dc2626; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.5 system-ui, -apple-system, 'Noto Sans KR', sans-serif; color: var(--ink); background: var(--bg); }
+#app { max-width: 1200px; margin: 0 auto; padding: 16px; }
+.top h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
+.sub { margin: 4px 0 16px; color: var(--muted); }
+.status { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+.status.bad { border-left-color: var(--bad); }
+.status h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.status p { margin: 2px 0; }
+.issue { color: var(--bad); font-family: ui-monospace, monospace; font-size: 0.85rem; }
+.note { color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.card img, .card .initials { display: block; width: 100%; aspect-ratio: 512 / 748; object-fit: cover; }
+.card .initials { display: grid; place-items: center; color: #fff; font-size: 2rem; font-weight: 700; }
+.card h3 { margin: 8px 8px 0; font-size: 0.95rem; }
+.card .meta, .card .tags { margin: 2px 8px 8px; font-size: 0.8rem; color: var(--muted); }
+.cost4 { border-color: #a855f7; } .cost5 { border-color: #f59e0b; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

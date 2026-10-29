@@ -29,6 +29,7 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             name-remains/package-lock.json
+            kivotos/package-lock.json
       - run: npm ci
       - name: 규칙·시뮬레이션 검사 (headless 기준 · 감사)
         run: npm test
@@ -50,6 +51,14 @@ jobs:
         run: node tests/e2e/play.e2e.mjs test-results/e2e
       - name: 「이름이 남는 동안」을 배포본 하위 경로(/name-remains/)에 싣기
         run: cp -r name-remains/dist dist/name-remains
+      - name: 「키보토스 택티컬 프론트라인」 검사·빌드 (kivotos/ · 기획서 대조·콘텐츠 검증·타입·테스트)
+        working-directory: kivotos
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: 「키보토스 택티컬 프론트라인」을 배포본 하위 경로(/kivotos/)에 싣기
+        run: cp -r kivotos/dist dist/kivotos
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:

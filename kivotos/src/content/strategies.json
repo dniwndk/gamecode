@@ -1,0 +1,283 @@
+[
+  {
+    "id": "str_schale_supply",
+    "name": "샬레의 초동 전술 지휘",
+    "offer": {
+      "chapters": [
+        1,
+        2,
+        3
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "1~3장 시작 시 조건 없이 등장 (범용)",
+    "effectIds": [
+      "eff_str_schale_supply"
+    ],
+    "benefit": "전투 시작 시 팀 SP +2(최대 5로 시작) 및 아군 전방 전원 초기 에너지 +25 획득.",
+    "drawback": "초반 1~2턴 폭딜에는 강력하나 3턴 이후 지속적인 스탯 보너스는 없음.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": true
+  },
+  {
+    "id": "str_aegis_barrier",
+    "name": "밀레니엄 이지스 방어 프로토콜",
+    "offer": {
+      "chapters": [
+        1,
+        2,
+        3
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "1~3장 시작 시 조건 없이 등장 (범용)",
+    "effectIds": [
+      "eff_str_aegis_barrier"
+    ],
+    "benefit": "전투 시작 시 아군 전방 전원에게 최대 HP 25%의 보호막(3턴)을 부여하고, 보호막 보유 중인 아군의 DEF +30% 증가.",
+    "drawback": "순수 공격력 상승치가 없어 화력이 부족한 조합에서는 전투 시간이 길어질 수 있음.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": true
+  },
+  {
+    "id": "str_relief_knights",
+    "name": "구호기사단의 헌신 서약",
+    "offer": {
+      "chapters": [
+        1,
+        2,
+        3
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "1~3장 시작 시 조건 없이 등장 (범용)",
+    "effectIds": [
+      "eff_str_relief_knights"
+    ],
+    "benefit": "아군 전원이 주는 치유량 +30% 증가. 아군 전방 유닛은 매 턴 시작 시 최대 HP의 6%를 자동 회복(`st_hot`)하고 치유를 받을 때 에너지를 8 얻음(턴당 1회).",
+    "drawback": "치유 유닛을 전혀 쓰지 않는 극공격 조합에서는 효율이 절반 이하로 감소.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": true
+  },
+  {
+    "id": "str_rapid_fire_drill",
+    "name": "기동 타격대 탄막 교리",
+    "offer": {
+      "chapters": [
+        1,
+        2,
+        3
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "1~3장 시작 시 조건 없이 등장 (범용)",
+    "effectIds": [
+      "eff_str_rapid_fire"
+    ],
+    "benefit": "아군 전방 유닛의 SPD +14 증가. 기본 공격(`basic_resolved`)과 후속 공격(`followup_attack`)으로 가하는 피해 +35% 증가.",
+    "drawback": "단발 필살기 위주의 느린 스트라이커에게는 효율이 낮음.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": true
+  },
+  {
+    "id": "str_precision_sniping",
+    "name": "결전 사격 통제 시스템",
+    "offer": {
+      "chapters": [
+        1,
+        2,
+        3
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "1~3장 시작 시 조건 없이 등장 (범용)",
+    "effectIds": [
+      "eff_str_precision_sniping"
+    ],
+    "benefit": "아군 전원의 CRIT +18%, CRIT_DMG +0.35 증가. 필살기(`ultimate_resolved`)로 적 타격 시 대상의 방어력을 무시하는 ATK 60% `true` 추가 피해 발동(턴당 1회).",
+    "drawback": "유지력이나 속도 보너스가 없어 전방 탱커진이 먼저 갖춰져야 안정적임.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": true
+  },
+  {
+    "id": "str_rear_command_net",
+    "name": "통합 후방 관제 네트워크",
+    "offer": {
+      "chapters": [
+        2,
+        3
+      ],
+      "ownedCondition": {
+        "positions": [
+          "rear_only",
+          "dual"
+        ],
+        "anyTagOf": null,
+        "minCount": 2,
+        "chapters": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "offerText": "후방 배치 가능 유닛 2명 이상 보유 시 또는 2~3장 시작 시 등장",
+    "effectIds": [
+      "eff_str_rear_command"
+    ],
+    "benefit": "후방에 배치된 아군 유닛의 SPD +20, ATK +25% 증가. 후방 정기 지원(`rear_action`)이 3회 발생할 때마다 팀 SP +1 회복 및 전방 전체 ATK +15%(2턴) 부여.",
+    "drawback": "후방에 최소 3~4명 이상을 배치하지 않으면 발동 주기가 느림.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": false
+  },
+  {
+    "id": "str_iron_frontline",
+    "name": "전방 중장갑 돌격 전술",
+    "offer": {
+      "chapters": [
+        2,
+        3
+      ],
+      "ownedCondition": {
+        "positions": [
+          "front_only",
+          "dual"
+        ],
+        "anyTagOf": [
+          "syn_vanguard",
+          "syn_heavy_armor"
+        ],
+        "minCount": 2,
+        "chapters": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "offerText": "전방 탱커/중장갑 유닛 2명 이상 보유 시 또는 2~3장 시작 시 등장",
+    "effectIds": [
+      "eff_str_iron_frontline"
+    ],
+    "benefit": "전방 1~2번 슬롯 아군의 최대 HP +30%, 받는 피해 18% 감소. 전방 3~4번 슬롯 아군의 가하는 피해 +28%, SPD +10 증가.",
+    "drawback": "전방 슬롯 위치(1~2번 탱커, 3~4번 딜러)를 엄격히 맞춰 배치해야 최고 효율이 나옴.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": true
+  },
+  {
+    "id": "str_outlaw_frenzy",
+    "name": "흥신소식 무법지대 돌파",
+    "offer": {
+      "chapters": [
+        1,
+        2,
+        3
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "1~3장 시작 시 조건 없이 등장",
+    "effectIds": [
+      "eff_str_outlaw_frenzy"
+    ],
+    "benefit": "아군 전방 유닛의 현재 HP가 70% 이하일 때 가하는 피해 +35% 및 행동 종료 시 에너지 +15 추가 획득. 전투 중 최초 HP 30% 이하 도달 시 최대 HP 25% 보호막 생성.",
+    "drawback": "항상 풀체력을 유지하는 과잉 치유 조합에서는 화력 증가 조건(HP 70% 이하)을 발동시키기 어려움.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": false
+  },
+  {
+    "id": "str_mystic_resonance",
+    "name": "고대 신비(Mystic)의 공명",
+    "offer": {
+      "chapters": [
+        2,
+        3
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "2~3장 시작 시 등장",
+    "effectIds": [
+      "eff_str_mystic_resonance"
+    ],
+    "benefit": "아군이 가하는 모든 `true`(방어 무시) 피해량 +40% 증가. 아군이 적에게 디버프를 부여할 때 50% 확률로 자신의 에너지를 10 회복(턴당 1회).",
+    "drawback": "`true` 피해를 가진 유닛(`u_iori`, `u_wakamo`)이나 시너지(`syn_hyakkiyako`, `syn_special_armor`)가 없으면 효율이 낮음.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": false
+  },
+  {
+    "id": "str_overclock_core",
+    "name": "엔지니어부 오버클럭 모듈",
+    "offer": {
+      "chapters": [
+        2,
+        3
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "2~3장 시작 시 등장",
+    "effectIds": [
+      "eff_str_overclock"
+    ],
+    "benefit": "아군 전방 유닛이 필살기를 사용할 때마다 자신의 쿨다운 중인 전투 스킬 쿨다운을 1턴 감소시키고 다음 행동 시간을 25% 당김(턴당 1회).",
+    "drawback": "스킬 사용 빈도가 급증하므로 팀 SP 공급 수단(`u_himari`, `syn_tactical_support`, 평타 요원)이 뒷받침되어야 함.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": true
+  },
+  {
+    "id": "str_sandstorm_endurance",
+    "name": "대책위원회의 모래폭풍 적응",
+    "offer": {
+      "chapters": [
+        1,
+        2,
+        3
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "1~3장 시작 시 조건 없이 등장",
+    "effectIds": [
+      "eff_str_sandstorm"
+    ],
+    "benefit": "전투 시작 후 매 3턴(3, 6, 9턴...)마다 적 전방 전체에 최대 HP 8% 비례(보스는 시전자 평균 ATK 120%) 피해를 입히고 적 전원의 SPD를 2턴간 15 감소시킴.",
+    "drawback": "초단기 결전(1~2턴 클리어)에서는 효과가 발동하기 전에 전투가 끝남.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": true
+  },
+  {
+    "id": "str_festival_fireworks",
+    "name": "백야제 불꽃놀이 피날레",
+    "offer": {
+      "chapters": [
+        2,
+        3
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "2~3장 시작 시 등장",
+    "effectIds": [
+      "eff_str_fireworks"
+    ],
+    "benefit": "아군의 후속 공격(`followup_attack`) 또는 후방 반응 지원이 총 4회 발동할 때마다 적 전방 전체에 아군 최고 ATK의 140% 광역 피해를 입히고 아군 전방 전원을 최고 ATK의 80%만큼 치유함.",
+    "drawback": "후속 공격이나 후방 반응 지원이 적은 정적인 조합에서는 발동 횟수가 적음.",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": false
+  },
+  {
+    "id": "str_kaiser_loan",
+    "name": "카이저 론 — 아비도스식 상환 계약",
+    "offer": {
+      "chapters": [
+        1,
+        2
+      ],
+      "ownedCondition": null
+    },
+    "offerText": "1~2장 시작 (조건 없음). 범용 대안 아님",
+    "effectIds": [
+      "eff_str_kaiser_loan"
+    ],
+    "benefit": "선택 즉시 +25G. 이후 정산 5번 동안 매번 6G 자동 상환(총 30G). 상환은 그 정산의 수입을 더한 뒤 차감한다",
+    "drawback": "초반 이자 구간을 깎아 먹는다. 연패 중에 고르면 체력으로 갚게 된다",
+    "stacking": "중복 획득 불가",
+    "generalPurpose": false
+  }
+]

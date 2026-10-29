@@ -1,0 +1,2009 @@
+[
+  {
+    "id": "u_serika",
+    "name": "쿠로미 세리카",
+    "cost": 1,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_abydos",
+      "syn_light_armor",
+      "syn_assault"
+    ],
+    "baseStats": {
+      "hp": 950,
+      "atk": 115,
+      "def": 35,
+      "spd": 112,
+      "critBps": 1500,
+      "critDamageBps": 5000
+    },
+    "role": "단일 지속 딜러 / 자가 가속",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_serika_skill",
+      "ultimate": "eff_serika_ult",
+      "frontEffects": [
+        "eff_serika_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_serika",
+    "shopEligible": true
+  },
+  {
+    "id": "u_suzumi",
+    "name": "모리즈키 스즈미",
+    "cost": 1,
+    "position": "dual",
+    "synergyIds": [
+      "syn_trinity",
+      "syn_light_armor",
+      "syn_tactical_support",
+      "syn_electro"
+    ],
+    "baseStats": {
+      "hp": 1100,
+      "atk": 90,
+      "def": 55,
+      "spd": 104,
+      "critBps": 1000,
+      "critDamageBps": 5000
+    },
+    "role": "광역 기절 제어 / 전후방 겸용 교란가",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_suzumi_skill",
+      "ultimate": "eff_suzumi_ult",
+      "frontEffects": [],
+      "rearAction": "eff_suzumi_rear_reg",
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_suzumi",
+    "shopEligible": true
+  },
+  {
+    "id": "u_haruka",
+    "name": "이구사 하루카",
+    "cost": 1,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_gehenna",
+      "syn_problem_solver",
+      "syn_heavy_armor",
+      "syn_vanguard",
+      "syn_breacher"
+    ],
+    "baseStats": {
+      "hp": 1450,
+      "atk": 75,
+      "def": 80,
+      "spd": 92,
+      "critBps": 500,
+      "critDamageBps": 5000
+    },
+    "role": "자가 치유·방어 중첩 선봉 탱커",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_haruka_skill",
+      "ultimate": "eff_haruka_ult",
+      "frontEffects": [
+        "eff_haruka_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_haruka",
+    "shopEligible": true
+  },
+  {
+    "id": "u_kotama",
+    "name": "오토세 코타마",
+    "cost": 1,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_light_armor",
+      "syn_tactical_support",
+      "syn_electro"
+    ],
+    "baseStats": {
+      "hp": 800,
+      "atk": 95,
+      "def": 30,
+      "spd": 105,
+      "critBps": 1000,
+      "critDamageBps": 5000
+    },
+    "role": "아군 전방 전체 공격력 버프 / 적 공격력 약화",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_kotama_rear_reg",
+      "rearEffects": [
+        "eff_kotama_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_kotama",
+    "shopEligible": true
+  },
+  {
+    "id": "u_serina",
+    "name": "스미 세리나",
+    "cost": 1,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_trinity",
+      "syn_light_armor",
+      "syn_medic"
+    ],
+    "baseStats": {
+      "hp": 850,
+      "atk": 100,
+      "def": 35,
+      "spd": 108,
+      "critBps": 500,
+      "critDamageBps": 5000
+    },
+    "role": "단일 집중 치유 / 위기 응급 회복",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_serina_rear_reg",
+      "rearEffects": [
+        "eff_serina_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_serina",
+    "shopEligible": true
+  },
+  {
+    "id": "u_asuna",
+    "name": "이치노세 아스나",
+    "cost": 1,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_cc",
+      "syn_special_armor",
+      "syn_assault"
+    ],
+    "baseStats": {
+      "hp": 980,
+      "atk": 110,
+      "def": 40,
+      "spd": 118,
+      "critBps": 2000,
+      "critDamageBps": 5000
+    },
+    "role": "고속 치명타 딜러 / 행동 당기기",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_asuna_skill",
+      "ultimate": "eff_asuna_ult",
+      "frontEffects": [
+        "eff_asuna_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_asuna",
+    "shopEligible": true
+  },
+  {
+    "id": "u_junko",
+    "name": "아카시 준코",
+    "cost": 1,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_gehenna",
+      "syn_light_armor",
+      "syn_assault"
+    ],
+    "baseStats": {
+      "hp": 960,
+      "atk": 118,
+      "def": 35,
+      "spd": 106,
+      "critBps": 1500,
+      "critDamageBps": 5000
+    },
+    "role": "광역 딜러 / 저체력 폭딜",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_junko_skill",
+      "ultimate": "eff_junko_ult",
+      "frontEffects": [
+        "eff_junko_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_junko",
+    "shopEligible": true
+  },
+  {
+    "id": "u_michiru",
+    "name": "치도리 미치루",
+    "cost": 1,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_hyakkiyako",
+      "syn_light_armor",
+      "syn_breacher",
+      "syn_demolition"
+    ],
+    "baseStats": {
+      "hp": 1040,
+      "atk": 112,
+      "def": 45,
+      "spd": 108,
+      "critBps": 1600,
+      "critDamageBps": 5000
+    },
+    "role": "근접 화상 딜러 / 산탄 인법 공격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_michiru_skill",
+      "ultimate": "eff_michiru_ult",
+      "frontEffects": [
+        "eff_michiru_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_michiru",
+    "shopEligible": true
+  },
+  {
+    "id": "u_kokona",
+    "name": "스노하라 코코나",
+    "cost": 1,
+    "position": "dual",
+    "synergyIds": [
+      "syn_shanhaijing",
+      "syn_special_armor",
+      "syn_medic",
+      "syn_tactical_support"
+    ],
+    "baseStats": {
+      "hp": 1060,
+      "atk": 102,
+      "def": 48,
+      "spd": 106,
+      "critBps": 1000,
+      "critDamageBps": 5000
+    },
+    "role": "전후방 겸용 치유 교관 / 스탬프 SP 환급",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_kokona_skill",
+      "ultimate": "eff_kokona_ult",
+      "frontEffects": [],
+      "rearAction": "eff_kokona_rear_reg",
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_kokona",
+    "shopEligible": true
+  },
+  {
+    "id": "u_nodoka",
+    "name": "아마미 노도카",
+    "cost": 1,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_red_winter",
+      "syn_light_armor",
+      "syn_tactical_support",
+      "syn_sniper"
+    ],
+    "baseStats": {
+      "hp": 840,
+      "atk": 96,
+      "def": 32,
+      "spd": 106,
+      "critBps": 1200,
+      "critDamageBps": 5000
+    },
+    "role": "후방 치명타·공격력 관측 지원",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_nodoka_rear_reg",
+      "rearEffects": [
+        "eff_nodoka_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_nodoka",
+    "shopEligible": true
+  },
+  {
+    "id": "u_fubuki",
+    "name": "네무가키 후부키",
+    "cost": 1,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_valkyrie",
+      "syn_heavy_armor",
+      "syn_sniper",
+      "syn_electro"
+    ],
+    "baseStats": {
+      "hp": 1020,
+      "atk": 114,
+      "def": 45,
+      "spd": 102,
+      "critBps": 1800,
+      "critDamageBps": 5000
+    },
+    "role": "단일 행동 지연 저격 / 자가 치유 평타",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_fubuki_skill",
+      "ultimate": "eff_fubuki_ult",
+      "frontEffects": [
+        "eff_fubuki_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_fubuki",
+    "shopEligible": true
+  },
+  {
+    "id": "u_rabu",
+    "name": "코마카제 라부",
+    "cost": 1,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_outlaw",
+      "syn_elastic_armor",
+      "syn_demolition",
+      "syn_assault"
+    ],
+    "baseStats": {
+      "hp": 1150,
+      "atk": 112,
+      "def": 50,
+      "spd": 104,
+      "critBps": 1400,
+      "critDamageBps": 5000
+    },
+    "role": "광역 유탄 투척 / 선봉 화력 브루저",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_rabu_skill",
+      "ultimate": "eff_rabu_ult",
+      "frontEffects": [
+        "eff_rabu_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_rabu",
+    "shopEligible": true
+  },
+  {
+    "id": "u_shiroko",
+    "name": "스나오오카미 시로코",
+    "cost": 2,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_abydos",
+      "syn_light_armor",
+      "syn_assault",
+      "syn_jackpot"
+    ],
+    "baseStats": {
+      "hp": 1150,
+      "atk": 135,
+      "def": 45,
+      "spd": 116,
+      "critBps": 1800,
+      "critDamageBps": 5000
+    },
+    "role": "고속 단일 딜러 / 방깎 및 드론 추격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_shiroko_skill",
+      "ultimate": "eff_shiroko_ult",
+      "frontEffects": [
+        "eff_shiroko_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_shiroko",
+    "shopEligible": true
+  },
+  {
+    "id": "u_yuuka",
+    "name": "하야세 유우카",
+    "cost": 2,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_heavy_armor",
+      "syn_vanguard",
+      "syn_aegis",
+      "syn_jackpot"
+    ],
+    "baseStats": {
+      "hp": 1750,
+      "atk": 85,
+      "def": 90,
+      "spd": 96,
+      "critBps": 800,
+      "critDamageBps": 5000
+    },
+    "role": "자가·광역 보호막 탱커",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_yuuka_skill",
+      "ultimate": "eff_yuuka_ult",
+      "frontEffects": [
+        "eff_yuuka_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_yuuka",
+    "shopEligible": true
+  },
+  {
+    "id": "u_tsubaki",
+    "name": "카스가 츠바키",
+    "cost": 2,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_hyakkiyako",
+      "syn_special_armor",
+      "syn_vanguard"
+    ],
+    "baseStats": {
+      "hp": 1820,
+      "atk": 70,
+      "def": 95,
+      "spd": 94,
+      "critBps": 500,
+      "critDamageBps": 5000
+    },
+    "role": "광역 도발 탱커 / 위기 응급 회복",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_tsubaki_skill",
+      "ultimate": "eff_tsubaki_ult",
+      "frontEffects": [
+        "eff_tsubaki_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_tsubaki",
+    "shopEligible": true
+  },
+  {
+    "id": "u_momoi",
+    "name": "사이바 모모이",
+    "cost": 2,
+    "position": "dual",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_light_armor",
+      "syn_assault"
+    ],
+    "baseStats": {
+      "hp": 1120,
+      "atk": 132,
+      "def": 42,
+      "spd": 110,
+      "critBps": 1600,
+      "critDamageBps": 5000
+    },
+    "role": "광역 화상 딜러 / 전후방 겸용 사격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_momoi_skill",
+      "ultimate": "eff_momoi_ult",
+      "frontEffects": [],
+      "rearAction": "eff_momoi_rear_reg",
+      "rearEffects": [
+        "eff_momoi_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_momoi",
+    "shopEligible": true
+  },
+  {
+    "id": "u_fuuka",
+    "name": "아이키요 후우카",
+    "cost": 2,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_gehenna",
+      "syn_heavy_armor",
+      "syn_medic"
+    ],
+    "baseStats": {
+      "hp": 1050,
+      "atk": 110,
+      "def": 50,
+      "spd": 100,
+      "critBps": 500,
+      "critDamageBps": 5000
+    },
+    "role": "광역 치유 / 방어력 버프 지원",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_fuuka_rear_reg",
+      "rearEffects": [
+        "eff_fuuka_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_fuuka",
+    "shopEligible": true
+  },
+  {
+    "id": "u_hare",
+    "name": "오마가리 하레",
+    "cost": 2,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_light_armor",
+      "syn_tactical_support",
+      "syn_electro"
+    ],
+    "baseStats": {
+      "hp": 920,
+      "atk": 115,
+      "def": 40,
+      "spd": 107,
+      "critBps": 1200,
+      "critDamageBps": 5000
+    },
+    "role": "후방 광역 침묵 제어 / 행동 지연",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_hare_rear_reg",
+      "rearEffects": [
+        "eff_hare_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_hare",
+    "shopEligible": true
+  },
+  {
+    "id": "u_ayane",
+    "name": "오쿠소라 아야네",
+    "cost": 2,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_abydos",
+      "syn_light_armor",
+      "syn_medic",
+      "syn_tactical_support",
+      "syn_jackpot"
+    ],
+    "baseStats": {
+      "hp": 980,
+      "atk": 108,
+      "def": 45,
+      "spd": 104,
+      "critBps": 500,
+      "critDamageBps": 5000
+    },
+    "role": "3인 치유 + 치유 반응 보호막",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_ayane_rear_reg",
+      "rearEffects": [
+        "eff_ayane_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_ayane",
+    "shopEligible": true
+  },
+  {
+    "id": "u_hasumi",
+    "name": "하네카와 하스미",
+    "cost": 2,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_trinity",
+      "syn_heavy_armor",
+      "syn_striker",
+      "syn_sniper"
+    ],
+    "baseStats": {
+      "hp": 1200,
+      "atk": 150,
+      "def": 50,
+      "spd": 98,
+      "critBps": 2200,
+      "critDamageBps": 5000
+    },
+    "role": "단일 죽창 저격 / 처치 시 치명타 폭발",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_hasumi_skill",
+      "ultimate": "eff_hasumi_ult",
+      "frontEffects": [
+        "eff_hasumi_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_hasumi",
+    "shopEligible": true
+  },
+  {
+    "id": "u_kayoko",
+    "name": "오니카타 카요코",
+    "cost": 2,
+    "position": "dual",
+    "synergyIds": [
+      "syn_gehenna",
+      "syn_problem_solver",
+      "syn_heavy_armor",
+      "syn_electro",
+      "syn_tactical_support"
+    ],
+    "baseStats": {
+      "hp": 1240,
+      "atk": 128,
+      "def": 58,
+      "spd": 108,
+      "critBps": 1600,
+      "critDamageBps": 5000
+    },
+    "role": "전후방 광역 제어 / 제어 대상 추가 피해",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_kayoko_skill",
+      "ultimate": "eff_kayoko_ult",
+      "frontEffects": [],
+      "rearAction": "eff_kayoko_rear_reg",
+      "rearEffects": [
+        "eff_kayoko_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_kayoko",
+    "shopEligible": true
+  },
+  {
+    "id": "u_karin",
+    "name": "카쿠다테 카린",
+    "cost": 2,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_cc",
+      "syn_heavy_armor",
+      "syn_sniper",
+      "syn_striker"
+    ],
+    "baseStats": {
+      "hp": 1000,
+      "atk": 152,
+      "def": 45,
+      "spd": 102,
+      "critBps": 2200,
+      "critDamageBps": 5000
+    },
+    "role": "후방 대물 저격 딜러 / 고방어 적 추가 타격",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_karin_rear_reg",
+      "rearEffects": [
+        "eff_karin_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_karin",
+    "shopEligible": true
+  },
+  {
+    "id": "u_shun",
+    "name": "스노하라 슌",
+    "cost": 2,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_shanhaijing",
+      "syn_light_armor",
+      "syn_sniper",
+      "syn_commander"
+    ],
+    "baseStats": {
+      "hp": 1160,
+      "atk": 146,
+      "def": 44,
+      "spd": 110,
+      "critBps": 2200,
+      "critDamageBps": 5000
+    },
+    "role": "개전 에너지 부스트 / 고공격력 적 저격수",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_shun_skill",
+      "ultimate": "eff_shun_ult",
+      "frontEffects": [
+        "eff_shun_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_shun",
+    "shopEligible": true
+  },
+  {
+    "id": "u_momiji",
+    "name": "아키이즈미 모미지",
+    "cost": 2,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_red_winter",
+      "syn_elastic_armor",
+      "syn_demolition",
+      "syn_striker"
+    ],
+    "baseStats": {
+      "hp": 1180,
+      "atk": 148,
+      "def": 46,
+      "spd": 96,
+      "critBps": 1800,
+      "critDamageBps": 5000
+    },
+    "role": "광역 대전차 포격 딜러",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_momiji_skill",
+      "ultimate": "eff_momiji_ult",
+      "frontEffects": [
+        "eff_momiji_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_momiji",
+    "shopEligible": true
+  },
+  {
+    "id": "u_kirino",
+    "name": "나카츠카사 키리노",
+    "cost": 2,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_valkyrie",
+      "syn_special_armor",
+      "syn_vanguard",
+      "syn_electro"
+    ],
+    "baseStats": {
+      "hp": 1680,
+      "atk": 95,
+      "def": 82,
+      "spd": 100,
+      "critBps": 1000,
+      "critDamageBps": 5000
+    },
+    "role": "전방 교란 브루저 / 적 공격력·치명타 약화",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_kirino_skill",
+      "ultimate": "eff_kirino_ult",
+      "frontEffects": [
+        "eff_kirino_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_kirino",
+    "shopEligible": true
+  },
+  {
+    "id": "u_nozomi",
+    "name": "타치바나 노조미",
+    "cost": 2,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_highlander",
+      "syn_elastic_armor",
+      "syn_assault",
+      "syn_breacher"
+    ],
+    "baseStats": {
+      "hp": 1220,
+      "atk": 138,
+      "def": 48,
+      "spd": 120,
+      "critBps": 2000,
+      "critDamageBps": 5000
+    },
+    "role": "초고속 돌격 연타 / 행동 가속 딜러",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_nozomi_skill",
+      "ultimate": "eff_nozomi_ult",
+      "frontEffects": [
+        "eff_nozomi_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_nozomi",
+    "shopEligible": true
+  },
+  {
+    "id": "u_nonomi",
+    "name": "이자요이 노노미",
+    "cost": 3,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_abydos",
+      "syn_light_armor",
+      "syn_assault",
+      "syn_jackpot"
+    ],
+    "baseStats": {
+      "hp": 1350,
+      "atk": 162,
+      "def": 52,
+      "spd": 96,
+      "critBps": 1800,
+      "critDamageBps": 5000
+    },
+    "role": "광역 소사 딜러 / 중장갑 카운터",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_nonomi_skill",
+      "ultimate": "eff_nonomi_ult",
+      "frontEffects": [
+        "eff_nonomi_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_nonomi",
+    "shopEligible": true
+  },
+  {
+    "id": "u_iori",
+    "name": "시로미 이오리",
+    "cost": 3,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_gehenna",
+      "syn_heavy_armor",
+      "syn_striker",
+      "syn_sniper"
+    ],
+    "baseStats": {
+      "hp": 1280,
+      "atk": 172,
+      "def": 55,
+      "spd": 106,
+      "critBps": 2400,
+      "critDamageBps": 5000
+    },
+    "role": "고화력 단일·연쇄 딜러 / 방어 관통 추격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_iori_skill",
+      "ultimate": "eff_iori_ult",
+      "frontEffects": [
+        "eff_iori_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_iori",
+    "shopEligible": true
+  },
+  {
+    "id": "u_mutsuki",
+    "name": "아사기 무츠키",
+    "cost": 3,
+    "position": "dual",
+    "synergyIds": [
+      "syn_gehenna",
+      "syn_problem_solver",
+      "syn_light_armor",
+      "syn_assault",
+      "syn_demolition"
+    ],
+    "baseStats": {
+      "hp": 1220,
+      "atk": 168,
+      "def": 44,
+      "spd": 109,
+      "critBps": 2000,
+      "critDamageBps": 5000
+    },
+    "role": "광역 폭발 딜러 / 후방 지뢰 기폭",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_mutsuki_skill",
+      "ultimate": "eff_mutsuki_ult",
+      "frontEffects": [],
+      "rearAction": "eff_mutsuki_rear_reg",
+      "rearEffects": [
+        "eff_mutsuki_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_mutsuki",
+    "shopEligible": true
+  },
+  {
+    "id": "u_azusa",
+    "name": "시라스 아즈사",
+    "cost": 3,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_trinity",
+      "syn_arius",
+      "syn_light_armor",
+      "syn_striker"
+    ],
+    "baseStats": {
+      "hp": 1300,
+      "atk": 168,
+      "def": 50,
+      "spd": 108,
+      "critBps": 2200,
+      "critDamageBps": 5000
+    },
+    "role": "방어력 파괴 단일 딜러 / 약점 추가 피해",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_azusa_skill",
+      "ultimate": "eff_azusa_ult",
+      "frontEffects": [
+        "eff_azusa_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_azusa",
+    "shopEligible": true
+  },
+  {
+    "id": "u_koharu",
+    "name": "시모에 코하루",
+    "cost": 3,
+    "position": "dual",
+    "synergyIds": [
+      "syn_trinity",
+      "syn_heavy_armor",
+      "syn_medic"
+    ],
+    "baseStats": {
+      "hp": 1420,
+      "atk": 138,
+      "def": 65,
+      "spd": 102,
+      "critBps": 1200,
+      "critDamageBps": 5000
+    },
+    "role": "광역 치유 + 광역 타격 하이브리드 메딕",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_koharu_skill",
+      "ultimate": "eff_koharu_ult",
+      "frontEffects": [],
+      "rearAction": "eff_koharu_rear_reg",
+      "rearEffects": [
+        "eff_koharu_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_koharu",
+    "shopEligible": true
+  },
+  {
+    "id": "u_izuna",
+    "name": "쿠다 이즈나",
+    "cost": 3,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_hyakkiyako",
+      "syn_light_armor",
+      "syn_assault",
+      "syn_mystic_arts"
+    ],
+    "baseStats": {
+      "hp": 1260,
+      "atk": 158,
+      "def": 46,
+      "spd": 124,
+      "critBps": 2200,
+      "critDamageBps": 5000
+    },
+    "role": "초고속 연타 닌자 / 수리검 후속 공격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_izuna_skill",
+      "ultimate": "eff_izuna_ult",
+      "frontEffects": [
+        "eff_izuna_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_izuna",
+    "shopEligible": true
+  },
+  {
+    "id": "u_shizuko",
+    "name": "카와와 시즈코",
+    "cost": 3,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_hyakkiyako",
+      "syn_special_armor",
+      "syn_tactical_support",
+      "syn_aegis"
+    ],
+    "baseStats": {
+      "hp": 1150,
+      "atk": 125,
+      "def": 55,
+      "spd": 106,
+      "critBps": 1000,
+      "critDamageBps": 5000
+    },
+    "role": "후방 전체 보호막 / 치명타 버프 및 적 약화",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_shizuko_rear_reg",
+      "rearEffects": [
+        "eff_shizuko_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_shizuko",
+    "shopEligible": true
+  },
+  {
+    "id": "u_toki",
+    "name": "아스마 토키",
+    "cost": 3,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_cc",
+      "syn_elastic_armor",
+      "syn_striker",
+      "syn_breacher"
+    ],
+    "baseStats": {
+      "hp": 1460,
+      "atk": 166,
+      "def": 68,
+      "spd": 106,
+      "critBps": 2200,
+      "critDamageBps": 5000
+    },
+    "role": "아비 에슈흐 관통 포격 / 방어 무시 딜탱",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_toki_skill",
+      "ultimate": "eff_toki_ult",
+      "frontEffects": [
+        "eff_toki_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_toki",
+    "shopEligible": true
+  },
+  {
+    "id": "u_mina",
+    "name": "코노에 미나",
+    "cost": 3,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_shanhaijing",
+      "syn_light_armor",
+      "syn_electro",
+      "syn_assault"
+    ],
+    "baseStats": {
+      "hp": 1340,
+      "atk": 156,
+      "def": 56,
+      "spd": 114,
+      "critBps": 2000,
+      "critDamageBps": 5000
+    },
+    "role": "다중 디버프 연사 딜러 / 적 능력치 대폭 약화",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_mina_skill",
+      "ultimate": "eff_mina_ult",
+      "frontEffects": [
+        "eff_mina_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_mina",
+    "shopEligible": true
+  },
+  {
+    "id": "u_marina",
+    "name": "이케쿠라 마리나",
+    "cost": 3,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_red_winter",
+      "syn_light_armor",
+      "syn_vanguard",
+      "syn_breacher"
+    ],
+    "baseStats": {
+      "hp": 1880,
+      "atk": 135,
+      "def": 82,
+      "spd": 106,
+      "critBps": 1400,
+      "critDamageBps": 5000
+    },
+    "role": "불굴의 선봉 브루저 / 광역 진형 돌파",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_marina_skill",
+      "ultimate": "eff_marina_ult",
+      "frontEffects": [
+        "eff_marina_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_marina",
+    "shopEligible": true
+  },
+  {
+    "id": "u_atsuko",
+    "name": "하카리 아츠코",
+    "cost": 3,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_arius",
+      "syn_special_armor",
+      "syn_vanguard",
+      "syn_medic"
+    ],
+    "baseStats": {
+      "hp": 1920,
+      "atk": 110,
+      "def": 92,
+      "spd": 102,
+      "critBps": 1000,
+      "critDamageBps": 5000
+    },
+    "role": "전방 광역 회피·치유 탱커",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_atsuko_skill",
+      "ultimate": "eff_atsuko_ult",
+      "frontEffects": [
+        "eff_atsuko_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_atsuko",
+    "shopEligible": true
+  },
+  {
+    "id": "u_hiyori",
+    "name": "츠치나가 히요리",
+    "cost": 3,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_arius",
+      "syn_light_armor",
+      "syn_tactical_support",
+      "syn_sniper"
+    ],
+    "baseStats": {
+      "hp": 1080,
+      "atk": 148,
+      "def": 45,
+      "spd": 104,
+      "critBps": 1800,
+      "critDamageBps": 5000
+    },
+    "role": "후방 방어력 대폭 파괴 포격수",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_hiyori_rear_reg",
+      "rearEffects": [
+        "eff_hiyori_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_hiyori",
+    "shopEligible": true
+  },
+  {
+    "id": "u_moe",
+    "name": "카제쿠라 모에",
+    "cost": 3,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_srt",
+      "syn_light_armor",
+      "syn_demolition",
+      "syn_tactical_support"
+    ],
+    "baseStats": {
+      "hp": 1100,
+      "atk": 160,
+      "def": 42,
+      "spd": 105,
+      "critBps": 2000,
+      "critDamageBps": 5000
+    },
+    "role": "후방 무차별 융단 폭격 / 화상 부여",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_moe_rear_reg",
+      "rearEffects": [
+        "eff_moe_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_moe",
+    "shopEligible": true
+  },
+  {
+    "id": "u_saki",
+    "name": "소라이 사키",
+    "cost": 3,
+    "position": "dual",
+    "synergyIds": [
+      "syn_srt",
+      "syn_heavy_armor",
+      "syn_assault"
+    ],
+    "baseStats": {
+      "hp": 1380,
+      "atk": 152,
+      "def": 62,
+      "spd": 108,
+      "critBps": 1800,
+      "critDamageBps": 5000
+    },
+    "role": "전후방 교범 지휘관 / 기절 및 공격력 버프",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_saki_skill",
+      "ultimate": "eff_saki_ult",
+      "frontEffects": [],
+      "rearAction": "eff_saki_rear_reg",
+      "rearEffects": [
+        "eff_saki_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_saki",
+    "shopEligible": true
+  },
+  {
+    "id": "u_hoshino",
+    "name": "타카나시 호시노",
+    "cost": 4,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_abydos",
+      "syn_heavy_armor",
+      "syn_vanguard",
+      "syn_breacher",
+      "syn_aegis",
+      "syn_unique_dawn_horus"
+    ],
+    "baseStats": {
+      "hp": 2400,
+      "atk": 135,
+      "def": 115,
+      "spd": 95,
+      "critBps": 1200,
+      "critDamageBps": 5000
+    },
+    "role": "최상위 결전 탱커 / 광역 기절 및 거대 보호막",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_hoshino_skill",
+      "ultimate": "eff_hoshino_ult",
+      "frontEffects": [
+        "eff_hoshino_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_hoshino",
+    "shopEligible": true
+  },
+  {
+    "id": "u_aru",
+    "name": "리쿠하치마 아루",
+    "cost": 4,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_gehenna",
+      "syn_problem_solver",
+      "syn_light_armor",
+      "syn_striker",
+      "syn_sniper",
+      "syn_unique_outlaw_boss",
+      "syn_jackpot"
+    ],
+    "baseStats": {
+      "hp": 1480,
+      "atk": 198,
+      "def": 52,
+      "spd": 105,
+      "critBps": 2600,
+      "critDamageBps": 5000
+    },
+    "role": "단일+광역 폭발 메인 캐리 / 처치 에너지 환급",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_aru_skill",
+      "ultimate": "eff_aru_ult",
+      "frontEffects": [
+        "eff_aru_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_aru",
+    "shopEligible": true
+  },
+  {
+    "id": "u_ako",
+    "name": "아마우 아코",
+    "cost": 4,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_gehenna",
+      "syn_light_armor",
+      "syn_tactical_support",
+      "syn_commander"
+    ],
+    "baseStats": {
+      "hp": 1250,
+      "atk": 145,
+      "def": 55,
+      "spd": 112,
+      "critBps": 1500,
+      "critDamageBps": 5000
+    },
+    "role": "최고 공격력 아군 치명타 극대화 / 전방 치유 보조",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_ako_rear_reg",
+      "rearEffects": [
+        "eff_ako_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_ako",
+    "shopEligible": true
+  },
+  {
+    "id": "u_neru",
+    "name": "미카모 네루",
+    "cost": 4,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_cc",
+      "syn_light_armor",
+      "syn_assault",
+      "syn_breacher"
+    ],
+    "baseStats": {
+      "hp": 1650,
+      "atk": 188,
+      "def": 68,
+      "spd": 126,
+      "critBps": 2500,
+      "critDamageBps": 5000
+    },
+    "role": "초고속 단일 폭딜 브루저 / 피격 반격 사격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_neru_skill",
+      "ultimate": "eff_neru_ult",
+      "frontEffects": [
+        "eff_neru_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_neru",
+    "shopEligible": true
+  },
+  {
+    "id": "u_aris",
+    "name": "텐도 아리스",
+    "cost": 4,
+    "position": "dual",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_special_armor",
+      "syn_striker",
+      "syn_mystic_arts"
+    ],
+    "baseStats": {
+      "hp": 1520,
+      "atk": 210,
+      "def": 58,
+      "spd": 90,
+      "critBps": 2400,
+      "critDamageBps": 5000
+    },
+    "role": "에너지 충전형 초거대 광역 레일건 / 후방 포격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_aris_skill",
+      "ultimate": "eff_aris_ult",
+      "frontEffects": [
+        "eff_aris_passive"
+      ],
+      "rearAction": "eff_aris_rear_reg",
+      "rearEffects": [
+        "eff_aris_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_aris",
+    "shopEligible": true
+  },
+  {
+    "id": "u_cherino",
+    "name": "렌카와 체리노",
+    "cost": 4,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_red_winter",
+      "syn_light_armor",
+      "syn_commander",
+      "syn_assault",
+      "syn_unique_red_mustache"
+    ],
+    "baseStats": {
+      "hp": 1500,
+      "atk": 178,
+      "def": 58,
+      "spd": 112,
+      "critBps": 2200,
+      "critDamageBps": 5000
+    },
+    "role": "팀 SP·에너지 공급 사령관 / 숙청 표적 집점사",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_cherino_skill",
+      "ultimate": "eff_cherino_ult",
+      "frontEffects": [
+        "eff_cherino_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_cherino",
+    "shopEligible": true
+  },
+  {
+    "id": "u_miyu",
+    "name": "카스미자와 미유",
+    "cost": 4,
+    "position": "dual",
+    "synergyIds": [
+      "syn_srt",
+      "syn_light_armor",
+      "syn_sniper",
+      "syn_striker"
+    ],
+    "baseStats": {
+      "hp": 1360,
+      "atk": 192,
+      "def": 48,
+      "spd": 108,
+      "critBps": 2800,
+      "critDamageBps": 5000
+    },
+    "role": "약점 노출 표적 부여 / 아군 타격 반응 추가타",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_miyu_skill",
+      "ultimate": "eff_miyu_ult",
+      "frontEffects": [
+        "eff_miyu_rear_react"
+      ],
+      "rearAction": "eff_miyu_rear_reg",
+      "rearEffects": [
+        "eff_miyu_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_miyu",
+    "shopEligible": true
+  },
+  {
+    "id": "u_miyako",
+    "name": "츠키유키 미야코",
+    "cost": 4,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_srt",
+      "syn_heavy_armor",
+      "syn_vanguard",
+      "syn_electro",
+      "syn_commander"
+    ],
+    "baseStats": {
+      "hp": 2250,
+      "atk": 140,
+      "def": 108,
+      "spd": 102,
+      "critBps": 1400,
+      "critDamageBps": 5000
+    },
+    "role": "기절 특화 전술 탱커 / 기절 적 피해 증폭",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_miyako_skill",
+      "ultimate": "eff_miyako_ult",
+      "frontEffects": [
+        "eff_miyako_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_miyako",
+    "shopEligible": true
+  },
+  {
+    "id": "u_kanna",
+    "name": "오가타 칸나",
+    "cost": 4,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_valkyrie",
+      "syn_heavy_armor",
+      "syn_commander",
+      "syn_assault"
+    ],
+    "baseStats": {
+      "hp": 1680,
+      "atk": 182,
+      "def": 74,
+      "spd": 114,
+      "critBps": 2200,
+      "critDamageBps": 5000
+    },
+    "role": "집중 수사 표적 방깎 / 아군 공격 호응 추격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_kanna_skill",
+      "ultimate": "eff_kanna_ult",
+      "frontEffects": [
+        "eff_kanna_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_kanna",
+    "shopEligible": true
+  },
+  {
+    "id": "u_akemi",
+    "name": "쿠리하마 아케미",
+    "cost": 4,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_outlaw",
+      "syn_elastic_armor",
+      "syn_vanguard",
+      "syn_assault",
+      "syn_breacher"
+    ],
+    "baseStats": {
+      "hp": 2300,
+      "atk": 175,
+      "def": 98,
+      "spd": 100,
+      "critBps": 2000,
+      "critDamageBps": 5000
+    },
+    "role": "초괴력 중화기 딜탱 / 제어 저항 및 광역 분쇄",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_akemi_skill",
+      "ultimate": "eff_akemi_ult",
+      "frontEffects": [
+        "eff_akemi_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_akemi",
+    "shopEligible": true
+  },
+  {
+    "id": "u_hina",
+    "name": "소라사키 히나",
+    "cost": 5,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_gehenna",
+      "syn_heavy_armor",
+      "syn_assault",
+      "syn_commander",
+      "syn_unique_head_prefect"
+    ],
+    "baseStats": {
+      "hp": 1950,
+      "atk": 235,
+      "def": 78,
+      "spd": 114,
+      "critBps": 2800,
+      "critDamageBps": 5000
+    },
+    "role": "광역 절대 화력 캐리 / 보스·정예 섬멸자",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_hina_skill",
+      "ultimate": "eff_hina_ult",
+      "frontEffects": [
+        "eff_hina_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_hina",
+    "shopEligible": true
+  },
+  {
+    "id": "u_mika",
+    "name": "미소노 미카",
+    "cost": 5,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_trinity",
+      "syn_light_armor",
+      "syn_striker",
+      "syn_vanguard",
+      "syn_mystic_arts",
+      "syn_unique_princess_stars"
+    ],
+    "baseStats": {
+      "hp": 2250,
+      "atk": 240,
+      "def": 85,
+      "spd": 108,
+      "critBps": 4500,
+      "critDamageBps": 5000
+    },
+    "role": "확정 치명타 결전 브루저 / 보스 직격 폭딜러",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_mika_skill",
+      "ultimate": "eff_mika_ult",
+      "frontEffects": [
+        "eff_mika_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_mika",
+    "shopEligible": true
+  },
+  {
+    "id": "u_himari",
+    "name": "아케보시 히마리",
+    "cost": 5,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_light_armor",
+      "syn_tactical_support",
+      "syn_commander",
+      "syn_unique_super_genius"
+    ],
+    "baseStats": {
+      "hp": 1300,
+      "atk": 165,
+      "def": 60,
+      "spd": 118,
+      "critBps": 1500,
+      "critDamageBps": 5000
+    },
+    "role": "최고 공격력 아군 초증폭 + 팀 SP·에너지 공급",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_himari_rear_reg",
+      "rearEffects": [
+        "eff_himari_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_himari",
+    "shopEligible": true
+  },
+  {
+    "id": "u_wakamo",
+    "name": "코사카 와카모",
+    "cost": 5,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_hyakkiyako",
+      "syn_outlaw",
+      "syn_special_armor",
+      "syn_striker",
+      "syn_mystic_arts",
+      "syn_unique_calamity_fox"
+    ],
+    "baseStats": {
+      "hp": 1720,
+      "atk": 248,
+      "def": 62,
+      "spd": 115,
+      "critBps": 2800,
+      "critDamageBps": 5000
+    },
+    "role": "단일 누적 폭발 결전 딜러 / 방어 무시(`true`) 피날레",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_wakamo_skill",
+      "ultimate": "eff_wakamo_ult",
+      "frontEffects": [
+        "eff_wakamo_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_wakamo",
+    "shopEligible": true
+  },
+  {
+    "id": "u_rio",
+    "name": "츠카츠키 리오",
+    "cost": 5,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_heavy_armor",
+      "syn_tactical_support",
+      "syn_commander",
+      "syn_unique_big_sister",
+      "syn_jackpot"
+    ],
+    "baseStats": {
+      "hp": 1400,
+      "atk": 170,
+      "def": 70,
+      "spd": 114,
+      "critBps": 1500,
+      "critDamageBps": 5000
+    },
+    "role": "후방 전체 보호막·방깎 + 아군 필살기 복제 포격",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_rio_rear_reg",
+      "rearEffects": [
+        "eff_rio_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_rio",
+    "shopEligible": true
+  },
+  {
+    "id": "u_kisaki",
+    "name": "류우게 키사키",
+    "cost": 5,
+    "position": "dual",
+    "synergyIds": [
+      "syn_shanhaijing",
+      "syn_elastic_armor",
+      "syn_commander",
+      "syn_tactical_support",
+      "syn_aegis",
+      "syn_unique_black_monarch"
+    ],
+    "baseStats": {
+      "hp": 1850,
+      "atk": 195,
+      "def": 80,
+      "spd": 116,
+      "critBps": 2000,
+      "critDamageBps": 5000
+    },
+    "role": "필살기 위력 절대 증폭 / 전후방 겸용 군주 지휘관",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_kisaki_skill",
+      "ultimate": "eff_kisaki_ult",
+      "frontEffects": [
+        "eff_kisaki_rear_react"
+      ],
+      "rearAction": "eff_kisaki_rear_reg",
+      "rearEffects": [
+        "eff_kisaki_rear_react"
+      ]
+    },
+    "portraitAssetId": "portrait_u_kisaki",
+    "shopEligible": true
+  },
+  {
+    "id": "u_saori",
+    "name": "죠마에 사오리",
+    "cost": 5,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_arius",
+      "syn_light_armor",
+      "syn_striker",
+      "syn_assault",
+      "syn_commander",
+      "syn_unique_vanitas_leader"
+    ],
+    "baseStats": {
+      "hp": 1820,
+      "atk": 242,
+      "def": 68,
+      "spd": 118,
+      "critBps": 3500,
+      "critDamageBps": 5000
+    },
+    "role": "확정 치명타 관통 사수 / 아리우스 연쇄 협동 공격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_saori_skill",
+      "ultimate": "eff_saori_ult",
+      "frontEffects": [
+        "eff_saori_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_saori",
+    "shopEligible": true
+  },
+  {
+    "id": "u_hikari",
+    "name": "타치바나 히카리",
+    "cost": 5,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_highlander",
+      "syn_elastic_armor",
+      "syn_mystic_arts",
+      "syn_tactical_support",
+      "syn_breacher"
+    ],
+    "baseStats": {
+      "hp": 1800,
+      "atk": 220,
+      "def": 72,
+      "spd": 122,
+      "critBps": 2600,
+      "critDamageBps": 5000
+    },
+    "role": "신비·탄력 특효 증폭기 / 초특급 열차포 광역 타격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_hikari_skill",
+      "ultimate": "eff_hikari_ult",
+      "frontEffects": [
+        "eff_hikari_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_hikari",
+    "shopEligible": true
+  },
+  {
+    "id": "u_akira",
+    "name": "키요스미 아키라",
+    "cost": 5,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_outlaw",
+      "syn_special_armor",
+      "syn_mystic_arts",
+      "syn_electro",
+      "syn_assault",
+      "syn_jackpot"
+    ],
+    "baseStats": {
+      "hp": 1760,
+      "atk": 232,
+      "def": 66,
+      "spd": 124,
+      "critBps": 3000,
+      "critDamageBps": 5000
+    },
+    "role": "적 버프 강탈·무력화 / 광역 환상 참격 딜러",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_akira_skill",
+      "ultimate": "eff_akira_ult",
+      "frontEffects": [
+        "eff_akira_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_akira",
+    "shopEligible": true
+  },
+  {
+    "id": "u_hoshino_armed",
+    "name": "타카나시 호시노 (무장)",
+    "cost": 5,
+    "position": "front_only",
+    "synergyIds": [
+      "syn_abydos",
+      "syn_special_armor",
+      "syn_vanguard",
+      "syn_striker",
+      "syn_breacher",
+      "syn_mystic_arts"
+    ],
+    "baseStats": {
+      "hp": 2350,
+      "atk": 238,
+      "def": 100,
+      "spd": 110,
+      "critBps": 3000,
+      "critDamageBps": 5000
+    },
+    "role": "공방 일체 결전 황제 / 보호막 관통 폭격",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_hoshino_armed_skill",
+      "ultimate": "eff_hoshino_armed_ult",
+      "frontEffects": [
+        "eff_hoshino_armed_passive"
+      ],
+      "rearAction": null,
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_hoshino_armed",
+    "shopEligible": true
+  }
+]

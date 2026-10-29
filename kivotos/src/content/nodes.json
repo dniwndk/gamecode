@@ -1,0 +1,656 @@
+[
+  {
+    "id": "node_1_1",
+    "chapter": 1,
+    "battle": 1,
+    "type": "normal",
+    "statScaleBps": 8500,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "단일 집중",
+        "front": [
+          {
+            "enemyId": "en_helmet_thug",
+            "index": 0
+          },
+          {
+            "enemyId": "en_helmet_thug",
+            "index": 1
+          }
+        ],
+        "rear": [],
+        "threat": "단일 최전열 점사"
+      },
+      {
+        "id": "B",
+        "label": "광역 압박",
+        "front": [
+          {
+            "enemyId": "en_helmet_thug",
+            "index": 0
+          },
+          {
+            "enemyId": "en_helmet_grenadier",
+            "index": 1
+          }
+        ],
+        "rear": [],
+        "threat": "전방 2인 유탄 피해"
+      }
+    ]
+  },
+  {
+    "id": "node_1_2",
+    "chapter": 1,
+    "battle": 2,
+    "type": "normal",
+    "statScaleBps": 9500,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "다수 보병",
+        "front": [
+          {
+            "enemyId": "en_helmet_thug",
+            "index": 0
+          },
+          {
+            "enemyId": "en_helmet_thug",
+            "index": 1
+          },
+          {
+            "enemyId": "en_helmet_thug",
+            "index": 2
+          }
+        ],
+        "rear": [],
+        "threat": "3인 물량 공세"
+      },
+      {
+        "id": "B",
+        "label": "고속 기습",
+        "front": [
+          {
+            "enemyId": "en_sukeban_smg",
+            "index": 0
+          },
+          {
+            "enemyId": "en_helmet_grenadier",
+            "index": 1
+          }
+        ],
+        "rear": [],
+        "threat": "빠른 속도의 SMG 연타"
+      }
+    ]
+  },
+  {
+    "id": "node_1_3",
+    "chapter": 1,
+    "battle": 3,
+    "type": "normal",
+    "statScaleBps": 10000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "방패 수비",
+        "front": [
+          {
+            "enemyId": "en_sukeban_shield",
+            "index": 0
+          },
+          {
+            "enemyId": "en_sukeban_smg",
+            "index": 1
+          },
+          {
+            "enemyId": "en_helmet_thug",
+            "index": 2
+          }
+        ],
+        "rear": [],
+        "threat": "고방어 도발 탱커 엄호"
+      },
+      {
+        "id": "B",
+        "label": "화력 투사",
+        "front": [
+          {
+            "enemyId": "en_helmet_grenadier",
+            "index": 0
+          },
+          {
+            "enemyId": "en_helmet_grenadier",
+            "index": 1
+          },
+          {
+            "enemyId": "en_sukeban_smg",
+            "index": 2
+          }
+        ],
+        "rear": [],
+        "threat": "2연속 수류탄 광역 타격"
+      }
+    ]
+  },
+  {
+    "id": "node_1_4",
+    "chapter": 1,
+    "battle": 4,
+    "type": "elite",
+    "statScaleBps": 10000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "단일 정예 편성",
+        "front": [
+          {
+            "enemyId": "en_pmc_heavy",
+            "index": 0
+          },
+          {
+            "enemyId": "en_sukeban_smg",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_pmc_sniper",
+            "index": 0
+          }
+        ],
+        "threat": "중장갑 보병의 보호막 버티기 + 적 후방 저격수의 아군 저체력 전방 저격"
+      }
+    ]
+  },
+  {
+    "id": "node_1_5",
+    "chapter": 1,
+    "battle": 5,
+    "type": "boss",
+    "statScaleBps": 10000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "1장 보스 편성",
+        "front": [
+          {
+            "enemyId": "boss_kaiten_fx_mk0",
+            "index": 0
+          },
+          {
+            "enemyId": "en_helmet_grenadier",
+            "index": 1
+          }
+        ],
+        "rear": [],
+        "threat": "카이텐 FX Mk.0의 공격/방어 오라 변환 및 전체 필살기 '파이널 머신건 & 소드'"
+      }
+    ]
+  },
+  {
+    "id": "node_2_1",
+    "chapter": 2,
+    "battle": 1,
+    "type": "normal",
+    "statScaleBps": 11500,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "중장갑 방어선",
+        "front": [
+          {
+            "enemyId": "en_pmc_heavy",
+            "index": 0
+          },
+          {
+            "enemyId": "en_sukeban_shield",
+            "index": 1
+          },
+          {
+            "enemyId": "en_sukeban_smg",
+            "index": 2
+          }
+        ],
+        "rear": [],
+        "threat": "두꺼운 이중 전방 장갑"
+      },
+      {
+        "id": "B",
+        "label": "기계 군집",
+        "front": [
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 0
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 1
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 2
+          }
+        ],
+        "rear": [],
+        "threat": "스위퍼 3기의 고속 광역 전기 충격"
+      }
+    ]
+  },
+  {
+    "id": "node_2_2",
+    "chapter": 2,
+    "battle": 2,
+    "type": "normal",
+    "statScaleBps": 12500,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "후방 저격 협공",
+        "front": [
+          {
+            "enemyId": "en_pmc_heavy",
+            "index": 0
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_pmc_sniper",
+            "index": 0
+          },
+          {
+            "enemyId": "en_pmc_sniper",
+            "index": 1
+          }
+        ],
+        "threat": "후방 스나이퍼 2명의 집요한 약자 저격"
+      },
+      {
+        "id": "B",
+        "label": "전방 4인 돌격",
+        "front": [
+          {
+            "enemyId": "en_sukeban_shield",
+            "index": 0
+          },
+          {
+            "enemyId": "en_sukeban_smg",
+            "index": 1
+          },
+          {
+            "enemyId": "en_sukeban_smg",
+            "index": 2
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 3
+          }
+        ],
+        "rear": [],
+        "threat": "4전방 고속 난타"
+      }
+    ]
+  },
+  {
+    "id": "node_2_3",
+    "chapter": 2,
+    "battle": 3,
+    "type": "normal",
+    "statScaleBps": 13500,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "중화기 압박",
+        "front": [
+          {
+            "enemyId": "en_pmc_heavy",
+            "index": 0
+          },
+          {
+            "enemyId": "en_pmc_heavy",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_pmc_sniper",
+            "index": 0
+          }
+        ],
+        "threat": "고체력 중장갑 2기 돌파 요구"
+      },
+      {
+        "id": "B",
+        "label": "자율기계 웨이브",
+        "front": [
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 0
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 1
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 2
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 3
+          }
+        ],
+        "rear": [],
+        "threat": "전방 전체 지속 감전 피해"
+      }
+    ]
+  },
+  {
+    "id": "node_2_4",
+    "chapter": 2,
+    "battle": 4,
+    "type": "elite",
+    "statScaleBps": 10500,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "2장 정예 편성",
+        "front": [
+          {
+            "enemyId": "en_automaton_goliath",
+            "index": 0
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 1
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 2
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_pmc_sniper",
+            "index": 0
+          }
+        ],
+        "threat": "중기갑 골리앗의 전체 레이저 포격과 과출력 단일 빔"
+      }
+    ]
+  },
+  {
+    "id": "node_2_5",
+    "chapter": 2,
+    "battle": 5,
+    "type": "boss",
+    "statScaleBps": 10000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "2장 보스 편성",
+        "front": [
+          {
+            "enemyId": "boss_chesed_core",
+            "index": 0
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 1
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 2
+          }
+        ],
+        "rear": [],
+        "threat": "헤세드의 높은 기본 방어력(130)과 광역 방전, 호위기 격파 시 외장 노출 기믹"
+      }
+    ]
+  },
+  {
+    "id": "node_3_1",
+    "chapter": 3,
+    "battle": 1,
+    "type": "normal",
+    "statScaleBps": 12000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "성도회 강습",
+        "front": [
+          {
+            "enemyId": "en_justina_follower",
+            "index": 0
+          },
+          {
+            "enemyId": "en_justina_follower",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_justina_choir_rear",
+            "index": 0
+          }
+        ],
+        "threat": "치유 감소 디버프와 후방 성가대 버프"
+      },
+      {
+        "id": "B",
+        "label": "기갑 전선",
+        "front": [
+          {
+            "enemyId": "en_automaton_goliath",
+            "index": 0
+          },
+          {
+            "enemyId": "en_pmc_heavy",
+            "index": 1
+          }
+        ],
+        "rear": [],
+        "threat": "압도적인 전방 깡체력·방어력"
+      }
+    ]
+  },
+  {
+    "id": "node_3_2",
+    "chapter": 3,
+    "battle": 2,
+    "type": "normal",
+    "statScaleBps": 13000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "신비 탄막",
+        "front": [
+          {
+            "enemyId": "en_justina_follower",
+            "index": 0
+          },
+          {
+            "enemyId": "en_justina_follower",
+            "index": 1
+          },
+          {
+            "enemyId": "en_justina_follower",
+            "index": 2
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_justina_choir_rear",
+            "index": 0
+          }
+        ],
+        "threat": "전방 2인 타격 연속 집중"
+      },
+      {
+        "id": "B",
+        "label": "복합 화망",
+        "front": [
+          {
+            "enemyId": "en_automaton_goliath",
+            "index": 0
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 1
+          },
+          {
+            "enemyId": "en_sweeper_drone",
+            "index": 2
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_pmc_sniper",
+            "index": 0
+          },
+          {
+            "enemyId": "en_pmc_sniper",
+            "index": 1
+          }
+        ],
+        "threat": "광역 레이저 + 후방 2인 저격 동시 압박"
+      }
+    ]
+  },
+  {
+    "id": "node_3_3",
+    "chapter": 3,
+    "battle": 3,
+    "type": "normal",
+    "statScaleBps": 13500,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "쌍둥이 골리앗",
+        "front": [
+          {
+            "enemyId": "en_automaton_goliath",
+            "index": 0
+          },
+          {
+            "enemyId": "en_automaton_goliath",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_justina_choir_rear",
+            "index": 0
+          }
+        ],
+        "threat": "중기갑 골리앗 2기의 교차 레이저 폭격"
+      },
+      {
+        "id": "B",
+        "label": "성도회 대편대",
+        "front": [
+          {
+            "enemyId": "en_justina_follower",
+            "index": 0
+          },
+          {
+            "enemyId": "en_justina_follower",
+            "index": 1
+          },
+          {
+            "enemyId": "en_justina_follower",
+            "index": 2
+          },
+          {
+            "enemyId": "en_justina_follower",
+            "index": 3
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_justina_choir_rear",
+            "index": 0
+          },
+          {
+            "enemyId": "en_justina_choir_rear",
+            "index": 1
+          }
+        ],
+        "threat": "6인 풀편성 성도회의 고속 화력"
+      }
+    ]
+  },
+  {
+    "id": "node_3_4",
+    "chapter": 3,
+    "battle": 4,
+    "type": "elite",
+    "statScaleBps": 14000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "3장 정예 편성",
+        "front": [
+          {
+            "enemyId": "en_automaton_goliath",
+            "index": 0
+          },
+          {
+            "enemyId": "en_justina_follower",
+            "index": 1
+          },
+          {
+            "enemyId": "en_justina_follower",
+            "index": 2
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_justina_choir_rear",
+            "index": 0
+          },
+          {
+            "enemyId": "en_pmc_sniper",
+            "index": 1
+          }
+        ],
+        "threat": "최종 보스 직전의 종합 시험: 고방어 골리앗 + 치유감소 딜러 + 후방 버프/저격"
+      }
+    ]
+  },
+  {
+    "id": "node_3_5",
+    "chapter": 3,
+    "battle": 5,
+    "type": "boss",
+    "statScaleBps": 10000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "최종 보스 편성",
+        "front": [
+          {
+            "enemyId": "boss_binah_decagram",
+            "index": 0
+          },
+          {
+            "enemyId": "en_automaton_goliath",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_justina_choir_rear",
+            "index": 0
+          }
+        ],
+        "threat": "비나의 DEF 160 중장갑, 단일 열선 방깎 레이저, HP 60% 모래폭풍, 정화의 폭풍 전체 미사일"
+      }
+    ]
+  }
+]

@@ -82,18 +82,19 @@ self.addEventListener('activate', (e) => {
   // 교대가 끝난 뒤에 다시 연다(교대 중에 열면 그 화면 요청이 교대를 기다리며 멈춘다)
   done.then(() => setTimeout(reopenOtherGame, 100));
 });
-// 예전 판본의 서비스 워커는 같은 사이트의 다른 게임(name-remains/) 화면까지 이 게임으로 열었다.
+// 예전 판본의 서비스 워커는 같은 사이트의 다른 게임(name-remains/, kivotos/) 화면까지 이 게임으로 열었다.
 // 그런 탭이 있으면 기다리지 않고 바로 교대한 뒤, 그 탭을 원래 주소로 다시 연다.
-const OTHER = '/name-remains/';
-const otherTabs = () => self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => cs.filter((c) => new URL(c.url).pathname.includes(OTHER)));
+const OTHERS = ['/name-remains/', '/kivotos/'];
+const isOther = (url) => OTHERS.some((p) => new URL(url).pathname.includes(p));
+const otherTabs = () => self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => cs.filter((c) => isOther(c.url)));
 const rescueOtherGame = () => otherTabs().then((cs) => { if (cs.length) return self.skipWaiting(); });
 const reopenOtherGame = () => otherTabs().then((cs) => Promise.all(cs.map((c) => c.navigate(c.url).catch(() => {}))));
 self.addEventListener('message', (e) => { if (e.data && e.data.type === 'skip-waiting') self.skipWaiting(); });
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
-  // 같은 사이트의 다른 게임(name-remains/)은 이 서비스 워커가 건드리지 않는다
-  if (new URL(req.url).pathname.includes(OTHER)) return;
+  // 같은 사이트의 다른 게임(name-remains/, kivotos/)은 이 서비스 워커가 건드리지 않는다
+  if (isOther(req.url)) return;
   // 화면 요청(?seed= 같은 주소 포함)은 언제나 이 판본의 index.html로 연다
   if (req.mode === 'navigate') {
     e.respondWith(caches.open(CACHE).then((c) => c.match('index.html')).then((r) => r || fetch(req)));
