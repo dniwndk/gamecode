@@ -7,7 +7,7 @@ import { fxList } from './summary';
 import type { RunView, SynergyStateView, UnitInstanceView } from './model';
 
 export const COST_COLOR = ['#9aa5b1', '#3fb37f', '#3b82f6', '#a855f7', '#f5b400'];
-const CATEGORY_COLOR: Record<string, string> = { role: '#1f8fff', armor: '#5b6b82', unique: '#f0a500', economy: '#e0a106' };
+const CATEGORY_COLOR: Record<string, string> = { club: '#14a38b', role: '#1f8fff', unique: '#f0a500', platinum: '#8a9bb4' };
 
 export const STATUS_LABEL: Record<string, string> = {
   st_atk_down: '공격↓', st_atk_up: '공격↑', st_burn: '화상', st_charge_aris: '충전', st_crit_up: '치명↑', st_damage_reduction: '피해감소',
@@ -43,14 +43,14 @@ export function initials(name: string): string {
 export function synergyColor(ctx: Ctx, synId: string): string {
   const s = ctx.lookup.syn(synId);
   if (!s) return '#64748b';
-  if (s.category === 'faction') return ({ syn_abydos: '#3b82f6', syn_gehenna: '#dc2626', syn_millennium: '#0ea5e9', syn_trinity: '#e0a106', syn_hyakkiyako: '#db2777', syn_shanhaijing: '#16a34a', syn_red_winter: '#b91c1c', syn_valkyrie: '#1d4ed8', syn_srt: '#475569', syn_arius: '#7c3aed', syn_problem_solver: '#9f1239', syn_cc: '#1f2937', syn_highlander: '#0f766e', syn_outlaw: '#a16207' } as Record<string, string>)[synId] ?? '#64748b';
-  return CATEGORY_COLOR[s.category] ?? '#64748b';
+  const own = ({ syn_abydos: '#3b82f6', syn_gehenna: '#dc2626', syn_millennium: '#0ea5e9', syn_trinity: '#e0a106', syn_hyakkiyako: '#db2777', syn_shanhaijing: '#16a34a', syn_red_winter: '#b91c1c', syn_valkyrie: '#1d4ed8', syn_srt: '#475569', syn_arius: '#7c3aed', syn_problem_solver: '#9f1239', syn_cc: '#1f2937', syn_highlander: '#0f766e', syn_outlaw: '#a16207' } as Record<string, string>)[synId];
+  return own ?? CATEGORY_COLOR[s.category] ?? '#64748b';
 }
 
 export function synergyGlyph(ctx: Ctx, synId: string): string {
   const s = ctx.lookup.syn(synId);
   if (!s) return '?';
-  const n = s.name.replace(/^고유:\s*/, '');
+  const n = s.name.replace(/^고유:\s*/, '').replace(/[「」]/g, '');
   if (/^[A-Za-z]/.test(n)) return n.replace(/[^A-Za-z&]/g, '').slice(0, 3);
   return n.slice(0, 1);
 }
@@ -230,7 +230,7 @@ export function synergyRow(ctx: Ctx, s: SynergyStateView, run: RunView | null, o
 }
 
 // ── 상단 상태바 ─────────────────────────────────────────
-export function topBar(ctx: Ctx, run: RunView, opts: { title: string; onBack?: () => void; extra?: HTMLElement[] } ): HTMLElement {
+export function topBar(_ctx: Ctx, run: RunView, opts: { title: string; onBack?: () => void; extra?: HTMLElement[] } ): HTMLElement {
   const xpPct = run.xpToNext ? Math.min(100, (run.xp / run.xpToNext) * 100) : 100;
   const hpPct = (run.runHp / run.runHpMax) * 100;
   const bar = h('header', { class: 'k-top' },
@@ -241,12 +241,7 @@ export function topBar(ctx: Ctx, run: RunView, opts: { title: string; onBack?: (
       h('div', { class: cls('k-pill is-hp', hpPct < 35 && 'is-low'), title: '런 체력' }, icon('heart', 26), h('b', null, String(run.runHp)), h('small', null, `/${run.runHpMax}`),
         h('i', { class: 'k-pill-meter', style: `--p:${hpPct}%` })),
       h('div', { class: 'k-pill is-gold', title: `골드 · 다음 이자 +${run.nextInterestPreview.gold}G` }, icon('gold', 26), h('b', null, String(run.gold)),
-        h('small', { class: 'k-interest' }, `+${run.nextInterestPreview.gold}${run.nextInterestPreview.jackpotTier ? ` · 한탕 ${run.nextInterestPreview.jackpotTier}` : ''}`)),
-      run.vault ? h('div', { class: 'k-pill is-vault' }, icon('vault', 24), h('b', null, `${run.vault.amount}`), h('small', null, '금고'),
-        h('button', {
-          class: 'k-mini-btn', disabled: !run.vault.canCashOut, title: run.vault.reasonIfNot ?? '장당 1회, 금고 적립금을 골드로 가져옵니다',
-          onclick: () => void ctx.send('CASH_OUT_VAULT'),
-        }, '털기')) : null,
+        h('small', { class: 'k-interest' }, `+${run.nextInterestPreview.gold}${run.nextInterestPreview.capBonus ? ` · 상한 +${run.nextInterestPreview.capBonus}` : ''}`)),
       h('div', { class: 'k-pill is-level', title: `레벨 ${run.level} · 편성 가능 인원 ${run.deployLimit}` },
         h('span', { class: 'k-lv' }, h('small', null, 'Lv'), h('b', null, String(run.level))),
         h('span', { class: 'k-xp' }, h('i', { style: `--p:${xpPct}%` }), h('small', null, run.xpToNext ? `${run.xp}/${run.xpToNext}` : 'MAX'))),

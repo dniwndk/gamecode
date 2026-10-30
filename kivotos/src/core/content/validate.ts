@@ -168,7 +168,7 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
   // ── 시너지
   for (const syn of pack.synergies) {
     const path = `synergies.${syn.id}`;
-    if (!['deployed_all', 'front_only', 'rear_only'].includes(syn.countScope)) err('RANGE', path, `집계 범위 ${syn.countScope}`);
+    if (!['deployed_all', 'front_only', 'rear_only', 'special'].includes(syn.countScope)) err('RANGE', path, `집계 범위 ${syn.countScope}`);
     if (syn.tiers.length === 0) err('SYNERGY_TIERS', path, '단계가 없음');
     syn.tiers.forEach((t, i) => {
       if (!Number.isInteger(t.threshold) || t.threshold < 1) err('SYNERGY_TIERS', `${path}.tiers.${i}`, `요구 수 ${t.threshold}`);
@@ -188,7 +188,9 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
     }
     if (comp.maxLegalCount !== doc.maxLegalCount) err('SYNERGY_COMPOSITION', path, `최대 합법 집계 ${comp.maxLegalCount} — 기획서 표 ${doc.maxLegalCount}`);
     const top = syn.tiers.at(-1)?.threshold ?? 0;
-    if (comp.maxLegalCount < top) err('SYNERGY_UNREACHABLE', path, `최고 단계 ${top}명인데 합법 편성으로 최대 ${comp.maxLegalCount}명`);
+    if (syn.countScope === 'special') {
+      if (syn.memberIds.length) err('SYNERGY_COMPOSITION', path, 'special 집계 시너지는 구성원 명단을 두지 않음');
+    } else if (comp.maxLegalCount < top) err('SYNERGY_UNREACHABLE', path, `최고 단계 ${top}명인데 합법 편성으로 최대 ${comp.maxLegalCount}명`);
   }
 
   // ── 장비

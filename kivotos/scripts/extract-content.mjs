@@ -1,11 +1,11 @@
-// 기획서(docs/GDD_v2.1.md + docs/GDD_v2.2_amendment.md)의 표를 읽어 src/content/*.json 카탈로그를 만든다.
+// 기획서(docs/GDD_v2.1.md + docs/GDD_v2.2_amendment.md + docs/GDD_v2.3_amendment.md)의 표를 읽어 src/content/*.json 카탈로그를 만든다.
 // 기획서가 바뀌면 다시 돌린다: npm run content:extract
 // --check 를 주면 파일을 쓰지 않고, 지금 저장소의 JSON이 기획서와 같은지만 본다(다르면 exit 1).
 //
 // 원칙
 // - 숫자·ID·연결은 표에서 그대로 읽는다. 못 읽으면 추측하지 않고 오류로 멈춘다.
 // - 효과 본문(한국어)은 사람이 읽는 명세(spec)로만 보관한다. 실행 연산(handlers)은 M3에서 채운다.
-// - v2.2 개정안이 v2.1의 같은 항목을 대체한다(개정안 머리말의 해석 순서).
+// - 개정안이 앞 판의 같은 항목을 대체한다(해석 순서 v2.3 → v2.2 → v2.1). 유닛·시너지 표는 v2.3이 통째로 대체한다.
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -20,6 +20,8 @@ const v21Text = readFileSync(join(DOCS, 'GDD_v2.1.md'), 'utf8');
 const v22Text = readFileSync(join(DOCS, 'GDD_v2.2_amendment.md'), 'utf8');
 const v21 = v21Text.split('\n');
 const v22 = v22Text.split('\n');
+const v23Text = readFileSync(join(DOCS, 'GDD_v2.3_amendment.md'), 'utf8');
+const v23 = v23Text.split('\n');
 
 function fail(msg) {
   console.error(`extract-content: ${msg}`);
@@ -46,45 +48,27 @@ function section(lines, heading) {
 const tableRows = (lines, firstCellPrefix) => lines.filter((l) => l.startsWith(`| ${firstCellPrefix}`)).map(cells);
 
 // ───────────────────────── 유닛 ─────────────────────────
-const SLOT = {
-  '전방 기본 공격': 'basic',
-  '전방 전투 스킬': 'skill',
-  '전방 필살기': 'ultimate',
-  '전방 패시브': 'frontEffects',
-  '후방 정기 지원': 'rearAction',
-  '후방 반응 지원': 'rearEffects',
-};
-const appendixA = section(v21, '## 부록 A. 60유닛 마스터와 능력 연결');
-const v22UnitRows = new Map(tableRows(section(v22, '## 5. 유닛 마스터 v2.2 (태그만 바뀜)'), '`u_').map((c) => [unticked(c[0]), c]));
-
-const units = tableRows(appendixA, '`u_').map((c) => {
+// v2.3 3장 표가 v2.1 부록 A + v2.2 5장을 통째로 대체한다(100명).
+const SLOT_COLUMNS = ['basic', 'skill', 'ultimate', 'frontEffects', 'rearAction', 'rearEffects'];
+const units = tableRows(section(v23, '## 3. 유닛 마스터 v2.3 (100명)'), '`u_').map((c) => {
   const id = unticked(c[0]);
   const [hp, atk, def, spd, crit, critDmg] = c[4].split('/').map((x) => Number(x.trim()));
   if ([hp, atk, def, spd, crit, critDmg].some((n) => !Number.isFinite(n))) fail(`${id} 스탯을 읽지 못함: ${c[4]}`);
-  const v22Row = v22UnitRows.get(id);
-  if (!v22Row) fail(`v2.2 유닛 표에 ${id} 없음`);
-  if (Number(v22Row[2]) !== Number(c[2]) || v22Row[3] !== c[3]) fail(`${id}: v2.2 표의 코스트/구역이 v2.1과 다름`);
-
-  const detail = section(appendixA, `### A.${id} — ${c[1]}`);
-  const role = (detail.find((l) => l.startsWith('역할: ')) ?? '').replace(/^역할: /, '').replace(/ 원안 상세 시작 행: .*$/, '').replace(/\.$/, '');
-  const abilityIds = { basic: null, skill: null, ultimate: null, frontEffects: [], rearAction: null, rearEffects: [] };
-  for (const row of detail.filter((l) => l.startsWith('| ')).map(cells)) {
-    const key = SLOT[row[0]];
-    if (!key) continue;
-    const effs = ids(row[1], 'eff_');
-    if (effs.length === 0) fail(`${id} ${row[0]} 칸에 효과 ID 없음`);
-    if (Array.isArray(abilityIds[key])) abilityIds[key].push(...effs);
-    else if (effs.length !== 1 || abilityIds[key] !== null) fail(`${id} ${row[0]} 칸이 하나가 아님`);
-    else abilityIds[key] = effs[0];
-  }
+  const abilityIds = {};
+  SLOT_COLUMNS.forEach((key, k) => {
+    const effs = c[6 + k] === '—' ? [] : ids(c[6 + k], 'eff_');
+    if (key === 'frontEffects' || key === 'rearEffects') abilityIds[key] = effs;
+    else if (effs.length > 1) fail(`${id} ${key} 칸이 하나가 아님`);
+    else abilityIds[key] = effs[0] ?? null;
+  });
   return {
     id,
-    name: v22Row[1],
+    name: c[1],
     cost: Number(c[2]),
     position: c[3],
-    synergyIds: v22Row[4].split(',').map((s) => s.trim()),
+    synergyIds: c[5].split(',').map((s) => s.trim()),
     baseStats: { hp, atk, def, spd, critBps: Math.round(crit * 10000), critDamageBps: Math.round(critDmg * 10000) },
-    role,
+    role: c[12],
     abilityIds,
     portraitAssetId: `portrait_${id}`,
     shopEligible: true,
@@ -92,27 +76,23 @@ const units = tableRows(appendixA, '`u_').map((c) => {
 });
 
 // ───────────────────────── 시너지 ─────────────────────────
-// 표시명: 기획서 본문이 부르는 이름(무법자 구성원, 뱅가드 피격 시 …)을 따른다. 고유 시너지는 주인 이름을 붙인다.
-const SYNERGY_NAME = {
-  syn_abydos: '아비도스', syn_gehenna: '게헨나', syn_millennium: '밀레니엄', syn_trinity: '트리니티',
-  syn_hyakkiyako: '백귀야행', syn_shanhaijing: '산해경', syn_red_winter: '붉은겨울', syn_valkyrie: '발키리',
-  syn_srt: 'SRT', syn_arius: '아리우스', syn_problem_solver: '흥신소68', syn_cc: 'C&C', syn_highlander: '하이랜더',
-  syn_outlaw: '무법자 — 칠수인·헬멧단', syn_vanguard: '뱅가드', syn_striker: '스트라이커', syn_assault: '어설트',
-  syn_breacher: '브리처', syn_sniper: '스나이퍼', syn_demolition: '데몰리션', syn_medic: '메딕',
-  syn_tactical_support: '택티컬 서포트', syn_aegis: '이지스', syn_electro: '일렉트로', syn_commander: '커맨더',
-  syn_mystic_arts: '미스틱 아츠', syn_light_armor: '경장갑', syn_heavy_armor: '중장갑', syn_special_armor: '특수장갑',
-  syn_elastic_armor: '탄력장갑', syn_jackpot: '한탕',
-};
-// 커맨더가 세는 "14개 진영 카테고리"(10.4)
-const FACTIONS = new Set(['syn_abydos', 'syn_gehenna', 'syn_millennium', 'syn_trinity', 'syn_hyakkiyako', 'syn_shanhaijing',
-  'syn_red_winter', 'syn_valkyrie', 'syn_srt', 'syn_arius', 'syn_problem_solver', 'syn_cc', 'syn_highlander', 'syn_outlaw']);
-const ARMOR = new Set(['syn_light_armor', 'syn_heavy_armor', 'syn_special_armor', 'syn_elastic_armor']);
-const category = (id) => (FACTIONS.has(id) ? 'faction' : ARMOR.has(id) ? 'armor' : id.startsWith('syn_unique_') ? 'unique'
-  : id === 'syn_jackpot' ? 'economy' : 'role');
-
+// v2.3 4장 표: 진영 12 + 동아리 + 역할군 + 고유 + 플래티넘. 구성원은 유닛 태그에서 거꾸로 모은다.
+// 단계 설명은 v2.3 5장에 같은 효과가 있으면 그 본문, 없으면(진영) v2.1 부록 B의 단계 문장.
 const appendixB = section(v21, '## 부록 B. 40시너지의 단계·효과·최대 합법 편성');
-const v22SynRows = new Map(tableRows(section(v22, '## 6. 시너지 41종 구성원·도달 가능성 재집계'), '`syn_').map((c) => [unticked(c[0]), c]));
-const unitByShort = new Map(units.map((u) => [u.id.replace(/^u_/, ''), u]));
+const tierTextV21 = new Map();
+for (const l of appendixB) {
+  const m = l.match(/^- \*\*\d+명:\*\* `(eff_[a-z0-9_]+)` — (.*)$/);
+  if (m) tierTextV21.set(m[1], m[2]);
+}
+const v23Effects = new Map();
+{
+  const lines = section(v23, '## 5. 효과 v2.3 (교체·추가)');
+  for (let i = 0; i < lines.length; i++) {
+    const h = lines[i].match(/^### (V\.\d{3}) `(eff_[a-z0-9_]+)`$/);
+    if (h) v23Effects.set(h[2], { catalogNo: h[1], lines: lines.slice(i + 1, i + 6) });
+  }
+}
+const v23Spec = (id) => v23Effects.get(id)?.lines.find((l) => l.startsWith('- 본문: '))?.slice(6);
 
 function parseTierCell(s) {
   return s.split(';').map((part) => {
@@ -121,49 +101,23 @@ function parseTierCell(s) {
     return { threshold: Number(m[1]), effectIds: [m[2]] };
   });
 }
-function synergyFromV22(id, row, tiers, tierText, scope) {
-  const members = row[4].split(',').map((s) => {
-    const u = unitByShort.get(s.trim());
-    if (!u) fail(`${id} 구성원 ${s} 를 유닛에서 찾지 못함`);
-    return u.id;
-  });
-  const [f, r, d] = row[2].split('/').map(Number);
-  if (row[1] !== tiers.map((t) => t.threshold).join('/')) fail(`${id}: v2.2 단계 ${row[1]} ≠ 효과 단계`);
-  const uniqueOwner = id.startsWith('syn_unique_') ? units.find((u) => u.id === members[0]) : null;
+const synergies = tableRows(section(v23, '## 4. 시너지 v2.3 (63종)'), '`syn_').map((c) => {
+  const id = unticked(c[0]);
+  const tiers = parseTierCell(c[4]).map((t) => ({
+    ...t,
+    spec: v23Spec(t.effectIds[0]) ?? tierTextV21.get(t.effectIds[0]) ?? fail(`${id} ${t.effectIds[0]} 설명 없음`),
+  }));
+  const [f, r, d] = c[5].split('/').map(Number);
   return {
     id,
-    name: uniqueOwner ? `고유: ${uniqueOwner.name}` : SYNERGY_NAME[id] ?? fail(`${id} 표시명 없음`),
-    category: category(id),
-    countScope: scope,
-    tiers: tiers.map((t, i) => ({ ...t, spec: tierText[i] })),
-    memberIds: members,
-    documented: { frontOnly: f, rearOnly: r, dual: d, maxLegalCount: Number(row[3]) },
+    name: c[1],
+    category: c[2],
+    countScope: unticked(c[3]),
+    tiers,
+    memberIds: units.filter((u) => u.synergyIds.includes(id)).map((u) => u.id),
+    documented: { frontOnly: f, rearOnly: r, dual: d, maxLegalCount: Number(c[6]) },
   };
-}
-
-const synergies = tableRows(appendixB, '`syn_').map((c) => {
-  const id = unticked(c[0]);
-  const tiers = parseTierCell(c[4]);
-  if (c[1] !== tiers.map((t) => t.threshold).join('/')) fail(`${id}: 요구 단계 ${c[1]} ≠ 효과 단계`);
-  const detail = section(appendixB, `### B.${id}`);
-  const scope = (detail.find((l) => l.startsWith('집계 범위: ')) ?? '').match(/`([a-z_]+)`/)?.[1] ?? fail(`${id} 집계 범위 없음`);
-  const tierText = tiers.map((t) => {
-    const line = detail.find((l) => l.includes(`\`${t.effectIds[0]}\``));
-    return line ? line.replace(/^- \*\*\d+명:\*\* `eff_[a-z0-9_]+` — /, '') : fail(`${id} ${t.effectIds[0]} 설명 없음`);
-  });
-  const row = v22SynRows.get(id) ?? fail(`v2.2 시너지 표에 ${id} 없음`);
-  return synergyFromV22(id, row, tiers, tierText, scope);
 });
-
-// v2.2 신규: 한탕 (개정안 3장)
-{
-  const rows = tableRows(section(v22, '### 3.2 단계별 효과'), '');
-  const jackpotRows = rows.filter((c) => /^\d/.test(c[0]));
-  const tiers = jackpotRows.map((c) => ({ threshold: Number(c[0].match(/^\d+/)[0]), effectIds: [unticked(c[1])] }));
-  const tierText = jackpotRows.map((c) => `${c[0]} — 정산: ${unbold(c[2])} / 전투: ${unbold(c[3])}`);
-  synergies.push(synergyFromV22('syn_jackpot', v22SynRows.get('syn_jackpot'), tiers, tierText, 'deployed_all'));
-}
-if (synergies.length !== v22SynRows.size) fail(`시너지 수 ${synergies.length} ≠ v2.2 표 ${v22SynRows.size}`);
 
 // ───────────────────────── 효과 ─────────────────────────
 const EXEC = {
@@ -203,15 +157,6 @@ for (let i = 0; i < appendixC.length; i++) {
     handlers: [],
   });
 }
-// v2.2 신규 효과 4개
-for (const s of synergies.find((x) => x.id === 'syn_jackpot').tiers) {
-  effects.push({
-    id: s.effectIds[0], catalogNo: 'v2.2 3.2', owner: `syn_jackpot ${s.threshold}단계`, scope: 'deployed_all',
-    execution: 'synergy_container', trigger: null, spec: s.spec,
-    limits: '정산 효과는 SettlementModifier로만 반영(개정안 3.5). 전투 효과의 전투 시작 골드는 battleInput.startGold.',
-    sourceReference: 'GDD v2.2 3장', implementation: 'spec_only', handlers: [],
-  });
-}
 const kaiserRows = new Map(tableRows(section(v22, '## 4. 신규 전략 「카이저 론」 `str_kaiser_loan`'), '').map((c) => [c[0], unbold(c[1])]));
 effects.push({
   id: 'eff_str_kaiser_loan', catalogNo: 'v2.2 4', owner: 'str_kaiser_loan', scope: 'global',
@@ -220,6 +165,41 @@ effects.push({
   limits: '상환 일정은 RunState.loans[]에 남은 횟수·금액으로 저장(개정안 4장).',
   sourceReference: 'GDD v2.2 4장', implementation: 'spec_only', handlers: [],
 });
+
+// v2.3 5장: 같은 ID는 교체, 없으면 추가. 6장: 카탈로그에서 뺀다.
+for (const [id, { catalogNo, lines }] of v23Effects) {
+  const field = (name) => lines.find((l) => l.startsWith(`- ${name}: `))?.slice(name.length + 4) ?? fail(`${id}: "${name}" 줄 없음`);
+  const src = field('출처/구역').match(/^(.*) \/ `([a-z_]+)`\. 원안 행: (v2\.3 조정|v2\.3 신규)\.$/) ?? fail(`${id} 출처/구역 형식`);
+  const exec = field('실행').match(/^\*\*(.+?)\*\*\.?\s*(.*)$/) ?? fail(`${id} 실행 형식`);
+  const def = {
+    id,
+    catalogNo,
+    owner: src[1],
+    scope: src[2],
+    execution: EXEC[exec[1]] ?? fail(`${id} 실행 종류 모름: ${exec[1]}`),
+    trigger: exec[2] && !exec[2].startsWith('ActionResolver') ? exec[2].replace(/\.$/, '') : null,
+    spec: field('본문'),
+    limits: field('제한'),
+    sourceReference: `GDD v2.3 5장 (${src[3] === 'v2.3 조정' ? '교체' : '신규'})`,
+    implementation: 'spec_only',
+    handlers: [],
+  };
+  const at = effects.findIndex((e) => e.id === id);
+  if (src[3] === 'v2.3 조정') {
+    if (at < 0) fail(`${id}: v2.3 조정인데 v2.1에 없음`);
+    effects[at] = def;
+  } else {
+    if (at >= 0) fail(`${id}: v2.3 신규인데 이미 있음`);
+    effects.push(def);
+  }
+}
+for (const l of section(v23, '## 6. 삭제된 효과')) {
+  const m = l.match(/^- `(eff_[a-z0-9_]+)`$/);
+  if (!m) continue;
+  const at = effects.findIndex((e) => e.id === m[1]);
+  if (at < 0) fail(`삭제할 효과 ${m[1]} 이 없음`);
+  effects.splice(at, 1);
+}
 
 // ───────────────────────── 장비 ─────────────────────────
 const STAT_KEY = { HP: 'hp', ATK: 'atk', DEF: 'def', SPD: 'spd', CRIT: 'critBps', CRIT_DMG: 'critDamageBps' };
@@ -255,7 +235,7 @@ const equipment = tableRows(section(v21, '### D.1 장비 목록 (총 12종)'), '
 // 보유 조건이 붙은 두 전략은 문장을 구조화한다(DECISIONS.md D-006).
 const OWNED_CONDITION = {
   str_rear_command_net: { positions: ['rear_only', 'dual'], anyTagOf: null, minCount: 2 },
-  str_iron_frontline: { positions: ['front_only', 'dual'], anyTagOf: ['syn_vanguard', 'syn_heavy_armor'], minCount: 2 },
+  str_iron_frontline: { positions: ['front_only', 'dual'], anyTagOf: null, minCount: 2 },
 };
 function strategyOffer(id, cond) {
   if (/^1~3장 시작 시 조건 없이/.test(cond)) return { chapters: [1, 2, 3], ownedCondition: null };
@@ -275,6 +255,15 @@ const strategies = tableRows(section(v21, '### D.2 전역 전략 목록 (총 12�
   stacking: c[6],
   generalPurpose: c[7].startsWith('예'),
 }));
+// v2.3 7장: 보유 조건 태그와 약점 문장 교체
+for (const c of tableRows(section(v23, '## 7. 전략 조정'), '`str_')) {
+  const st = strategies.find((s) => s.id === unticked(c[0])) ?? fail(`v2.3 7장의 ${c[0]} 전략이 없음`);
+  if (c[1] === '보유 조건 태그') {
+    if (!st.offer.ownedCondition) fail(`${st.id}: 보유 조건이 없는 전략`);
+    st.offer.ownedCondition.anyTagOf = ids(c[2], 'syn_');
+  } else if (c[1] === '약점') st.drawback = c[2];
+  else fail(`v2.3 7장 항목 모름: ${c[1]}`);
+}
 strategies.push({
   id: 'str_kaiser_loan',
   name: kaiserRows.get('이름'),
@@ -409,12 +398,13 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-2.2.0',
+  contentVersion: 'ba-content-2.3.0',
   rulesVersion: rules.rulesVersion,
-  expectedCounts: { units: 60, synergies: 41, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 304, dialogueFiles: 60, statuses: 20 },
+  expectedCounts: { units: 100, synergies: 63, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 399, dialogueFiles: 100, statuses: 20 },
   sources: [
     { path: 'docs/GDD_v2.1.md', sha256: sha256(v21Text) },
     { path: 'docs/GDD_v2.2_amendment.md', sha256: sha256(v22Text) },
+    { path: 'docs/GDD_v2.3_amendment.md', sha256: sha256(v23Text) },
   ],
   generatedBy: 'scripts/extract-content.mjs',
 };
@@ -425,7 +415,7 @@ const outputs = {
   'equipment.json': equipment, 'strategies.json': strategies, 'enemies.json': enemies, 'nodes.json': nodes,
   'statuses.json': statuses, 'assets.json': portraits,
 };
-// 대사는 docs/dialogue/ko/<unitId>.json(개정안의 원본 60개 파일)을 한 배열로 묶어 둔다.
+// 대사는 docs/dialogue/ko/<unitId>.json(유닛마다 한 파일)을 한 배열로 묶어 둔다.
 outputs['dialogue.ko.json'] = dialogueFiles.map((f) => JSON.parse(readFileSync(join(dialogueSrc, f), 'utf8')));
 const stale = [];
 mkdirSync(OUT, { recursive: true });

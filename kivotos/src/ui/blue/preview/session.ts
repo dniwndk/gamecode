@@ -30,7 +30,6 @@ interface RunState {
   locked: boolean;
   tracked: string | null;
   chosen: 'A' | 'B';
-  vault: { amount: number; usedChapter: number };
   history: ('win' | 'loss' | null)[];
   offers: RunView['offers'];
   lastBattle?: BattleView;
@@ -82,8 +81,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       front: [newInst('u_hoshino', 1, ['eq_heavy_ballistic_plate']), newInst('u_shiroko', 2, ['eq_abydos_goggles']), newInst('u_yuuka', 2), newInst('u_nonomi')],
       rear: [null, newInst('u_ayane'), null, newInst('u_serina'), null, null],
       bench, stash: ['eq_tactical_watch', 'eq_trinity_rosary'],
-      shop: ['u_serika', 'u_aru', 'u_iori', 'u_mutsuki', 'u_akira'], locked: false, tracked: 'syn_jackpot', chosen: 'A',
-      vault: { amount: 45, usedChapter: 0 },
+      shop: ['u_serika', 'u_aru', 'u_iori', 'u_mutsuki', 'u_akira'], locked: false, tracked: 'syn_seminar', chosen: 'A',
       history: ['win', 'win', 'loss', 'win', 'win', 'win', 'win', null, null, null, null, null, null, null, null],
       offers: {}, recruited: new Set(), deployed: new Set(),
     };
@@ -191,11 +189,12 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     if (need === null) r.xp = 0;
   }
 
-  function interest(gold: number) { return Math.min(rules.income.interest.cap, Math.floor(gold / rules.income.interest.stepGold)); }
-  const jackpotTier = (r: RunState) => {
-    const c = synergyCounts(r).get('syn_jackpot') ?? 0;
-    return [6, 4, 2].find((t) => c >= t) ?? 0;
+  /** 세미나 동아리 2·4단계: 정산 이자 상한 +2/+4 (v2.3 4장) */
+  const capBonus = (r: RunState) => {
+    const c = synergyCounts(r).get('syn_seminar') ?? 0;
+    return c >= 4 ? 4 : c >= 2 ? 2 : 0;
   };
+  function interest(r: RunState) { return Math.min(rules.income.interest.cap + capBonus(r), Math.floor(r.gold / rules.income.interest.stepGold)); }
 
   function defeatDamage(r: RunState, survivingFront: number): { total: number; parts: { label: string; value: number }[] } {
     const n = node(r);
@@ -213,16 +212,10 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       placeable: placeable(unitById.get(i.unitId)!), sellValue: sellValue(i),
     });
     const cand = n.candidates.find((c) => c.id === r.chosen) ?? n.candidates[0];
-    const jt = jackpotTier(r);
     return {
       runId: 'preview', seed: r.seed, crisisLevel: 0, chapter: r.chapter, battle: r.battle, nodeId: n.id, nodeType: n.type,
       runHp: r.runHp, runHpMax: rules.run.startRunHp, gold: r.gold,
-      nextInterestPreview: { gold: interest(r.gold) + (jt >= 4 ? 2 : jt >= 2 ? 1 : 0), jackpotTier: jt },
-      vault: jt >= 2 || r.vault.amount > 0 ? {
-        amount: r.vault.amount,
-        canCashOut: r.vault.usedChapter !== r.chapter && r.vault.amount > 0,
-        reasonIfNot: r.vault.usedChapter === r.chapter ? '이번 장에서 이미 금고를 털었어요' : r.vault.amount === 0 ? '금고가 비어 있어요' : undefined,
-      } : null,
+      nextInterestPreview: { gold: interest(r), capBonus: capBonus(r) },
       level: r.level, xp: r.xp, xpToNext: xpToNext(r.level), deployedCount: deployedInsts(r).length, deployLimit: r.level,
       streak: { ...r.streak }, strategies: [...r.strategies],
       loans: r.strategies.includes('str_kaiser_loan') ? [{ remaining: 5, perPayment: 6 }] : [],
@@ -431,9 +424,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     if (outcome === 'win') income.push({ label: '승리', value: rules.income.winBonus });
     const sb = [...rules.income.streakBonus].reverse().find((b) => streakNext >= b.minStreak);
     if (sb) income.push({ label: `${streakNext}${outcome === 'win' ? '연승' : '연패'}`, value: sb.gold });
-    income.push({ label: '이자', value: interest(r.gold) });
-    const jt = jackpotTier(r);
-    if (jt) income.push({ label: `한탕 ${jt} 추가 이자`, value: jt >= 4 ? 2 : 1 });
+    income.push({ label: capBonus(r) ? `이자 (세미나 상한 +${capBonus(r)})` : '이자', value: interest(r) });
     const contributions = [...contrib].map(([unitId, v]) => ({ unitId, ...v }));
     const score = (x: typeof contributions[number]) => x.damage + x.healing * 1.2 + x.shield + x.rearSupport * 0.5;
     const mvp = outcome === 'win' ? [...contributions].sort((a2, b2) => score(b2) - score(a2))[0]?.unitId ?? null : null;
@@ -476,7 +467,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     const r: RunState = {
       seed, chapter: 1, battle: 1, runHp: rules.run.startRunHp, gold: rules.run.startGold, level: rules.run.startLevel, xp: rules.run.startXp,
       streak: { kind: null, count: 0 }, strategies: [], front: Array(rules.board.frontSlots).fill(null), rear: Array(rules.board.rearSlots).fill(null),
-      bench, stash: [], shop: [], locked: false, tracked: null, chosen: 'A', vault: { amount: 0, usedChapter: 0 },
+      bench, stash: [], shop: [], locked: false, tracked: null, chosen: 'A',
       history: Array(rules.run.chapters * rules.run.battlesPerChapter).fill(null),
       offers: {
         startingUnits: chosen.map((u) => u.id),
@@ -667,15 +658,6 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         r.stash.push(...inst.equipment.splice(idx, 1));
         return ok();
       }
-      case 'CASH_OUT_VAULT': {
-        if (r.vault.usedChapter === r.chapter) return no('이번 장에서 이미 금고를 털었어요');
-        if (r.vault.amount <= 0) return no('금고가 비어 있어요');
-        const amount = r.vault.amount;
-        r.gold += amount;
-        r.vault = { amount: 0, usedChapter: r.chapter };
-        cue({ kind: 'vault', amount });
-        return ok();
-      }
       case 'START_BATTLE': {
         if (!r.front.some(Boolean)) return no('전방에 최소 1명이 필요해요');
         const { battle, result } = simulate(r);
@@ -684,7 +666,6 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         // 결과는 재생 전에 먼저 확정된다(13.3)
         r.runHp = result.runHp.after;
         r.gold += result.income.reduce((a, b) => a + b.value, 0);
-        if (jackpotTier(r)) r.vault.amount += 6;
         r.xp += result.xpGained;
         levelUp(r);
         r.streak = r.streak.kind === result.outcome ? { kind: result.outcome, count: r.streak.count + 1 } : { kind: result.outcome, count: 1 };

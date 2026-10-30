@@ -38,9 +38,12 @@ export interface UnitDefinition {
   shopEligible: boolean;
 }
 
-export type SynergyCategory = 'faction' | 'role' | 'armor' | 'unique' | 'economy';
-/** front_only/rear_only: 실제 그 구역에 놓인 구성원만 센다(6장 뱅가드, 고유 시너지). */
-export type SynergyCountScope = 'deployed_all' | 'front_only' | 'rear_only';
+export type SynergyCategory = 'faction' | 'club' | 'role' | 'unique' | 'platinum';
+/**
+ * front_only/rear_only: 실제 그 구역에 놓인 구성원만 센다(고유 시너지).
+ * special: 구성원 명단 없이 출전 편성 전체로 판정한다(v2.3 플래티넘 「학원 대항전」·「총력전 만점」).
+ */
+export type SynergyCountScope = 'deployed_all' | 'front_only' | 'rear_only' | 'special';
 
 export interface SynergyTier {
   threshold: number;

@@ -37,7 +37,6 @@ export type GameCommandType =
   | 'START_BATTLE'
   | 'CONFIRM_RESULT'
   | 'CHOOSE_EQUIPMENT'
-  | 'CASH_OUT_VAULT'
   | 'IMPORT_SAVE'
   | 'ABANDON_RUN';
 

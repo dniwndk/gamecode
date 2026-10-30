@@ -348,17 +348,8 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
       }
       if (c.kind === 'levelup') ctx.fx.burst(el.querySelector('.k-lv-big'), { color: '#45d3ff', size: 260 });
       if (c.kind === 'levelup') ctx.toast(`레벨 ${c.amount}! 이제 ${c.amount}명까지 편성할 수 있어요`);
-      if (c.kind === 'vault') { coinRain(); ctx.fx.burst({ x: innerWidth / 2, y: innerHeight * 0.4 }, { color: '#ffc93c', size: 520, ms: 1300 }); ctx.toast(`금고를 털었어요 +${c.amount}G`, 'gold'); }
       if (c.kind === 'equip_returned' && c.unitId) ctx.toast(`${ctx.lookup.unit(c.unitId).name}의 맞지 않는 장비가 보관함으로 돌아갔어요`);
     }
-  }
-
-  function coinRain() {
-    if (ctx.settings.reduceMotion) return;
-    const rain = h('div', { class: 'k-coin-rain', 'aria-hidden': 'true' });
-    for (let i = 0; i < 26; i++) rain.append(h('i', { style: `--x:${Math.random() * 100}%;--d:${Math.random() * 0.6}s;--r:${Math.random() * 360}deg` }, icon('gold', 34)));
-    el.append(rain);
-    setTimeout(() => rain.remove(), 1800);
   }
 
   const onKey = (e: KeyboardEvent) => {

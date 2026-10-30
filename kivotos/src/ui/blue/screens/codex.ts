@@ -5,7 +5,7 @@ import { cls, fill, h } from '../dom';
 import { icon } from '../icons';
 
 type Tab = 'units' | 'synergies';
-const CAT_LABEL: Record<string, string> = { faction: '학원·소속', role: '역할', armor: '장갑', unique: '고유', economy: '경제' };
+const CAT_LABEL: Record<string, string> = { faction: '학원', club: '동아리', role: '역할군', unique: '고유', platinum: '플래티넘' };
 
 export function mountCodex(ctx: Ctx): Screen {
   const { pack } = ctx.driver.catalog;
@@ -33,7 +33,7 @@ export function mountCodex(ctx: Ctx): Screen {
         const b = h('button', { class: 'k-codex-item', 'aria-label': `${u.name} 상세`, onclick: () => openUnitDetail(ctx, u.id) }, card);
         return b;
       }), units.length ? null : h('p', { class: 'k-empty' }, '조건에 맞는 학생이 없어요. 필터를 하나 풀어 보세요.'))
-      : h('div', { class: 'k-codex-syns' }, ...['faction', 'role', 'armor', 'unique', 'economy'].map((cat) => h('section', null,
+      : h('div', { class: 'k-codex-syns' }, ...['faction', 'club', 'role', 'unique', 'platinum'].map((cat) => h('section', null,
         h('h3', null, CAT_LABEL[cat]),
         h('div', { class: 'k-codex-syn-grid' }, ...pack.synergies.filter((s) => s.category === cat).map((s) => {
           const item = h('button', { class: 'k-codex-syn', onclick: () => { syn = s.id; tab = 'units'; draw(); } },

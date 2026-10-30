@@ -94,8 +94,8 @@ export interface RunView {
   runHp: number;
   runHpMax: number;
   gold: number;
-  nextInterestPreview: { gold: number; jackpotTier: number };
-  vault: { amount: number; canCashOut: boolean; reasonIfNot?: string } | null;
+  /** capBonus: 세미나 동아리가 올린 이자 상한(0이면 기본) */
+  nextInterestPreview: { gold: number; capBonus: number };
   level: number;
   xp: number;
   xpToNext: number | null;
@@ -130,7 +130,7 @@ export interface UiState {
 
 export interface Cue {
   id: number;
-  kind: 'recruit' | 'deploy' | 'merge' | 'levelup' | 'vault' | 'equip_returned';
+  kind: 'recruit' | 'deploy' | 'merge' | 'levelup' | 'equip_returned';
   unitId?: string;
   star?: number;
   amount?: number;
