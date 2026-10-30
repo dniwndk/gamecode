@@ -408,3 +408,11 @@ export function openLevelUp(ctx: Ctx): void {
   draw();
   close = ctx.modal(panel, { label: '레벨업' });
 }
+
+/** 전략이 가진 효과만 보여 준다(이득·대가 문장 대신 효과 본문 요약) */
+export function strategyEffects(ctx: Ctx, effectIds: string[]): HTMLElement {
+  return h('div', { class: 'k-strat-effects' }, ...effectIds.map((id) => {
+    const e = ctx.lookup.effectSpec(id);
+    return e ? fxList(ctx, e.spec) : null;
+  }));
+}

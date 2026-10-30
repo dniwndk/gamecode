@@ -24,7 +24,7 @@
     },
     {
       "path": "docs/GDD_v2.3_amendment.md",
-      "sha256": "8aa7864d004cd6f8ea087fa32e10d979bab2a8aa9605c9f6054eb774f62c18f4"
+      "sha256": "79e65999b0142eb4a7bf20ff8cc7dd1f65d0ec2e2f0053d0f51f9009bbb64f84"
     }
   ],
   "generatedBy": "scripts/extract-content.mjs"

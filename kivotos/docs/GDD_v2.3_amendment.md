@@ -421,895 +421,907 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 - 본문: 전방 배치 시 아군 전방 전원에게 2턴간 필살기 피해량 +35% 부여
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.031 `eff_chinatsu_rear_reg`
+### V.031 `eff_str_overclock`
+- 출처/구역: 전략 str_overclock_core / `global`. 원안 행: v2.3 조정.
+- 실행: **전략 컨테이너: 상시·반응·카운터·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 아군 전방이 필살기를 해소하면(`ultimate_resolved`) 그 학생의 스킬 남은 재사용 대기 -1(최소 0), 다음 행동 시간 25% 당김. 학생마다 개인 차례당 1회.
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.032 `eff_str_sandstorm`
+- 출처/구역: 전략 str_sandstorm_endurance / `global`. 원안 행: v2.3 조정.
+- 실행: **전략 컨테이너: 상시·반응·카운터·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: AV 300·600·900마다 적 전방 전원에게 모래폭풍 피해: 일반 적은 대상 최대 HP 8%, 보스는 생존 아군(전방+후방) 평균 ATK 120% 기준 `normal` 피해(치명타 없음). 맞은 적은 2차례 동안 SPD -15.
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.033 `eff_chinatsu_rear_reg`
 - 출처/구역: u_chinatsu 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 HP 비율이 가장 낮은 아군 1명을 ATK 150/170/205% 치유하고 디버프 1개를 해제
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.032 `eff_chinatsu_rear_react`
+### V.034 `eff_chinatsu_rear_react`
 - 출처/구역: u_chinatsu 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. status_applied.
 - 본문: 아군이 기절(`st_stun`) 또는 침묵(`st_silence`)에 걸리면(`status_applied`) 즉시 해제(쿨다운 2턴)
 - 제한: CD2(소유자 정상 차례), 개인 차례당1회, handler/root당 1회.
 
-### V.033 `eff_haruna_skill`
+### V.035 `eff_haruna_skill`
 - 출처/구역: u_haruna 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 전방 중 현재 HP가 가장 높은 1명에게 ATK 180% 피해. 대상의 HP가 50% 이하이면 피해 +30%
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.034 `eff_haruna_ult`
+### V.036 `eff_haruna_ult`
 - 출처/구역: u_haruna 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 전방 중 현재 HP가 가장 높은 1명에게 ATK 340/395/480% 피해. 이 공격으로 처치하면 적 전방 전원에게 ATK 100% "별점 0개" 폭발 피해
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.035 `eff_haruna_passive`
+### V.037 `eff_haruna_passive`
 - 출처/구역: u_haruna 전방 패시브 / `front`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. battle_start + unit_defeated.
 - 본문: 전투 시작 시(`battle_start`) 적 1명을 "맛집 평가" 대상으로 지정. 그 적이 전투불능이 되면(`unit_defeated`) 자신의 에너지 +40
 - 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
 
-### V.036 `eff_izumi_skill`
+### V.038 `eff_izumi_skill`
 - 출처/구역: u_izumi 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 140% 피해. 이 공격으로 처치하면 자신의 에너지 +20
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.037 `eff_izumi_ult`
+### V.039 `eff_izumi_ult`
 - 출처/구역: u_izumi 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 240/275/330% 피해
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.038 `eff_akari_skill`
+### V.040 `eff_akari_skill`
 - 출처/구역: u_akari 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 2명에게 ATK 130% 피해
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.039 `eff_akari_ult`
+### V.041 `eff_akari_ult`
 - 출처/구역: u_akari 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 전방 전원에게 ATK 160/185/225% 피해. 이 공격으로 처치한 적 1명마다 자신의 에너지 +20
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.040 `eff_juri_rear_reg`
+### V.042 `eff_juri_rear_reg`
 - 출처/구역: u_juri 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 HP 비율이 가장 낮은 아군 1명을 ATK 110/130/155% 치유하고 2턴간 ATK +10%(`st_atk_up`) 부여. 30% 확률로 요리가 실패해 대신 적 최전열 1명에게 ATK 80% 피해
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.041 `eff_kasumi_rear_reg`
+### V.043 `eff_kasumi_rear_reg`
 - 출처/구역: u_kasumi 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 적 전방 전원에게 ATK 110/130/160% 피해, 대상마다 30% 확률로 다음 행동 시간 15% 지연(`delay_action`)
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.042 `eff_kasumi_rear_react`
+### V.044 `eff_kasumi_rear_react`
 - 출처/구역: u_kasumi 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. unit_defeated.
 - 본문: 적이 전투불능이 될 때(`unit_defeated`) 다음 후방 행동 피해 +20%(최대 2중첩, 사용하면 초기화)
 - 제한: CD2(소유자 정상 차례), 개인 차례당1회, handler/root당 1회.
 
-### V.043 `eff_megu_skill`
+### V.045 `eff_megu_skill`
 - 출처/구역: u_megu 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 2명에게 ATK 120% 피해 및 2턴간 화상(`st_burn`) 부여
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.044 `eff_megu_ult`
+### V.046 `eff_megu_ult`
 - 출처/구역: u_megu 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 전방 전원에게 ATK 155/180/220% 피해. 이미 화상인 적은 화상 지속 +1턴
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.045 `eff_akane_skill`
+### V.047 `eff_akane_skill`
 - 출처/구역: u_akane 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 150% 피해 및 "폭탄" 설치(2턴 뒤 그 적에게 ATK 120% 폭발)
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.046 `eff_akane_ult`
+### V.048 `eff_akane_ult`
 - 출처/구역: u_akane 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 설치된 폭탄을 모두 즉시 기폭하고 적 전방 전원에게 ATK 190/220/265% 피해. 폭탄이 있던 적은 ATK 60% 추가 피해
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.047 `eff_midori_skill`
+### V.049 `eff_midori_skill`
 - 출처/구역: u_midori 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 150% 피해. 아군에 모모이가 있으면 모모이의 다음 행동 시간 15% 당김
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.048 `eff_midori_ult`
+### V.050 `eff_midori_ult`
 - 출처/구역: u_midori 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 270/310/375% 피해
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.049 `eff_yuzu_rear_reg`
+### V.051 `eff_yuzu_rear_reg`
 - 출처/구역: u_yuzu 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 무작위 적에게 3회(중복 가능) ATK 70/80/100% 유탄 피해
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.050 `eff_yuzu_rear_react`
+### V.052 `eff_yuzu_rear_react`
 - 출처/구역: u_yuzu 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. battle_start.
 - 본문: "사물함": 전투 시작 후(`battle_start`) 2턴간 적의 표적이 되지 않고, 첫 후방 행동 피해 +50%
 - 제한: CD2(소유자 정상 차례), 개인 차례당1회, handler/root당 1회.
 
-### V.051 `eff_chihiro_rear_reg`
+### V.053 `eff_chihiro_rear_reg`
 - 출처/구역: u_chihiro 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 적 1명의 버프 1개를 해제하고 아군 전방 전원에게 2턴간 CRIT +12/15/20%(`st_crit_up`) 부여
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.052 `eff_chihiro_rear_react`
+### V.054 `eff_chihiro_rear_react`
 - 출처/구역: u_chihiro 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. ultimate_resolved.
 - 본문: 적이 필살기를 해소하면(`ultimate_resolved`) 그 적의 에너지 -20(쿨다운 2턴)
 - 제한: CD2(소유자 정상 차례), 개인 차례당1회, handler/root당 1회.
 
-### V.053 `eff_maki_rear_reg`
+### V.055 `eff_maki_rear_reg`
 - 출처/구역: u_maki 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 적 전방 전원에게 ATK 85/100/125% 피해 및 2턴간 SPD -10(`st_spd_down`)
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.054 `eff_noa_rear_reg`
+### V.056 `eff_noa_rear_reg`
 - 출처/구역: u_noa 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 아군 전방 전원에게 2턴간 ATK +20/26/35%(`st_atk_up`) 부여
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.055 `eff_noa_rear_react`
+### V.057 `eff_noa_rear_react`
 - 출처/구역: u_noa 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. damage_dealt.
 - 본문: "완전 기억": 아군이 한 턴에 같은 적을 두 번째로 타격하면(`damage_dealt`) 그 피해 +20%
 - 제한: CD2(소유자 정상 차례), 개인 차례당1회, handler/root당 1회.
 
-### V.056 `eff_koyuki_skill`
+### V.058 `eff_koyuki_skill`
 - 출처/구역: u_koyuki 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 140% 피해, 50% 확률로 1턴 기절(`st_stun`)
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.057 `eff_koyuki_ult`
+### V.059 `eff_koyuki_ult`
 - 출처/구역: u_koyuki 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 전방 전원에게 ATK 170/195/235% 피해 후 동전 던지기: 앞면이면 적 전방 전원 1턴 기절, 뒷면이면 아군 전방 전원 에너지 +30
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.058 `eff_koyuki_rear_reg`
+### V.060 `eff_koyuki_rear_reg`
 - 출처/구역: u_koyuki 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 적 1명의 다음 행동 시간 30/35/45% 지연(`delay_action`)
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.059 `eff_utaha_rear_reg`
+### V.061 `eff_utaha_rear_reg`
 - 출처/구역: u_utaha 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: "긴급 수리": 후방 정기 행동(`rear_action`)마다 HP 비율이 가장 낮은 아군 1명에게 ATK 140/165/200% 보호막 및 2턴간 받는 피해 -10%(`st_damage_reduction`) 부여
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.060 `eff_hibiki_rear_reg`
+### V.062 `eff_hibiki_rear_reg`
 - 출처/구역: u_hibiki 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: "박격포": 후방 정기 행동(`rear_action`)마다 무작위 적 2명(후방 포함)에게 ATK 110/130/160% 피해
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.061 `eff_kotori_rear_reg`
+### V.063 `eff_kotori_rear_reg`
 - 출처/구역: u_kotori 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 ATK가 가장 높은 아군 1명에게 2턴간 치명 피해 +20/25/35%
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.062 `eff_eimi_skill`
+### V.064 `eff_eimi_skill`
 - 출처/구역: u_eimi 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 100% 피해 후 자신에게 2턴간 받는 피해 -25%(`st_damage_reduction`) 및 도발(`st_taunt`)
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.063 `eff_eimi_ult`
+### V.065 `eff_eimi_ult`
 - 출처/구역: u_eimi 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 자신에게 최대 HP 30/35/45% 보호막, 아군 전방 전원에게 2턴간 디버프 면역 부여
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.064 `eff_eimi_passive`
+### V.066 `eff_eimi_passive`
 - 출처/구역: u_eimi 전방 패시브 / `front`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. 상시.
 - 본문: 화상(`st_burn`)에 걸리지 않는다
 - 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
 
-### V.065 `eff_hifumi_rear_reg`
+### V.067 `eff_hifumi_rear_reg`
 - 출처/구역: u_hifumi 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 "페로로 인형"을 세워 아군 전방이 받는 다음 단일 대상 공격 1회를 대신 맞게 하고, 아군 전방 전원에게 2턴간 ATK +15/20/28%(`st_atk_up`) 부여
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.066 `eff_hanako_rear_reg`
+### V.068 `eff_hanako_rear_reg`
 - 출처/구역: u_hanako 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 아군 전방 전원을 ATK 120/140/170% 치유. 세 번째 후방 행동마다 치유량 2배
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.067 `eff_nagisa_rear_reg`
+### V.069 `eff_nagisa_rear_reg`
 - 출처/구역: u_nagisa 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 아군 전방 전원에게 2턴간 ATK +30/38/50%(`st_atk_up`)와 받는 피해 -10%(`st_damage_reduction`)를 부여하고 에너지 +20
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.068 `eff_nagisa_aura`
+### V.070 `eff_nagisa_aura`
 - 출처/구역: u_nagisa 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. battle_start.
 - 본문: 존재 효과 「티타임」: 전투 시작 시(`battle_start`) 팀 SP +1, 아군 전방 전원 최대 HP +10%
 - 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
 
-### V.069 `eff_seia_rear_reg`
+### V.071 `eff_seia_rear_reg`
 - 출처/구역: u_seia 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 필살기 게이지가 가장 높은 적 1명에게 ATK 160/190/240% 피해와 2턴간 침묵(`st_silence`), ATK -20/25/30%(`st_atk_down`) 부여
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.070 `eff_seia_aura`
+### V.072 `eff_seia_aura`
 - 출처/구역: u_seia 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. enemy ultimate_declared.
 - 본문: 존재 효과 「예지」: 적이 필살기를 쓰기 직전 아군 전방 전원에게 그 공격 동안 받는 피해 -25%(전투당 2회)
 - 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
 
-### V.071 `eff_tsurugi_skill`
+### V.073 `eff_tsurugi_skill`
 - 출처/구역: u_tsurugi 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 100% 피해 2회
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.072 `eff_tsurugi_ult`
+### V.074 `eff_tsurugi_ult`
 - 출처/구역: u_tsurugi 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 360/415/505% 피해. 자신의 HP가 50% 이하이면 피해 +30%
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.073 `eff_tsurugi_passive`
+### V.075 `eff_tsurugi_passive`
 - 출처/구역: u_tsurugi 전방 패시브 / `front`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. damage_received.
 - 본문: 피격될 때(`damage_received`)마다 자신의 ATK +5%(최대 6중첩, 전투 종료까지)
 - 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
 
-### V.074 `eff_mashiro_rear_reg`
+### V.076 `eff_mashiro_rear_reg`
 - 출처/구역: u_mashiro 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 ATK가 가장 높은 적 1명에게 ATK 165/190/235% 피해. 이번 전투에서 아군을 쓰러뜨린 적이면 피해 +50%
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.075 `eff_mine_skill`
+### V.077 `eff_mine_skill`
 - 출처/구역: u_mine 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: HP 비율이 가장 낮은 아군 앞으로 뛰어들어 2턴간 도발(`st_taunt`)하고 자신에게 최대 HP 20% 보호막
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.076 `eff_mine_ult`
+### V.078 `eff_mine_ult`
 - 출처/구역: u_mine 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 아군 전방 전원을 최대 HP 15/18/22% 치유한 뒤 적 최전열 1명에게 ATK 200% 피해
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.077 `eff_mine_passive`
+### V.079 `eff_mine_passive`
 - 출처/구역: u_mine 전방 패시브 / `front`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. healed.
 - 본문: 아군이 치유받을 때(`healed`) 자신의 DEF +10%(최대 3중첩, 전투 종료까지)
 - 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
 
-### V.078 `eff_hanae_rear_reg`
+### V.080 `eff_hanae_rear_reg`
 - 출처/구역: u_hanae 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 HP 비율이 가장 낮은 아군 1명을 ATK 130/150/180% 치유
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.079 `eff_reisa_skill`
+### V.081 `eff_reisa_skill`
 - 출처/구역: u_reisa 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 145% 피해 후 자신에게 2턴간 SPD +10(`st_spd_up`)
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.080 `eff_reisa_ult`
+### V.082 `eff_reisa_ult`
 - 출처/구역: u_reisa 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 265/305/370% 피해. 대상이 기절(`st_stun`) 상태면 피해 +50%
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.081 `eff_kazusa_skill`
+### V.083 `eff_kazusa_skill`
 - 출처/구역: u_kazusa 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 165% 피해 후 자신에게 2턴간 CRIT +15%(`st_crit_up`)
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.082 `eff_kazusa_ult`
+### V.084 `eff_kazusa_ult`
 - 출처/구역: u_kazusa 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 310/355/430% 피해
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.083 `eff_yoshimi_skill`
+### V.085 `eff_yoshimi_skill`
 - 출처/구역: u_yoshimi 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 135% 피해
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.084 `eff_yoshimi_ult`
+### V.086 `eff_yoshimi_ult`
 - 출처/구역: u_yoshimi 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 235/270/325% 피해 후 자신의 최대 HP 15% 회복
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.085 `eff_airi_rear_reg`
+### V.087 `eff_airi_rear_reg`
 - 출처/구역: u_airi 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 HP 비율이 가장 낮은 아군 1명에게 2턴간 DEF +20/25/32%(`st_def_up`) 부여
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.086 `eff_natsu_skill`
+### V.088 `eff_natsu_skill`
 - 출처/구역: u_natsu 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 자신에게 2턴간 DEF +30%(`st_def_up`), 아군 전방 전원에게 2턴간 받는 피해 -8%(`st_damage_reduction`)
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.087 `eff_natsu_ult`
+### V.089 `eff_natsu_ult`
 - 출처/구역: u_natsu 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 자신에게 2턴간 도발(`st_taunt`)을 걸어 적 전방 전원의 공격을 끌고, 자신의 최대 HP 20/24/30% 회복
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.088 `eff_tsukuyo_skill`
+### V.090 `eff_tsukuyo_skill`
 - 출처/구역: u_tsukuyo 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 자신에게 2턴간 도발(`st_taunt`)과 받는 피해 -20%(`st_damage_reduction`) 부여
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.089 `eff_tsukuyo_ult`
+### V.091 `eff_tsukuyo_ult`
 - 출처/구역: u_tsukuyo 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 자신에게 최대 HP 30/35/42% 보호막과 다음 피격 1회 회피("바꿔치기 술") 부여
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.090 `eff_mimori_rear_reg`
+### V.092 `eff_mimori_rear_reg`
 - 출처/구역: u_mimori 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 아군 전방 전원에게 디버프 저항 1회(다음 디버프 1개 무효)와 에너지 +10/12/15 부여
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.091 `eff_kaede_skill`
+### V.093 `eff_kaede_skill`
 - 출처/구역: u_kaede 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 2명에게 ATK 110% 피해
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.092 `eff_kaede_ult`
+### V.094 `eff_kaede_ult`
 - 출처/구역: u_kaede 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 전방 전원에게 ATK 150/170/205% 피해
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.093 `eff_niya_rear_reg`
+### V.095 `eff_niya_rear_reg`
 - 출처/구역: u_niya 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 점괘 1개를 무작위로 적용: 대길(아군 전방 전원 2턴간 ATK +30/36/45%) / 길(아군 전방 전원 에너지 +25) / 흉(적 전방 전원 2턴간 ATK -20%(`st_atk_down`))
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.094 `eff_niya_rear_react`
+### V.096 `eff_niya_rear_react`
 - 출처/구역: u_niya 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. turn_start.
 - 본문: 자신의 턴 시작 시(`turn_start`) 세 번째 차례마다 팀 SP +1
 - 제한: CD2(소유자 정상 차례), 개인 차례당1회, handler/root당 1회.
 
-### V.095 `eff_chise_rear_reg`
+### V.097 `eff_chise_rear_reg`
 - 출처/구역: u_chise 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 적 최전열 2명에게 ATK 95/110/135% 피해 및 2턴간 화상(`st_burn`) 부여
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.096 `eff_tomoe_rear_reg`
+### V.098 `eff_tomoe_rear_reg`
 - 출처/구역: u_tomoe 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 아군 전방 전원 에너지 +15. 체리노가 있으면 체리노에게 2턴간 ATK +25/30/40%(`st_atk_up`)
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.097 `eff_tomoe_rear_react`
+### V.099 `eff_tomoe_rear_react`
 - 출처/구역: u_tomoe 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. 상시.
 - 본문: 팀 SP가 최대(5)인 동안 아군 전방 전원 ATK +10%
 - 제한: CD2(소유자 정상 차례), 개인 차례당1회, handler/root당 1회.
 
-### V.098 `eff_meru_rear_reg`
+### V.100 `eff_meru_rear_reg`
 - 출처/구역: u_meru 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 적 1명에게 ATK 80% 피해, 50/65/80% 확률로 1턴 침묵(`st_silence`)
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.099 `eff_shigure_skill`
+### V.101 `eff_shigure_skill`
 - 출처/구역: u_shigure 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 160% 피해 후 자신의 최대 HP 10% 회복
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
-### V.100 `eff_shigure_ult`
+### V.102 `eff_shigure_ult`
 - 출처/구역: u_shigure 필살기 / `front`. 원안 행: v2.3 신규.
 - 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 적 최전열 1명에게 ATK 300/345/420% 피해. 5턴째부터는 피해 +40%
 - 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
 
-### V.101 `eff_misaki_rear_reg`
+### V.103 `eff_misaki_rear_reg`
 - 출처/구역: u_misaki 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 후방 정기 행동(`rear_action`)마다 적 전방 전원에게 ATK 120/140/170% 피해
 - 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
 
-### V.102 `eff_misaki_rear_react`
+### V.104 `eff_misaki_rear_react`
 - 출처/구역: u_misaki 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. unit_defeated.
 - 본문: 아군이 쓰러지면(`unit_defeated`) 다음 후방 행동 피해 +50%
 - 제한: CD2(소유자 정상 차례), 개인 차례당1회, handler/root당 1회.
 
-### V.103 `eff_syn_ps68_2`
+### V.105 `eff_syn_ps68_2`
 - 출처/구역: 시너지 syn_problem_solver (1단계) / `deployed_all`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 구성원이 적을 처치하면 정산 때 의뢰비 +1G(전투당 최대 2G)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.104 `eff_syn_ps68_4`
+### V.106 `eff_syn_ps68_4`
 - 출처/구역: 시너지 syn_problem_solver (2단계) / `deployed_all`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 구성원이 쓰러지면 그 자리가 폭발해 적 전방 전원에게 ATK 120% 피해(무츠키의 지뢰, 구성원당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.105 `eff_syn_prefect_2`
+### V.107 `eff_syn_prefect_2`
 - 출처/구역: 시너지 syn_prefect (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 전투 시작 시 적이 가진 가장 강한 버프 1개를 해제(단속)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.106 `eff_syn_prefect_4`
+### V.108 `eff_syn_prefect_4`
 - 출처/구역: 시너지 syn_prefect (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 히나가 살아 있는 동안 다른 선도부원의 받는 피해 -15%. 히나가 쓰러지면 남은 선도부원 ATK +40%(전투 종료까지)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.107 `eff_syn_gourmet_2`
+### V.109 `eff_syn_gourmet_2`
 - 출처/구역: 시너지 syn_gourmet (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 구성원이 적을 처치하면 "별점 0개" 폭발: 처치한 적 주변 적에게 ATK 70% 피해(구성원당 턴당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.108 `eff_syn_gourmet_4`
+### V.110 `eff_syn_gourmet_4`
 - 출처/구역: 시너지 syn_gourmet (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 아군에 급양부원이 있으면 전투 시작 시 "납치"한다. 미식연구회원이 공격할 때마다 납치된 급양부원이 그 학생을 ATK 40% 치유(턴당 2회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.109 `eff_syn_school_lunch_2`
+### V.111 `eff_syn_school_lunch_2`
 - 출처/구역: 시너지 syn_school_lunch (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 전투 시작 시 아군 전원 최대 HP +10%(든든한 급식). 미식연구회 4단계에 "납치"되면 +20%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.110 `eff_syn_hot_spring_2`
+### V.112 `eff_syn_hot_spring_2`
 - 출처/구역: 시너지 syn_hot_spring (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 전투 시작 시 땅을 폭파: 적 전방 전원 다음 행동 시간 15% 지연 및 2턴간 화상(`st_burn`)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.111 `eff_syn_cc_2`
+### V.113 `eff_syn_cc_2`
 - 출처/구역: 시너지 syn_cc (1단계) / `deployed_all`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 적을 처치한 C&C 요원은 다음 행동 시간 20% 당김(청소 완료)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.112 `eff_syn_cc_4`
+### V.114 `eff_syn_cc_4`
 - 출처/구역: 시너지 syn_cc (2단계) / `deployed_all`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] HP 30% 이하인 적은 "청소 대상". C&C 요원이 청소 대상을 공격하면 반드시 치명타
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.113 `eff_syn_game_dev_2`
+### V.115 `eff_syn_game_dev_2`
 - 출처/구역: 시너지 syn_game_dev (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 전투 시작 시 무작위 "버그" 1개: 아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.114 `eff_syn_game_dev_4`
+### V.116 `eff_syn_game_dev_4`
 - 출처/구역: 시너지 syn_game_dev (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 버그 3개 중 2개를 골라 적용(유즈의 디버깅)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.115 `eff_syn_veritas_2`
+### V.117 `eff_syn_veritas_2`
 - 출처/구역: 시너지 syn_veritas (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 적의 첫 필살기 직전에 그 적의 행동을 50% 지연시키고, 적 필살기 예정 시점을 화면에 표시
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.116 `eff_syn_veritas_4`
+### V.118 `eff_syn_veritas_4`
 - 출처/구역: 시너지 syn_veritas (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 전투 시작 시 적 버프 1개를 해킹해 아군 1명에게 옮긴다
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.117 `eff_syn_seminar_2`
+### V.119 `eff_syn_seminar_2`
 - 출처/구역: 시너지 syn_seminar (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 정산 이자 상한 +2
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.118 `eff_syn_seminar_4`
+### V.120 `eff_syn_seminar_4`
 - 출처/구역: 시너지 syn_seminar (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 이자 상한 +4. 코유키가 있으면 정산 이자가 50% 확률로 2배, 50% 확률로 0
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.119 `eff_syn_engineering_2`
+### V.121 `eff_syn_engineering_2`
 - 출처/구역: 시너지 syn_engineering (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 전투 시작 시 포탑 1기 설치(구성원 평균 ATK 50%로 매 턴 적 최전열 1명 사격)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.120 `eff_syn_engineering_3`
+### V.122 `eff_syn_engineering_3`
 - 출처/구역: 시너지 syn_engineering (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 포탑 2기. 포탑이 부서지면 폭발해 주변 적에게 ATK 100% 피해
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.121 `eff_syn_paranormal_2`
+### V.123 `eff_syn_paranormal_2`
 - 출처/구역: 시너지 syn_paranormal (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 전투 시작 시 ATK가 가장 높은 적 1명의 패시브를 2턴간 봉인
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.122 `eff_syn_make_up_2`
+### V.124 `eff_syn_make_up_2`
 - 출처/구역: 시너지 syn_make_up (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 패배할 때마다 "보충수업" 1중첩(구성원 ATK +8%, 최대 4). 승리하면 "합격"으로 중첩 수만큼 골드를 받고 초기화
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.123 `eff_syn_make_up_4`
+### V.125 `eff_syn_make_up_4`
 - 출처/구역: 시너지 syn_make_up (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 합격 골드 2배, 구성원 최대 HP +15%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.124 `eff_syn_tea_party_2`
+### V.126 `eff_syn_tea_party_2`
 - 출처/구역: 시너지 syn_tea_party (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 전투 시작 시 아군 전원 에너지 +20(티타임)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.125 `eff_syn_tea_party_3`
+### V.127 `eff_syn_tea_party_3`
 - 출처/구역: 시너지 syn_tea_party (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 3명 모두 출전하면 아군 전원 ATK +15%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.126 `eff_syn_justice_2`
+### V.128 `eff_syn_justice_2`
 - 출처/구역: 시너지 syn_justice (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: HP 50% 이하인 적에게 주는 피해 +25%(정의 집행)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.127 `eff_syn_justice_3`
+### V.129 `eff_syn_justice_3`
 - 출처/구역: 시너지 syn_justice (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 구성원이 적을 처치하면 다른 구성원 에너지 +15
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.128 `eff_syn_vigilante_2`
+### V.130 `eff_syn_vigilante_2`
 - 출처/구역: 시너지 syn_vigilante (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 구성원이 기절시킨 적에게 다른 구성원의 다음 공격 피해 +40%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.129 `eff_syn_remedial_knights_2`
+### V.131 `eff_syn_remedial_knights_2`
 - 출처/구역: 시너지 syn_remedial_knights (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 구성원의 치유량 +30%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.130 `eff_syn_remedial_knights_3`
+### V.132 `eff_syn_remedial_knights_3`
 - 출처/구역: 시너지 syn_remedial_knights (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 아군 HP가 20% 이하로 떨어지면 구성원이 즉시 그 아군을 최대 HP 20% 치유(전투당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.131 `eff_syn_sweets_2`
+### V.133 `eff_syn_sweets_2`
 - 출처/구역: 시너지 syn_sweets (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 승리하면 다음 전투 시작 시 아군 전원 최대 HP 10% 회복(디저트 타임)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.132 `eff_syn_sweets_4`
+### V.134 `eff_syn_sweets_4`
 - 출처/구역: 시너지 syn_sweets (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 구성원 4명이 모두 살아 있으면 매 턴 아군 전원 최대 HP 3% 회복
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.133 `eff_syn_ninjutsu_2`
+### V.135 `eff_syn_ninjutsu_2`
 - 출처/구역: 시너지 syn_ninjutsu (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 구성원마다 전투당 첫 피격 1회를 "분신술"로 회피
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.134 `eff_syn_ninjutsu_3`
+### V.136 `eff_syn_ninjutsu_3`
 - 출처/구역: 시너지 syn_ninjutsu (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 분신술을 쓸 때마다 공격자에게 ATK 60% 반격
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.135 `eff_syn_training_2`
+### V.137 `eff_syn_training_2`
 - 출처/구역: 시너지 syn_training (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 구성원의 받는 피해가 매 턴 -3%씩 누적(최대 -15%)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.136 `eff_syn_training_3`
+### V.138 `eff_syn_training_3`
 - 출처/구역: 시너지 syn_training (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 최대치에 이르면 "득도": 다음 피격 1회 무효
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.137 `eff_syn_yinyang_2`
+### V.139 `eff_syn_yinyang_2`
 - 출처/구역: 시너지 syn_yinyang (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 니야의 점괘가 나오면 결과 3개 중 하나를 골라 적용하고, 치세가 건 화상(`st_burn`) 지속 +1턴
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.138 `eff_syn_plum_blossom_2`
+### V.140 `eff_syn_plum_blossom_2`
 - 출처/구역: 시너지 syn_plum_blossom (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 아군이 필살기를 쓸 때마다 도장 1개. 3개가 모이면 팀 SP +1
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.139 `eff_syn_genryumon_2`
+### V.141 `eff_syn_genryumon_2`
 - 출처/구역: 시너지 syn_genryumon (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 키사키가 공격받으면 미나가 대신 맞는다(턴당 1회). 키사키의 필살기 피해 +20%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.140 `eff_syn_rw_office_2`
+### V.142 `eff_syn_rw_office_2`
 - 출처/구역: 시너지 syn_rw_office (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 3턴마다 적 1명을 "숙청 대상"으로 지정. 숙청 대상을 처치하면 팀 SP +1
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.141 `eff_syn_rw_office_3`
+### V.143 `eff_syn_rw_office_3`
 - 출처/구역: 시너지 syn_rw_office (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 숙청 주기가 2턴으로 줄고, 숙청 대상의 받는 피해 +20%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.142 `eff_syn_knowledge_front_2`
+### V.144 `eff_syn_knowledge_front_2`
 - 출처/구역: 시너지 syn_knowledge_front (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 적이 버프를 받으면 같은 버프를 아군 1명에게 복사(턴당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.143 `eff_syn_class_227_2`
+### V.145 `eff_syn_class_227_2`
 - 출처/구역: 시너지 syn_class_227 (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 5턴째부터 매 턴 구성원 ATK +10%(최대 +50%, 버티기)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.144 `eff_syn_life_safety_2`
+### V.146 `eff_syn_life_safety_2`
 - 출처/구역: 시너지 syn_life_safety (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 첫 턴에는 둘 다 SPD -30(농땡이). 2턴부터 구성원 ATK +30%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.145 `eff_syn_tank_2`
+### V.147 `eff_syn_tank_2`
 - 출처/구역: 시너지 syn_tank (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 탱커 구성원의 받는 피해 -10%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.146 `eff_syn_tank_3`
+### V.148 `eff_syn_tank_3`
 - 출처/구역: 시너지 syn_tank (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 받는 피해 -20%, 전투 시작 시 가장 앞의 탱커가 2턴간 도발(`st_taunt`)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.147 `eff_syn_tank_4`
+### V.149 `eff_syn_tank_4`
 - 출처/구역: 시너지 syn_tank (3단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 받는 피해 -30%. HP가 처음 50% 아래로 내려가면 최대 HP 25% 보호막
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.148 `eff_syn_attacker_2`
+### V.150 `eff_syn_attacker_2`
 - 출처/구역: 시너지 syn_attacker (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 어태커 구성원의 단일 대상 공격 피해 +15%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.149 `eff_syn_attacker_3`
+### V.151 `eff_syn_attacker_3`
 - 출처/구역: 시너지 syn_attacker (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 단일 대상 공격 피해 +30%. 같은 적을 연속으로 때리면 회당 +5%(최대 5)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.150 `eff_syn_attacker_4`
+### V.152 `eff_syn_attacker_4`
 - 출처/구역: 시너지 syn_attacker (3단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 단일 대상 공격 피해 +50%. 적을 처치하면 즉시 한 번 더 행동(턴당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.151 `eff_syn_sniper_2`
+### V.153 `eff_syn_sniper_2`
 - 출처/구역: 시너지 syn_sniper (1단계) / `deployed_all`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 스나이퍼 구성원 CRIT +15%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.152 `eff_syn_sniper_4`
+### V.154 `eff_syn_sniper_4`
 - 출처/구역: 시너지 syn_sniper (2단계) / `deployed_all`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] CRIT +30%. 전투 시작 시 HP가 가장 높은 적을 조준하고, 그 적에게 치명 피해 +50%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.153 `eff_syn_blaster_2`
+### V.155 `eff_syn_blaster_2`
 - 출처/구역: 시너지 syn_blaster (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 블래스터 구성원의 광역 공격 피해 +15%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.154 `eff_syn_blaster_4`
+### V.156 `eff_syn_blaster_4`
 - 출처/구역: 시너지 syn_blaster (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 광역 공격 피해 +30%. 3명 이상 맞히면 대상들에게 2턴간 DEF -15%(`st_def_down`)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.155 `eff_syn_blaster_6`
+### V.157 `eff_syn_blaster_6`
 - 출처/구역: 시너지 syn_blaster (3단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 광역 공격 피해 +45%. 3명 이상 맞히면 팀 SP +1(턴당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.156 `eff_syn_healer_2`
+### V.158 `eff_syn_healer_2`
 - 출처/구역: 시너지 syn_healer (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 힐러 구성원의 치유량 +20%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.157 `eff_syn_healer_4`
+### V.159 `eff_syn_healer_4`
 - 출처/구역: 시너지 syn_healer (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 치유량 +40%. 최대 HP를 넘친 치유량은 2턴짜리 보호막으로 바뀜
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.158 `eff_syn_supporter_2`
+### V.160 `eff_syn_supporter_2`
 - 출처/구역: 시너지 syn_supporter (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 서포터 구성원이 건 버프 지속 +1턴
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.159 `eff_syn_supporter_4`
+### V.161 `eff_syn_supporter_4`
 - 출처/구역: 시너지 syn_supporter (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 전투 시작 시 팀 SP +1. 서포터가 버프를 걸면 대상 에너지 +10
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.160 `eff_syn_controller_2`
+### V.162 `eff_syn_controller_2`
 - 출처/구역: 시너지 syn_controller (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 컨트롤러 구성원이 건 기절·침묵·지연 지속 +1턴(보스 제외)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.161 `eff_syn_controller_4`
+### V.163 `eff_syn_controller_4`
 - 출처/구역: 시너지 syn_controller (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: [하위 효과 포함] 제어 상태인 적이 받는 피해 +20%. 제어가 풀린 적의 다음 행동 10% 지연
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.162 `eff_syn_uni_hoshino`
+### V.164 `eff_syn_uni_hoshino`
 - 출처/구역: 시너지 syn_unique_dawn_horus (1단계) / `front_only`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 첫 2턴은 자신의 SPD -50%(낮잠). 아군이 처음 쓰러지는 순간 깨어나 "진심 모드": 도발(`st_taunt`) + 받는 피해 -40%(전투 종료까지)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.163 `eff_syn_uni_aru`
+### V.165 `eff_syn_uni_aru`
 - 출처/구역: 시너지 syn_unique_outlaw_boss (1단계) / `front_only`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 필살기마다 50% "대성공"(피해 2배, 흥신소68 구성원 2턴간 ATK +20%) 또는 50% "대실패"(피해 절반, 다음 필살기는 대성공 확정)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.164 `eff_syn_uni_hina`
+### V.166 `eff_syn_uni_hina`
 - 출처/구역: 시너지 syn_unique_head_prefect (1단계) / `front_only`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 연속 출전 1전마다 "업무량" +1(ATK +6%, 최대 5). 한 라운드 대기석에서 쉬면 업무량이 사라지는 대신 다음 전투를 에너지 100으로 시작
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.165 `eff_syn_uni_mika`
+### V.167 `eff_syn_uni_mika`
 - 출처/구역: 시너지 syn_unique_princess_stars (1단계) / `front_only`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 미카의 공격은 보호막을 먼저 통째로 부순다. 적을 처치하면 롤케이크를 먹고 최대 HP 15% 회복
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.166 `eff_syn_uni_wakamo`
+### V.168 `eff_syn_uni_wakamo`
 - 출처/구역: 시너지 syn_unique_calamity_fox (1단계) / `front_only`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 전투 시작 시 아군 중 코스트가 가장 높은 학생을 "그분"으로 지정. 그분을 때린 적을 끝까지 쫓으며 그 적에게 주는 피해 +50%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.167 `eff_syn_uni_cherino`
+### V.169 `eff_syn_uni_cherino`
 - 출처/구역: 시너지 syn_unique_red_mustache (1단계) / `front_only`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 체리노가 3번 맞으면 수염이 떨어져 1턴간 행동 불가(창피). 그 순간 마리나가 격노해 ATK +40%(전투 종료까지)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.168 `eff_syn_uni_aris`
+### V.170 `eff_syn_uni_aris`
 - 출처/구역: 시너지 syn_unique_level_up (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 적을 처치할 때마다 경험치 1. 5마다 레벨업해 런이 끝날 때까지 아리스 ATK +5% 영구 누적(최대 +30%)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.169 `eff_syn_uni_miyu`
+### V.171 `eff_syn_uni_miyu`
 - 출처/구역: 시너지 syn_unique_invisible (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 다른 아군이 살아 있으면 미유는 적의 단일 대상 공격 표적이 되지 않는다. 혼자 남으면 "발견"되어 ATK +50%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.170 `eff_syn_uni_shiroko`
+### V.172 `eff_syn_uni_shiroko`
 - 출처/구역: 시너지 syn_unique_bank_robber (1단계) / `front_only`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 시로코가 출전한 전투에서 이기면 정산 때 30% 확률로 "전리품" +2G. 지면 없음
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.171 `eff_syn_uni_nonomi`
+### V.173 `eff_syn_uni_nonomi`
 - 출처/구역: 시너지 syn_unique_gold_card (1단계) / `front_only`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 노노미가 출전한 전투가 끝나면 다음 라운드 상점의 첫 새로고침이 무료
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.172 `eff_syn_uni_kazusa`
+### V.174 `eff_syn_uni_kazusa`
 - 출처/구역: 시너지 syn_unique_caspalug (1단계) / `front_only`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 카즈사가 스케반(불량배)·헬멧단 소속 적(`en_sukeban_smg`, `en_sukeban_shield`, `en_helmet_thug`, `en_helmet_grenadier`)에게 주는 피해 +50%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.173 `eff_syn_plat_vanitas`
+### V.175 `eff_syn_plat_vanitas`
 - 출처/구역: 시너지 syn_plat_vanitas (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 발동 조건: 아리우스 스쿼드 5명(사오리·아츠코·히요리·미사키·아즈사)을 모두 3성으로 동시 출전. 효과: 아군이 쓰러질 때마다 남은 스쿼드원 ATK +25%, 에너지 +50. 사오리가 살아 있는 동안 적은 회복과 버프를 받지 못한다
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.174 `eff_syn_plat_ending_credits`
+### V.176 `eff_syn_plat_ending_credits`
 - 출처/구역: 시너지 syn_plat_ending_credits (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 발동 조건: 게임개발부 4명(모모이·미도리·유즈·아리스)을 모두 3성으로 동시 출전. 효과: 아리스의 "빛이여!" 레일건이 2턴마다 자동 발사(적 전원에게 ATK 400% 피해). 전멸 직전 1회 "컨티뉴": 아군 전원 HP 30%로 부활
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.175 `eff_syn_plat_codename`
+### V.177 `eff_syn_plat_codename`
 - 출처/구역: 시너지 syn_plat_codename (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 발동 조건: C&C 5명(네루·아스나·카린·아카네·토키) 동시 출전 + 네루·토키 3성. 효과: 전투 시작 직후 C&C 전원이 즉시 1회 행동. 적을 처치할 때마다 C&C 전원 다음 행동 시간 15% 당김
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.176 `eff_syn_plat_tea_party`
+### V.178 `eff_syn_plat_tea_party`
 - 출처/구역: 시너지 syn_plat_tea_party (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 발동 조건: 미카·나기사·세이아를 모두 3성으로 동시 출전. 효과: 켜진 진영·동아리 시너지가 모두 한 단계 위로 올라간다(이미 최고 단계면 그 효과 수치 +30%)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.177 `eff_syn_plat_last_line`
+### V.179 `eff_syn_plat_last_line`
 - 출처/구역: 시너지 syn_plat_last_line (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 발동 조건: 대책위원회 5명(호시노·시로코·세리카·노노미·아야네)을 모두 3성으로 동시 출전. 무장 호시노는 세지 않음. 효과: 아군 전원이 각자 1번씩 HP 1로 버틴다. 승리 정산마다 +5G(빚 상환)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.178 `eff_syn_plat_school_battle`
+### V.180 `eff_syn_plat_school_battle`
 - 출처/구역: 시너지 syn_plat_school_battle (1단계) / `special`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 발동 조건: 서로 다른 진영 10곳의 학생을 1명씩, 10명 출전(레벨 10 필요). 구성원 명단 없이 출전 편성으로 판정. 효과: 출전한 학생들의 진영 시너지가 모두 최소 단계로 켜진다
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
-### V.179 `eff_syn_plat_total_assault`
+### V.181 `eff_syn_plat_total_assault`
 - 출처/구역: 시너지 syn_plat_total_assault (1단계) / `special`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 발동 조건: 출전 10명 모두 3성 + 7개 역할군이 1명 이상씩. 구성원 명단 없이 출전 편성으로 판정. 효과: 모든 역할군 시너지의 2단계 효과가 함께 켜지고 아군 전원 ATK +30%

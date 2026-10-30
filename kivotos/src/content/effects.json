@@ -2562,7 +2562,7 @@
   },
   {
     "id": "eff_syn_ps68_2",
-    "catalogNo": "V.103",
+    "catalogNo": "V.105",
     "owner": "시너지 syn_problem_solver (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -2575,7 +2575,7 @@
   },
   {
     "id": "eff_syn_ps68_4",
-    "catalogNo": "V.104",
+    "catalogNo": "V.106",
     "owner": "시너지 syn_problem_solver (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -2588,7 +2588,7 @@
   },
   {
     "id": "eff_syn_cc_2",
-    "catalogNo": "V.111",
+    "catalogNo": "V.113",
     "owner": "시너지 syn_cc (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -2601,7 +2601,7 @@
   },
   {
     "id": "eff_syn_cc_4",
-    "catalogNo": "V.112",
+    "catalogNo": "V.114",
     "owner": "시너지 syn_cc (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -2666,7 +2666,7 @@
   },
   {
     "id": "eff_syn_sniper_2",
-    "catalogNo": "V.151",
+    "catalogNo": "V.153",
     "owner": "시너지 syn_sniper (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -2679,7 +2679,7 @@
   },
   {
     "id": "eff_syn_sniper_4",
-    "catalogNo": "V.152",
+    "catalogNo": "V.154",
     "owner": "시너지 syn_sniper (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -2692,7 +2692,7 @@
   },
   {
     "id": "eff_syn_uni_hina",
-    "catalogNo": "V.164",
+    "catalogNo": "V.166",
     "owner": "시너지 syn_unique_head_prefect (1단계)",
     "scope": "front_only",
     "execution": "synergy_container",
@@ -2705,7 +2705,7 @@
   },
   {
     "id": "eff_syn_uni_mika",
-    "catalogNo": "V.165",
+    "catalogNo": "V.167",
     "owner": "시너지 syn_unique_princess_stars (1단계)",
     "scope": "front_only",
     "execution": "synergy_container",
@@ -2718,7 +2718,7 @@
   },
   {
     "id": "eff_syn_uni_wakamo",
-    "catalogNo": "V.166",
+    "catalogNo": "V.168",
     "owner": "시너지 syn_unique_calamity_fox (1단계)",
     "scope": "front_only",
     "execution": "synergy_container",
@@ -2731,7 +2731,7 @@
   },
   {
     "id": "eff_syn_uni_hoshino",
-    "catalogNo": "V.162",
+    "catalogNo": "V.164",
     "owner": "시너지 syn_unique_dawn_horus (1단계)",
     "scope": "front_only",
     "execution": "synergy_container",
@@ -2744,7 +2744,7 @@
   },
   {
     "id": "eff_syn_uni_aru",
-    "catalogNo": "V.163",
+    "catalogNo": "V.165",
     "owner": "시너지 syn_unique_outlaw_boss (1단계)",
     "scope": "front_only",
     "execution": "synergy_container",
@@ -2757,7 +2757,7 @@
   },
   {
     "id": "eff_syn_uni_cherino",
-    "catalogNo": "V.167",
+    "catalogNo": "V.169",
     "owner": "시너지 syn_unique_red_mustache (1단계)",
     "scope": "front_only",
     "execution": "synergy_container",
@@ -3043,27 +3043,27 @@
   },
   {
     "id": "eff_str_overclock",
-    "catalogNo": "C.278",
+    "catalogNo": "V.031",
     "owner": "전략 str_overclock_core",
     "scope": "global",
     "execution": "strategy_container",
     "trigger": "아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용",
-    "spec": "아군 전방의 ultimate_resolved에서 그 유닛의스킬남은CD1감소(최소0),다음행동25%당기기. 해당유닛개인차례1회/root1회.",
+    "spec": "아군 전방이 필살기를 해소하면(`ultimate_resolved`) 그 학생의 스킬 남은 재사용 대기 -1(최소 0), 다음 행동 시간 25% 당김. 학생마다 개인 차례당 1회.",
     "limits": "상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.",
-    "sourceReference": "원안 v2.0 행 15478",
+    "sourceReference": "GDD v2.3 5장 (교체)",
     "implementation": "spec_only",
     "handlers": []
   },
   {
     "id": "eff_str_sandstorm",
-    "catalogNo": "C.279",
+    "catalogNo": "V.032",
     "owner": "전략 str_sandstorm_endurance",
     "scope": "global",
     "execution": "strategy_container",
     "trigger": "아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용",
-    "spec": "AV300/600/900에적전방전체: 일반적은대상최대HP8%,보스는생존아군전후방평균ATK120%기준normal피해(치명불가). 대상SPD-15를2차례.",
+    "spec": "AV 300·600·900마다 적 전방 전원에게 모래폭풍 피해: 일반 적은 대상 최대 HP 8%, 보스는 생존 아군(전방+후방) 평균 ATK 120% 기준 `normal` 피해(치명타 없음). 맞은 적은 2차례 동안 SPD -15.",
     "limits": "상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.",
-    "sourceReference": "원안 v2.0 행 15516",
+    "sourceReference": "GDD v2.3 5장 (교체)",
     "implementation": "spec_only",
     "handlers": []
   },
@@ -3407,7 +3407,7 @@
   },
   {
     "id": "eff_chinatsu_rear_reg",
-    "catalogNo": "V.031",
+    "catalogNo": "V.033",
     "owner": "u_chinatsu 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3420,7 +3420,7 @@
   },
   {
     "id": "eff_chinatsu_rear_react",
-    "catalogNo": "V.032",
+    "catalogNo": "V.034",
     "owner": "u_chinatsu 후방 반응 지원",
     "scope": "rear",
     "execution": "passive_container",
@@ -3433,7 +3433,7 @@
   },
   {
     "id": "eff_haruna_skill",
-    "catalogNo": "V.033",
+    "catalogNo": "V.035",
     "owner": "u_haruna 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -3446,7 +3446,7 @@
   },
   {
     "id": "eff_haruna_ult",
-    "catalogNo": "V.034",
+    "catalogNo": "V.036",
     "owner": "u_haruna 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -3459,7 +3459,7 @@
   },
   {
     "id": "eff_haruna_passive",
-    "catalogNo": "V.035",
+    "catalogNo": "V.037",
     "owner": "u_haruna 전방 패시브",
     "scope": "front",
     "execution": "passive_container",
@@ -3472,7 +3472,7 @@
   },
   {
     "id": "eff_izumi_skill",
-    "catalogNo": "V.036",
+    "catalogNo": "V.038",
     "owner": "u_izumi 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -3485,7 +3485,7 @@
   },
   {
     "id": "eff_izumi_ult",
-    "catalogNo": "V.037",
+    "catalogNo": "V.039",
     "owner": "u_izumi 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -3498,7 +3498,7 @@
   },
   {
     "id": "eff_akari_skill",
-    "catalogNo": "V.038",
+    "catalogNo": "V.040",
     "owner": "u_akari 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -3511,7 +3511,7 @@
   },
   {
     "id": "eff_akari_ult",
-    "catalogNo": "V.039",
+    "catalogNo": "V.041",
     "owner": "u_akari 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -3524,7 +3524,7 @@
   },
   {
     "id": "eff_juri_rear_reg",
-    "catalogNo": "V.040",
+    "catalogNo": "V.042",
     "owner": "u_juri 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3537,7 +3537,7 @@
   },
   {
     "id": "eff_kasumi_rear_reg",
-    "catalogNo": "V.041",
+    "catalogNo": "V.043",
     "owner": "u_kasumi 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3550,7 +3550,7 @@
   },
   {
     "id": "eff_kasumi_rear_react",
-    "catalogNo": "V.042",
+    "catalogNo": "V.044",
     "owner": "u_kasumi 후방 반응 지원",
     "scope": "rear",
     "execution": "passive_container",
@@ -3563,7 +3563,7 @@
   },
   {
     "id": "eff_megu_skill",
-    "catalogNo": "V.043",
+    "catalogNo": "V.045",
     "owner": "u_megu 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -3576,7 +3576,7 @@
   },
   {
     "id": "eff_megu_ult",
-    "catalogNo": "V.044",
+    "catalogNo": "V.046",
     "owner": "u_megu 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -3589,7 +3589,7 @@
   },
   {
     "id": "eff_akane_skill",
-    "catalogNo": "V.045",
+    "catalogNo": "V.047",
     "owner": "u_akane 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -3602,7 +3602,7 @@
   },
   {
     "id": "eff_akane_ult",
-    "catalogNo": "V.046",
+    "catalogNo": "V.048",
     "owner": "u_akane 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -3615,7 +3615,7 @@
   },
   {
     "id": "eff_midori_skill",
-    "catalogNo": "V.047",
+    "catalogNo": "V.049",
     "owner": "u_midori 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -3628,7 +3628,7 @@
   },
   {
     "id": "eff_midori_ult",
-    "catalogNo": "V.048",
+    "catalogNo": "V.050",
     "owner": "u_midori 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -3641,7 +3641,7 @@
   },
   {
     "id": "eff_yuzu_rear_reg",
-    "catalogNo": "V.049",
+    "catalogNo": "V.051",
     "owner": "u_yuzu 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3654,7 +3654,7 @@
   },
   {
     "id": "eff_yuzu_rear_react",
-    "catalogNo": "V.050",
+    "catalogNo": "V.052",
     "owner": "u_yuzu 후방 반응 지원",
     "scope": "rear",
     "execution": "passive_container",
@@ -3667,7 +3667,7 @@
   },
   {
     "id": "eff_chihiro_rear_reg",
-    "catalogNo": "V.051",
+    "catalogNo": "V.053",
     "owner": "u_chihiro 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3680,7 +3680,7 @@
   },
   {
     "id": "eff_chihiro_rear_react",
-    "catalogNo": "V.052",
+    "catalogNo": "V.054",
     "owner": "u_chihiro 후방 반응 지원",
     "scope": "rear",
     "execution": "passive_container",
@@ -3693,7 +3693,7 @@
   },
   {
     "id": "eff_maki_rear_reg",
-    "catalogNo": "V.053",
+    "catalogNo": "V.055",
     "owner": "u_maki 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3706,7 +3706,7 @@
   },
   {
     "id": "eff_noa_rear_reg",
-    "catalogNo": "V.054",
+    "catalogNo": "V.056",
     "owner": "u_noa 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3719,7 +3719,7 @@
   },
   {
     "id": "eff_noa_rear_react",
-    "catalogNo": "V.055",
+    "catalogNo": "V.057",
     "owner": "u_noa 후방 반응 지원",
     "scope": "rear",
     "execution": "passive_container",
@@ -3732,7 +3732,7 @@
   },
   {
     "id": "eff_koyuki_skill",
-    "catalogNo": "V.056",
+    "catalogNo": "V.058",
     "owner": "u_koyuki 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -3745,7 +3745,7 @@
   },
   {
     "id": "eff_koyuki_ult",
-    "catalogNo": "V.057",
+    "catalogNo": "V.059",
     "owner": "u_koyuki 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -3758,7 +3758,7 @@
   },
   {
     "id": "eff_koyuki_rear_reg",
-    "catalogNo": "V.058",
+    "catalogNo": "V.060",
     "owner": "u_koyuki 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3771,7 +3771,7 @@
   },
   {
     "id": "eff_utaha_rear_reg",
-    "catalogNo": "V.059",
+    "catalogNo": "V.061",
     "owner": "u_utaha 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3784,7 +3784,7 @@
   },
   {
     "id": "eff_hibiki_rear_reg",
-    "catalogNo": "V.060",
+    "catalogNo": "V.062",
     "owner": "u_hibiki 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3797,7 +3797,7 @@
   },
   {
     "id": "eff_kotori_rear_reg",
-    "catalogNo": "V.061",
+    "catalogNo": "V.063",
     "owner": "u_kotori 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3810,7 +3810,7 @@
   },
   {
     "id": "eff_eimi_skill",
-    "catalogNo": "V.062",
+    "catalogNo": "V.064",
     "owner": "u_eimi 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -3823,7 +3823,7 @@
   },
   {
     "id": "eff_eimi_ult",
-    "catalogNo": "V.063",
+    "catalogNo": "V.065",
     "owner": "u_eimi 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -3836,7 +3836,7 @@
   },
   {
     "id": "eff_eimi_passive",
-    "catalogNo": "V.064",
+    "catalogNo": "V.066",
     "owner": "u_eimi 전방 패시브",
     "scope": "front",
     "execution": "passive_container",
@@ -3849,7 +3849,7 @@
   },
   {
     "id": "eff_hifumi_rear_reg",
-    "catalogNo": "V.065",
+    "catalogNo": "V.067",
     "owner": "u_hifumi 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3862,7 +3862,7 @@
   },
   {
     "id": "eff_hanako_rear_reg",
-    "catalogNo": "V.066",
+    "catalogNo": "V.068",
     "owner": "u_hanako 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3875,7 +3875,7 @@
   },
   {
     "id": "eff_nagisa_rear_reg",
-    "catalogNo": "V.067",
+    "catalogNo": "V.069",
     "owner": "u_nagisa 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3888,7 +3888,7 @@
   },
   {
     "id": "eff_nagisa_aura",
-    "catalogNo": "V.068",
+    "catalogNo": "V.070",
     "owner": "u_nagisa 후방 반응 지원",
     "scope": "rear",
     "execution": "passive_container",
@@ -3901,7 +3901,7 @@
   },
   {
     "id": "eff_seia_rear_reg",
-    "catalogNo": "V.069",
+    "catalogNo": "V.071",
     "owner": "u_seia 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3914,7 +3914,7 @@
   },
   {
     "id": "eff_seia_aura",
-    "catalogNo": "V.070",
+    "catalogNo": "V.072",
     "owner": "u_seia 후방 반응 지원",
     "scope": "rear",
     "execution": "passive_container",
@@ -3927,7 +3927,7 @@
   },
   {
     "id": "eff_tsurugi_skill",
-    "catalogNo": "V.071",
+    "catalogNo": "V.073",
     "owner": "u_tsurugi 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -3940,7 +3940,7 @@
   },
   {
     "id": "eff_tsurugi_ult",
-    "catalogNo": "V.072",
+    "catalogNo": "V.074",
     "owner": "u_tsurugi 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -3953,7 +3953,7 @@
   },
   {
     "id": "eff_tsurugi_passive",
-    "catalogNo": "V.073",
+    "catalogNo": "V.075",
     "owner": "u_tsurugi 전방 패시브",
     "scope": "front",
     "execution": "passive_container",
@@ -3966,7 +3966,7 @@
   },
   {
     "id": "eff_mashiro_rear_reg",
-    "catalogNo": "V.074",
+    "catalogNo": "V.076",
     "owner": "u_mashiro 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -3979,7 +3979,7 @@
   },
   {
     "id": "eff_mine_skill",
-    "catalogNo": "V.075",
+    "catalogNo": "V.077",
     "owner": "u_mine 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -3992,7 +3992,7 @@
   },
   {
     "id": "eff_mine_ult",
-    "catalogNo": "V.076",
+    "catalogNo": "V.078",
     "owner": "u_mine 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -4005,7 +4005,7 @@
   },
   {
     "id": "eff_mine_passive",
-    "catalogNo": "V.077",
+    "catalogNo": "V.079",
     "owner": "u_mine 전방 패시브",
     "scope": "front",
     "execution": "passive_container",
@@ -4018,7 +4018,7 @@
   },
   {
     "id": "eff_hanae_rear_reg",
-    "catalogNo": "V.078",
+    "catalogNo": "V.080",
     "owner": "u_hanae 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -4031,7 +4031,7 @@
   },
   {
     "id": "eff_reisa_skill",
-    "catalogNo": "V.079",
+    "catalogNo": "V.081",
     "owner": "u_reisa 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -4044,7 +4044,7 @@
   },
   {
     "id": "eff_reisa_ult",
-    "catalogNo": "V.080",
+    "catalogNo": "V.082",
     "owner": "u_reisa 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -4057,7 +4057,7 @@
   },
   {
     "id": "eff_kazusa_skill",
-    "catalogNo": "V.081",
+    "catalogNo": "V.083",
     "owner": "u_kazusa 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -4070,7 +4070,7 @@
   },
   {
     "id": "eff_kazusa_ult",
-    "catalogNo": "V.082",
+    "catalogNo": "V.084",
     "owner": "u_kazusa 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -4083,7 +4083,7 @@
   },
   {
     "id": "eff_yoshimi_skill",
-    "catalogNo": "V.083",
+    "catalogNo": "V.085",
     "owner": "u_yoshimi 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -4096,7 +4096,7 @@
   },
   {
     "id": "eff_yoshimi_ult",
-    "catalogNo": "V.084",
+    "catalogNo": "V.086",
     "owner": "u_yoshimi 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -4109,7 +4109,7 @@
   },
   {
     "id": "eff_airi_rear_reg",
-    "catalogNo": "V.085",
+    "catalogNo": "V.087",
     "owner": "u_airi 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -4122,7 +4122,7 @@
   },
   {
     "id": "eff_natsu_skill",
-    "catalogNo": "V.086",
+    "catalogNo": "V.088",
     "owner": "u_natsu 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -4135,7 +4135,7 @@
   },
   {
     "id": "eff_natsu_ult",
-    "catalogNo": "V.087",
+    "catalogNo": "V.089",
     "owner": "u_natsu 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -4148,7 +4148,7 @@
   },
   {
     "id": "eff_tsukuyo_skill",
-    "catalogNo": "V.088",
+    "catalogNo": "V.090",
     "owner": "u_tsukuyo 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -4161,7 +4161,7 @@
   },
   {
     "id": "eff_tsukuyo_ult",
-    "catalogNo": "V.089",
+    "catalogNo": "V.091",
     "owner": "u_tsukuyo 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -4174,7 +4174,7 @@
   },
   {
     "id": "eff_mimori_rear_reg",
-    "catalogNo": "V.090",
+    "catalogNo": "V.092",
     "owner": "u_mimori 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -4187,7 +4187,7 @@
   },
   {
     "id": "eff_kaede_skill",
-    "catalogNo": "V.091",
+    "catalogNo": "V.093",
     "owner": "u_kaede 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -4200,7 +4200,7 @@
   },
   {
     "id": "eff_kaede_ult",
-    "catalogNo": "V.092",
+    "catalogNo": "V.094",
     "owner": "u_kaede 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -4213,7 +4213,7 @@
   },
   {
     "id": "eff_niya_rear_reg",
-    "catalogNo": "V.093",
+    "catalogNo": "V.095",
     "owner": "u_niya 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -4226,7 +4226,7 @@
   },
   {
     "id": "eff_niya_rear_react",
-    "catalogNo": "V.094",
+    "catalogNo": "V.096",
     "owner": "u_niya 후방 반응 지원",
     "scope": "rear",
     "execution": "passive_container",
@@ -4239,7 +4239,7 @@
   },
   {
     "id": "eff_chise_rear_reg",
-    "catalogNo": "V.095",
+    "catalogNo": "V.097",
     "owner": "u_chise 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -4252,7 +4252,7 @@
   },
   {
     "id": "eff_tomoe_rear_reg",
-    "catalogNo": "V.096",
+    "catalogNo": "V.098",
     "owner": "u_tomoe 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -4265,7 +4265,7 @@
   },
   {
     "id": "eff_tomoe_rear_react",
-    "catalogNo": "V.097",
+    "catalogNo": "V.099",
     "owner": "u_tomoe 후방 반응 지원",
     "scope": "rear",
     "execution": "passive_container",
@@ -4278,7 +4278,7 @@
   },
   {
     "id": "eff_meru_rear_reg",
-    "catalogNo": "V.098",
+    "catalogNo": "V.100",
     "owner": "u_meru 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -4291,7 +4291,7 @@
   },
   {
     "id": "eff_shigure_skill",
-    "catalogNo": "V.099",
+    "catalogNo": "V.101",
     "owner": "u_shigure 전투 스킬",
     "scope": "front",
     "execution": "ability_skill",
@@ -4304,7 +4304,7 @@
   },
   {
     "id": "eff_shigure_ult",
-    "catalogNo": "V.100",
+    "catalogNo": "V.102",
     "owner": "u_shigure 필살기",
     "scope": "front",
     "execution": "ability_ultimate",
@@ -4317,7 +4317,7 @@
   },
   {
     "id": "eff_misaki_rear_reg",
-    "catalogNo": "V.101",
+    "catalogNo": "V.103",
     "owner": "u_misaki 후방 정기 지원",
     "scope": "rear",
     "execution": "ability_rear",
@@ -4330,7 +4330,7 @@
   },
   {
     "id": "eff_misaki_rear_react",
-    "catalogNo": "V.102",
+    "catalogNo": "V.104",
     "owner": "u_misaki 후방 반응 지원",
     "scope": "rear",
     "execution": "passive_container",
@@ -4343,7 +4343,7 @@
   },
   {
     "id": "eff_syn_prefect_2",
-    "catalogNo": "V.105",
+    "catalogNo": "V.107",
     "owner": "시너지 syn_prefect (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4356,7 +4356,7 @@
   },
   {
     "id": "eff_syn_prefect_4",
-    "catalogNo": "V.106",
+    "catalogNo": "V.108",
     "owner": "시너지 syn_prefect (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4369,7 +4369,7 @@
   },
   {
     "id": "eff_syn_gourmet_2",
-    "catalogNo": "V.107",
+    "catalogNo": "V.109",
     "owner": "시너지 syn_gourmet (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4382,7 +4382,7 @@
   },
   {
     "id": "eff_syn_gourmet_4",
-    "catalogNo": "V.108",
+    "catalogNo": "V.110",
     "owner": "시너지 syn_gourmet (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4395,7 +4395,7 @@
   },
   {
     "id": "eff_syn_school_lunch_2",
-    "catalogNo": "V.109",
+    "catalogNo": "V.111",
     "owner": "시너지 syn_school_lunch (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4408,7 +4408,7 @@
   },
   {
     "id": "eff_syn_hot_spring_2",
-    "catalogNo": "V.110",
+    "catalogNo": "V.112",
     "owner": "시너지 syn_hot_spring (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4421,7 +4421,7 @@
   },
   {
     "id": "eff_syn_game_dev_2",
-    "catalogNo": "V.113",
+    "catalogNo": "V.115",
     "owner": "시너지 syn_game_dev (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4434,7 +4434,7 @@
   },
   {
     "id": "eff_syn_game_dev_4",
-    "catalogNo": "V.114",
+    "catalogNo": "V.116",
     "owner": "시너지 syn_game_dev (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4447,7 +4447,7 @@
   },
   {
     "id": "eff_syn_veritas_2",
-    "catalogNo": "V.115",
+    "catalogNo": "V.117",
     "owner": "시너지 syn_veritas (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4460,7 +4460,7 @@
   },
   {
     "id": "eff_syn_veritas_4",
-    "catalogNo": "V.116",
+    "catalogNo": "V.118",
     "owner": "시너지 syn_veritas (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4473,7 +4473,7 @@
   },
   {
     "id": "eff_syn_seminar_2",
-    "catalogNo": "V.117",
+    "catalogNo": "V.119",
     "owner": "시너지 syn_seminar (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4486,7 +4486,7 @@
   },
   {
     "id": "eff_syn_seminar_4",
-    "catalogNo": "V.118",
+    "catalogNo": "V.120",
     "owner": "시너지 syn_seminar (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4499,7 +4499,7 @@
   },
   {
     "id": "eff_syn_engineering_2",
-    "catalogNo": "V.119",
+    "catalogNo": "V.121",
     "owner": "시너지 syn_engineering (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4512,7 +4512,7 @@
   },
   {
     "id": "eff_syn_engineering_3",
-    "catalogNo": "V.120",
+    "catalogNo": "V.122",
     "owner": "시너지 syn_engineering (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4525,7 +4525,7 @@
   },
   {
     "id": "eff_syn_paranormal_2",
-    "catalogNo": "V.121",
+    "catalogNo": "V.123",
     "owner": "시너지 syn_paranormal (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4538,7 +4538,7 @@
   },
   {
     "id": "eff_syn_make_up_2",
-    "catalogNo": "V.122",
+    "catalogNo": "V.124",
     "owner": "시너지 syn_make_up (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4551,7 +4551,7 @@
   },
   {
     "id": "eff_syn_make_up_4",
-    "catalogNo": "V.123",
+    "catalogNo": "V.125",
     "owner": "시너지 syn_make_up (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4564,7 +4564,7 @@
   },
   {
     "id": "eff_syn_tea_party_2",
-    "catalogNo": "V.124",
+    "catalogNo": "V.126",
     "owner": "시너지 syn_tea_party (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4577,7 +4577,7 @@
   },
   {
     "id": "eff_syn_tea_party_3",
-    "catalogNo": "V.125",
+    "catalogNo": "V.127",
     "owner": "시너지 syn_tea_party (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4590,7 +4590,7 @@
   },
   {
     "id": "eff_syn_justice_2",
-    "catalogNo": "V.126",
+    "catalogNo": "V.128",
     "owner": "시너지 syn_justice (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4603,7 +4603,7 @@
   },
   {
     "id": "eff_syn_justice_3",
-    "catalogNo": "V.127",
+    "catalogNo": "V.129",
     "owner": "시너지 syn_justice (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4616,7 +4616,7 @@
   },
   {
     "id": "eff_syn_vigilante_2",
-    "catalogNo": "V.128",
+    "catalogNo": "V.130",
     "owner": "시너지 syn_vigilante (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4629,7 +4629,7 @@
   },
   {
     "id": "eff_syn_remedial_knights_2",
-    "catalogNo": "V.129",
+    "catalogNo": "V.131",
     "owner": "시너지 syn_remedial_knights (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4642,7 +4642,7 @@
   },
   {
     "id": "eff_syn_remedial_knights_3",
-    "catalogNo": "V.130",
+    "catalogNo": "V.132",
     "owner": "시너지 syn_remedial_knights (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4655,7 +4655,7 @@
   },
   {
     "id": "eff_syn_sweets_2",
-    "catalogNo": "V.131",
+    "catalogNo": "V.133",
     "owner": "시너지 syn_sweets (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4668,7 +4668,7 @@
   },
   {
     "id": "eff_syn_sweets_4",
-    "catalogNo": "V.132",
+    "catalogNo": "V.134",
     "owner": "시너지 syn_sweets (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4681,7 +4681,7 @@
   },
   {
     "id": "eff_syn_ninjutsu_2",
-    "catalogNo": "V.133",
+    "catalogNo": "V.135",
     "owner": "시너지 syn_ninjutsu (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4694,7 +4694,7 @@
   },
   {
     "id": "eff_syn_ninjutsu_3",
-    "catalogNo": "V.134",
+    "catalogNo": "V.136",
     "owner": "시너지 syn_ninjutsu (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4707,7 +4707,7 @@
   },
   {
     "id": "eff_syn_training_2",
-    "catalogNo": "V.135",
+    "catalogNo": "V.137",
     "owner": "시너지 syn_training (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4720,7 +4720,7 @@
   },
   {
     "id": "eff_syn_training_3",
-    "catalogNo": "V.136",
+    "catalogNo": "V.138",
     "owner": "시너지 syn_training (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4733,7 +4733,7 @@
   },
   {
     "id": "eff_syn_yinyang_2",
-    "catalogNo": "V.137",
+    "catalogNo": "V.139",
     "owner": "시너지 syn_yinyang (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4746,7 +4746,7 @@
   },
   {
     "id": "eff_syn_plum_blossom_2",
-    "catalogNo": "V.138",
+    "catalogNo": "V.140",
     "owner": "시너지 syn_plum_blossom (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4759,7 +4759,7 @@
   },
   {
     "id": "eff_syn_genryumon_2",
-    "catalogNo": "V.139",
+    "catalogNo": "V.141",
     "owner": "시너지 syn_genryumon (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4772,7 +4772,7 @@
   },
   {
     "id": "eff_syn_rw_office_2",
-    "catalogNo": "V.140",
+    "catalogNo": "V.142",
     "owner": "시너지 syn_rw_office (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4785,7 +4785,7 @@
   },
   {
     "id": "eff_syn_rw_office_3",
-    "catalogNo": "V.141",
+    "catalogNo": "V.143",
     "owner": "시너지 syn_rw_office (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4798,7 +4798,7 @@
   },
   {
     "id": "eff_syn_knowledge_front_2",
-    "catalogNo": "V.142",
+    "catalogNo": "V.144",
     "owner": "시너지 syn_knowledge_front (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4811,7 +4811,7 @@
   },
   {
     "id": "eff_syn_class_227_2",
-    "catalogNo": "V.143",
+    "catalogNo": "V.145",
     "owner": "시너지 syn_class_227 (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4824,7 +4824,7 @@
   },
   {
     "id": "eff_syn_life_safety_2",
-    "catalogNo": "V.144",
+    "catalogNo": "V.146",
     "owner": "시너지 syn_life_safety (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4837,7 +4837,7 @@
   },
   {
     "id": "eff_syn_tank_2",
-    "catalogNo": "V.145",
+    "catalogNo": "V.147",
     "owner": "시너지 syn_tank (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4850,7 +4850,7 @@
   },
   {
     "id": "eff_syn_tank_3",
-    "catalogNo": "V.146",
+    "catalogNo": "V.148",
     "owner": "시너지 syn_tank (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4863,7 +4863,7 @@
   },
   {
     "id": "eff_syn_tank_4",
-    "catalogNo": "V.147",
+    "catalogNo": "V.149",
     "owner": "시너지 syn_tank (3단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4876,7 +4876,7 @@
   },
   {
     "id": "eff_syn_attacker_2",
-    "catalogNo": "V.148",
+    "catalogNo": "V.150",
     "owner": "시너지 syn_attacker (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4889,7 +4889,7 @@
   },
   {
     "id": "eff_syn_attacker_3",
-    "catalogNo": "V.149",
+    "catalogNo": "V.151",
     "owner": "시너지 syn_attacker (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4902,7 +4902,7 @@
   },
   {
     "id": "eff_syn_attacker_4",
-    "catalogNo": "V.150",
+    "catalogNo": "V.152",
     "owner": "시너지 syn_attacker (3단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4915,7 +4915,7 @@
   },
   {
     "id": "eff_syn_blaster_2",
-    "catalogNo": "V.153",
+    "catalogNo": "V.155",
     "owner": "시너지 syn_blaster (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4928,7 +4928,7 @@
   },
   {
     "id": "eff_syn_blaster_4",
-    "catalogNo": "V.154",
+    "catalogNo": "V.156",
     "owner": "시너지 syn_blaster (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4941,7 +4941,7 @@
   },
   {
     "id": "eff_syn_blaster_6",
-    "catalogNo": "V.155",
+    "catalogNo": "V.157",
     "owner": "시너지 syn_blaster (3단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4954,7 +4954,7 @@
   },
   {
     "id": "eff_syn_healer_2",
-    "catalogNo": "V.156",
+    "catalogNo": "V.158",
     "owner": "시너지 syn_healer (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4967,7 +4967,7 @@
   },
   {
     "id": "eff_syn_healer_4",
-    "catalogNo": "V.157",
+    "catalogNo": "V.159",
     "owner": "시너지 syn_healer (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4980,7 +4980,7 @@
   },
   {
     "id": "eff_syn_supporter_2",
-    "catalogNo": "V.158",
+    "catalogNo": "V.160",
     "owner": "시너지 syn_supporter (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -4993,7 +4993,7 @@
   },
   {
     "id": "eff_syn_supporter_4",
-    "catalogNo": "V.159",
+    "catalogNo": "V.161",
     "owner": "시너지 syn_supporter (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -5006,7 +5006,7 @@
   },
   {
     "id": "eff_syn_controller_2",
-    "catalogNo": "V.160",
+    "catalogNo": "V.162",
     "owner": "시너지 syn_controller (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -5019,7 +5019,7 @@
   },
   {
     "id": "eff_syn_controller_4",
-    "catalogNo": "V.161",
+    "catalogNo": "V.163",
     "owner": "시너지 syn_controller (2단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -5032,7 +5032,7 @@
   },
   {
     "id": "eff_syn_uni_aris",
-    "catalogNo": "V.168",
+    "catalogNo": "V.170",
     "owner": "시너지 syn_unique_level_up (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -5045,7 +5045,7 @@
   },
   {
     "id": "eff_syn_uni_miyu",
-    "catalogNo": "V.169",
+    "catalogNo": "V.171",
     "owner": "시너지 syn_unique_invisible (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -5058,7 +5058,7 @@
   },
   {
     "id": "eff_syn_uni_shiroko",
-    "catalogNo": "V.170",
+    "catalogNo": "V.172",
     "owner": "시너지 syn_unique_bank_robber (1단계)",
     "scope": "front_only",
     "execution": "synergy_container",
@@ -5071,7 +5071,7 @@
   },
   {
     "id": "eff_syn_uni_nonomi",
-    "catalogNo": "V.171",
+    "catalogNo": "V.173",
     "owner": "시너지 syn_unique_gold_card (1단계)",
     "scope": "front_only",
     "execution": "synergy_container",
@@ -5084,7 +5084,7 @@
   },
   {
     "id": "eff_syn_uni_kazusa",
-    "catalogNo": "V.172",
+    "catalogNo": "V.174",
     "owner": "시너지 syn_unique_caspalug (1단계)",
     "scope": "front_only",
     "execution": "synergy_container",
@@ -5097,7 +5097,7 @@
   },
   {
     "id": "eff_syn_plat_vanitas",
-    "catalogNo": "V.173",
+    "catalogNo": "V.175",
     "owner": "시너지 syn_plat_vanitas (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -5110,7 +5110,7 @@
   },
   {
     "id": "eff_syn_plat_ending_credits",
-    "catalogNo": "V.174",
+    "catalogNo": "V.176",
     "owner": "시너지 syn_plat_ending_credits (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -5123,7 +5123,7 @@
   },
   {
     "id": "eff_syn_plat_codename",
-    "catalogNo": "V.175",
+    "catalogNo": "V.177",
     "owner": "시너지 syn_plat_codename (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -5136,7 +5136,7 @@
   },
   {
     "id": "eff_syn_plat_tea_party",
-    "catalogNo": "V.176",
+    "catalogNo": "V.178",
     "owner": "시너지 syn_plat_tea_party (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -5149,7 +5149,7 @@
   },
   {
     "id": "eff_syn_plat_last_line",
-    "catalogNo": "V.177",
+    "catalogNo": "V.179",
     "owner": "시너지 syn_plat_last_line (1단계)",
     "scope": "deployed_all",
     "execution": "synergy_container",
@@ -5162,7 +5162,7 @@
   },
   {
     "id": "eff_syn_plat_school_battle",
-    "catalogNo": "V.178",
+    "catalogNo": "V.180",
     "owner": "시너지 syn_plat_school_battle (1단계)",
     "scope": "special",
     "execution": "synergy_container",
@@ -5175,7 +5175,7 @@
   },
   {
     "id": "eff_syn_plat_total_assault",
-    "catalogNo": "V.179",
+    "catalogNo": "V.181",
     "owner": "시너지 syn_plat_total_assault (1단계)",
     "scope": "special",
     "execution": "synergy_container",

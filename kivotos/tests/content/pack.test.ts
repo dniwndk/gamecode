@@ -32,9 +32,9 @@ describe('정식 콘텐츠 팩 ba-content-2.3.0', () => {
     expect(byPos).toEqual([53, 36, 11]);
   });
 
-  it('효과 출처: 부록 C 그대로 219 + v2.3 교체·추가 179 + 카이저 론 1', () => {
+  it('효과 출처: 부록 C 그대로 217 + v2.3 교체·추가 181 + 카이저 론 1', () => {
     const prefix = (p: string) => pack.effects.filter((e) => e.catalogNo.startsWith(p)).length;
-    expect([prefix('C.'), prefix('V.'), prefix('v2.2')]).toEqual([219, 179, 1]);
+    expect([prefix('C.'), prefix('V.'), prefix('v2.2')]).toEqual([217, 181, 1]);
     expect(byId(pack.effects, 'eff_aris_passive').catalogNo).toBe('C.300');
     expect(pack.effects.map((e) => e.id)).not.toContain('eff_syn_jackpot_2');
   });

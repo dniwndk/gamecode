@@ -478,9 +478,6 @@ kbd { font-family: var(--f-num); }
 .k-delta { list-style: none; padding: 0; margin: 8px 0 4px; display: flex; flex-direction: column; gap: 4px; }
 .k-delta li { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 .k-strat-tip strong { font-size: 19px; }
-.k-benefit, .k-drawback { margin: 6px 0 0; padding-left: 10px; line-height: 1.45; }
-.k-benefit { border-left: 3px solid var(--blue); }
-.k-drawback { border-left: 3px solid var(--warn); }
 
 /* ── 토스트·모달·말풍선 ──────────────────────────────────── */
 .k-toasts { position: absolute; top: 104px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 95; pointer-events: none; align-items: center; }
@@ -676,15 +673,6 @@ kbd { font-family: var(--f-num); }
 .k-choice-kind { position: absolute; left: 16px; top: 14px; z-index: 1; padding: 3px 12px; border-radius: 999px; background: rgba(255,255,255,.25); font-size: 15px; font-weight: 800; }
 .k-choice-card:has(.k-choice-img) .k-choice-kind { background: rgba(8,18,38,.6); backdrop-filter: blur(4px); }
 .k-choice-card h3 { margin: 18px 22px 10px; font-size: 26px; font-weight: 900; letter-spacing: -.02em; line-height: 1.25; }
-.k-choice-line { margin: 0 22px 10px; padding: 8px 12px; border-radius: 8px; }
-.k-choice-line small { font-weight: 800; font-size: 15px; }
-.k-choice-line p { margin: 2px 0 0; font-size: 17px; line-height: 1.45; }
-.k-choice-line.is-benefit { background: rgba(18,140,255,.08); }
-.k-choice-line.is-benefit small { color: var(--blue-d); }
-.k-choice-line.is-drawback { background: rgba(255,138,0,.09); }
-.k-choice-line.is-drawback small { color: #b45d00; }
-.k-stacking { margin: auto 22px 0; font-size: 15px; color: var(--ink-3); line-height: 1.4; }
-.k-loan { display: flex; align-items: center; gap: 6px; margin: 0 22px; font-weight: 800; color: #b07b00; font-size: 16px; }
 .k-check { position: absolute; right: 16px; top: 16px; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--hue); opacity: 0; transform: scale(.6); transition: all .2s cubic-bezier(.2,.9,.3,1.4); z-index: 2; }
 .k-choice-card.is-picked .k-check { opacity: 1; transform: none; }
 .k-eq-stats { list-style: none; margin: 0 22px 10px; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -1159,9 +1147,8 @@ kbd { font-family: var(--f-num); }
 .is-mobile .k-choice-art { height: 110px; }
 .is-mobile .k-choice-art > .ico { width: 44px; height: 44px; }
 .is-mobile .k-choice-card h3 { font-size: 20px; margin: 12px 14px 8px; }
-.is-mobile .k-choice-line, .is-mobile .k-eq-stats, .is-mobile .k-eq-desc, .is-mobile .k-stacking { margin-left: 14px; margin-right: 14px; }
-.is-mobile .k-choice-line p, .is-mobile .k-eq-desc { font-size: 14px; }
-.is-mobile .k-stacking { margin-top: 6px; }
+.is-mobile .k-strat-effects, .is-mobile .k-eq-stats, .is-mobile .k-eq-desc, .is-mobile .k-stacking { margin-left: 14px; margin-right: 14px; }
+.is-mobile .k-eq-desc { font-size: 14px; }
 .is-mobile .k-choice-foot { position: sticky; bottom: 12px; }
 .is-mobile .k-choice-confirm { min-width: 0; width: 100%; font-size: 19px; }
 
@@ -1285,7 +1272,7 @@ kbd { font-family: var(--f-num); }
 .is-compact .k-merge-badge, .is-compact .k-syn-name em, .is-compact .k-track-label, .is-compact .k-strats > small, .is-compact .k-defeat small,
 .is-compact .k-st, .is-compact .k-hp-text, .is-compact .k-cb-support, .is-compact .k-tl-label, .is-compact .k-log-list, .is-compact .k-limits,
 .is-compact .k-contrib-legend, .is-compact .k-sell small, .is-compact .k-deploy-count small, .is-compact .k-lv-big > small, .is-compact .k-node-badge,
-.is-compact .k-cost, .is-compact .k-odds span, .is-compact .k-stacking, .is-compact .k-muted, .is-compact .k-bench-label small { font-size: 18px; }
+.is-compact .k-cost, .is-compact .k-odds span, .is-compact .k-muted, .is-compact .k-bench-label small { font-size: 18px; }
 .is-compact .k-card-name, .is-compact .k-cb.is-rear .k-cb-name, .is-compact .k-enemy-row strong, .is-compact .k-shop-tip, .is-compact .k-tip { font-size: 18px; }
 .is-compact .k-xp { width: 110px; }
 
@@ -1432,6 +1419,7 @@ kbd { font-family: var(--f-num); }
 .k-tip-skill { display: flex; gap: 8px; }
 .k-tip-skill > b { flex: none; width: 52px; font-size: 14px; color: var(--ink-2); padding-top: 2px; }
 .k-strat-tip .k-eff { margin: 6px 0; }
-.k-strat-tip .k-drawback { display: flex; gap: 6px; align-items: flex-start; }
+.k-stacking { margin: auto 22px 0; font-size: 15px; color: var(--ink-3); line-height: 1.4; }
+.k-choice-card .k-strat-effects { margin: 0 22px 14px; padding: 10px 12px; border-radius: 8px; background: rgba(18,140,255,.07); }
 .is-compact .k-eff-line { font-size: 19px; } .is-compact .k-eff-v { font-size: 21px; } .is-compact .k-eff-when, .is-compact .k-eff-limits span, .is-compact .k-eff-note { font-size: 17px; }
 .is-mobile .k-eff-line { font-size: 14px; } .is-mobile .k-eff-v { font-size: 15px; }

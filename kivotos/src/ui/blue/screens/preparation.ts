@@ -1,7 +1,7 @@
 // 준비 단계 ★ 핵심 화면: 시너지 | 전방·후방 보드 | 적 예고 / 대기석 / 상점.
 import type { Ctx, Screen } from '../app';
 import {
-  COST_COLOR, attachTip, readable, enemyPortrait, hideTip, nodeTrack, openLevelUp, openUnitDetail, portrait, shortName, synHex, synergyRow, topBar, unitCard,
+  COST_COLOR, attachTip, readable, enemyPortrait, hideTip, nodeTrack, strategyEffects, openLevelUp, openUnitDetail, portrait, shortName, synHex, synergyRow, topBar, unitCard,
 } from '../components';
 import { cls, h } from '../dom';
 import { icon } from '../icons';
@@ -218,7 +218,7 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
       run.strategies.length ? h('div', { class: 'k-strats' }, h('small', null, '보유 전략'), ...run.strategies.map((id) => {
         const st = ctx.lookup.strategy(id);
         const chip = h('span', { class: 'k-strat-chip', tabindex: 0 }, icon('strategy', 16), st?.name ?? id);
-        if (st) attachTip(ctx, chip, () => h('div', { class: 'k-strat-tip' }, h('strong', null, st.name), fxList(ctx, st.benefit), h('p', { class: 'k-drawback' }, icon('warning', 14), readable(ctx, st.drawback))));
+        if (st) attachTip(ctx, chip, () => h('div', { class: 'k-strat-tip' }, h('strong', null, st.name), strategyEffects(ctx, st.effectIds)));
         return chip;
       })) : null);
   }
