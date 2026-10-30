@@ -6,6 +6,7 @@ import {
 import { cls, h } from '../dom';
 import { icon } from '../icons';
 import { fxList } from '../summary';
+import { oopartChip } from './ooparts';
 import type { RunView, UiState, UnitInstanceView, Zone } from '../model';
 
 type Loc = { zone: Zone; index: number };
@@ -220,7 +221,8 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
         const chip = h('span', { class: 'k-strat-chip', tabindex: 0 }, icon('strategy', 16), st?.name ?? id);
         if (st) attachTip(ctx, chip, () => h('div', { class: 'k-strat-tip' }, h('strong', null, st.name), strategyEffects(ctx, st.effectIds)));
         return chip;
-      })) : null);
+      })) : null,
+      run.ooparts.owned.length ? h('div', { class: 'k-strats k-oop-owned' }, h('small', null, `보유 오파츠 ${run.ooparts.owned.length}`), ...run.ooparts.owned.map((id) => oopartChip(ctx, id))) : null);
   }
 
   function benchRow(): HTMLElement {

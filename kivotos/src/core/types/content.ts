@@ -161,7 +161,7 @@ export interface OopartDefinition {
   flavor: string;
 }
 
-export type OopartSourceId = 'run_start' | 'chapter_third_battle' | 'elite' | 'boss' | 'rescue';
+export type OopartSourceId = 'run_start' | 'elite' | 'boss' | 'rescue';
 
 export interface OopartSourceRule {
   id: OopartSourceId;
@@ -245,7 +245,13 @@ export interface RulesConfig {
     startingUnits: { count: number; cost: number; minFrontCapable: number };
   };
   board: { frontSlots: number; rearSlots: number; benchSlots: number; maxDeployed: number };
-  shop: { slots: number; rerollCost: number; recommendedSlotIndex: number; recommendedModeChanceBps: number; levels: ShopLevelOdds[] };
+  shop: {
+    slots: number; rerollCost: number; recommendedSlotIndex: number; recommendedModeChanceBps: number; levels: ShopLevelOdds[];
+    /** 코스트 1~5 학생 1명당 장수(v2.3 11.1). 남은 장수 = 장수 − 소유(1성 환산) − 지금 상점 칸 */
+    copiesByCost: number[];
+    /** 최고 성급을 보유한 학생은 팔기 전까지 상점에 나오지 않는다(v2.3 11.1) */
+    excludeMaxStarOwned: boolean;
+  };
   xp: { buyCostGold: number; buyAmount: number; perBattle: number; xpToNext: Record<string, number | null> };
   income: {
     baseByChapter: number[];

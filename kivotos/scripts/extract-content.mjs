@@ -453,7 +453,6 @@ for (const item of ooparts) {
 // 1.2절 획득 표 → rules.ooparts
 const OOP_SOURCE = [
   [/^런 시작/, 'run_start'],
-  [/3번째 일반 전투/, 'chapter_third_battle'],
   [/^정예/, 'elite'],
   [/보스 승리/, 'boss'],
   [/^구조 요청/, 'rescue'],
@@ -497,18 +496,29 @@ const odds = tableRows(section(v21, '### 5.1 레벨별 확률과 XP'), '').filte
 }));
 const xpRow = tableRows(section(v22, '### 1.2 레벨별 XP (v2.1 5.1의 "다음 XP" 열만 교체)'), '다음 XP (v2.2)')[0] ?? fail('v2.2 XP 줄 없음');
 const levelHeader = tableRows(section(v22, '### 1.2 레벨별 XP (v2.1 5.1의 "다음 XP" 열만 교체)'), '레벨')[0];
-const xpToNext = Object.fromEntries(levelHeader.slice(1).map((lv, k) => [lv, xpRow[k + 1] === '—' ? null : Number(unbold(xpRow[k + 1]))]));
+const xpOf = (row) => Object.fromEntries(levelHeader.slice(1).map((lv, k) => [lv, row[k + 1] === '—' ? null : Number(unbold(row[k + 1]))]));
+const xpV22 = xpOf(xpRow);
+
+// v2.3 11장: 상점 장수 제한(11.1)과 레벨 XP 교체(11.2). 11.2의 v2.2 줄이 v2.2 개정안과 다르면 멈춘다.
+const copiesByCost = tableRows(section(v23, '### 11.1 코스트별 장수'), '').filter((c) => /^\d+$/.test(c[0])).map((c) => Number(c[1]));
+if (copiesByCost.length !== 5 || copiesByCost.some((n) => !(n > 0))) fail(`11.1 장수 표를 읽지 못함: ${copiesByCost}`);
+const xp11 = section(v23, '### 11.2 레벨별 XP');
+const xp11Old = xpOf(tableRows(xp11, '다음 XP (v2.2)')[0] ?? fail('11.2 v2.2 줄 없음'));
+if (JSON.stringify(xp11Old) !== JSON.stringify(xpV22)) fail('11.2의 v2.2 XP 줄이 v2.2 개정안 1.2와 다름');
+const xpToNext = xpOf(tableRows(xp11, '다음 XP (v2.3.4)')[0] ?? fail('11.2 v2.3.4 줄 없음'));
+const excludeMaxStarOwned = /3성을 보유한 학생은 그 3성을 팔기 전까지 상점에 나오지 않는다/.test(section(v23, '### 11.1 코스트별 장수').join('\n'));
+if (!excludeMaxStarOwned) fail('11.1 3성 제외 규칙 문장을 찾지 못함');
 
 const rules = {
-  rulesVersion: 'ktfr-rules-2.4.0',
-  source: 'GDD v2.1 4.1·5장 + v2.2 1장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.',
+  rulesVersion: 'ktfr-rules-2.5.0',
+  source: 'GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.',
   run: {
     chapters: 3, battlesPerChapter: 5,
     startRunHp: 80, startGold: 10, startLevel: 3, startXp: 0, maxLevel: 10,
     startingUnits: { count: 3, cost: 1, minFrontCapable: 2 },
   },
   board: { frontSlots: 4, rearSlots: 6, benchSlots: 9, maxDeployed: 10 },
-  shop: { slots: 5, rerollCost: 2, recommendedSlotIndex: 4, recommendedModeChanceBps: 5000, levels: odds },
+  shop: { slots: 5, rerollCost: 2, recommendedSlotIndex: 4, recommendedModeChanceBps: 5000, levels: odds, copiesByCost, excludeMaxStarOwned },
   xp: { buyCostGold: 4, buyAmount: 4, perBattle: 3, xpToNext },
   income: {
     baseByChapter: [6, 7, 8], winBonus: 1,

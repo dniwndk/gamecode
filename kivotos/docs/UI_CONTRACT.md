@@ -38,7 +38,7 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 | 항목 | M0 | 확정 시점 |
 |---|---|---|
 | `catalog` | 완성 (팩 ba-content-2.5.0, 오파츠 55종·AL-1S 각성 포함) | — |
-| 오파츠 | `catalog.pack.ooparts` 정의. `OOPART_CHOICE` 단계와 `CHOOSE_OOPART`(payload `{ oopartId }`)·`SKIP_OOPART` 명령 이름만 있음 | M1 런 reducer가 `src/core/ooparts/ooparts.ts`를 부를 때 |
+| 오파츠 | `catalog.pack.ooparts` 정의. `OOPART_CHOICE` 단계, `CHOOSE_OOPART`(payload `{ oopartId }`)·`SKIP_OOPART`. 실제 클라이언트는 아직 `NOT_IMPLEMENTED`, 미리보기 세션은 코어 함수로 동작(`run.ooparts.owned`·`run.ooparts.offer`, `UiState.oopartRevealed`, 연출 신호 `cues`의 `oopart`·`oopart_merge`) | M1 런 reducer가 `src/core/ooparts/ooparts.ts`를 부를 때 |
 | `GameSnapshot.run` | 항상 `null` | M1 런 reducer |
 | `GameCommandType` | 이름 목록만. 모든 명령이 `NOT_IMPLEMENTED`로 거부 | M1(준비 단계 명령), M4(런 흐름) |
 | `GameEvent` | 자리만 | M2 전투 로그 |
@@ -83,3 +83,4 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 - 2026-10-30 임시 카탈로그 화면을 `src/ui/blue/`로 교체, 계약 확장 요청 목록 추가.
 - 2026-10-30 오파츠 추가: 카탈로그에 `ooparts`, 단계 `OOPART_CHOICE`, 명령 `CHOOSE_OOPART`·`SKIP_OOPART`(아직 `NOT_IMPLEMENTED`).
 - 2026-10-30 AL-1S 각성: 유닛에 `awakening`·`awakenedFrom` 필드, 팩 ba-content-2.5.0.
+- 2026-10-30 v2.3.4: 미리보기 세션이 `src/app/runRules.ts`(코어 상점·오파츠 함수 창구)로 상점 장수 제한·3성 제외와 오파츠 보상을 실제로 처리. 화면 모양에 `RunView.ooparts`, `UiState.oopartRevealed`, 신호 `oopart`·`oopart_merge` 추가. 화면 컴포넌트는 `runRules.ts`를 쓰지 않는다.

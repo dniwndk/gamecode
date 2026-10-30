@@ -1,6 +1,6 @@
 // 도감(런 밖): 학생 목록(구역·코스트·시너지 필터), 시너지 목록, 오파츠 목록.
 import type { Ctx, Screen } from '../app';
-import { attachTip, gfx, hideTip, openUnitDetail, synHex, synergyTip, unitCard } from '../components';
+import { attachTip, gfx, hideTip, openUnitDetail, readable, synHex, synergyTip, unitCard } from '../components';
 import { cls, fill, h } from '../dom';
 import { icon } from '../icons';
 
@@ -28,8 +28,9 @@ export function mountCodex(ctx: Ctx): Screen {
     const seg = <T extends string | number>(items: [T, string][], cur: T, set: (v: T) => void, label: string) =>
       h('div', { class: 'k-seg', role: 'group', 'aria-label': label }, ...items.map(([v, t]) => h('button', { class: cls(v === cur && 'on'), 'aria-pressed': v === cur ? 'true' : 'false', onclick: () => { set(v); draw(); } }, t)));
 
-    // 전설은 레시피가 공개되기 전까지 실루엣과 「???」만(OOPARTS_v1 1.3). 화면은 프로필을 모르므로 공개 목록은 코어가 줄 때까지 비어 있다.
-    const revealed = new Set<string>();
+    // 전설은 레시피가 공개되기 전까지 실루엣과 「???」만(OOPARTS_v1 1.3). 공개 목록은 프로필에서 온다.
+    const revealed = new Set(ctx.state().oopartRevealed ?? []);
+    const oopName = (id: string) => pack.ooparts.find((x) => x.id === id)?.name ?? id;
     const oopBody = () => h('div', { class: 'k-codex-syns' }, ...['common', 'uncommon', 'rare', 'legendary'].map((r) => h('section', null,
       h('h3', null, `${RARITY_LABEL[r]} ${pack.ooparts.filter((o) => o.rarity === r).length}`),
       h('div', { class: 'k-codex-oop-grid' }, ...pack.ooparts.filter((o) => o.rarity === r).map((o) => {
@@ -38,8 +39,9 @@ export function mountCodex(ctx: Ctx): Screen {
           h('div', { class: 'k-oop-art' }, gfx(ctx, `ooparts/${o.id}.webp`, () => h('span', { class: 'k-oop-code' }, o.code), 'k-oop-img')),
           h('div', { class: 'k-oop-text' },
             h('div', { class: 'k-oop-head' }, h('b', null, hidden ? '???' : o.name), h('small', null, `${o.code} · ${RARITY_LABEL[r]}`)),
-            hidden ? h('p', { class: 'k-muted' }, '특정 오파츠를 모으면 합쳐져 나타나요. 한 번 완성하면 조합법이 공개돼요.') : h('p', null, o.benefit),
-            !hidden && o.drawback ? h('p', { class: 'k-oop-drawback' }, `대가 · ${o.drawback}`) : null,
+            hidden ? h('p', { class: 'k-muted' }, '특정 오파츠를 모으면 합쳐져 나타나요. 한 번 완성하면 조합법이 공개돼요.') : h('p', null, readable(ctx, o.benefit)),
+            !hidden && o.recipe ? h('p', { class: 'k-oop-recipe-line' }, `조합 · ${o.recipe.map(oopName).join(' + ')}`) : null,
+            !hidden && o.drawback ? h('p', { class: 'k-oop-drawback' }, `대가 · ${readable(ctx, o.drawback)}`) : null,
             !hidden ? h('p', { class: 'k-oop-flavor' }, o.flavor) : null));
       })))));
 

@@ -15,7 +15,7 @@
 
 ## M0 결과
 
-콘텐츠 팩 `ba-content-2.4.0` / 규칙 `ktfr-rules-2.4.0` (2026-10-30 v2.3.1 문구 정리 + 오파츠 반영)
+콘텐츠 팩 `ba-content-2.4.0` / 규칙 `ktfr-rules-2.4.0` (2026-10-30 v2.3.1 문구 정리 + 오파츠 반영). 현재는 팩 `ba-content-2.5.0` / 규칙 `ktfr-rules-2.5.0`(v2.3.4 상점 장수·레벨 XP)
 
 | 항목 | 기대 | 실제 |
 |---|---:|---:|
@@ -49,9 +49,18 @@
 | `src/core/rng.ts` | 12.2 xorshift32·FNV-1a32 스트림 시드·rejection sampling·가중 추첨. 골든 출력 270369, 67634689, 2647435461 통과 |
 | `src/core/ooparts/ooparts.ts` | 보상 3택1(등급 추첨, 후보 소진 시 등급 이동, 미보유·전설 제외, 레시피 가중치), 획득·자동 조합, 레시피 공개(프로필), 보상 배지, 도감 숨김, 구조 요청 |
 | 전투 효과 55종 | 명세만(`spec_only`). M3에서 효과 엔진과 함께 |
-| 런 연결 | 없음. M1 런 reducer가 정산 뒤 `OOPART_CHOICE` 단계로 부른다 |
+| 런 연결 | 2026-10-30부터 미리보기 세션(지금 빌드의 플레이)이 `src/app/runRules.ts`로 코어 함수를 불러 실제로 준다: 런 시작(전략 직후)·정예 승리(장비 뒤)·1·2장 보스 승리·구조 요청(3연패). 3번째 일반 전투 획득은 삭제(D-018). 레시피 공개는 `localStorage` `kivotos-oopart-profile`. M1 런 reducer가 나오면 같은 함수를 reducer가 부른다 |
 
 실행한 검증(2026-10-30, Node 22.22.0): `npm test` 6개 파일 92개 통과, `npm run build` 통과(content:check·content:validate 오류 0·경고 0, typecheck 오류 0).
+
+## 상점 재고·레벨 XP (v2.3.4, 2026-10-30)
+
+| 항목 | 상태 |
+|---|---|
+| 규칙 수치 | `rules.shop.copiesByCost` 30/25/18/10/9, `excludeMaxStarOwned`, `rules.xp.xpToNext` 4/8/14/24/36/48/60 (v2.3 11장에서 추출) |
+| `src/core/shop/shop.ts` | 남은 장수 계산(소유 1성 환산·상점 칸), 3성·각성 제외, 코스트 추첨 + 남은 장수 비례 추첨, 바닥난 코스트 재분배, 5번 칸 추천 모드. 테스트 `tests/core/shop.test.ts` |
+| 런 연결 | 미리보기 세션의 상점 갱신이 코어 `rollShop`을 쓴다(`shop` RNG 스트림). M1 reducer도 같은 함수를 쓴다 |
+| 밸런스 | 측정하지 않음(M6 시뮬레이션) |
 
 ## 학생·시너지 정적 감사 (2026-10-30)
 

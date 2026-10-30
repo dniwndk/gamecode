@@ -1,6 +1,6 @@
 // 「블루 아카이브 풍」 화면 계층의 뼈대: 1920×1080 무대 배율, phase 라우팅, 토스트·모달·말풍선·설정.
 import type { GameCommandType } from '../../app/gameClient';
-import type { DialogueKey, EnemyDefinition, EquipmentDefinition, StrategyDefinition, SynergyDefinition, UnitDefinition } from '../../core/types/content';
+import type { DialogueKey, EnemyDefinition, EquipmentDefinition, OopartDefinition, StrategyDefinition, SynergyDefinition, UnitDefinition } from '../../core/types/content';
 import { h } from './dom';
 import { chooseFxTier } from './fx/capabilities';
 import { createFx, NO_FX, type Fx } from './fx/engine';
@@ -9,6 +9,7 @@ import type { UiDriver, UiState } from './model';
 import { mountBattle } from './screens/battle';
 import { mountCodex } from './screens/codex';
 import { mountEquipmentChoice } from './screens/equipment';
+import { mountOopartChoice, oopartArt, oopartBody } from './screens/ooparts';
 import { mountHome } from './screens/home';
 import { mountNextNode } from './screens/nextNode';
 import { mountPreparation } from './screens/preparation';
@@ -60,6 +61,7 @@ export interface Ctx {
     enemy(id: string): EnemyDefinition | undefined;
     eq(id: string): EquipmentDefinition | undefined;
     strategy(id: string): StrategyDefinition | undefined;
+    oopart(id: string): OopartDefinition | undefined;
     effectSpec(id: string | null): { spec: string; limits: string } | null;
     line(unitId: string, key: DialogueKey): string | null;
   };
@@ -95,6 +97,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
   const enemies = new Map(pack.enemies.map((e) => [e.id, e]));
   const eqs = new Map(pack.equipment.map((e) => [e.id, e]));
   const strats = new Map(pack.strategies.map((s) => [s.id, s]));
+  const oops = new Map(pack.ooparts.map((o) => [o.id, o]));
   const effects = new Map(pack.effects.map((e) => [e.id, e]));
   const lines = new Map(pack.dialogue.map((d) => [d.unitId, d]));
   const portraitIds = new Map(pack.units.map((u) => [u.id, u.portraitAssetId]));
@@ -249,6 +252,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
       enemy: (id) => enemies.get(id),
       eq: (id) => eqs.get(id),
       strategy: (id) => strats.get(id),
+      oopart: (id) => oops.get(id),
       effectSpec: (id) => { const e = id ? effects.get(id) : undefined; return e ? { spec: e.spec, limits: e.limits } : null; },
       line: (unitId, key) => lines.get(unitId)?.lines[key] ?? null,
     },
@@ -276,6 +280,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
       case 'BATTLE': return [`battle-${s.run.lastBattle?.battleId}`, () => mountBattle(ctx, s)];
       case 'RESULT': return ['result', () => mountResult(ctx, s)];
       case 'EQUIPMENT_CHOICE': return ['equipment', () => mountEquipmentChoice(ctx, s)];
+      case 'OOPART_CHOICE': return [`oopart-${s.run.ooparts.offer?.source}-${s.run.nodeId}`, () => mountOopartChoice(ctx, s)];
       case 'NEXT_NODE': return [`next-${s.run.nodeId}`, () => mountNextNode(ctx, s)];
       case 'RUN_COMPLETE':
       case 'RUN_FAILED': return ['end', () => mountRunEnd(ctx, s)];
@@ -329,9 +334,32 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     if (mobile) window.scrollTo(0, 0);
   }
 
+  // 전설 오파츠 완성은 어느 화면으로 넘어가든 한 번 크게 보여 준다(OOPARTS_v1 1.3)
+  let lastMergeCue = driver.get().cues.at(-1)?.id ?? 0;
+  function celebrateMerges(s: UiState) {
+    for (const c of s.cues) {
+      if (c.id <= lastMergeCue) continue;
+      lastMergeCue = c.id;
+      if (c.kind !== 'oopart_merge' || !c.oopartId) continue;
+      const leg = oops.get(c.oopartId);
+      const parts = (c.consumed ?? []).map((id) => oops.get(id)?.name ?? id);
+      const box = h('div', { class: 'k-oop-merge' },
+        h('div', { class: 'k-oop-merge-art' }, oopartArt(ctx, c.oopartId, 'k-oop-merge-img')),
+        h('small', null, `${leg?.code ?? ''} · 전설 오파츠 완성`),
+        h('h2', null, leg?.name ?? c.oopartId),
+        h('p', { class: 'k-oop-merge-parts' }, `${parts.join(' + ')} → 하나로 합쳐졌어요`),
+        ...oopartBody(ctx, c.oopartId),
+        c.firstReveal ? h('p', { class: 'k-oop-merge-reveal' }, icon('codex', 18), '처음 완성했어요. 이 조합법이 도감에 공개돼요.') : null,
+        h('button', { class: 'k-btn is-primary', onclick: () => close() }, icon('check', 22), '확인'));
+      const close = ctx.modal(box, { label: '전설 오파츠 완성' });
+      ctx.fx.burst(box, { color: '#ffcf3a', size: 520, ms: 1400 });
+    }
+  }
+
   driver.subscribe((s) => {
     if (s.phase !== 'HOME') route = null;
     render(s);
+    celebrateMerges(s);
   });
   render(driver.get());
 }

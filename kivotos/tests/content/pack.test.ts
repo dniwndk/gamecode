@@ -157,9 +157,17 @@ describe('정식 콘텐츠 팩 ba-content-2.5.0', () => {
     expect(r.run.startRunHp).toBe(80);
     expect(r.income.baseByChapter).toEqual([6, 7, 8]);
     expect(r.xp.perBattle).toBe(3);
-    expect(Object.values(r.xp.xpToNext)).toEqual([2, 6, 10, 18, 26, 34, 42, null]);
     expect(r.defeatDamage).toMatchObject({ chapterBase: [6, 9, 12], perSurvivingEnemyFront: 2, eliteBonus: 3, bossBonus: 6 });
     expect(r.shop.levels.find((l) => l.level === 8)!.costOddsPct).toEqual([12, 20, 35, 27, 6]);
+  });
+
+  it('상점 재고·레벨 XP v2.3.4: 코스트별 장수 30/25/18/10/9, 3성 제외, XP 4/8/14/24/36/48/60 (v2.3 11장)', () => {
+    const r = pack.rules;
+    expect(r.shop.copiesByCost).toEqual([30, 25, 18, 10, 9]);
+    expect(r.shop.excludeMaxStarOwned).toBe(true);
+    expect(Object.values(r.xp.xpToNext)).toEqual([4, 8, 14, 24, 36, 48, 60, null]);
+    expect(Object.values(r.xp.xpToNext).reduce<number>((a, b) => a + (b ?? 0), 0)).toBe(194);
+    expect(r.ooparts.sources.map((s) => s.id)).toEqual(['run_start', 'elite', 'boss', 'rescue']);
   });
 
   it('난이도 v2.3.3: 최종 보스 노드만 E.2 배율 그대로, 나머지 14개는 1.5배 (v2.3 10장)', () => {

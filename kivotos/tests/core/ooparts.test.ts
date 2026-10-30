@@ -36,7 +36,7 @@ describe('보상 제안', () => {
   it('3택1: 서로 다르고, 미보유이며, 전설은 없다', () => {
     const owned = state('oop_nebra_disk', 'oop_haniwa');
     for (let seed = 1; seed <= 300; seed++) {
-      for (const [src, ch] of [['run_start', 1], ['chapter_third_battle', 2], ['elite', 3], ['boss', 1]] as const) {
+      for (const [src, ch] of [['run_start', 1], ['elite', 2], ['elite', 3], ['boss', 1]] as const) {
         const offer = rollOopartOffer(pack, owned, src, ch, new Rng(seed));
         expect(offer).toHaveLength(3);
         expect(new Set(offer).size).toBe(3);
@@ -72,8 +72,8 @@ describe('보상 제안', () => {
   });
 
   it('같은 시드·상태면 같은 제안(재현성)', () => {
-    const a = rollOopartOffer(pack, state('oop_voynich'), 'chapter_third_battle', 3, new Rng(2024));
-    const b = rollOopartOffer(pack, state('oop_voynich'), 'chapter_third_battle', 3, new Rng(2024));
+    const a = rollOopartOffer(pack, state('oop_voynich'), 'elite', 3, new Rng(2024));
+    const b = rollOopartOffer(pack, state('oop_voynich'), 'elite', 3, new Rng(2024));
     expect(a).toEqual(b);
   });
 

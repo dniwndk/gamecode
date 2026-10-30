@@ -23,6 +23,7 @@ function toUiState(snapshot: GameSnapshot): UiState {
     run,
     hasSavedRun: run !== null,
     cues: [],
+    oopartRevealed: [],
   };
 }
 

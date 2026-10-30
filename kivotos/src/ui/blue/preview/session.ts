@@ -1,10 +1,15 @@
 // 미리보기 세션 — 코어 런(M1)과 전투(M2)가 나오기 전에 화면을 실제로 눌러 볼 수 있게 하는 목(mock).
 //
-// ⚠ 이 파일의 수치·판정은 진짜 게임 규칙이 아니다. 사양서 11.2의 "가정" 모양을 그럴듯하게 채우는
+// ⚠ 이 파일의 수치·판정은 진짜 게임 규칙이 아니다(전투·수입 흉내). 단, 상점 추첨과 오파츠 보상·조합은
+//   app/runRules.ts로 코어 규칙 함수를 그대로 부른다(v2.3 11장, OOPARTS_v1 1장). 사양서 11.2의 "가정" 모양을 그럴듯하게 채우는
 //   흉내일 뿐이며, 화면 컴포넌트는 이 파일을 import하지 않는다(adapter.ts만 쓴다).
 //   코어가 GameSnapshot.run을 내기 시작하면 adapter.ts가 자동으로 실제 클라이언트를 쓰고, 이 폴더는 지운다.
 import type { CommandResult, ContentCatalog, GameCommandType, GameSnapshot, RunPhase } from '../../../app/gameClient';
-import type { BaseStats, EnemyDefinition, NodeDefinition, UnitDefinition } from '../../../core/types/content';
+import type { BaseStats, EnemyDefinition, NodeDefinition, OopartSourceId, UnitDefinition } from '../../../core/types/content';
+import {
+  acquireOopart, costOdds, emptyOopartProfile, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
+  rollShop as rollShopCore, type OopartProfile, type OopartRunState,
+} from '../../../app/runRules';
 import type {
   BattleEventView, BattleView, CombatantView, Cue, Ref, ResultView, RunView, ShopSlotView, SynergyStateView, UiDriver, UiState,
   UnitInstanceView, Zone,
@@ -36,6 +41,24 @@ interface RunState {
   lastResult?: ResultView;
   recruited: Set<string>;
   deployed: Set<string>;
+  /** 오파츠 보유 상태와 OOPART_CHOICE 제안. after: 고른 뒤 준비 단계로 갈지, 다음 노드로 넘어갈지 */
+  oop: OopartRunState;
+  oopOffer: { ids: string[]; source: OopartSourceId; grant: boolean; after: 'prep' | 'advance' } | null;
+  oopStartDone: boolean;
+  /** 독립 RNG 스트림(12.2): 상점, 보상 */
+  shopRng: Rng;
+  rewardRng: Rng;
+}
+
+const PROFILE_KEY = 'kivotos-oopart-profile';
+function loadProfile(): OopartProfile {
+  try {
+    const v = JSON.parse(localStorage.getItem(PROFILE_KEY) ?? 'null') as OopartProfile | null;
+    return v && Array.isArray(v.revealedRecipes) ? { revealedRecipes: v.revealedRecipes.filter((x) => typeof x === 'string') } : emptyOopartProfile();
+  } catch { return emptyOopartProfile(); }
+}
+function saveProfile(p: OopartProfile) {
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch { /* 저장 불가 환경: 이번 세션에만 남는다 */ }
 }
 
 /** 미리보기 전용 시드 난수(mulberry32) */
@@ -57,7 +80,6 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   const eqById = new Map(pack.equipment.map((e) => [e.id, e]));
   const synById = new Map(pack.synergies.map((s) => [s.id, s]));
   let rand = rng(20261030);
-  const pick = <T,>(xs: T[]): T => xs[Math.floor(rand() * xs.length)];
   let nextId = 1;
   const newInst = (unitId: string, star: 1 | 2 | 3 = 1, equipment: string[] = []): Inst => ({ instanceId: `i${nextId++}`, unitId, star, equipment });
 
@@ -66,6 +88,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   let run: RunState | null = demoRun();
   let cueId = 0;
   let cues: Cue[] = [];
+  let profile = loadProfile();
   const listeners = new Set<(s: UiState) => void>();
 
   // ── 데모 런: 사양서 11.2 권장 목 상태(2장 3전투, 골드 34, 레벨 6, 한탕 4, 금고 45G, 합성 예고 1칸, 적 후보 A/B)
@@ -84,6 +107,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       shop: ['u_serika', 'u_aru', 'u_iori', 'u_mutsuki', 'u_akira'], locked: false, tracked: 'syn_seminar', chosen: 'A',
       history: ['win', 'win', 'loss', 'win', 'win', 'win', 'win', null, null, null, null, null, null, null, null],
       offers: {}, recruited: new Set(), deployed: new Set(),
+      oop: { owned: ['oop_nebra_disk', 'oop_voynich', 'oop_nimrud_lens'], rescueUsed: false }, oopOffer: null, oopStartDone: true,
+      shopRng: Rng.forStream('KIVO-7Q2M-SCHALE', 'shop'), rewardRng: Rng.forStream('KIVO-7Q2M-SCHALE', 'reward'),
     };
     for (const i of [...r.front, ...r.rear, ...r.bench]) if (i) { r.recruited.add(i.unitId); r.deployed.add(i.unitId); }
     return r;
@@ -158,24 +183,38 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     return { mergesTo, synergyDelta };
   }
 
-  function odds(level: number): number[] {
-    return rules.shop.levels.find((l) => l.level === level)?.costOddsPct ?? [100, 0, 0, 0, 0];
+  const odds = (level: number): number[] => costOdds(pack, level);
+
+  /** 코어 상점 추첨(v2.3 11장): 코스트별 장수 제한, 3성 보유 학생 제외. 남은 장수는 소유 학생에서 매번 계산한다. */
+  function rollShop(r: RunState) {
+    r.shop = rollShopCore(pack, { level: r.level, owned: all(r).map((i) => ({ unitId: i.unitId, star: i.star })), trackedSynergyId: r.tracked }, r.shopRng);
   }
 
-  function rollShop(r: RunState) {
-    const o = odds(r.level);
-    const eligible = pack.units.filter((u) => u.shopEligible);
-    r.shop = Array.from({ length: rules.shop.slots }, (_, idx) => {
-      if (idx === rules.shop.recommendedSlotIndex && r.tracked) {
-        const members = synById.get(r.tracked)!.memberIds.filter((id) => unitById.get(id)?.shopEligible && o[unitById.get(id)!.cost - 1] > 0);
-        if (members.length) return pick(members);
-      }
-      let x = rand() * 100;
-      let cost = 1;
-      for (let c = 0; c < 5; c++) { if (x < o[c]) { cost = c + 1; break; } x -= o[c]; }
-      const pool = eligible.filter((u) => u.cost === cost);
-      return pick(pool.length ? pool : eligible).id;
-    });
+  // ── 오파츠(OOPARTS_v1 1장) ───────────────────────────────
+  /** 제안을 뽑아 OOPART_CHOICE로 간다. 후보가 없으면 false(그냥 다음 단계로). */
+  function offerOoparts(r: RunState, source: OopartSourceId, after: 'prep' | 'advance'): boolean {
+    const ids = rollOopartOffer(pack, r.oop, source, r.chapter, r.rewardRng);
+    if (!ids.length) return false;
+    const grant = rules.ooparts.sources.find((s) => s.id === source)!.grant;
+    r.oopOffer = { ids, source, grant, after };
+    phase = 'OOPART_CHOICE';
+    return true;
+  }
+
+  function finishOoparts(r: RunState) {
+    const after = r.oopOffer?.after ?? 'advance';
+    r.oopOffer = null;
+    if (after === 'prep') { if (!r.shop.length) rollShop(r); phase = 'PREPARATION'; }
+    else { advanceNode(r); phase = 'NEXT_NODE'; }
+  }
+
+  /** 정예·1·2장 보스 승리 뒤 오파츠, 없으면 다음 노드로 */
+  function afterRewards(r: RunState) {
+    const n = node(r);
+    const source: OopartSourceId | null = n.type === 'elite' ? 'elite' : n.type === 'boss' ? 'boss' : null;
+    if (source && offerOoparts(r, source, 'advance')) return;
+    advanceNode(r);
+    phase = 'NEXT_NODE';
   }
 
   function levelUp(r: RunState) {
@@ -232,6 +271,13 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       },
       nodeHistory: [...r.history],
       offers: r.offers,
+      ooparts: {
+        owned: [...r.oop.owned],
+        offer: r.oopOffer && {
+          ids: [...r.oopOffer.ids], source: r.oopOffer.source, grant: r.oopOffer.grant, skipGold: oopartSkipGold(pack),
+          badges: r.oopOffer.ids.map((id) => recipeBadge(pack, r.oop, profile, id)),
+        },
+      },
       lastBattle: r.lastBattle, lastResult: r.lastResult,
     };
   }
@@ -239,7 +285,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   function state(): UiState {
     return {
       revision, phase, contentVersion: base.contentVersion, rulesVersion: base.rulesVersion,
-      run: run && phase !== 'HOME' ? view(run) : null, hasSavedRun: !!run, cues,
+      run: run && phase !== 'HOME' ? view(run) : null, hasSavedRun: !!run, cues, oopartRevealed: [...profile.revealedRecipes],
       savedRun: run ? { chapter: run.chapter, battle: run.battle, runHp: run.runHp, runHpMax: rules.run.startRunHp, snapshot: view(run) } : undefined,
     };
   }
@@ -475,6 +521,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         strategies: shuffle(pack.strategies.filter((s) => s.offer.chapters.includes(1))).slice(0, 3).map((s) => s.id),
       },
       recruited: new Set(chosen.map((u) => u.id)), deployed: new Set(),
+      oop: emptyOopartRunState(), oopOffer: null, oopStartDone: false,
+      shopRng: Rng.forStream(seed, 'shop'), rewardRng: Rng.forStream(seed, 'reward'),
     };
     rollShop(r);
     return r;
@@ -515,6 +563,11 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
           phase = 'EQUIPMENT_CHOICE';
           return ok();
         }
+        // 구조 요청: 이번 패배로 연패가 기준에 닿았고 이 런에서 아직 안 받았을 때(1.2)
+        if (res.outcome === 'loss' && r.streak.kind === 'loss' && rescueDue(pack, r.oop, r.streak.count)) {
+          r.oop = markRescueUsed(r.oop);
+          if (offerOoparts(r, 'rescue', 'advance')) return ok();
+        }
         advanceNode(r);
         phase = 'NEXT_NODE';
         return ok();
@@ -531,6 +584,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       if (!r.offers?.strategies?.includes(id)) return no('제안된 전략이 아니에요', 'INVALID_PAYLOAD');
       r.strategies.push(id);
       r.offers = {};
+      // 런 시작 오파츠 3택1(전략 선택 직후)
+      if (!r.oopStartDone) { r.oopStartDone = true; if (offerOoparts(r, 'run_start', 'prep')) return ok(); }
       if (!r.shop.length) rollShop(r);
       phase = 'PREPARATION';
       return ok();
@@ -539,8 +594,25 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       const id = payload.equipmentId ? String(payload.equipmentId) : null;
       if (id) { if (!r.offers?.equipment?.includes(id)) return no('제안된 장비가 아니에요', 'INVALID_PAYLOAD'); r.stash.push(id); }
       else r.gold += 3;
-      advanceNode(r);
-      phase = 'NEXT_NODE';
+      afterRewards(r);
+      return ok();
+    }
+    if (phase === 'OOPART_CHOICE' && r.oopOffer && (type === 'CHOOSE_OOPART' || type === 'SKIP_OOPART')) {
+      if (type === 'SKIP_OOPART') {
+        if (r.oopOffer.grant) return no('구조 요청 오파츠는 건너뛸 수 없어요');
+        r.gold += oopartSkipGold(pack);
+        finishOoparts(r);
+        return ok();
+      }
+      const id = String(payload.oopartId ?? '');
+      if (!r.oopOffer.ids.includes(id)) return no('제안된 오파츠가 아니에요', 'INVALID_PAYLOAD');
+      const got = acquireOopart(pack, r.oop, profile, id);
+      if (!got.ok) return no(got.message);
+      r.oop = got.state;
+      if (got.profile.revealedRecipes.length !== profile.revealedRecipes.length) { profile = got.profile; saveProfile(profile); }
+      cue({ kind: 'oopart', oopartId: id });
+      for (const m of got.merges) cue({ kind: 'oopart_merge', oopartId: m.legendaryId, consumed: m.consumed, firstReveal: m.firstReveal });
+      finishOoparts(r);
       return ok();
     }
     if (phase !== 'PREPARATION') return no('준비 단계에서만 할 수 있어요', 'WRONG_PHASE');
@@ -685,7 +757,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     send,
     resume() {
       if (!run) return;
-      phase = run.lastResult && run.history.every((x) => x !== null) ? 'RUN_COMPLETE' : 'PREPARATION';
+      phase = run.lastResult && run.history.every((x) => x !== null) ? 'RUN_COMPLETE' : run.oopOffer ? 'OOPART_CHOICE' : 'PREPARATION';
       emit();
     },
   };

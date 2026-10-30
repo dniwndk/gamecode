@@ -1,6 +1,6 @@
 {
-  "rulesVersion": "ktfr-rules-2.4.0",
-  "source": "GDD v2.1 4.1·5장 + v2.2 1장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.",
+  "rulesVersion": "ktfr-rules-2.5.0",
+  "source": "GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.",
   "run": {
     "chapters": 3,
     "battlesPerChapter": 5,
@@ -107,20 +107,28 @@
           25
         ]
       }
-    ]
+    ],
+    "copiesByCost": [
+      30,
+      25,
+      18,
+      10,
+      9
+    ],
+    "excludeMaxStarOwned": true
   },
   "xp": {
     "buyCostGold": 4,
     "buyAmount": 4,
     "perBattle": 3,
     "xpToNext": {
-      "3": 2,
-      "4": 6,
-      "5": 10,
-      "6": 18,
-      "7": 26,
-      "8": 34,
-      "9": 42,
+      "3": 4,
+      "4": 8,
+      "5": 14,
+      "6": 24,
+      "7": 36,
+      "8": 48,
+      "9": 60,
       "10": null
     }
   },
@@ -232,34 +240,6 @@
             100,
             0,
             0
-          ]
-        }
-      },
-      {
-        "id": "chapter_third_battle",
-        "chapters": [
-          1,
-          2,
-          3
-        ],
-        "choices": 3,
-        "grant": false,
-        "requiresWin": true,
-        "oddsByChapter": {
-          "1": [
-            80,
-            20,
-            0
-          ],
-          "2": [
-            50,
-            45,
-            5
-          ],
-          "3": [
-            30,
-            55,
-            15
           ]
         }
       },
