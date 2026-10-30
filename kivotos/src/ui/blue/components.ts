@@ -216,7 +216,7 @@ export function synergyRow(ctx: Ctx, s: SynergyStateView, run: RunView | null, o
   const row = h('div', { class: cls('k-syn', state, s.tracked && 'is-tracked'), tabindex: 0, role: 'listitem' },
     synHex(ctx, s.synergyId, { size: 46, dim: s.activeTier === null, tier: s.activeTier }),
     h('div', { class: 'k-syn-body' },
-      h('div', { class: 'k-syn-name' }, h('span', null, syn.name.replace(/^고유:\s*/, '')), oneShort ? h('em', null, '1명 더') : null),
+      h('div', { class: 'k-syn-name' }, h('span', null, syn.name.replace(/^고유:\s*/, ''))),
       h('div', { class: 'k-syn-steps' },
         h('b', { class: 'k-syn-count' }, String(s.count)),
         ...syn.tiers.map((t, idx) => h('span', { class: cls('k-step', s.activeTier !== null && idx <= s.activeTier && 'on', s.activeTier === idx && 'cur') }, String(t.threshold))))),
