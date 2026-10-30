@@ -13,7 +13,7 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 ## 화면이 할 수 있는 것
 
 - `import { createGameClient } from '../app/gameClient'`와 `import { contentPack } from '../content'`로 클라이언트를 만든다(예: src/ui/main.ts).
-- `client.catalog`: 유닛·시너지·장비·전략·적·노드·대사 정의와 검증 결과. 표시용이며 고치지 않는다. 초상화 주소는 `catalog.assetUrl(unit.portraitAssetId)`이고 `null`이면 이니셜·진영색으로 대체한다.
+- `client.catalog`: 유닛·시너지·장비·전략·오파츠·적·노드·대사 정의와 검증 결과. 표시용이며 고치지 않는다. 초상화 주소는 `catalog.assetUrl(unit.portraitAssetId)`이고 `null`이면 이니셜·진영색으로 대체한다.
 - `client.getSnapshot()` / `client.subscribe(listener)`: 현재 상태(`revision`, `phase`, 런 상태)와 연출용 이벤트.
 - `client.dispatch(command)`: 모든 상태 변경은 명령으로만. `{ commandId, expectedRevision, type, payload }`. 결과는 `{ ok: true, revision }` 또는 거부 사유.
 - 타입이 필요하면 `src/core/types/*`의 타입만 import한다.
@@ -37,7 +37,8 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 
 | 항목 | M0 | 확정 시점 |
 |---|---|---|
-| `catalog` | 완성 (팩 ba-content-2.2.0) | — |
+| `catalog` | 완성 (팩 ba-content-2.4.0, 오파츠 55종 포함) | — |
+| 오파츠 | `catalog.pack.ooparts` 정의. `OOPART_CHOICE` 단계와 `CHOOSE_OOPART`(payload `{ oopartId }`)·`SKIP_OOPART` 명령 이름만 있음 | M1 런 reducer가 `src/core/ooparts/ooparts.ts`를 부를 때 |
 | `GameSnapshot.run` | 항상 `null` | M1 런 reducer |
 | `GameCommandType` | 이름 목록만. 모든 명령이 `NOT_IMPLEMENTED`로 거부 | M1(준비 단계 명령), M4(런 흐름) |
 | `GameEvent` | 자리만 | M2 전투 로그 |
@@ -62,7 +63,15 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 | 노드 진행 기록 | `run.nodeHistory`(15칸 승/패) | 런 상태에 포함 |
 | 패배 피해 미리보기 | `run.node.defeatDamagePreview` | 후보별 예상 피해 |
 
+## 오파츠 화면이 지킬 것
+
+- **전설은 레시피가 공개되기 전까지 숨긴다.** 도감에서 공개 전 전설은 실루엣과 「???」만. 코어의 `oopartCodex(pack, profile)`가 숨길 항목을 정해 주고, 런 스냅샷에도 같은 값이 실린다(M1).
+- 보상 카드의 「조합 재료 (n/m)」 배지는 코어가 준 값(`recipeBadge`)이 있을 때만 그린다. 화면이 레시피를 직접 찾아 배지를 만들면 공개 규칙을 깨게 된다.
+- 대가 오파츠(`kind: 'drawback'`)는 이득과 대가를 둘 다 보여 준다(사양: 붉은 테두리).
+- 조합은 보상 확정 직후 자동으로 일어난다. 연출 신호는 M2에서 `GameEvent`로 온다(`OOPART_MERGED`, 처음 완성이면 `firstReveal`).
+
 ## 변경 기록
 
 - 2026-10-29 M0 초안.
 - 2026-10-30 임시 카탈로그 화면을 `src/ui/blue/`로 교체, 계약 확장 요청 목록 추가.
+- 2026-10-30 오파츠 추가: 카탈로그에 `ooparts`, 단계 `OOPART_CHOICE`, 명령 `CHOOSE_OOPART`·`SKIP_OOPART`(아직 `NOT_IMPLEMENTED`).

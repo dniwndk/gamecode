@@ -1,4 +1,4 @@
-// 기획서(docs/GDD_v2.1.md + docs/GDD_v2.2_amendment.md + docs/GDD_v2.3_amendment.md)의 표를 읽어 src/content/*.json 카탈로그를 만든다.
+// 기획서(docs/GDD_v2.1.md + docs/GDD_v2.2_amendment.md + docs/GDD_v2.3_amendment.md + docs/OOPARTS_v1.md)의 표를 읽어 src/content/*.json 카탈로그를 만든다.
 // 기획서가 바뀌면 다시 돌린다: npm run content:extract
 // --check 를 주면 파일을 쓰지 않고, 지금 저장소의 JSON이 기획서와 같은지만 본다(다르면 exit 1).
 //
@@ -22,6 +22,8 @@ const v21 = v21Text.split('\n');
 const v22 = v22Text.split('\n');
 const v23Text = readFileSync(join(DOCS, 'GDD_v2.3_amendment.md'), 'utf8');
 const v23 = v23Text.split('\n');
+const oopText = readFileSync(join(DOCS, 'OOPARTS_v1.md'), 'utf8');
+const oop = oopText.split('\n');
 
 function fail(msg) {
   console.error(`extract-content: ${msg}`);
@@ -262,6 +264,7 @@ for (const c of tableRows(section(v23, '## 7. 전략 조정'), '`str_')) {
     if (!st.offer.ownedCondition) fail(`${st.id}: 보유 조건이 없는 전략`);
     st.offer.ownedCondition.anyTagOf = ids(c[2], 'syn_');
   } else if (c[1] === '약점') st.drawback = c[2];
+  else if (c[1] === '제안 문장') st.offerText = c[2];
   else fail(`v2.3 7장 항목 모름: ${c[1]}`);
 }
 strategies.push({
@@ -275,6 +278,12 @@ strategies.push({
   stacking: '중복 획득 불가',
   generalPurpose: false,
 });
+
+// v2.3 7.1: 장비 추천 문구 교체
+for (const c of tableRows(section(v23, '### 7.1 장비 추천 문구'), '`eq_')) {
+  const eq = equipment.find((e) => e.id === unticked(c[0])) ?? fail(`v2.3 7.1의 ${c[0]} 장비가 없음`);
+  eq.recommendation = c[1];
+}
 
 // ───────────────────────── 적 ─────────────────────────
 const enemies = tableRows(section(v21, '### E.1 적 및 보스 마스터 정의 (총 13종: 일반·정예 10종 + 보스 3종)'), '`').map((c) => {
@@ -339,6 +348,125 @@ const nodes = tableRows(section(v21, '### E.2 15개 진행 노드(1장 1전투 ~
   };
 });
 
+// ───────────────────────── 오파츠 ─────────────────────────
+// docs/OOPARTS_v1.md 2~5장의 표. 표마다 칸 구성이 달라 제목으로 배치를 정한다.
+const OOP_TABLES = [
+  ['### 2.1 범용 (11)', 'general'],
+  ['### 2.2 역할군 특화 (7)', 'targeted'],
+  ['### 2.3 동아리 특화 (7)', 'targeted'],
+  ['### 3.1 학원 진영 특화 (8)', 'targeted'],
+  ['### 3.2 범용 (3)', 'general'],
+  ['### 3.3 ⚠ 대가 오파츠 (4)', 'drawback'],
+  ['### 4.1 학원 진영 특화 (4)', 'targeted'],
+  ['### 4.2 범용 (3)', 'general'],
+  ['### 4.3 ⚠ 대가 오파츠 (3)', 'drawback'],
+  ['## 5. 전설 오파츠 (5) — 조합 전용', 'legendary'],
+];
+const OOP_RARITY = { C: 'common', U: 'uncommon', R: 'rare', L: 'legendary' };
+const plain = (s) => unbold(s);
+// 표시명이 긴 시너지(「무법자 — 칠수인·헬멧단」)는 " — " 앞 이름으로도 찾는다.
+const synergyByName = new Map(synergies.flatMap((s) => [[s.name, s.id], [s.name.split(' — ')[0], s.id]]));
+const oopRows = [];
+for (const [heading, layout] of OOP_TABLES) {
+  const rows = section(oop, heading).filter((l) => /^\| [CURL]\d{2} \|/.test(l)).map(cells);
+  if (rows.length === 0) fail(`오파츠 표가 비어 있음: ${heading}`);
+  for (const c of rows) oopRows.push({ layout, heading, c });
+}
+const oopByCode = new Map();
+const ooparts = oopRows.map(({ layout, heading, c }) => {
+  const [code, rawId, rawName] = c;
+  const id = unticked(rawId);
+  if (!/^oop_[a-z0-9_]+$/.test(id)) fail(`오파츠 ID 형식: ${rawId}`);
+  const item = {
+    id,
+    code,
+    name: plain(rawName),
+    rarity: OOP_RARITY[code[0]],
+    kind: layout === 'drawback' ? 'drawback' : layout === 'targeted' ? 'synergy' : 'general',
+    synergyIds: [],
+    effectIds: [`eff_${id}`],
+    benefit: '',
+    drawback: null,
+    recipe: null,
+    flavor: '',
+  };
+  if (layout === 'general') [item.benefit, item.flavor] = [plain(c[3]), c[4]];
+  if (layout === 'targeted') {
+    const synId = synergyByName.get(c[3]) ?? fail(`${id}: 대상 시너지 "${c[3]}"를 찾지 못함`);
+    item.synergyIds = [synId];
+    [item.benefit, item.flavor] = [plain(c[4]), c[5]];
+  }
+  if (layout === 'drawback') [item.benefit, item.drawback, item.flavor] = [plain(c[3]), plain(c[4]), c[5]];
+  if (layout === 'legendary') {
+    item.recipe = [...c[3].matchAll(/\(([CUR]\d{2})\)/g)].map((m) => m[1]);
+    if (item.recipe.length < 2) fail(`${id}: 레시피 재료를 읽지 못함: ${c[3]}`);
+    item.benefit = plain(c[4]);
+  }
+  if (oopByCode.has(code)) fail(`오파츠 번호 중복: ${code}`);
+  oopByCode.set(code, item);
+  item.sourceHeading = heading;
+  return item;
+});
+for (const item of ooparts) {
+  if (!item.recipe) continue;
+  const parts = item.recipe.map((code) => oopByCode.get(code) ?? fail(`${item.id}: 레시피의 ${code}가 없음`));
+  item.recipe = parts.map((p) => p.id);
+  item.synergyIds = [...new Set(parts.flatMap((p) => p.synergyIds))];
+  if (item.synergyIds.length) item.kind = 'synergy';
+}
+for (const item of ooparts) {
+  const heading = item.sourceHeading;
+  delete item.sourceHeading;
+  effects.push({
+    id: `eff_${item.id}`,
+    catalogNo: `O.${item.code}`,
+    owner: `오파츠 ${item.id}`,
+    scope: 'global',
+    execution: 'oopart_container',
+    trigger: null,
+    spec: item.drawback ? `이득: ${item.benefit} 대가: ${item.drawback}` : item.benefit,
+    limits: '보유하는 동안 상시. 전투 handler는 전역 주기(7.1)·root 한도(9.4)를 따른다. 대가는 이득과 같은 handler에서 함께 적용한다.',
+    sourceReference: `OOPARTS v1 ${heading.replace(/^#+ /, '')}`,
+    implementation: 'spec_only',
+    handlers: [],
+  });
+}
+
+// 1.2절 획득 표 → rules.ooparts
+const OOP_SOURCE = [
+  [/^런 시작/, 'run_start'],
+  [/3번째 일반 전투/, 'chapter_third_battle'],
+  [/^정예/, 'elite'],
+  [/보스 승리/, 'boss'],
+  [/^구조 요청/, 'rescue'],
+];
+const oopAcqLines = section(oop, '### 1.2 획득 경로');
+const oopSources = tableRows(oopAcqLines, '').filter((c) => c.length === 3 && !/^-+$/.test(c[0]) && c[0] !== '시점').map((c) => {
+  const id = OOP_SOURCE.find(([re]) => re.test(c[0]))?.[1] ?? fail(`오파츠 획득 시점을 모름: ${c[0]}`);
+  const all = [1, 2, 3];
+  const chapterMatch = c[0].match(/^(\d)·(\d)장/);
+  const chapters = chapterMatch ? [Number(chapterMatch[1]), Number(chapterMatch[2])] : all;
+  const perChapter = [...c[2].matchAll(/(\d)장 (\d+)\/(\d+)\/(\d+)/g)];
+  const flat = c[2].match(/^(\d+) \/ (\d+) \/ (\d+)$/);
+  const oddsByChapter = {};
+  for (const ch of chapters) {
+    const m = perChapter.find((x) => Number(x[1]) === ch);
+    const row = m ? m.slice(2, 5) : flat ? flat.slice(1, 4) : fail(`${id}: ${ch}장 등급 확률을 읽지 못함: ${c[2]}`);
+    oddsByChapter[ch] = row.map(Number);
+    if (oddsByChapter[ch].reduce((a, b) => a + b, 0) !== 100) fail(`${id}: ${ch}장 확률 합이 100이 아님`);
+  }
+  const choice = c[1].match(/3택1/) ? 3 : 1;
+  return { id, chapters, choices: choice, grant: choice === 1, requiresWin: /승리/.test(c[0]), oddsByChapter };
+});
+const oopRule = (re, what) => Number((oopText.match(re) ?? fail(`오파츠 규칙 "${what}"를 찾지 못함`))[1]);
+const oopartRules = {
+  rarityOrder: ['common', 'uncommon', 'rare'],
+  sources: oopSources,
+  rescueLossStreak: oopRule(/구조 요청\((\d)연패 직후, 런당 1회\)/, '구조 요청 연패 수'),
+  skipGold: oopRule(/건너뛰면 (\d+)G/, '건너뛰기 골드'),
+  recipeWeight: oopRule(/남은 재료가 보상 추첨 가중치 ×(\d+)를 받는다/, '레시피 가중치'),
+};
+
 // ───────────────────────── 상태 ─────────────────────────
 const statusIds = [...new Set([...v21Text.matchAll(/\bst_[a-z_]+/g)].map((m) => m[0]))].sort();
 const statusRules = new Map(tableRows(section(v21, '### 8.4 상태 규칙'), '`st_').map((c) => [unticked(c[0]), c[1]]));
@@ -354,8 +482,8 @@ const levelHeader = tableRows(section(v22, '### 1.2 레벨별 XP (v2.1 5.1의 "�
 const xpToNext = Object.fromEntries(levelHeader.slice(1).map((lv, k) => [lv, xpRow[k + 1] === '—' ? null : Number(unbold(xpRow[k + 1]))]));
 
 const rules = {
-  rulesVersion: 'ktfr-rules-2.2.0',
-  source: 'GDD v2.1 4.1·5장 + v2.2 1장. 표에서 직접 읽은 값은 shop.levels/xpToNext, 나머지는 해당 절의 확정 초기값.',
+  rulesVersion: 'ktfr-rules-2.4.0',
+  source: 'GDD v2.1 4.1·5장 + v2.2 1장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.',
   run: {
     chapters: 3, battlesPerChapter: 5,
     startRunHp: 80, startGold: 10, startLevel: 3, startXp: 0, maxLevel: 10,
@@ -377,6 +505,7 @@ const rules = {
     teamSp: { start: 3, max: 5 }, energy: { start: 0, max: 100 },
   },
   rng: { algorithm: 'xorshift32', zeroSeedReplacement: 0x6d2b79f5, streams: ['setup', 'shop', 'reward', 'battle', 'initiative'] },
+  ooparts: oopartRules,
 };
 
 // ───────────────────────── 대사·초상화 ─────────────────────────
@@ -398,13 +527,14 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-2.3.0',
+  contentVersion: 'ba-content-2.4.0',
   rulesVersion: rules.rulesVersion,
-  expectedCounts: { units: 100, synergies: 63, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 399, dialogueFiles: 100, statuses: 20 },
+  expectedCounts: { units: 100, synergies: 63, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 454, dialogueFiles: 100, statuses: 20, ooparts: 55 },
   sources: [
     { path: 'docs/GDD_v2.1.md', sha256: sha256(v21Text) },
     { path: 'docs/GDD_v2.2_amendment.md', sha256: sha256(v22Text) },
     { path: 'docs/GDD_v2.3_amendment.md', sha256: sha256(v23Text) },
+    { path: 'docs/OOPARTS_v1.md', sha256: sha256(oopText) },
   ],
   generatedBy: 'scripts/extract-content.mjs',
 };
@@ -413,7 +543,7 @@ const pack = {
 const outputs = {
   'pack.json': pack, 'rules.json': rules, 'units.json': units, 'synergies.json': synergies, 'effects.json': effects,
   'equipment.json': equipment, 'strategies.json': strategies, 'enemies.json': enemies, 'nodes.json': nodes,
-  'statuses.json': statuses, 'assets.json': portraits,
+  'statuses.json': statuses, 'assets.json': portraits, 'ooparts.json': ooparts,
 };
 // 대사는 docs/dialogue/ko/<unitId>.json(유닛마다 한 파일)을 한 배열로 묶어 둔다.
 outputs['dialogue.ko.json'] = dialogueFiles.map((f) => JSON.parse(readFileSync(join(dialogueSrc, f), 'utf8')));
@@ -429,5 +559,5 @@ if (CHECK) {
   if (stale.length) fail(`기획서와 다른 카탈로그 파일: ${stale.join(', ')} — npm run content:extract 로 다시 만든다`);
   console.log('extract-content --check: 카탈로그가 기획서와 같다');
 } else {
-  console.log(`extract-content: 유닛 ${units.length} · 시너지 ${synergies.length} · 효과 ${effects.length} · 장비 ${equipment.length} · 전략 ${strategies.length} · 적 ${enemies.length} · 노드 ${nodes.length} · 상태 ${statuses.length} · 대사 ${dialogueFiles.length}`);
+  console.log(`extract-content: 유닛 ${units.length} · 시너지 ${synergies.length} · 효과 ${effects.length} · 장비 ${equipment.length} · 전략 ${strategies.length} · 적 ${enemies.length} · 노드 ${nodes.length} · 상태 ${statuses.length} · 오파츠 ${ooparts.length} · 대사 ${dialogueFiles.length}`);
 }

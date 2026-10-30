@@ -1,0 +1,903 @@
+[
+  {
+    "id": "oop_nebra_disk",
+    "code": "C01",
+    "name": "네브라 디스크",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_nebra_disk"
+    ],
+    "benefit": "정산 이자를 계산할 때 보유 골드를 +4G 많은 것으로 친다(이자 상한은 그대로)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "하늘의 별을 새긴 원반. 별을 세듯 금화를 센다"
+  },
+  {
+    "id": "oop_roman_dodecahedron",
+    "code": "C02",
+    "name": "로마 십이면체",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_roman_dodecahedron"
+    ],
+    "benefit": "상점 5번째(추천) 칸의 추천 모드 확률 50% → 80%",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "쓰임새를 아무도 모르는 십이면체. 굴리면 원하는 면이 잘 나온다"
+  },
+  {
+    "id": "oop_antikythera",
+    "code": "C03",
+    "name": "안티키테라 장치",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_antikythera"
+    ],
+    "benefit": "레벨업 직후 첫 상점 갱신에서 1번 칸은 그 레벨에서 나올 수 있는 최고 코스트로 확정",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "천체의 움직임을 계산하던 톱니바퀴"
+  },
+  {
+    "id": "oop_phaistos_disc",
+    "code": "C04",
+    "name": "파이스토스 원반",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_phaistos_disc"
+    ],
+    "benefit": "전투 종료 XP +1(3 → 4)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "해독되지 않은 문자. 읽으려 애쓰는 것만으로 공부가 된다"
+  },
+  {
+    "id": "oop_haniwa",
+    "code": "C05",
+    "name": "하니와",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_haniwa"
+    ],
+    "benefit": "대기석 +1칸(9 → 10). 대기석에 있던 학생을 팔 때 2성 이상 감가(-1G) 없음",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "무덤을 지키던 흙인형. 자리를 하나 더 지켜 준다"
+  },
+  {
+    "id": "oop_okiku_doll",
+    "code": "C06",
+    "name": "오키쿠 인형",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_okiku_doll"
+    ],
+    "benefit": "패배 시 런 체력 피해 -2(최소 1)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "머리카락이 자란다는 인형. 대신 아파 준다"
+  },
+  {
+    "id": "oop_baghdad_battery",
+    "code": "C07",
+    "name": "고대 전지",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_baghdad_battery"
+    ],
+    "benefit": "전투 중 팀 SP가 처음 0이 되는 순간 SP +2(전투당 1회)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "2천 년 전 항아리 전지. 아직 조금 남아 있다"
+  },
+  {
+    "id": "oop_nimrud_lens",
+    "code": "C08",
+    "name": "님루드 렌즈",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_nimrud_lens"
+    ],
+    "benefit": "후방에 출전한 학생 CRIT +10%",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "고대의 수정 렌즈. 멀리 있는 것이 잘 보인다"
+  },
+  {
+    "id": "oop_aether_essence",
+    "code": "C09",
+    "name": "에테르 정수",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_aether_essence"
+    ],
+    "benefit": "기본 공격의 에너지 획득 +20 → +25",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "신비를 머금은 정수"
+  },
+  {
+    "id": "oop_mandragora",
+    "code": "C10",
+    "name": "만드라고라",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_mandragora"
+    ],
+    "benefit": "전투 중 아군이 처음 쓰러질 때, 남은 전방 전원 최대 HP 8% 회복(전투당 1회)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "뽑힐 때의 비명이 동료를 일으켜 세운다"
+  },
+  {
+    "id": "oop_voynich",
+    "code": "C11",
+    "name": "보이니치 사본",
+    "rarity": "common",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_voynich"
+    ],
+    "benefit": "장 시작 전략 선택 후보 3 → 4개",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "아무도 못 읽는 책. 샬레의 작전 회의에서는 의외로 쓸모 있다"
+  },
+  {
+    "id": "oop_wolfsegg_steel",
+    "code": "C12",
+    "name": "볼프세크 철편",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_tank"
+    ],
+    "effectIds": [
+      "eff_oop_wolfsegg_steel"
+    ],
+    "benefit": "도발(`st_taunt`) 중인 탱커가 받는 피해의 15%를 공격자에게 되돌린다(턴당 3회). 탱커 3단계의 시작 도발과 이어진다",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "하늘에서 떨어진 철. 깨지지 않는다"
+  },
+  {
+    "id": "oop_istanbul_rocket",
+    "code": "C13",
+    "name": "이스탄불 로켓",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_attacker"
+    ],
+    "effectIds": [
+      "eff_oop_istanbul_rocket"
+    ],
+    "benefit": "어태커 3단계의 \"연속 타격\" 중첩이 대상을 처치해도 사라지지 않고 다음 대상에 이어진다. 최대 중첩 5 → 7",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "고대 유물인데 왜인지 로켓 모양"
+  },
+  {
+    "id": "oop_quimbaya_plane",
+    "code": "C14",
+    "name": "킴바야 비행기",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_sniper"
+    ],
+    "effectIds": [
+      "eff_oop_quimbaya_plane"
+    ],
+    "benefit": "스나이퍼 4단계 \"조준\" 대상이 쓰러지면 즉시 HP가 가장 높은 적을 다시 조준하고, 새 대상에 대한 첫 공격은 확정 치명. 2단계만 켜져 있어도 전투 시작 조준 1회(치명 피해 +25%)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "황금 비행기 모형. 바람을 읽는다"
+  },
+  {
+    "id": "oop_disco_colgante",
+    "code": "C15",
+    "name": "디스코 콜간테",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_blaster"
+    ],
+    "effectIds": [
+      "eff_oop_disco_colgante"
+    ],
+    "benefit": "블래스터 광역 공격이 3명 이상을 맞히면 그 공격의 CRIT +20%(4·6단계의 \"3명 이상\" 조건과 같은 순간에 터진다)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "둥근 원반. 적이 적어도 빈틈없이 퍼진다"
+  },
+  {
+    "id": "oop_golden_fleece",
+    "code": "C16",
+    "name": "황금 양모",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_healer"
+    ],
+    "effectIds": [
+      "eff_oop_golden_fleece"
+    ],
+    "benefit": "힐러 4단계 \"넘친 치유 → 보호막\"의 전환량 +50%. 2단계만 켜져 있으면 넘친 치유의 25%를 1턴 보호막으로",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "상처를 감싸는 황금빛 털"
+  },
+  {
+    "id": "oop_atlantis_medal",
+    "code": "C17",
+    "name": "아틀란티스 메달",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_supporter"
+    ],
+    "effectIds": [
+      "eff_oop_atlantis_medal"
+    ],
+    "benefit": "서포터 학생의 전투 스킬은 첫 사용 후 쿨다운 -1(학생별 전투당 1회)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "가라앉은 도시의 훈장"
+  },
+  {
+    "id": "oop_winnipesaukee_stone",
+    "code": "C18",
+    "name": "위니페소키 돌",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_controller"
+    ],
+    "effectIds": [
+      "eff_oop_winnipesaukee_stone"
+    ],
+    "benefit": "컨트롤러 학생의 기절이 보스에게 막히면 대신 보스 행동 15% 지연, 그 보스는 1턴간 컨트롤러 4단계의 \"제어 상태\"(받는 피해 +20%)로 친다",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "호수 밑에서 나온 알 모양 돌. 무겁다"
+  },
+  {
+    "id": "oop_zero_star_review",
+    "code": "C19",
+    "name": "별점 0개 리뷰 수첩",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_gourmet"
+    ],
+    "effectIds": [
+      "eff_oop_zero_star_review"
+    ],
+    "benefit": "미식연구회 2단계의 \"별점 0개\" 폭발이 맞은 적에게 화상(`st_burn`) 1턴",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "하루나가 쓴 리뷰. 읽으면 가게가 탄다"
+  },
+  {
+    "id": "oop_tsc_first_edition",
+    "code": "C20",
+    "name": "테일즈 사가 크로니클 초회판",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_game_dev"
+    ],
+    "effectIds": [
+      "eff_oop_tsc_first_edition"
+    ],
+    "benefit": "게임개발부 2단계 \"버그\"를 전투당 1번 다시 굴린다(결과를 보고 고름). 4단계에서는 고르지 않은 세 번째 버그도 절반 효과로 적용",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "전설의 쿠소게. 초회판이라 버그가 더 많다"
+  },
+  {
+    "id": "oop_half_donut",
+    "code": "C21",
+    "name": "반쯤 먹은 도넛",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_life_safety"
+    ],
+    "effectIds": [
+      "eff_oop_half_donut"
+    ],
+    "benefit": "생활안전국 \"농땡이\" 페널티 SPD -30 → -15",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "후부키가 근무 중에 먹다 남긴 것"
+  },
+  {
+    "id": "oop_wrong_answer_note",
+    "code": "C22",
+    "name": "보충수업 오답노트",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_make_up"
+    ],
+    "effectIds": [
+      "eff_oop_wrong_answer_note"
+    ],
+    "benefit": "\"합격\"으로 골드를 받을 때 같은 양의 XP도 받는다",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "틀린 문제만 모았다. 페로로 스티커 투성이"
+  },
+  {
+    "id": "oop_dessert_stamp",
+    "code": "C23",
+    "name": "디저트 스탬프 카드",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_sweets"
+    ],
+    "effectIds": [
+      "eff_oop_dessert_stamp"
+    ],
+    "benefit": "디저트부 2단계 \"디저트 타임\"이 패배 후에도 절반(최대 HP 5%)으로 발동",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "열 개 모으면 롤케이크 하나"
+  },
+  {
+    "id": "oop_hot_spring_map",
+    "code": "C24",
+    "name": "온천 굴착 지도",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_hot_spring"
+    ],
+    "effectIds": [
+      "eff_oop_hot_spring_map"
+    ],
+    "benefit": "온천개발부 폭파 때 HP가 가장 낮은 아군 전방 1명 최대 HP 10% 회복(온천수 분출)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "표시된 곳의 절반은 남의 학교 건물이다"
+  },
+  {
+    "id": "oop_tsurugi_novel",
+    "code": "C25",
+    "name": "츠루기의 연애 소설",
+    "rarity": "common",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_justice"
+    ],
+    "effectIds": [
+      "eff_oop_tsurugi_novel"
+    ],
+    "benefit": "정의실현위원회 학생이 \"정의 집행\" 대상(HP 50% 이하 적)을 처치하면 자신의 다음 행동 15% 당김(턴당 1회). 3단계의 처치 → 동료 에너지와 이어져 연속 처치가 된다",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "위원장이 몰래 읽는 책. 들키면 폭주한다"
+  },
+  {
+    "id": "oop_dragon_censer",
+    "code": "U01",
+    "name": "현룡문 연환 향로",
+    "rarity": "uncommon",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_shanhaijing"
+    ],
+    "effectIds": [
+      "eff_oop_dragon_censer"
+    ],
+    "benefit": "필살기 연환: 산해경 학생의 필살기가 해소되면, 이번 전역 주기에 아직 필살기를 쓰지 않은 다른 산해경 학생 중 에너지가 가장 높은 1명에게 에너지 +35. 같은 전역 주기 안에서 이어진 n번째 필살기는 피해 +15%×(n-1)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "향이 다 타기 전에 다음 초식이 이어진다"
+  },
+  {
+    "id": "oop_coup_order",
+    "code": "U02",
+    "name": "쿠데타 명령서",
+    "rarity": "uncommon",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_red_winter"
+    ],
+    "effectIds": [
+      "eff_oop_coup_order"
+    ],
+    "benefit": "전투 시작 시 붉은겨울 학생 1명이 \"서기장\"(체리노가 있으면 체리노, 없으면 무작위): ATK +40%, 받는 피해 -20%. 서기장이 쓰러지거나 체리노의 수염이 떨어지면 쿠데타: 다른 붉은겨울 학생이 승계하고, 승계할 때마다 새 서기장 ATK +20%p 추가, 적 최고 HP 1명에게 \"숙청 표적\" 즉시 재부여(전투당 3회)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "붉은겨울에서는 서기장이 자주 바뀐다"
+  },
+  {
+    "id": "oop_arrest_warrant",
+    "code": "U03",
+    "name": "발키리 체포 영장",
+    "rarity": "uncommon",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_valkyrie"
+    ],
+    "effectIds": [
+      "eff_oop_arrest_warrant"
+    ],
+    "benefit": "발키리 2단계 \"수배자\"의 HP가 25% 이하가 되면 즉시 체포(전투불능). 2턴마다 새 수배자가 지정되므로 횟수 제한 없음. 체포할 때마다 발키리 학생 전원 1턴 ATK +20%. 보스는 체포 대신 1턴 기절(전투당 1회)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "칸나 국장의 서명이 들어간 진짜 영장"
+  },
+  {
+    "id": "oop_rabbit_radio",
+    "code": "U04",
+    "name": "RABBIT 소대 야전 무전기",
+    "rarity": "uncommon",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_srt"
+    ],
+    "effectIds": [
+      "eff_oop_rabbit_radio"
+    ],
+    "benefit": "후방 SRT 학생의 반응 지원 쿨다운 -1(SRT 4단계 \"반응 지원 → 전방 SRT 보호막\"이 더 자주 돈다). 전방 SRT 학생이 쓰러지면 후방 SRT 학생 전원이 쿨다운을 무시하고 반응 지원 1회",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "폐교 뒤에도 주파수는 그대로다"
+  },
+  {
+    "id": "oop_express_ticket",
+    "code": "U05",
+    "name": "하이랜더 무정차 운행표",
+    "rarity": "uncommon",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_highlander"
+    ],
+    "effectIds": [
+      "eff_oop_express_ticket"
+    ],
+    "benefit": "하이랜더 2단계 \"급행열차 충격파\"가 적을 처치하면 충격파가 한 번 더 달린다(피해 70%, root당 2회 = 최대 3연속)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "이 열차는 어느 역에도 서지 않습니다"
+  },
+  {
+    "id": "oop_jailbreak_kit",
+    "code": "U06",
+    "name": "칠수인 현상수배서",
+    "rarity": "uncommon",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_outlaw"
+    ],
+    "effectIds": [
+      "eff_oop_jailbreak_kit"
+    ],
+    "benefit": "무법자 학생이 적을 처치하면 \"악명\" +1(전투 중, 최대 6): 무법자 전원 ATK +8%/악명. 악명이 6이 되는 순간 무법자 4단계 \"약탈 폭격\"(적 전방 전체 ATK 135% `true`)이 즉시 1회 추가 발동(4단계가 꺼져 있어도)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "현상금이 오를수록 더 날뛴다"
+  },
+  {
+    "id": "oop_onibi_seal",
+    "code": "U07",
+    "name": "백귀 도깨비 낙인",
+    "rarity": "uncommon",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_hyakkiyako"
+    ],
+    "effectIds": [
+      "eff_oop_onibi_seal"
+    ],
+    "benefit": "백귀야행 시너지의 `true` 피해(2단계 도깨비불, 4·5단계 행동 해소 피해)가 대상에게 낙인을 남긴다. 낙인 3개가 되면 터져 그 적에게 ATK 150% `true` 피해 + 1턴 SPD -10, 낙인 초기화(폭발은 낙인을 남기지 않음). 5단계 만개화가 적 전방 전체에 낙인을 깔아 연쇄 폭발이 난다",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "축제 밤, 여우불이 세 번 지나간 자리"
+  },
+  {
+    "id": "oop_squad_manual",
+    "code": "U08",
+    "name": "아리우스 스쿼드 전술 교범",
+    "rarity": "uncommon",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_arius"
+    ],
+    "effectIds": [
+      "eff_oop_squad_manual"
+    ],
+    "benefit": "전염: 아리우스 학생이 디버프가 있는 적을 처치하면, 그 적의 디버프가 전부 남은 적 중 HP가 가장 높은 1명에게 옮겨 붙고 지속 +1턴(턴당 2회). 아리우스 2·4단계의 \"디버프 적 추가 피해·흡혈\" 대상이 끊기지 않는다",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "\"모든 것은 헛되다.\" 그래도 살아남는 법은 적혀 있다"
+  },
+  {
+    "id": "oop_halo_fragment",
+    "code": "U13",
+    "name": "팔각형 헤일로 파편",
+    "rarity": "uncommon",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_halo_fragment"
+    ],
+    "benefit": "출전한 3성 학생 1명당 아군 전원 최대 HP +4%(최대 +20%)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "누군가의 헤일로 조각. 아직 따뜻하다"
+  },
+  {
+    "id": "oop_momofriends_box",
+    "code": "U14",
+    "name": "모모프렌즈 한정 굿즈 박스",
+    "rarity": "uncommon",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_momofriends_box"
+    ],
+    "benefit": "합성으로 2성이 완성되면 +1G, 3성이 완성되면 +4G",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "페로로 피규어가 들어 있다. 히후미가 부러워한다"
+  },
+  {
+    "id": "oop_gsc_pass",
+    "code": "U15",
+    "name": "연방생도회 임시 출입증",
+    "rarity": "uncommon",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_gsc_pass"
+    ],
+    "benefit": "출전한 학생 중 자기 진영에서 혼자 출전한 학생(모든 소속 진영에서 1명뿐)은 ATK +20%, SPD +8",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "회장이 사라진 뒤 아무나 받는 출입증"
+  },
+  {
+    "id": "oop_pmc_contract",
+    "code": "U09",
+    "name": "카이저 PMC 화력 지원 계약서",
+    "rarity": "uncommon",
+    "kind": "drawback",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_pmc_contract"
+    ],
+    "benefit": "200AV마다 적 전방 무작위 1명에게 아군 최고 ATK 150% 포격",
+    "drawback": "같은 순간 아군 전방 무작위 1명에게도 같은 ATK의 40% 오폭(보호막 먼저 깎임)",
+    "recipe": null,
+    "flavor": "카이저의 포병은 정확하다. 어느 쪽이든"
+  },
+  {
+    "id": "oop_black_market_ammo",
+    "code": "U10",
+    "name": "블랙마켓 무허가 철갑탄",
+    "rarity": "uncommon",
+    "kind": "drawback",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_black_market_ammo"
+    ],
+    "benefit": "아군 전원 CRIT_DMG +0.40",
+    "drawback": "치명타가 아닌 공격의 피해 -10%",
+    "recipe": null,
+    "flavor": "맞으면 크게, 안 맞으면 탄피만 날린다"
+  },
+  {
+    "id": "oop_energy_drink",
+    "code": "U11",
+    "name": "엔지니어부 불법 에너지 드링크",
+    "rarity": "uncommon",
+    "kind": "drawback",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_energy_drink"
+    ],
+    "benefit": "아군 전방 SPD +15",
+    "drawback": "600AV부터 전방 전원 SPD -30(탈진, 전투 종료까지)",
+    "recipe": null,
+    "flavor": "성분표 칸이 비어 있다"
+  },
+  {
+    "id": "oop_black_market_card",
+    "code": "U12",
+    "name": "블랙마켓 VIP 회원증",
+    "rarity": "uncommon",
+    "kind": "drawback",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_black_market_card"
+    ],
+    "benefit": "상점 새로고침 2G → 1G",
+    "drawback": "정산 이자 상한 5 → 2",
+    "recipe": null,
+    "flavor": "싸게 사는 대신 저축은 포기하는 인생"
+  },
+  {
+    "id": "oop_foreclosure_photo",
+    "code": "R01",
+    "name": "대책위원회 단체 사진",
+    "rarity": "rare",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_abydos"
+    ],
+    "effectIds": [
+      "eff_oop_foreclosure_photo"
+    ],
+    "benefit": "아비도스 학생이 쓰러지면 남은 아비도스 학생 전원 에너지 100(즉시 필살기 준비). 이렇게 나간 필살기의 아비도스 4·5단계 \"합동 사격\"은 턴당 한도를 세지 않는다(복수의 일제 사격). 호시노 고유 \"진심 모드\"와 같은 순간에 터진다. 전투당 2회",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "다섯 명이 다 같이 찍은 유일한 사진"
+  },
+  {
+    "id": "oop_pandemonium_summons",
+    "code": "R02",
+    "name": "만마전 비상 소집령",
+    "rarity": "rare",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_gehenna"
+    ],
+    "effectIds": [
+      "eff_oop_pandemonium_summons"
+    ],
+    "benefit": "장 시작마다 보유한 1성 게헨나 학생 중 코스트가 가장 높은 1명을 2성으로 승급(동률은 획득 순서). 대상이 없으면 4G",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "게헨나 학생회의 소집령. 안 오면 더 무섭다"
+  },
+  {
+    "id": "oop_millennium_prize",
+    "code": "R03",
+    "name": "밀레니엄 프라이스 트로피",
+    "rarity": "rare",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_millennium"
+    ],
+    "effectIds": [
+      "eff_oop_millennium_prize"
+    ],
+    "benefit": "밀레니엄 학생 장비 칸 2 → 3, 밀레니엄 학생이 장착한 장비의 능력치 +50%. 밀레니엄 시너지 보호막이 있는 동안은 +100%",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "밀레니엄 최고 권위의 과학상. 게임개발부도 한 번 받았다(?)"
+  },
+  {
+    "id": "oop_trinity_club_charter",
+    "code": "R04",
+    "name": "트리니티 동아리 연합 인가증",
+    "rarity": "rare",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_trinity"
+    ],
+    "effectIds": [
+      "eff_oop_trinity_club_charter"
+    ],
+    "benefit": "트리니티 학생이 1명 이상 출전한 동아리 시너지는 구성원 수를 +1로 센다(플래티넘 제외)",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "티파티 도장이 찍힌 인가증. 동아리가 하나 더 생긴다"
+  },
+  {
+    "id": "oop_prophecy_circuit",
+    "code": "R05",
+    "name": "데카그라마톤 예언 회로",
+    "rarity": "rare",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_prophecy_circuit"
+    ],
+    "benefit": "정예·보스에게 주는 피해 +20%. 보스의 HP 임계 패턴(비나 모래폭풍 등)이 처음 발동할 때 아군이 받는 피해 -50%",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "예언자들의 회로 조각. 그들이 무엇을 할지 먼저 속삭인다"
+  },
+  {
+    "id": "oop_schale_annex_key",
+    "code": "R06",
+    "name": "샬레 별관 열쇠",
+    "rarity": "rare",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_schale_annex_key"
+    ],
+    "benefit": "상점 칸 5 → 6",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "샬레에 방이 하나 늘었다. 학생들이 더 자주 들른다"
+  },
+  {
+    "id": "oop_empty_chair",
+    "code": "R07",
+    "name": "연방생도회장의 빈 의자",
+    "rarity": "rare",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_empty_chair"
+    ],
+    "benefit": "출전 한도 레벨 + 1(최대 10). 플래티넘 「학원 대항전」의 레벨 10 조건도 레벨 9에서 충족 가능",
+    "drawback": null,
+    "recipe": null,
+    "flavor": "사라진 회장의 의자. 누군가 앉을 자리가 남아 있다"
+  },
+  {
+    "id": "oop_afterglow_of_color",
+    "code": "R08",
+    "name": "색채의 잔광",
+    "rarity": "rare",
+    "kind": "drawback",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_afterglow_of_color"
+    ],
+    "benefit": "아군 전원 ATK +35%",
+    "drawback": "아군이 받는 치유·보호막 -50%. 전투가 끝날 때마다(승패 무관) 런 체력 -2",
+    "recipe": null,
+    "flavor": "「색채」가 지나간 자국. 보는 것만으로 무언가 닳는다"
+  },
+  {
+    "id": "oop_gematria_contract",
+    "code": "R09",
+    "name": "게마트리아의 계약서",
+    "rarity": "rare",
+    "kind": "drawback",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_gematria_contract"
+    ],
+    "benefit": "정산마다 +4G",
+    "drawback": "획득 즉시 런 체력 최대치·현재치 -25(최소 1)",
+    "recipe": null,
+    "flavor": "검은 양복이 내민 계약서. 조항은 공정하다고 한다"
+  },
+  {
+    "id": "oop_prototype_zero",
+    "code": "R10",
+    "name": "엔지니어부 금지 시제품 No.0",
+    "rarity": "rare",
+    "kind": "drawback",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_prototype_zero"
+    ],
+    "benefit": "아군 전방의 필살기 필요 에너지 100 → 70",
+    "drawback": "아군 전방은 전투 스킬을 쓸 수 없다(기본 공격과 필살기만)",
+    "recipe": null,
+    "flavor": "우타하: \"이론상 완벽해. 이론상.\""
+  },
+  {
+    "id": "oop_shittim_chest",
+    "code": "L01",
+    "name": "싯딤의 상자",
+    "rarity": "legendary",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_shittim_chest"
+    ],
+    "benefit": "★상점 6칸, ★추천 모드 80%, ★전략 후보 4개. 선생님의 권한: 장 시작마다 전략을 2개 고른다(4택2). 아로나 추천: 6번째 칸은 보유 학생 중 다음 성급까지 남은 복사본이 가장 적은 학생으로 확정(동률은 고코스트), 이 칸으로 합성이 완성되면 XP +2. 프라나 보조: 상점을 잠가도 노드 진입 무료 갱신이 사라지지 않고, 잠근 칸을 뺀 나머지만 갱신된다",
+    "drawback": null,
+    "recipe": [
+      "oop_schale_annex_key",
+      "oop_roman_dodecahedron",
+      "oop_voynich"
+    ],
+    "flavor": ""
+  },
+  {
+    "id": "oop_eden_treaty",
+    "code": "L02",
+    "name": "에덴 조약 원본",
+    "rarity": "legendary",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_trinity",
+      "syn_arius"
+    ],
+    "effectIds": [
+      "eff_oop_eden_treaty"
+    ],
+    "benefit": "★트리니티 동아리 +1. ★디버프 전염(턴당 3회, 트리니티 학생의 처치도 적용). 트리니티 학생과 아리우스 학생은 트리니티·아리우스 진영 시너지에 모두 집계된다",
+    "drawback": null,
+    "recipe": [
+      "oop_trinity_club_charter",
+      "oop_squad_manual"
+    ],
+    "flavor": ""
+  },
+  {
+    "id": "oop_nameless_relic",
+    "code": "L03",
+    "name": "무명의 사제들의 성유물",
+    "rarity": "legendary",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_nameless_relic"
+    ],
+    "benefit": "★아군 전원 ATK +35%(대가 없음). ★3성 1명당 최대 HP +4%. ★첫 사망 시 전방 회복 8%. 신비 해방: 3성 학생이 처음 쓰러지면 HP 40%로 일어나고 ATK +25%(전투당 최대 2명)",
+    "drawback": null,
+    "recipe": [
+      "oop_afterglow_of_color",
+      "oop_halo_fragment",
+      "oop_mandragora"
+    ],
+    "flavor": ""
+  },
+  {
+    "id": "oop_yume_notebook",
+    "code": "L04",
+    "name": "유메 선배의 수첩",
+    "rarity": "legendary",
+    "kind": "synergy",
+    "synergyIds": [
+      "syn_abydos"
+    ],
+    "effectIds": [
+      "eff_oop_yume_notebook"
+    ],
+    "benefit": "★아비도스 사망 시 남은 아비도스 에너지 100(전투당 3회). ★새로고침 1G(이자 상한 감소 없음). 패배 시 런 체력 피해 -3. \"후배들을 부탁해\": 런 체력이 처음 0이 되면 20으로 버틴다(런당 1회, 최종 보스 패배에는 적용 안 됨)",
+    "drawback": null,
+    "recipe": [
+      "oop_foreclosure_photo",
+      "oop_okiku_doll",
+      "oop_black_market_card"
+    ],
+    "flavor": ""
+  },
+  {
+    "id": "oop_prototype_infinity",
+    "code": "L05",
+    "name": "엔지니어부 금지 시제품 No.∞",
+    "rarity": "legendary",
+    "kind": "general",
+    "synergyIds": [],
+    "effectIds": [
+      "eff_oop_prototype_infinity"
+    ],
+    "benefit": "★전방 필살기 에너지 70(스킬 봉인 해제). ★전방 SPD +15(탈진 없음). ★SP 0 → +2(전투당 2회). 팀 SP 최대 5 → 6, 아군 필살기가 해소될 때 팀 SP +1(전역 주기당 1회)",
+    "drawback": null,
+    "recipe": [
+      "oop_prototype_zero",
+      "oop_energy_drink",
+      "oop_baghdad_battery"
+    ],
+    "flavor": ""
+  }
+]

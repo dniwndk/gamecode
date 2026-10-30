@@ -72,7 +72,8 @@ export type EffectExecution =
   | 'passive_container'
   | 'synergy_container'
   | 'equipment_container'
-  | 'strategy_container';
+  | 'strategy_container'
+  | 'oopart_container';
 /** spec_only: 명세만 있음(M0). implemented: 실행 연산과 테스트가 붙음(M3 이후). */
 export type EffectImplementation = 'spec_only' | 'implemented';
 
@@ -123,6 +124,51 @@ export interface StrategyDefinition {
   drawback: string;
   stacking: string;
   generalPurpose: boolean;
+}
+
+export type OopartRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
+/** general: 범용, synergy: 시너지 특화, drawback: 이득과 대가를 함께 가짐(⚠). */
+export type OopartKind = 'general' | 'synergy' | 'drawback';
+
+/** 오파츠(보유형 유물, docs/OOPARTS_v1.md). 장착하지 않고 보유만으로 켜진다. */
+export interface OopartDefinition {
+  id: string;
+  /** 기획서 번호(C01·U09·R04·L01 …) */
+  code: string;
+  name: string;
+  rarity: OopartRarity;
+  kind: OopartKind;
+  /** 특화 대상 시너지. 전설은 재료의 대상을 합친다. */
+  synergyIds: string[];
+  effectIds: string[];
+  benefit: string;
+  drawback: string | null;
+  /** 전설만: 재료 오파츠 ID. 모두 보유하면 자동으로 합쳐진다. */
+  recipe: string[] | null;
+  flavor: string;
+}
+
+export type OopartSourceId = 'run_start' | 'chapter_third_battle' | 'elite' | 'boss' | 'rescue';
+
+export interface OopartSourceRule {
+  id: OopartSourceId;
+  chapters: number[];
+  /** 제안 칸 수. 1이면 고르지 않고 바로 지급(grant). */
+  choices: number;
+  grant: boolean;
+  requiresWin: boolean;
+  /** 장 번호 → [일반, 고급, 희귀] 확률(%) */
+  oddsByChapter: Record<string, number[]>;
+}
+
+export interface OopartRules {
+  /** oddsByChapter 배열의 순서이자, 후보가 바닥났을 때 내려가는 순서의 역순 */
+  rarityOrder: Exclude<OopartRarity, 'legendary'>[];
+  sources: OopartSourceRule[];
+  rescueLossStreak: number;
+  skipGold: number;
+  /** 레시피 재료를 하나라도 가졌을 때 남은 재료의 추첨 가중치 */
+  recipeWeight: number;
 }
 
 export interface EnemyDefinition {
@@ -199,6 +245,7 @@ export interface RulesConfig {
   units: { maxStar: number; mergeCount: number; starStatMultiplierBps: number[]; equipmentSlots: number };
   battle: { maxAv: number; eventLimit: number; globalPulseAv: number; teamSp: { start: number; max: number }; energy: { start: number; max: number } };
   rng: { algorithm: string; zeroSeedReplacement: number; streams: string[] };
+  ooparts: OopartRules;
 }
 
 export const DIALOGUE_KEYS = ['recruit', 'deploy', 'ultimate', 'victory', 'defeated', 'star3', 'bond'] as const;
@@ -226,7 +273,7 @@ export interface PackManifest {
   packId: string;
   contentVersion: string;
   rulesVersion: string;
-  expectedCounts: Record<'units' | 'synergies' | 'equipment' | 'strategies' | 'enemies' | 'nodes' | 'effects' | 'dialogueFiles' | 'statuses', number>;
+  expectedCounts: Record<'units' | 'synergies' | 'equipment' | 'strategies' | 'enemies' | 'nodes' | 'effects' | 'dialogueFiles' | 'statuses' | 'ooparts', number>;
   sources: { path: string; sha256: string }[];
   generatedBy: string;
 }
@@ -239,6 +286,7 @@ export interface ContentPack {
   effects: EffectDefinition[];
   equipment: EquipmentDefinition[];
   strategies: StrategyDefinition[];
+  ooparts: OopartDefinition[];
   enemies: EnemyDefinition[];
   nodes: NodeDefinition[];
   statuses: StatusDefinition[];

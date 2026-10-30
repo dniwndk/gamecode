@@ -15,6 +15,8 @@ export type RunPhase =
   | 'BATTLE'
   | 'RESULT'
   | 'EQUIPMENT_CHOICE'
+  /** 오파츠 3택1 또는 구조 요청 지급(docs/OOPARTS_v1.md 1.2) */
+  | 'OOPART_CHOICE'
   | 'NEXT_NODE'
   | 'RUN_COMPLETE'
   | 'RUN_FAILED'
@@ -37,6 +39,8 @@ export type GameCommandType =
   | 'START_BATTLE'
   | 'CONFIRM_RESULT'
   | 'CHOOSE_EQUIPMENT'
+  | 'CHOOSE_OOPART'
+  | 'SKIP_OOPART'
   | 'IMPORT_SAVE'
   | 'ABANDON_RUN';
 

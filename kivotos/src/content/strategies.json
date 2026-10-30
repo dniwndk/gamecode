@@ -75,7 +75,7 @@
       "eff_str_rapid_fire"
     ],
     "benefit": "아군 전방 유닛의 SPD +14 증가. 기본 공격(`basic_resolved`)과 후속 공격(`followup_attack`)으로 가하는 피해 +35% 증가.",
-    "drawback": "단발 필살기 위주의 느린 스트라이커에게는 효율이 낮음.",
+    "drawback": "단발 필살기 위주의 느린 어태커에게는 효율이 낮음.",
     "stacking": "중복 획득 불가",
     "generalPurpose": true
   },
@@ -154,7 +154,7 @@
         ]
       }
     },
-    "offerText": "전방 탱커/중장갑 유닛 2명 이상 보유 시 또는 2~3장 시작 시 등장",
+    "offerText": "전방 탱커(`syn_tank`) 유닛 2명 이상 보유 시 또는 2~3장 시작 시 등장",
     "effectIds": [
       "eff_str_iron_frontline"
     ],

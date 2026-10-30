@@ -1,13 +1,13 @@
 # Kivotos Tactical Frontline
 
 ## Goal
-- Build the complete single-player web autobattler described in docs/GDD_v2.1.md as amended by docs/GDD_v2.2_amendment.md and docs/GDD_v2.3_amendment.md.
-- Shipping scope (pack ba-content-2.3.0): 100 units, 63 synergies, 399 parent effect definitions,
-  12 equipment, 13 strategies, 13 enemies, 15 combat nodes, 100 dialogue files.
+- Build the complete single-player web autobattler described in docs/GDD_v2.1.md as amended by docs/GDD_v2.2_amendment.md and docs/GDD_v2.3_amendment.md, plus the OOParts relic system in docs/OOPARTS_v1.md.
+- Shipping scope (pack ba-content-2.4.0): 100 units, 63 synergies, 454 parent effect definitions (399 + 55 OOParts),
+  12 equipment, 13 strategies, 55 OOParts, 13 enemies, 15 combat nodes, 100 dialogue files.
 - These counts describe this content pack, never hard-code them in the engine.
 
 ## Authority
-- v2.3 amendment overrides v2.2, which overrides v2.1. v2.3 replaces the unit and synergy tables entirely; v2.1 corrections override the original content v2.0 (not in this repo).
+- v2.3 amendment overrides v2.2, which overrides v2.1. docs/OOPARTS_v1.md is the source for OOParts. v2.3 replaces the unit and synergy tables entirely; v2.1 corrections override the original content v2.0 (not in this repo).
 - Read the relevant GDD chapters and effect entries before implementing a feature.
 - Record any additional design interpretation in docs/DECISIONS.md.
 - Never run prose placeholders such as skill_op or synergy_op. Effect `spec` text is documentation only.
