@@ -28,9 +28,10 @@
   --warn: #ff8a00;
   --danger: #e5383b;
   --good: #14b8a6;
-  --f-kr: 'Noto Sans KR Variable', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
-  --f-display: 'Black Han Sans', 'Noto Sans KR Variable', sans-serif;
-  --f-num: 'Barlow Condensed', 'Noto Sans KR', 'Arial Narrow', sans-serif;
+  --f-kr: 'GyeonggiTitle', 'Noto Sans KR Variable', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --f-display: 'GyeonggiTitle', 'Noto Sans KR Variable', sans-serif;
+  --f-num: 'Noto Sans', 'GyeonggiTitle', sans-serif;
+  --f-sub: 'Noto Sans', 'Noto Sans KR Variable', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --r: 10px;
   --shadow: 0 6px 18px rgba(26, 72, 140, 0.12), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
   --skew: -11deg;
@@ -41,6 +42,8 @@ html, body { margin: 0; height: 100%; background: var(--sky-low); }
 body { font-family: var(--f-kr); color: var(--ink); -webkit-font-smoothing: antialiased; }
 #app { height: 100%; }
 button { font: inherit; color: inherit; }
+/* 서브 글꼴: 설명 문단·보조 캡션 */
+p, small { font-family: var(--f-sub); }
 kbd { font-family: var(--f-num); }
 
 .k-root { position: fixed; inset: 0; overflow: hidden; background: var(--sky-low); user-select: none; -webkit-user-select: none; }

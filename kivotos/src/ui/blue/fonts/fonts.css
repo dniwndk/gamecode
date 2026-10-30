@@ -1,0 +1,5 @@
+/* 메인: 경기천년제목(한글·영문), 서브: Noto Sans(영문·숫자). Noto Sans에 없는 한글은 Noto Sans KR로 이어진다. */
+@font-face { font-family: 'GyeonggiTitle'; font-style: normal; font-weight: 100 600; font-display: swap; src: url('./GyeonggiTitle-Medium.woff2') format('woff2'); }
+@font-face { font-family: 'GyeonggiTitle'; font-style: normal; font-weight: 700 900; font-display: swap; src: url('./GyeonggiTitle-Bold.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans'; font-style: normal; font-weight: 100 600; font-display: swap; src: url('./NotoSans-Regular.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans'; font-style: normal; font-weight: 700 900; font-display: swap; src: url('./NotoSans-Bold.woff2') format('woff2'); }
