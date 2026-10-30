@@ -228,7 +228,7 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
   function benchRow(): HTMLElement {
     const sel = ctx.ui.selected ? find(ctx.ui.selected) : null;
     return h('div', { class: 'k-bench' },
-      h('div', { class: 'k-bench-label' }, icon('bench', 22), h('b', null, '대기석'), h('small', null, `${run.board.bench.filter(Boolean).length}/9`)),
+      h('div', { class: 'k-bench-label' }, icon('bench', 22), h('b', null, '대기석'), h('small', null, `${run.board.bench.filter(Boolean).length}/${run.board.bench.length}`)),
       h('div', { class: 'k-bench-slots' }, ...run.board.bench.map((inst, i) => slot('bench', i, inst))),
       h('div', { class: cls('k-sell', sel && 'is-armed'), 'data-drop': 'sell', role: 'button', tabindex: sel ? 0 : -1,
         onclick: () => { if (sel) void sell(sel.inst); },

@@ -306,7 +306,7 @@ export function openUnitDetail(ctx: Ctx, unitId: string, inst?: UnitInstanceView
 
   const eqSlots = h('div', { class: 'k-eq-slots' });
   if (inst) {
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < (inst.equipSlots ?? 2); i++) {
       const id = inst.equipment[i];
       eqSlots.append(id
         ? h('button', { class: 'k-eq-slot is-filled', title: '눌러서 해제', onclick: async () => { if (await ctx.send('UNEQUIP_ITEM', { instanceId: inst.instanceId, equipmentId: id })) { close(); } } }, eqChip(ctx, id), h('small', null, '해제'))
@@ -317,7 +317,7 @@ export function openUnitDetail(ctx: Ctx, unitId: string, inst?: UnitInstanceView
       eqSlots.append(h('div', { class: 'k-stash' }, h('small', null, '보관함 — 눌러서 장착'), ...stash.map((id, idx) => h('button', {
         class: 'k-stash-item', title: ctx.lookup.eq(id)?.description ?? '',
         onclick: async () => {
-          const full = inst.equipment.length >= 2;
+          const full = inst.equipment.length >= (inst.equipSlots ?? 2);
           if (await ctx.send('EQUIP_ITEM', { instanceId: inst.instanceId, equipmentId: id, ...(full ? { replaceIndex: 0 } : {}) })) {
             if (full) ctx.toast(`${ctx.lookup.eq(inst.equipment[0])?.name}은(는) 보관함으로 돌아갔어요`);
             close();

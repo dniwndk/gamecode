@@ -712,6 +712,11 @@ kbd { font-family: var(--f-num); }
 .k-oop-tip-head strong { font-size: 19px; }
 .k-oop-tip-head small { color: var(--ink-3); }
 .k-oop-recipe-line { color: #a26b00; font-weight: 700; }
+.k-oop-support { font-size: 14px !important; color: var(--ink-3); }
+.k-oop-support b { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 13px; margin-right: 2px; }
+.k-oop-support.is-active b { background: #e2f6ea; color: #1b7a43; }
+.k-oop-support.is-partial b { background: #fff2d6; color: #9a6200; }
+.k-oop-support.is-pending b { background: #eceff4; color: #5b6676; }
 .k-oop-merge { width: 560px; max-width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 8px 6px; }
 .k-oop-merge-art { width: 220px; height: 220px; border-radius: 50%; display: grid; place-items: center;
   background: radial-gradient(circle, #fff6cf 0%, #ffd34d 55%, #c98a00 100%); box-shadow: 0 0 60px rgba(255,190,40,.6); }

@@ -82,3 +82,77 @@ describe('미리보기 런: 상점·레벨', () => {
     expect(shopIds().every((id) => id && contentPack.units.find((u) => u.id === id)!.shopEligible)).toBe(true);
   });
 });
+
+describe('미리보기 런: 오파츠 효과', () => {
+  function withOoparts(ids: string[]) {
+    const pack = { ...contentPack, nodes: contentPack.nodes.map((n) => ({ ...n, statScaleBps: 1 })) };
+    const catalog = { pack, rules: pack.rules, validation: { errors: [], warnings: [] }, assetUrl: () => null } as unknown as ContentCatalog;
+    return createPreviewSession(catalog, { revision: 0, phase: 'HOME', contentVersion: 'test', rulesVersion: pack.rules.rulesVersion, run: null }, { ooparts: ids });
+  }
+  async function start(d: UiDriver) {
+    await d.send('NEW_RUN', { seed: 'TEST-FX' });
+    await d.send('CONFIRM_RESULT');
+    while (d.get().phase === 'STRATEGY_CHOICE') await d.send('CHOOSE_STRATEGY', { strategyId: d.get().run!.offers!.strategies![0] });
+    if (d.get().phase === 'OOPART_CHOICE') await d.send('SKIP_OOPART');
+  }
+
+  it('런·상점 효과가 화면 값에 반영된다', async () => {
+    const d = withOoparts(['oop_haniwa', 'oop_black_market_card', 'oop_empty_chair', 'oop_schale_annex_key']);
+    await start(d);
+    const run = d.get().run!;
+    expect(run.board.bench).toHaveLength(10);
+    expect(run.shop.rerollCost).toBe(1);
+    expect(run.deployLimit).toBe(run.level + 1);
+    expect(run.shop.slots).toHaveLength(6);
+  });
+
+  it('싯딤의 상자: 전략 4개 중 2개', async () => {
+    const d = withOoparts(['oop_shittim_chest']);
+    await d.send('NEW_RUN', { seed: 'TEST-FX' });
+    await d.send('CONFIRM_RESULT');
+    expect(d.get().run!.offers!.strategies).toHaveLength(4);
+    await d.send('CHOOSE_STRATEGY', { strategyId: d.get().run!.offers!.strategies![0] });
+    expect(d.get().phase).toBe('STRATEGY_CHOICE');
+    expect(d.get().run!.offers!.strategies).toHaveLength(3);
+    await d.send('CHOOSE_STRATEGY', { strategyId: d.get().run!.offers!.strategies![0] });
+    expect(d.get().run!.strategies).toHaveLength(2);
+  });
+
+  it('게마트리아의 계약: 정산 +4G가 수입 내역에 들어간다', async () => {
+    const d = withOoparts(['oop_gematria_contract', 'oop_phaistos_disc']);
+    await start(d);
+    await deployAll(d);
+    await d.send('START_BATTLE');
+    const res = d.get().run!.lastResult!;
+    expect(res.income.some((x) => x.value === 4 && x.label.includes('게마트리아'))).toBe(true);
+    expect(res.xpGained).toBe(contentPack.rules.xp.perBattle + 1);
+  });
+
+  it('색채의 잔광: 이겨도 전투마다 런 체력 −2, ATK +35%', async () => {
+    const d = withOoparts(['oop_afterglow_of_color']);
+    await start(d);
+    await deployAll(d);
+    const hp = d.get().run!.runHp;
+    await d.send('START_BATTLE');
+    expect(d.get().run!.lastResult!.outcome).toBe('win');
+    expect(d.get().run!.runHp).toBe(hp - 2);
+  });
+
+  it('오파츠 55종 하나씩 가진 채로 1장을 끝까지 진행해도 전투·정산이 깨지지 않는다', async () => {
+    for (const o of contentPack.ooparts) {
+      const d = withOoparts([o.id]);
+      await start(d);
+      for (let guard = 0; guard < 40 && d.get().run!.chapter === 1; guard++) {
+        const ph = d.get().phase;
+        if (ph === 'PREPARATION') { await deployAll(d); expect((await d.send('START_BATTLE')).ok, o.id).toBe(true); }
+        else if (ph === 'BATTLE' || ph === 'NEXT_NODE') await d.send('CONFIRM_RESULT');
+        else if (ph === 'EQUIPMENT_CHOICE') await d.send('CHOOSE_EQUIPMENT', {});
+        else if (ph === 'OOPART_CHOICE') await d.send('SKIP_OOPART');
+        else break;
+      }
+      expect(d.get().run!.chapter, o.id).toBe(2);
+      const ev = d.get().run!.lastBattle!.events;
+      expect(ev.at(-1)!.t, o.id).toBe('end');
+    }
+  });
+});

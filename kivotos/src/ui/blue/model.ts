@@ -13,6 +13,8 @@ export interface UnitInstanceView {
   stats: BaseStats;
   placeable: { front: boolean; rear: boolean };
   sellValue: number;
+  /** 장비 칸 수(기본 2, 오파츠로 늘 수 있음) */
+  equipSlots?: number;
 }
 
 export interface SynergyStateView {
@@ -113,6 +115,8 @@ export interface RunView {
   offers?: { strategies?: string[]; equipment?: string[]; startingUnits?: string[]; bosses?: string[] };
   /** 보유 오파츠(획득 순)와, OOPART_CHOICE 단계일 때의 제안 */
   ooparts: { owned: string[]; offer: OopartOfferView | null };
+  /** 이번 전략 선택에서 더 고를 수 있는 수(기본 1, 싯딤의 상자 2) */
+  strategyPicksLeft?: number;
   lastBattle?: BattleView;
   lastResult?: ResultView;
 }
@@ -140,6 +144,8 @@ export interface UiState {
   cues: Cue[];
   /** 한 번이라도 완성해 레시피가 공개된 전설 오파츠(프로필, 모든 판 공통) */
   oopartRevealed: string[];
+  /** 오파츠별 지금 빌드에서 작동하는 정도. 없으면 표시하지 않는다 */
+  oopartSupport?: Record<string, { level: 'active' | 'partial' | 'pending'; waiting?: string }>;
 }
 
 export interface Cue {

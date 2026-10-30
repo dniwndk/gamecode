@@ -29,7 +29,17 @@ export function oopartBody(ctx: Ctx, id: string): HTMLElement[] {
   const out: HTMLElement[] = [h('p', { class: 'k-oop-benefit' }, readable(ctx, o.benefit))];
   if (o.drawback) out.push(h('p', { class: 'k-oop-drawback' }, `대가 · ${readable(ctx, o.drawback)}`));
   out.push(h('p', { class: 'k-oop-flavor' }, o.flavor));
+  const sup = oopartSupportLine(ctx, id);
+  if (sup) out.push(sup);
   return out;
+}
+
+const SUPPORT_LABEL = { active: '적용 중', partial: '일부 적용', pending: '대기 중' } as const;
+/** 지금 빌드에서 작동하는 정도(적용 중 / 일부 적용 / 시너지 효과 대기) */
+export function oopartSupportLine(ctx: Ctx, id: string): HTMLElement | null {
+  const s = ctx.state().oopartSupport?.[id];
+  if (!s) return null;
+  return h('p', { class: `k-oop-support is-${s.level}` }, h('b', null, SUPPORT_LABEL[s.level]), s.waiting ? ` · ${s.waiting}` : '');
 }
 
 export function mountOopartChoice(ctx: Ctx, s: UiState): Screen {

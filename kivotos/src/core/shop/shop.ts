@@ -59,6 +59,35 @@ export interface ShopRollInput {
   /** 추적 중인 시너지(5번 칸 추천 모드) */
   trackedSynergyId: string | null;
   awakenedFromIds?: ReadonlySet<string>;
+  /** 오파츠 보정(OOPARTS_v1): 칸 수, 추천 모드 확률, 1번 칸 최고 코스트(C03), 마지막 칸 아로나 추천(L01) */
+  slots?: number;
+  recommendedChanceBps?: number;
+  topCostFirstSlot?: boolean;
+  aronaLastSlot?: boolean;
+}
+
+/**
+ * 아로나 추천(L01): 보유 학생 중 다음 성급까지 남은 복사본이 가장 적은 학생(동률은 고코스트, 그다음 ID순).
+ * 1성이 있으면 2성까지(3 − 1성 수), 2성만 있으면 3성까지((3 − 2성 수) × 3). 남은 장수가 없거나 제외된 학생은 뺀다.
+ */
+export function aronaPick(pack: ContentPack, owned: readonly OwnedCopy[], remaining: ReadonlyMap<string, number>): string | null {
+  const n = pack.rules.units.mergeCount;
+  const by = new Map<string, { s1: number; s2: number }>();
+  for (const o of owned) {
+    const e = by.get(o.unitId) ?? { s1: 0, s2: 0 };
+    if (o.star === 1) e.s1++;
+    else if (o.star === 2) e.s2++;
+    by.set(o.unitId, e);
+  }
+  let best: { id: string; need: number; cost: number } | null = null;
+  for (const [id, e] of [...by].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    if (!(remaining.get(id)! > 0)) continue;
+    const need = e.s1 > 0 ? n - (e.s1 % n) : e.s2 > 0 ? (n - (e.s2 % n)) * n : Infinity;
+    if (!Number.isFinite(need)) continue;
+    const cost = pack.units.find((u) => u.id === id)!.cost;
+    if (!best || need < best.need || (need === best.need && cost > best.cost)) best = { id, need, cost };
+  }
+  return best?.id ?? null;
 }
 
 /** 레벨의 코스트 확률(%) */
@@ -72,7 +101,9 @@ export function costOdds(pack: ContentPack, level: number): number[] {
  * 남은 장수가 0인 코스트는 확률을 비례 재분배하고, 모두 0이면 빈칸(null).
  */
 export function rollShop(pack: ContentPack, input: ShopRollInput, rng: Rng): (string | null)[] {
-  const { slots, recommendedSlotIndex, recommendedModeChanceBps } = pack.rules.shop;
+  const { recommendedSlotIndex } = pack.rules.shop;
+  const slots = input.slots ?? pack.rules.shop.slots;
+  const recommendedModeChanceBps = input.recommendedChanceBps ?? pack.rules.shop.recommendedModeChanceBps;
   const remaining = remainingCopies(pack, input.owned, [], input.awakenedFromIds);
   const odds = costOdds(pack, input.level);
   // 등급별 후보는 ID순(5.2)
@@ -83,10 +114,15 @@ export function rollShop(pack: ContentPack, input: ShopRollInput, rng: Rng): (st
 
   const out: (string | null)[] = [];
   for (let slot = 0; slot < slots; slot++) {
+    if (input.aronaLastSlot && slot === slots - 1) {
+      const id = aronaPick(pack, input.owned, remaining);
+      if (id) { remaining.set(id, remaining.get(id)! - 1); out.push(id); continue; }
+    }
     const tierLeft = byCost.map((ids) => ids.reduce((a, id) => a + remaining.get(id)!, 0));
     const weights = odds.map((p, c) => (tierLeft[c] > 0 ? p : 0));
     if (!weights.some((w) => w > 0)) { out.push(null); continue; }
-    const cost = rng.weightedIndex(weights);
+    // C03: 1번 칸은 그 레벨에서 나올 수 있는(확률 > 0, 남은 장수 > 0) 최고 코스트
+    const cost = slot === 0 && input.topCostFirstSlot ? weights.reduce((hi, w, c) => (w > 0 ? c : hi), 0) : rng.weightedIndex(weights);
     let pool = byCost[cost];
     if (slot === recommendedSlotIndex && rng.chance(recommendedModeChanceBps)) {
       const rec = pool.filter((id) => recommended.has(id) && remaining.get(id)! > 0);

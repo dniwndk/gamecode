@@ -7,8 +7,8 @@
 import type { CommandResult, ContentCatalog, GameCommandType, GameSnapshot, RunPhase } from '../../../app/gameClient';
 import type { BaseStats, EnemyDefinition, NodeDefinition, OopartSourceId, UnitDefinition } from '../../../core/types/content';
 import {
-  acquireOopart, costOdds, emptyOopartProfile, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
-  rollShop as rollShopCore, type OopartProfile, type OopartRunState,
+  acquireOopart, costOdds, emptyOopartProfile, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
+  rollShop as rollShopCore, type OopartModifiers, type OopartProfile, type OopartRunState,
 } from '../../../app/runRules';
 import type {
   BattleEventView, BattleView, CombatantView, Cue, Ref, ResultView, RunView, ShopSlotView, SynergyStateView, UiDriver, UiState,
@@ -45,6 +45,13 @@ interface RunState {
   oop: OopartRunState;
   oopOffer: { ids: string[]; source: OopartSourceId; grant: boolean; after: 'prep' | 'advance' } | null;
   oopStartDone: boolean;
+  runHpMax: number;
+  /** 이번 장 전략 선택에서 더 고를 수 있는 수(L01 4택2) */
+  strategyPicksLeft: number;
+  /** 레벨업 뒤 아직 상점을 갱신하지 않음(C03) */
+  levelUpPending: boolean;
+  /** 「후배들을 부탁해」(L04)를 이미 썼는지 */
+  lastStandUsed: boolean;
   /** 독립 RNG 스트림(12.2): 상점, 보상 */
   shopRng: Rng;
   rewardRng: Rng;
@@ -73,7 +80,8 @@ function rng(seed: number) {
   };
 }
 
-export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot): UiDriver {
+/** opts.ooparts: 새 런을 이 오파츠를 가진 채로 시작(테스트·확인용) */
+export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot, opts: { ooparts?: string[] } = {}): UiDriver {
   const { pack, rules } = catalog;
   const unitById = new Map(pack.units.map((u) => [u.id, u]));
   const enemyById = new Map(pack.enemies.map((e) => [e.id, e]));
@@ -89,6 +97,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   let cueId = 0;
   let cues: Cue[] = [];
   let profile = loadProfile();
+  const supportMap = Object.fromEntries(pack.ooparts.map((o) => [o.id, oopartSupport(o.id)]));
   const listeners = new Set<(s: UiState) => void>();
 
   // ── 데모 런: 사양서 11.2 권장 목 상태(2장 3전투, 골드 34, 레벨 6, 한탕 4, 금고 45G, 합성 예고 1칸, 적 후보 A/B)
@@ -108,6 +117,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       history: ['win', 'win', 'loss', 'win', 'win', 'win', 'win', null, null, null, null, null, null, null, null],
       offers: {}, recruited: new Set(), deployed: new Set(),
       oop: { owned: ['oop_nebra_disk', 'oop_voynich', 'oop_nimrud_lens'], rescueUsed: false }, oopOffer: null, oopStartDone: true,
+      runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false,
       shopRng: Rng.forStream('KIVO-7Q2M-SCHALE', 'shop'), rewardRng: Rng.forStream('KIVO-7Q2M-SCHALE', 'reward'),
     };
     for (const i of [...r.front, ...r.rear, ...r.bench]) if (i) { r.recruited.add(i.unitId); r.deployed.add(i.unitId); }
@@ -119,17 +129,31 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   const xpToNext = (lv: number) => rules.xp.xpToNext[String(lv)] ?? null;
   const all = (r: RunState) => [...r.front, ...r.rear, ...r.bench].filter((x): x is Inst => !!x);
   const deployedInsts = (r: RunState) => [...r.front, ...r.rear].filter((x): x is Inst => !!x);
-  const sellValue = (i: Inst) => unitById.get(i.unitId)!.cost * 3 ** (i.star - 1) - (i.star >= rules.sell.depreciationFromStar ? rules.sell.depreciationGold : 0);
+  /** 보유 오파츠 보정(코어 oopartModifiers) */
+  const mods = (r: RunState): OopartModifiers => oopartModifiers(r.oop.owned);
+  const isMillennium = (unitId: string) => unitById.get(unitId)!.synergyIds.includes('syn_millennium');
+  const sellValue = (i: Inst, r?: RunState) => {
+    const fromBench = !!r && r.bench.includes(i) && mods(r).noBenchSellDepreciation;
+    return unitById.get(i.unitId)!.cost * 3 ** (i.star - 1) - (i.star >= rules.sell.depreciationFromStar && !fromBench ? rules.sell.depreciationGold : 0);
+  };
+  const benchSize = (r: RunState) => rules.board.benchSlots + mods(r).benchSlotsBonus;
+  const deployLimit = (r: RunState) => Math.min(rules.run.maxLevel, r.level + mods(r).deployLimitBonus);
+  const equipSlots = (r: RunState, unitId: string) => rules.units.equipmentSlots + (isMillennium(unitId) ? mods(r).millenniumEquipSlotBonus : 0);
+  const rerollCost = (r: RunState) => mods(r).rerollCost ?? rules.shop.rerollCost;
+  const strategyChoices = (r: RunState) => mods(r).strategyChoices ?? 3;
+  /** 대기석 칸 수를 오파츠에 맞춘다(C05: 9 → 10). 줄어드는 일은 없다. */
+  function fitBench(r: RunState) { while (r.bench.length < benchSize(r)) r.bench.push(null); }
   const placeable = (u: UnitDefinition) => ({ front: u.position !== 'rear_only', rear: u.position !== 'front_only' });
 
-  function stats(i: Inst): BaseStats {
+  function stats(i: Inst, r: RunState | null = run): BaseStats {
     const u = unitById.get(i.unitId)!;
+    const eqMul = 1 + (r && isMillennium(i.unitId) ? mods(r).millenniumEquipStatBps : 0) / 10000;
     const m = rules.units.starStatMultiplierBps[i.star - 1] / 10000;
     const s: BaseStats = { hp: Math.round(u.baseStats.hp * m), atk: Math.round(u.baseStats.atk * m), def: u.baseStats.def, spd: u.baseStats.spd, critBps: u.baseStats.critBps, critDamageBps: u.baseStats.critDamageBps };
     for (const id of i.equipment) {
       const e = eqById.get(id);
       if (!e) continue;
-      for (const [k, v] of Object.entries(e.stats)) s[k as keyof BaseStats] += v ?? 0;
+      for (const [k, v] of Object.entries(e.stats)) s[k as keyof BaseStats] += Math.round((v ?? 0) * eqMul);
     }
     return s;
   }
@@ -186,8 +210,27 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   const odds = (level: number): number[] => costOdds(pack, level);
 
   /** 코어 상점 추첨(v2.3 11장): 코스트별 장수 제한, 3성 보유 학생 제외. 남은 장수는 소유 학생에서 매번 계산한다. */
-  function rollShop(r: RunState) {
-    r.shop = rollShopCore(pack, { level: r.level, owned: all(r).map((i) => ({ unitId: i.unitId, star: i.star })), trackedSynergyId: r.tracked }, r.shopRng);
+  function rollShop(r: RunState, keepOffered = false) {
+    const m = mods(r);
+    const fresh = rollShopCore(pack, {
+      level: r.level, owned: all(r).map((i) => ({ unitId: i.unitId, star: i.star })), trackedSynergyId: r.tracked,
+      slots: m.shopSlots ?? undefined, recommendedChanceBps: m.recommendedChanceBps ?? undefined,
+      topCostFirstSlot: m.levelUpTopCostSlot && r.levelUpPending, aronaLastSlot: m.aronaSlot,
+    }, r.shopRng);
+    // 프라나 보조(L01): 잠근 상점은 남은 칸을 두고 빈칸만 새로 채운다
+    r.shop = keepOffered ? fresh.map((id, k) => r.shop[k] ?? id) : fresh;
+    r.levelUpPending = false;
+  }
+
+  /** 만마전 비상 소집령(R02): 장 시작마다 1성 게헨나 중 최고 코스트(동률은 먼저 얻은 순) 1명을 2성으로, 없으면 4G */
+  function pandemonium(r: RunState) {
+    if (!mods(r).pandemonium) return;
+    const pick = all(r).filter((i) => i.star === 1 && unitById.get(i.unitId)!.synergyIds.includes('syn_gehenna'))
+      .sort((a, b) => unitById.get(b.unitId)!.cost - unitById.get(a.unitId)!.cost || Number(a.instanceId.slice(1)) - Number(b.instanceId.slice(1)))[0];
+    if (!pick) { r.gold += 4; return; }
+    pick.star = 2;
+    cue({ kind: 'merge', unitId: pick.unitId, star: 2 });
+    merge(r);
   }
 
   // ── 오파츠(OOPARTS_v1 1장) ───────────────────────────────
@@ -222,6 +265,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     while (need !== null && r.xp >= need) {
       r.xp -= need;
       r.level++;
+      r.levelUpPending = true;
       cue({ kind: 'levelup', amount: r.level });
       need = xpToNext(r.level);
     }
@@ -233,7 +277,11 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     const c = synergyCounts(r).get('syn_seminar') ?? 0;
     return c >= 4 ? 4 : c >= 2 ? 2 : 0;
   };
-  function interest(r: RunState) { return Math.min(rules.income.interest.cap + capBonus(r), Math.floor(r.gold / rules.income.interest.stepGold)); }
+  function interest(r: RunState) {
+    const m = mods(r);
+    const cap = Math.max(0, rules.income.interest.cap + capBonus(r) + m.interestCapDelta);
+    return Math.min(cap, Math.floor((r.gold + m.interestGoldBonus) / rules.income.interest.stepGold));
+  }
 
   function defeatDamage(r: RunState, survivingFront: number): { total: number; parts: { label: string; value: number }[] } {
     const n = node(r);
@@ -248,14 +296,14 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     const n = node(r);
     const inst = (i: Inst | null): UnitInstanceView | null => i && ({
       instanceId: i.instanceId, unitId: i.unitId, star: i.star, equipment: [...i.equipment], stats: stats(i),
-      placeable: placeable(unitById.get(i.unitId)!), sellValue: sellValue(i),
+      placeable: placeable(unitById.get(i.unitId)!), sellValue: sellValue(i, r), equipSlots: equipSlots(r, i.unitId),
     });
     const cand = n.candidates.find((c) => c.id === r.chosen) ?? n.candidates[0];
     return {
       runId: 'preview', seed: r.seed, crisisLevel: 0, chapter: r.chapter, battle: r.battle, nodeId: n.id, nodeType: n.type,
-      runHp: r.runHp, runHpMax: rules.run.startRunHp, gold: r.gold,
+      runHp: r.runHp, runHpMax: r.runHpMax, gold: r.gold,
       nextInterestPreview: { gold: interest(r), capBonus: capBonus(r) },
-      level: r.level, xp: r.xp, xpToNext: xpToNext(r.level), deployedCount: deployedInsts(r).length, deployLimit: r.level,
+      level: r.level, xp: r.xp, xpToNext: xpToNext(r.level), deployedCount: deployedInsts(r).length, deployLimit: deployLimit(r),
       streak: { ...r.streak }, strategies: [...r.strategies],
       loans: r.strategies.includes('str_kaiser_loan') ? [{ remaining: 5, perPayment: 6 }] : [],
       board: { front: r.front.map(inst), rear: r.rear.map(inst), bench: r.bench.map(inst) },
@@ -263,14 +311,15 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       synergies: synergyStates(r),
       shop: {
         slots: r.shop.map((id, idx) => id ? { unitId: id, cost: unitById.get(id)!.cost, recommended: idx === rules.shop.recommendedSlotIndex && !!r.tracked, preview: shopPreview(r, id) } : null),
-        locked: r.locked, rerollCost: rules.shop.rerollCost, odds: odds(r.level), xpCost: rules.xp.buyCostGold,
+        locked: r.locked, rerollCost: rerollCost(r), odds: odds(r.level), xpCost: rules.xp.buyCostGold,
       },
       node: {
         candidates: n.candidates.map((c) => ({ ...c, front: [...c.front], rear: [...c.rear] })),
-        chosen: cand.id, defeatDamagePreview: defeatDamage(r, cand.front.length).total, statScaleBps: n.statScaleBps,
+        chosen: cand.id, defeatDamagePreview: Math.max(1, defeatDamage(r, cand.front.length).total - mods(r).defeatDamageReduction) + mods(r).runHpLossPerBattle, statScaleBps: n.statScaleBps,
       },
       nodeHistory: [...r.history],
       offers: r.offers,
+      strategyPicksLeft: r.strategyPicksLeft,
       ooparts: {
         owned: [...r.oop.owned],
         offer: r.oopOffer && {
@@ -285,8 +334,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   function state(): UiState {
     return {
       revision, phase, contentVersion: base.contentVersion, rulesVersion: base.rulesVersion,
-      run: run && phase !== 'HOME' ? view(run) : null, hasSavedRun: !!run, cues, oopartRevealed: [...profile.revealedRecipes],
-      savedRun: run ? { chapter: run.chapter, battle: run.battle, runHp: run.runHp, runHpMax: rules.run.startRunHp, snapshot: view(run) } : undefined,
+      run: run && phase !== 'HOME' ? view(run) : null, hasSavedRun: !!run, cues, oopartRevealed: [...profile.revealedRecipes], oopartSupport: supportMap,
+      savedRun: run ? { chapter: run.chapter, battle: run.battle, runHp: run.runHp, runHpMax: run.runHpMax, snapshot: view(run) } : undefined,
     };
   }
 
@@ -323,9 +372,11 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
           for (const x of rest) {
             const at = locate(r, x.instanceId)!;
             r[at.zone][at.index] = null;
-            keep.equipment = [...keep.equipment, ...x.equipment].slice(0, 2);
+            keep.equipment = [...keep.equipment, ...x.equipment];
           }
           keep.star = (star + 1) as 2 | 3;
+          keep.equipment = keep.equipment.slice(0, equipSlots(r, unitId));
+          r.gold += mods(r).mergeGold[keep.star - 2];
           cue({ kind: 'merge', unitId, star: keep.star });
           changed = true;
         }
@@ -338,14 +389,37 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     const n = node(r);
     const cand = n.candidates.find((c) => c.id === r.chosen) ?? n.candidates[0];
     const scale = n.statScaleBps / 10000;
-    type Live = CombatantView & { atk: number; def: number; spd: number; crit: number; critDmg: number; next: number; cd: number; role: string; stunned: boolean; taunt: boolean; delayed: boolean };
+    // 오파츠 보정(코어 oopartModifiers). 전투 흉내 안에서 같은 순간에 끼워 넣는다.
+    const om = mods(r);
+    type Live = CombatantView & {
+      atk: number; def: number; spd: number; crit: number; critDmg: number; next: number; cd: number; role: string; stunned: boolean; taunt: boolean; delayed: boolean;
+      syn: string[]; dmgTakenBps: number; controlled: boolean; skillUsed: boolean; secretary: boolean; revived: boolean; reflects: number;
+    };
     const live: Live[] = [];
     const mk = (ref: Ref, name: string, s: BaseStats, extra: Partial<Live>): Live => ({
       ref, name, star: 1, maxHp: s.hp, hp: s.hp, shield: 0, energy: 0, boss: false, hasHp: true,
-      atk: s.atk, def: s.def, spd: s.spd, crit: s.critBps, critDmg: s.critDamageBps, next: 10000 / s.spd, cd: 0, role: '', stunned: false, taunt: false, delayed: false, ...extra,
+      atk: s.atk, def: s.def, spd: s.spd, crit: s.critBps, critDmg: s.critDamageBps, next: 10000 / s.spd, cd: 0, role: '', stunned: false, taunt: false, delayed: false,
+      syn: [], dmgTakenBps: 0, controlled: false, skillUsed: false, secretary: false, revived: false, reflects: 0, ...extra,
     });
-    r.front.forEach((i, index) => { if (i) { const u = unitById.get(i.unitId)!; live.push(mk({ side: 'ally', zone: 'front', index }, u.name, stats(i), { unitId: u.id, star: i.star, role: u.role })); } });
-    r.rear.forEach((i, index) => { if (i) { const u = unitById.get(i.unitId)!; live.push(mk({ side: 'ally', zone: 'rear', index }, u.name, stats(i), { unitId: u.id, star: i.star, role: u.role, hasHp: false, next: 100 + index * 15 })); } });
+    // 출전 학생 능력치 + 오파츠(ATK·3성 HP·진영 단독·후방 CRIT·전방 SPD·치명 피해)
+    const factionsOf = (unitId: string) => unitById.get(unitId)!.synergyIds.filter((s) => synById.get(s)?.category === 'faction');
+    const factionCount = new Map<string, number>();
+    for (const id of new Set(deployedInsts(r).map((i) => i.unitId))) for (const f of factionsOf(id)) factionCount.set(f, (factionCount.get(f) ?? 0) + 1);
+    const hpBps = Math.min(om.threeStarHpCapBps, om.threeStarHpBps * deployedInsts(r).filter((i) => i.star === 3).length);
+    const allyStats = (i: Inst, zone: 'front' | 'rear'): BaseStats => {
+      const s = stats(i, r);
+      const fac = factionsOf(i.unitId);
+      const lone = om.loneFactionAtkBps > 0 && fac.length > 0 && fac.every((f) => factionCount.get(f) === 1);
+      s.atk = Math.round(s.atk * (1 + (om.atkBps + (lone ? om.loneFactionAtkBps : 0)) / 10000));
+      if (lone) s.spd += om.loneFactionSpd;
+      if (zone === 'front') s.spd += om.frontSpd;
+      else s.critBps += om.rearCritBps;
+      s.critDamageBps += om.critDamageBps;
+      s.hp = Math.round(s.hp * (1 + hpBps / 10000));
+      return s;
+    };
+    r.front.forEach((i, index) => { if (i) { const u = unitById.get(i.unitId)!; live.push(mk({ side: 'ally', zone: 'front', index }, u.name, allyStats(i, 'front'), { unitId: u.id, star: i.star, role: u.role, syn: u.synergyIds })); } });
+    r.rear.forEach((i, index) => { if (i) { const u = unitById.get(i.unitId)!; live.push(mk({ side: 'ally', zone: 'rear', index }, u.name, allyStats(i, 'rear'), { unitId: u.id, star: i.star, role: u.role, syn: u.synergyIds, hasHp: false, next: 100 + index * 15 })); } });
     const addEnemy = (slot: { enemyId: string; index: number }, zone: 'front' | 'rear') => {
       const e = enemyById.get(slot.enemyId) as EnemyDefinition;
       const s = { ...e.baseStats, hp: Math.round(e.baseStats.hp * scale * 0.5), atk: Math.round(e.baseStats.atk * scale * 0.7), def: Math.round(e.baseStats.def * 0.5) };
@@ -353,9 +427,23 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     };
     cand.front.forEach((s) => addEnemy(s, 'front'));
     cand.rear.forEach((s) => addEnemy(s, 'rear'));
-    const snapshot: CombatantView[] = live.map((l) => ({ ref: l.ref, unitId: l.unitId, enemyId: l.enemyId, name: l.name, star: l.star, maxHp: l.maxHp, hp: l.hp, shield: 0, energy: 0, boss: l.boss, hasHp: l.hasHp }));
 
     const events: BattleEventView[] = [];
+    // 쿠데타 명령서(U02): 전투 시작 서기장(체리노 우선, 없으면 무작위 전방 붉은겨울)
+    let coupLeft = 3;
+    let coupBonus = 0;
+    const makeSecretary = (l: Live, av: number) => {
+      l.secretary = true; l.atk = Math.round(l.atk * (1.4 + coupBonus)); l.dmgTakenBps = -2000;
+      events.push({ t: 'status', av, target: l.ref, statusId: 'st_atk_up', op: 'add' }, { t: 'status', av, target: l.ref, statusId: 'st_damage_reduction', op: 'add' });
+    };
+    if (om.coupOrder) {
+      const rw = live.filter((l) => l.ref.side === 'ally' && l.hasHp && l.syn.includes('syn_red_winter'));
+      const pickRw = rw.find((l) => l.unitId === 'u_cherino') ?? rw[Math.floor(rand() * rw.length)];
+      if (pickRw) makeSecretary(pickRw, 0);
+    }
+    const snapshot: CombatantView[] = live.map((l) => ({ ref: l.ref, unitId: l.unitId, enemyId: l.enemyId, name: l.name, star: l.star, maxHp: l.maxHp, hp: l.hp, shield: 0, energy: 0, boss: l.boss, hasHp: l.hasHp }));
+
+    const spMax = { ally: om.spMax ?? rules.battle.teamSp.max, enemy: rules.battle.teamSp.max };
     const sp = { ally: rules.battle.teamSp.start, enemy: rules.battle.teamSp.start };
     const contrib = new Map<string, { damage: number; healing: number; shield: number; rearSupport: number }>();
     const c = (l: Live) => { const k = l.unitId!; if (!contrib.has(k)) contrib.set(k, { damage: 0, healing: 0, shield: 0, rearSupport: 0 }); return contrib.get(k)!; };
@@ -367,24 +455,113 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       return (t.length ? t : pool).sort((a, b) => a.ref.index - b.ref.index)[0];
     };
     const lowest = (side: 'ally' | 'enemy') => alive(side, 'front').sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+    /** 아군이 받는 치유·보호막 배율(R08 −50%) */
+    const healMul = Math.max(0, 1 + om.healShieldReceivedBps / 10000);
+    const healerTier2 = (synergyCounts(r).get('syn_healer') ?? 0) >= (synById.get('syn_healer')?.tiers[0]?.threshold ?? 2);
 
-    function hit(av: number, src: Live, tgt: Live, mult: number, origin?: Ref) {
-      const isCrit = rand() * 10000 < src.crit;
-      let amount = Math.max(1, Math.round(src.atk * mult * (100 / (100 + tgt.def)) * (0.92 + rand() * 0.16) * (isCrit ? 1 + src.critDmg / 10000 : 1)));
+    let spRefills = 0;
+    let firstFall = false;
+    let revives = 0;
+    let abydosUses = 0;
+    let notoriety = 0;
+
+    function heal(av: number, src: Live, t: Live, raw: number) {
+      const amt = Math.min(t.maxHp - t.hp, Math.round(raw * healMul));
+      t.hp += amt;
+      events.push({ t: 'heal', av, source: src.ref, target: t.ref, amount: amt });
+      if (src.unitId) c(src).healing += amt;
+      return Math.round(raw * healMul) - amt;
+    }
+
+    /** 쓰러짐 처리: 부활(L03) → 첫 쓰러짐 회복(C10) → 아비도스 최후(R01·L04) → 쿠데타(U02) / 적이면 악명(U06) */
+    function onFall(av: number, tgt: Live, by: Live | null) {
+      if (tgt.ref.side === 'ally') {
+        if (revives < om.mysticRevives && tgt.star === 3 && !tgt.revived) {
+          revives++; tgt.revived = true; tgt.hp = Math.round(tgt.maxHp * 0.4); tgt.atk = Math.round(tgt.atk * 1.25);
+          events.push({ t: 'heal', av, source: tgt.ref, target: tgt.ref, amount: tgt.hp }, { t: 'status', av, target: tgt.ref, statusId: 'st_atk_up', op: 'add' });
+          return;
+        }
+        events.push({ t: 'defeated', av, target: tgt.ref, by: by?.ref });
+        if (!firstFall) {
+          firstFall = true;
+          if (om.firstFallHealBps) for (const f of alive('ally', 'front')) heal(av, tgt, f, f.maxHp * om.firstFallHealBps / 10000);
+        }
+        if (abydosUses < om.abydosLastStand && tgt.syn.includes('syn_abydos')) {
+          const rest = alive('ally', 'front').filter((l) => l.syn.includes('syn_abydos'));
+          if (rest.length) { abydosUses++; for (const l of rest) { l.energy = 100; events.push({ t: 'resource', av, side: 'ally', energy: { unit: l.ref, value: 100 } }); } }
+        }
+        if (om.coupOrder && tgt.secretary && coupLeft > 0) {
+          const heir = alive('ally', 'front').filter((l) => l.syn.includes('syn_red_winter')).sort((a, b) => b.atk - a.atk)[0];
+          if (heir) { coupLeft--; coupBonus += 0.2; makeSecretary(heir, av); }
+        }
+      } else {
+        events.push({ t: 'defeated', av, target: tgt.ref, by: by?.ref });
+        if (by && by.ref.side === 'ally' && om.jailbreak && by.syn.includes('syn_outlaw') && notoriety < 6) {
+          notoriety++;
+          for (const l of live) if (l.ref.side === 'ally' && l.syn.includes('syn_outlaw')) l.atk = Math.round(l.atk * (1 + 0.08 * notoriety) / (1 + 0.08 * (notoriety - 1)));
+          if (notoriety === 6) for (const t of alive('enemy', 'front')) hit(av, by, t, 1.35, undefined, { trueDmg: true });
+        }
+      }
+    }
+
+    function hit(av: number, src: Live, tgt: Live, mult: number, origin?: Ref, opt: { critBonus?: number; trueDmg?: boolean } = {}) {
+      if (tgt.hp <= 0) return;
+      const isCrit = rand() * 10000 < src.crit + (opt.critBonus ?? 0);
+      let m = mult;
+      if (src.ref.side === 'ally') {
+        if (!isCrit && om.nonCritDamageBps) m *= 1 + om.nonCritDamageBps / 10000;
+        if (om.eliteBossDamageBps && (tgt.boss || n.type === 'elite')) m *= 1 + om.eliteBossDamageBps / 10000;
+      }
+      m *= 1 + (tgt.dmgTakenBps + (tgt.controlled ? 2000 : 0)) / 10000;
+      const defMul = opt.trueDmg ? 1 : 100 / (100 + tgt.def);
+      let amount = Math.max(1, Math.round(src.atk * m * defMul * (0.92 + rand() * 0.16) * (isCrit ? 1 + src.critDmg / 10000 : 1)));
       const absorbed = Math.min(tgt.shield, amount);
       tgt.shield -= absorbed;
       amount -= absorbed;
       tgt.hp = Math.max(0, tgt.hp - amount);
-      events.push({ t: 'damage', av, source: src.ref, origin, target: tgt.ref, amount, crit: isCrit, shieldAbsorbed: absorbed });
+      events.push({ t: 'damage', av, source: src.ref, origin, target: tgt.ref, amount, crit: isCrit, shieldAbsorbed: absorbed, true: opt.trueDmg });
       if (src.unitId) { c(src).damage += amount + absorbed; if (origin) c(src).rearSupport += amount; }
       tgt.energy = Math.min(100, tgt.energy + 8);
-      if (tgt.hp <= 0) events.push({ t: 'defeated', av, target: tgt.ref, by: src.ref });
+      // 볼프세크 철편(C12): 도발 중인 아군이 받은 피해의 15%를 공격자에게(턴당 3회)
+      if (om.wolfseggReflectBps && tgt.ref.side === 'ally' && tgt.taunt && tgt.reflects < 3 && src.hasHp && src.hp > 0) {
+        tgt.reflects++;
+        const back = Math.round((amount + absorbed) * om.wolfseggReflectBps / 10000);
+        if (back > 0) {
+          src.hp = Math.max(0, src.hp - back);
+          events.push({ t: 'damage', av, source: tgt.ref, target: src.ref, amount: back, crit: false, shieldAbsorbed: 0, true: true });
+          if (tgt.unitId) c(tgt).damage += back;
+          if (src.hp <= 0) onFall(av, src, tgt);
+        }
+      }
+      if (tgt.hp <= 0) onFall(av, tgt, src);
+    }
+
+    /** 카이저 PMC 계약서(U09): 200AV마다 적 전방 1명에게 아군 최고 ATK 150%, 같은 순간 아군 전방 1명에게 그 40% */
+    function pmc(av: number) {
+      const shooter = live.filter((l) => l.ref.side === 'ally' && (l.hasHp ? l.hp > 0 : true)).sort((a, b) => b.atk - a.atk)[0];
+      const foes = alive('enemy', 'front');
+      if (!shooter || !foes.length) return;
+      hit(av, shooter, foes[Math.floor(rand() * foes.length)], 1.5, shooter.hasHp ? undefined : shooter.ref);
+      const mine = alive('ally', 'front');
+      if (!mine.length || !om.pmcFriendlyFireBps) return;
+      const t = mine[Math.floor(rand() * mine.length)];
+      let amount = Math.round(shooter.atk * 1.5 * om.pmcFriendlyFireBps / 10000);
+      const absorbed = Math.min(t.shield, amount);
+      t.shield -= absorbed; amount -= absorbed; t.hp = Math.max(0, t.hp - amount);
+      events.push({ t: 'damage', av, source: shooter.ref, target: t.ref, amount, crit: false, shieldAbsorbed: absorbed });
+      if (t.hp <= 0) onFall(av, t, null);
     }
 
     let av = 0;
     let outcome: 'win' | 'loss' = 'loss';
     let reason: ResultView['reason'] = 'timeout';
-    for (let guard = 0; guard < 400; guard++) {
+    let nextPmc = 200;
+    let exhausted = false;
+    let spUltPulse = -1;
+    let censerPulse = -1;
+    let censerChain = 0;
+    const censerUsed = new Set<Live>();
+    for (let guard = 0; guard < 500; guard++) {
       if (!alive('enemy', 'front').length) { outcome = 'win'; reason = 'enemy_front_wiped'; break; }
       if (!alive('ally', 'front').length) { outcome = 'loss'; reason = 'ally_front_wiped'; break; }
       const actors = live.filter((l) => (l.hasHp ? l.hp > 0 : alive('ally', 'front').length > 0));
@@ -392,7 +569,15 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       const a = actors[0];
       av = Math.round(a.next);
       if (av > rules.battle.maxAv) { av = rules.battle.maxAv; break; }
+      while (om.pmcBarrage && nextPmc <= av && alive('enemy', 'front').length) { pmc(nextPmc); nextPmc += 200; }
+      if (!alive('enemy', 'front').length || !alive('ally', 'front').length) continue;
+      // 엔지니어부 불법 에너지 드링크(U11): 600AV부터 전방 탈진
+      if (om.exhaustion && !exhausted && av >= 600) {
+        exhausted = true;
+        for (const l of alive('ally', 'front')) { l.spd = Math.max(10, l.spd - 30); events.push({ t: 'status', av, target: l.ref, statusId: 'st_spd_down', op: 'add' }); }
+      }
       a.next += 10000 / a.spd;
+      a.reflects = 0;
       events.push({ t: 'timeline', av, upcoming: actors.slice(1, 9).map((x) => x.ref) });
       if (a.stunned || a.delayed) {
         const sid = a.stunned ? 'st_stun' : 'st_delayed';
@@ -400,6 +585,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         events.push({ t: 'status', av, target: a.ref, statusId: sid, op: 'remove' });
         continue;
       }
+      a.controlled = false;
       const side = a.ref.side;
       const enemySide = foe(side);
       if (!a.hasHp) {
@@ -409,9 +595,15 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         events.push({ t: 'action', av, actor: a.ref, kind: 'rear', targets: front.map((f) => f.ref) });
         if (/치유|힐|회복/.test(a.role)) {
           const t = lowest('ally');
-          if (t) { const amt = Math.min(t.maxHp - t.hp, Math.round(a.atk * 2.2)); t.hp += amt; events.push({ t: 'heal', av, source: a.ref, target: t.ref, amount: amt }); c(a).healing += amt; c(a).rearSupport += amt; }
+          if (t) {
+            const before = t.hp;
+            const over = heal(av, a, t, a.atk * 2.2);
+            c(a).rearSupport += t.hp - before;
+            // 황금 양모(C16): 힐러 2단계가 켜져 있으면 넘친 치유의 25%를 보호막으로
+            if (om.goldenFleece && healerTier2 && over > 0) { const sh = Math.round(over * 0.25); t.shield += sh; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: sh }); c(a).shield += sh; }
+          }
         } else if (/보호막|방어/.test(a.role)) {
-          for (const t of front) { const amt = Math.round(a.atk * 1.4); t.shield += amt; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: amt }); c(a).shield += amt; c(a).rearSupport += amt; }
+          for (const t of front) { const amt = Math.round(a.atk * 1.4 * healMul); t.shield += amt; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: amt }); c(a).shield += amt; c(a).rearSupport += amt; }
         } else if (/버프|지휘|관측|증폭/.test(a.role)) {
           for (const t of front) { events.push({ t: 'status', av, target: t.ref, statusId: 'st_atk_up', op: 'add' }); t.atk = Math.round(t.atk * 1.08); }
           c(a).rearSupport += 120;
@@ -423,20 +615,44 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       }
       const target = frontTarget(enemySide);
       if (!target) continue;
-      if (a.energy >= 100) {
+      const allyFront = side === 'ally' && a.ref.zone === 'front';
+      const ultNeed = allyFront && om.frontUltEnergy ? om.frontUltEnergy : 100;
+      if (a.energy >= ultNeed) {
         a.energy = 0;
         events.push({ t: 'action', av, actor: a.ref, kind: 'ultimate', targets: [target.ref] });
         events.push({ t: 'resource', av, side, energy: { unit: a.ref, value: 0 } });
+        const pulse = Math.floor(av / rules.battle.globalPulseAv);
+        let mult = 1;
+        // 용의 향로(U01): 같은 전역 주기 안에서 이어진 산해경 필살기
+        if (side === 'ally' && om.dragonCenser && a.syn.includes('syn_shanhaijing')) {
+          if (pulse !== censerPulse) { censerPulse = pulse; censerChain = 0; censerUsed.clear(); }
+          censerChain++; censerUsed.add(a);
+          mult = 1 + 0.15 * (censerChain - 1);
+        }
         const aoe = /광역|폭발|포격/.test(a.role);
-        if (aoe) for (const t of alive(enemySide, 'front')) hit(av, a, t, 1.5);
-        else hit(av, a, lowest(enemySide) ?? target, 2.6);
-      } else if (sp[side] >= 1 && a.cd <= 0) {
+        if (aoe) {
+          const ts = alive(enemySide, 'front');
+          // 디스코 콜간테(C15): 블래스터 광역이 3명 이상을 맞히면 CRIT +20%
+          const critBonus = side === 'ally' && om.discoCritBps && a.syn.includes('syn_blaster') && ts.length >= 3 ? om.discoCritBps : 0;
+          for (const t of ts) hit(av, a, t, 1.5 * mult, undefined, { critBonus });
+        } else hit(av, a, lowest(enemySide) ?? target, 2.6 * mult);
+        if (side === 'ally' && om.dragonCenser && a.syn.includes('syn_shanhaijing')) {
+          const next = alive('ally', 'front').filter((l) => l !== a && l.syn.includes('syn_shanhaijing') && !censerUsed.has(l)).sort((x, y) => y.energy - x.energy)[0];
+          if (next) { next.energy = Math.min(100, next.energy + 35); events.push({ t: 'resource', av, side, energy: { unit: next.ref, value: next.energy } }); }
+        }
+        // 프로토타입 인피니티(L05): 필살기가 해소되면 팀 SP +1(전역 주기당 1회)
+        if (side === 'ally' && om.spOnUltimate && pulse !== spUltPulse) { spUltPulse = pulse; sp.ally = Math.min(spMax.ally, sp.ally + 1); events.push({ t: 'resource', av, side, sp: sp.ally }); }
+      } else if (sp[side] >= 1 && a.cd <= 0 && !(allyFront && om.frontSkillLocked)) {
         sp[side]--;
-        a.cd = 2;
+        // 아틀란티스 메달(C17): 서포터의 첫 스킬은 쿨다운 −1
+        a.cd = side === 'ally' && om.atlantisMedal && a.syn.includes('syn_supporter') && !a.skillUsed ? 1 : 2;
+        a.skillUsed = true;
+        // 바그다드 전지(C07)·L05: 팀 SP가 0이 되면 +2
+        if (side === 'ally' && sp.ally === 0 && spRefills < om.spRefillUses) { spRefills++; sp.ally = Math.min(spMax.ally, 2); }
         events.push({ t: 'action', av, actor: a.ref, kind: 'skill', targets: [target.ref] });
         events.push({ t: 'resource', av, side, sp: sp[side] });
         if (/탱커|방어|도발|방패/.test(a.role)) {
-          const amt = Math.round(a.maxHp * 0.18);
+          const amt = Math.round(a.maxHp * 0.18 * (side === 'ally' ? healMul : 1));
           a.shield += amt; a.taunt = true;
           events.push({ t: 'shield', av, source: a.ref, target: a.ref, amount: amt });
           events.push({ t: 'status', av, target: a.ref, statusId: 'st_taunt', op: 'add' });
@@ -444,8 +660,15 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         } else if (/제어|기절|CC|교란/.test(a.role) || rand() < 0.22) {
           hit(av, a, target, 1.3);
           if (target.hp > 0) {
-            if (target.boss) { target.delayed = true; events.push({ t: 'status', av, target: target.ref, statusId: 'st_delayed', op: 'add', replacedFrom: 'st_stun' }); }
-            else { target.stunned = true; events.push({ t: 'status', av, target: target.ref, statusId: 'st_stun', op: 'add' }); }
+            if (target.boss) {
+              target.delayed = true;
+              events.push({ t: 'status', av, target: target.ref, statusId: 'st_delayed', op: 'add', replacedFrom: 'st_stun' });
+              // 위니퍼소키 돌(C18): 컨트롤러의 기절이 보스에 막히면 행동 15% 지연 + 1턴 받는 피해 +20%
+              if (side === 'ally' && om.winnipesaukee && a.syn.includes('syn_controller')) {
+                target.next += 0.15 * (10000 / target.spd); target.controlled = true;
+                events.push({ t: 'status', av, target: target.ref, statusId: 'st_vuln', op: 'add' });
+              }
+            } else { target.stunned = true; events.push({ t: 'status', av, target: target.ref, statusId: 'st_stun', op: 'add' }); }
           }
         } else hit(av, a, target, 1.6);
         a.energy = Math.min(100, a.energy + 30);
@@ -453,8 +676,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         a.cd--;
         events.push({ t: 'action', av, actor: a.ref, kind: 'basic', targets: [target.ref] });
         hit(av, a, target, 1);
-        sp[side] = Math.min(rules.battle.teamSp.max, sp[side] + 1);
-        a.energy = Math.min(100, a.energy + 25);
+        sp[side] = Math.min(spMax[side], sp[side] + 1);
+        a.energy = Math.min(100, a.energy + 25 + (side === 'ally' ? om.basicEnergyBonus : 0));
         events.push({ t: 'resource', av, side, sp: sp[side] });
       }
       events.push({ t: 'resource', av, side, energy: { unit: a.ref, value: a.energy } });
@@ -464,20 +687,28 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     // 정산(흉내)
     const before = r.runHp;
     const survivors = alive('enemy', 'front').length;
-    const dmg = outcome === 'loss' ? defeatDamage(r, survivors) : { total: 0, parts: [] };
+    const dmg = outcome === 'loss' ? defeatDamage(r, survivors) : { total: 0, parts: [] as { label: string; value: number }[] };
+
+    // 오파츠: 패배 피해 감소(최소 1), 전투마다 런 체력 감소(R08)
+    if (outcome === 'loss' && om.defeatDamageReduction > 0) {
+      const cut = Math.min(om.defeatDamageReduction, dmg.total - 1);
+      if (cut > 0) { dmg.parts.push({ label: '오파츠 · 패배 피해 감소', value: -cut }); dmg.total -= cut; }
+    }
+    if (om.runHpLossPerBattle) { dmg.parts.push({ label: '오파츠 · 색채의 잔광', value: om.runHpLossPerBattle }); dmg.total += om.runHpLossPerBattle; }
     const income: { label: string; value: number }[] = [{ label: `${r.chapter}장 기본 수입`, value: rules.income.baseByChapter[r.chapter - 1] }];
     const streakNext = r.streak.kind === outcome ? r.streak.count + 1 : 1;
     if (outcome === 'win') income.push({ label: '승리', value: rules.income.winBonus });
     const sb = [...rules.income.streakBonus].reverse().find((b) => streakNext >= b.minStreak);
     if (sb) income.push({ label: `${streakNext}${outcome === 'win' ? '연승' : '연패'}`, value: sb.gold });
     income.push({ label: capBonus(r) ? `이자 (세미나 상한 +${capBonus(r)})` : '이자', value: interest(r) });
+    if (om.settlementGold) income.push({ label: '오파츠 · 게마트리아의 계약', value: om.settlementGold });
     const contributions = [...contrib].map(([unitId, v]) => ({ unitId, ...v }));
     const score = (x: typeof contributions[number]) => x.damage + x.healing * 1.2 + x.shield + x.rearSupport * 0.5;
     const mvp = outcome === 'win' ? [...contributions].sort((a2, b2) => score(b2) - score(a2))[0]?.unitId ?? null : null;
     const result: ResultView = {
       outcome, reason,
       runHp: { before, after: Math.max(0, before - dmg.total), breakdown: dmg.parts },
-      income, xpGained: rules.xp.perBattle, contributions, mvpUnitId: mvp,
+      income, xpGained: rules.xp.perBattle + om.battleXpBonus, contributions, mvpUnitId: mvp,
     };
     return { battle: { battleId: `${n.id}-${revision}`, nodeLabel: `${r.chapter}-${r.battle} ${cand.label}`, combatants: snapshot, startSp: { ally: rules.battle.teamSp.start, enemy: rules.battle.teamSp.start }, events }, result };
   }
@@ -487,13 +718,16 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       r.chapter++;
       r.battle = 1;
       const pool = pack.strategies.filter((s) => s.offer.chapters.includes(r.chapter) && !r.strategies.includes(s.id));
-      r.offers = { strategies: shuffle(pool).slice(0, 3).map((s) => s.id) };
+      r.offers = { strategies: shuffle(pool).slice(0, strategyChoices(r)).map((s) => s.id) };
+      r.strategyPicksLeft = mods(r).strategyPicks;
+      pandemonium(r);
     } else {
       r.battle++;
       r.offers = {};
     }
     r.chosen = 'A';
     if (!r.locked) rollShop(r);
+    else if (mods(r).pranaLock) rollShop(r, true);
   }
 
   function shuffle<T>(xs: T[]): T[] {
@@ -521,9 +755,15 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         strategies: shuffle(pack.strategies.filter((s) => s.offer.chapters.includes(1))).slice(0, 3).map((s) => s.id),
       },
       recruited: new Set(chosen.map((u) => u.id)), deployed: new Set(),
-      oop: emptyOopartRunState(), oopOffer: null, oopStartDone: false,
+      oop: { ...emptyOopartRunState(), owned: [...(opts.ooparts ?? [])] }, oopOffer: null, oopStartDone: false,
+      runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false,
       shopRng: Rng.forStream(seed, 'shop'), rewardRng: Rng.forStream(seed, 'reward'),
     };
+    fitBench(r);
+    if (r.oop.owned.length) {
+      r.offers!.strategies = shuffle(pack.strategies.filter((s) => s.offer.chapters.includes(1))).slice(0, strategyChoices(r)).map((s) => s.id);
+      r.strategyPicksLeft = mods(r).strategyPicks;
+    }
     rollShop(r);
     return r;
   }
@@ -583,6 +823,10 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       const id = String(payload.strategyId ?? '');
       if (!r.offers?.strategies?.includes(id)) return no('제안된 전략이 아니에요', 'INVALID_PAYLOAD');
       r.strategies.push(id);
+      // 선생님의 권한(L01): 장마다 2개를 고른다
+      r.strategyPicksLeft--;
+      const rest = (r.offers?.strategies ?? []).filter((x) => x !== id);
+      if (r.strategyPicksLeft > 0 && rest.length) { r.offers = { strategies: rest }; return ok(); }
       r.offers = {};
       // 런 시작 오파츠 3택1(전략 선택 직후)
       if (!r.oopStartDone) { r.oopStartDone = true; if (offerOoparts(r, 'run_start', 'prep')) return ok(); }
@@ -609,6 +853,9 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       const got = acquireOopart(pack, r.oop, profile, id);
       if (!got.ok) return no(got.message);
       r.oop = got.state;
+      // 게마트리아의 계약(R09): 획득 즉시 런 체력 최대치·현재치 −25(최소 1)
+      if (id === 'oop_gematria_contract') { r.runHpMax = Math.max(1, r.runHpMax - 25); r.runHp = Math.max(1, Math.min(r.runHpMax, r.runHp - 25)); }
+      fitBench(r);
       if (got.profile.revealedRecipes.length !== profile.revealedRecipes.length) { profile = got.profile; saveProfile(profile); }
       cue({ kind: 'oopart', oopartId: id });
       for (const m of got.merges) cue({ kind: 'oopart_merge', oopartId: m.legendaryId, consumed: m.consumed, firstReveal: m.firstReveal });
@@ -631,16 +878,18 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         r.shop[idx] = null;
         const inst = newInst(unitId);
         if (benchIdx >= 0) r.bench[benchIdx] = inst;
-        else { r.bench.push(inst); merge(r); r.bench = r.bench.slice(0, rules.board.benchSlots); }
+        else { r.bench.push(inst); merge(r); r.bench = r.bench.slice(0, benchSize(r)); }
         if (!r.recruited.has(unitId)) { r.recruited.add(unitId); cue({ kind: 'recruit', unitId }); }
         merge(r);
+        // 아로나 추천 칸(L01, 마지막 칸)으로 합성이 완성되면 XP
+        if (merging && mods(r).aronaSlot && idx === r.shop.length - 1) { r.xp += mods(r).aronaMergeXp; levelUp(r); }
         return ok();
       }
       case 'SELL_UNIT': {
         const at = locate(r, String(payload.instanceId));
         if (!at) return no('학생을 찾을 수 없어요', 'INVALID_PAYLOAD');
         const inst = r[at.zone][at.index]!;
-        r.gold += sellValue(inst);
+        r.gold += sellValue(inst, r);
         r.stash.push(...inst.equipment);
         r[at.zone][at.index] = null;
         return ok();
@@ -662,7 +911,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         }
         const deploying = from.zone === 'bench' && to.zone !== 'bench' && !occupant;
         const n = deployedInsts(r).length;
-        if (deploying && n >= r.level) return no(`편성 인원이 가득 찼어요(${n}/${r.level}). 레벨을 올리거나 다른 학생을 빼 주세요`);
+        if (deploying && n >= deployLimit(r)) return no(`편성 인원이 가득 찼어요(${n}/${deployLimit(r)}). 레벨을 올리거나 다른 학생을 빼 주세요`);
         r[to.zone][to.index] = inst;
         r[from.zone][from.index] = occupant;
         if (to.zone !== 'bench') {
@@ -678,8 +927,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         return ok();
       }
       case 'REROLL_SHOP':
-        if (r.gold < rules.shop.rerollCost) return no(`새로고침에 ${rules.shop.rerollCost}G가 필요해요 (보유 ${r.gold}G)`);
-        r.gold -= rules.shop.rerollCost;
+        if (r.gold < rerollCost(r)) return no(`새로고침에 ${rerollCost(r)}G가 필요해요 (보유 ${r.gold}G)`);
+        r.gold -= rerollCost(r);
         rollShop(r);
         return ok();
       case 'TOGGLE_SHOP_LOCK':
@@ -715,7 +964,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         if (eq.zone === 'rear' && !placeable(u).rear) return no(`${eq.name}은(는) 후방 학생 전용이에요`);
         if (eq.uniquePerUnit && inst.equipment.includes(eqId)) return no('같은 장비는 한 학생에게 하나만 장착할 수 있어요');
         const replace = payload.replaceIndex === undefined ? -1 : Number(payload.replaceIndex);
-        if (inst.equipment.length >= rules.units.equipmentSlots && replace < 0) return no('장비 칸이 가득 찼어요. 교체할 칸을 골라 주세요');
+        if (inst.equipment.length >= equipSlots(r, inst.unitId) && replace < 0) return no('장비 칸이 가득 찼어요. 교체할 칸을 골라 주세요');
         r.stash.splice(stashIdx, 1);
         if (replace >= 0 && inst.equipment[replace]) { r.stash.push(inst.equipment[replace]); inst.equipment[replace] = eqId; }
         else inst.equipment.push(eqId);
@@ -737,6 +986,9 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         r.lastResult = result;
         // 결과는 재생 전에 먼저 확정된다(13.3)
         r.runHp = result.runHp.after;
+        // 후배들을 부탁해(L04): 런 체력이 처음 0이 되면 버틴다(최종 보스 패배 제외)
+        const finalBoss = node(r).type === 'boss' && r.chapter === rules.run.chapters;
+        if (r.runHp <= 0 && mods(r).lastStandHp > 0 && !r.lastStandUsed && !finalBoss) { r.runHp = mods(r).lastStandHp; r.lastStandUsed = true; result.runHp.after = r.runHp; result.runHp.breakdown.push({ label: '후배들을 부탁해 (유메의 수첩)', value: 0 }); }
         r.gold += result.income.reduce((a, b) => a + b.value, 0);
         r.xp += result.xpGained;
         levelUp(r);
