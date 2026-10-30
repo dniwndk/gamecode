@@ -369,14 +369,14 @@ kbd { font-family: var(--f-num); }
 .k-shop-card:active { transform: translateY(-1px) scale(.98); }
 .k-shop-art { position: absolute; inset: 0; }
 .k-shop-art img { object-position: 50% 14%; }
-.k-shop-fade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 20%, rgba(8,18,38,.55) 48%, rgba(8,18,38,.95) 82%); }
+.k-shop-fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8,18,38,.45), transparent 32%), linear-gradient(180deg, transparent 62%, rgba(8,18,38,.7) 100%); }
 .k-shop-card.is-poor { filter: grayscale(.7) brightness(.75); }
 .k-shop-card.is-poor .k-shop-cost { color: #ff9a9a; }
-.k-shop-traits { position: absolute; left: 8px; right: 8px; bottom: 44px; display: flex; flex-direction: column; gap: 4px; }
-.k-trait { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; }
-.k-trait span { overflow: hidden; text-overflow: ellipsis; }
-.k-trait em { font-style: normal; font-family: var(--f-num); font-weight: 800; color: var(--yellow); margin-left: auto; }
-.k-trait.is-hit span { color: var(--yellow); }
+.k-shop-traits { position: absolute; left: 6px; bottom: 46px; display: flex; flex-direction: column-reverse; gap: 5px; }
+.k-trait { position: relative; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: rgba(8,18,38,.55); box-shadow: 0 0 0 1px rgba(255,255,255,.22); backdrop-filter: blur(4px); }
+.k-trait.is-hit { background: rgba(255,214,64,.28); box-shadow: 0 0 0 2px var(--yellow), 0 0 12px rgba(255,214,64,.75); }
+.k-trait em { position: absolute; left: calc(100% + 4px); top: 50%; transform: translateY(-50%); padding: 1px 6px; border-radius: 999px; background: var(--yellow); color: var(--ink);
+  font-style: normal; font-family: var(--f-num); font-weight: 800; font-size: 13px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
 .k-shop-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; display: flex; align-items: center; gap: 6px; padding: 0 10px;
   background: linear-gradient(90deg, color-mix(in srgb, var(--cc) 90%, #000), color-mix(in srgb, var(--cc) 55%, #0f1d36)); }
 .k-shop-foot b { font-size: 18px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1039,9 +1039,10 @@ kbd { font-family: var(--f-num); }
 .is-mobile .k-xp-btn kbd, .is-mobile .k-shop-actions kbd { display: none; }
 .is-mobile .k-shop-cards { grid-column: 1 / -1; grid-row: 2; display: flex; overflow-x: auto; gap: 8px; }
 .is-mobile .k-shop-card, .is-mobile .k-shop-empty { flex: none; width: 116px; height: 150px; }
-.is-mobile .k-shop-traits { bottom: 34px; }
-.is-mobile .k-trait { font-size: 11px; gap: 3px; }
-.is-mobile .k-trait .k-hex { --s: 16px !important; }
+.is-mobile .k-shop-traits { left: 4px; bottom: 34px; gap: 3px; }
+.is-mobile .k-trait { width: 24px; height: 24px; }
+.is-mobile .k-trait em { font-size: 11px; padding: 0 4px; }
+.is-mobile .k-trait .k-hex { --s: 20px !important; }
 .is-mobile .k-shop-foot { height: 30px; padding: 0 6px; }
 .is-mobile .k-shop-foot b { font-size: 13px; }
 .is-mobile .k-shop-cost { font-size: 16px; }
@@ -1249,7 +1250,7 @@ kbd { font-family: var(--f-num); }
 .is-compact .k-st, .is-compact .k-hp-text, .is-compact .k-cb-support, .is-compact .k-tl-label, .is-compact .k-log-list, .is-compact .k-limits,
 .is-compact .k-contrib-legend, .is-compact .k-sell small, .is-compact .k-deploy-count small, .is-compact .k-lv-big > small, .is-compact .k-node-badge,
 .is-compact .k-cost, .is-compact .k-odds span, .is-compact .k-stacking, .is-compact .k-muted, .is-compact .k-bench-label small { font-size: 18px; }
-.is-compact .k-card-name, .is-compact .k-trait, .is-compact .k-cb.is-rear .k-cb-name, .is-compact .k-enemy-row strong, .is-compact .k-shop-tip, .is-compact .k-tip { font-size: 18px; }
+.is-compact .k-card-name, .is-compact .k-cb.is-rear .k-cb-name, .is-compact .k-enemy-row strong, .is-compact .k-shop-tip, .is-compact .k-tip { font-size: 18px; }
 .is-compact .k-xp { width: 110px; }
 
 /* ── 셰이더 연출(WebGL2) ─────────────────────────────────────

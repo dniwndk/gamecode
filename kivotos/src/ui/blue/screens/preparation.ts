@@ -249,7 +249,9 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
         const delta = slotV.preview.synergyDelta.find((d) => d.synergyId === sid);
         const syn = ctx.lookup.syn(sid)!;
         const hits = delta && syn.tiers.some((t) => delta.from < t.threshold && delta.to >= t.threshold);
-        return h('span', { class: cls('k-trait', hits && 'is-hit') }, synHex(ctx, sid, { size: 22 }), h('span', null, syn.name.replace(/^고유:\s*/, '')), hits ? h('em', null, `${delta!.from}→${delta!.to}`) : null);
+        const name = syn.name.replace(/^고유:\s*/, '');
+        return h('span', { class: cls('k-trait', hits && 'is-hit'), title: name, 'aria-label': hits ? `${name} ${delta!.from}→${delta!.to}` : name },
+          synHex(ctx, sid, { size: 28 }), hits ? h('em', null, `${delta!.from}→${delta!.to}`) : null);
       })),
       h('div', { class: 'k-shop-foot' },
         h('span', { class: 'k-shop-pos' }, icon(u.position === 'rear_only' ? 'rear' : 'front', 14)),
