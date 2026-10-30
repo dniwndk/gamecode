@@ -50,9 +50,9 @@ function section(lines, heading) {
 const tableRows = (lines, firstCellPrefix) => lines.filter((l) => l.startsWith(`| ${firstCellPrefix}`)).map(cells);
 
 // ───────────────────────── 유닛 ─────────────────────────
-// v2.3 3장 표가 v2.1 부록 A + v2.2 5장을 통째로 대체한다(100명).
+// v2.3 3장 표가 v2.1 부록 A + v2.2 5장을 통째로 대체한다(101명).
 const SLOT_COLUMNS = ['basic', 'skill', 'ultimate', 'frontEffects', 'rearAction', 'rearEffects'];
-const units = tableRows(section(v23, '## 3. 유닛 마스터 v2.3 (100명)'), '`u_').map((c) => {
+const units = tableRows(section(v23, '## 3. 유닛 마스터 v2.3 (101명)'), '`u_').map((c) => {
   const id = unticked(c[0]);
   const [hp, atk, def, spd, crit, critDmg] = c[4].split('/').map((x) => Number(x.trim()));
   if ([hp, atk, def, spd, crit, critDmg].some((n) => !Number.isFinite(n))) fail(`${id} 스탯을 읽지 못함: ${c[4]}`);
@@ -74,8 +74,20 @@ const units = tableRows(section(v23, '## 3. 유닛 마스터 v2.3 (100명)'), '`
     abilityIds,
     portraitAssetId: `portrait_${id}`,
     shopEligible: true,
+    awakening: null,
+    awakenedFrom: null,
   };
 });
+// v2.3 9장: 각성. 원래 학생에 조건을, 각성 학생에 출처를 적고 각성 학생은 상점에서 뺀다.
+for (const c of tableRows(section(v23, '## 9. 각성'), '`u_')) {
+  const from = units.find((u) => u.id === unticked(c[0])) ?? fail(`9장 원래 학생 ${c[0]} 없음`);
+  const into = units.find((u) => u.id === unticked(c[1])) ?? fail(`9장 각성 학생 ${c[1]} 없음`);
+  const star = c[4].match(/^\+(\d+)$/) ?? fail(`9장 성급 칸 ${c[4]}`);
+  const gold = c[5].match(/^(\d+)G$/) ?? fail(`9장 3성 보상 칸 ${c[5]}`);
+  from.awakening = { intoUnitId: into.id, counterSynergyId: unticked(c[2]), expRequired: Number(c[3]), starBonus: Number(star[1]), maxStarGold: Number(gold[1]) };
+  into.awakenedFrom = from.id;
+  into.shopEligible = false;
+}
 
 // ───────────────────────── 시너지 ─────────────────────────
 // v2.3 4장 표: 진영 12 + 동아리 + 역할군 + 고유 + 플래티넘. 구성원은 유닛 태그에서 거꾸로 모은다.
@@ -103,7 +115,7 @@ function parseTierCell(s) {
     return { threshold: Number(m[1]), effectIds: [m[2]] };
   });
 }
-const synergies = tableRows(section(v23, '## 4. 시너지 v2.3 (63종)'), '`syn_').map((c) => {
+const synergies = tableRows(section(v23, '## 4. 시너지 v2.3 (64종)'), '`syn_').map((c) => {
   const id = unticked(c[0]);
   const tiers = parseTierCell(c[4]).map((t) => ({
     ...t,
@@ -527,9 +539,9 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-2.4.0',
+  contentVersion: 'ba-content-2.5.0',
   rulesVersion: rules.rulesVersion,
-  expectedCounts: { units: 100, synergies: 63, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 454, dialogueFiles: 100, statuses: 20, ooparts: 55 },
+  expectedCounts: { units: 101, synergies: 64, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 461, dialogueFiles: 101, statuses: 20, ooparts: 55 },
   sources: [
     { path: 'docs/GDD_v2.1.md', sha256: sha256(v21Text) },
     { path: 'docs/GDD_v2.2_amendment.md', sha256: sha256(v22Text) },

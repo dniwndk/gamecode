@@ -36,6 +36,21 @@ export interface UnitDefinition {
   abilityIds: UnitAbilityIds;
   portraitAssetId: string;
   shopEligible: boolean;
+  /** 이 학생이 런 도중 다른 학생으로 바뀌는 조건(v2.3 9장). 없으면 null. */
+  awakening: UnitAwakening | null;
+  /** 각성 학생이면 원래 학생 ID. 시너지 구성원 수에서는 원래 학생과 같은 사람으로 센다. */
+  awakenedFrom: string | null;
+}
+
+export interface UnitAwakening {
+  intoUnitId: string;
+  /** 경험치를 세는 원래 학생의 고유 시너지 */
+  counterSynergyId: string;
+  expRequired: number;
+  /** 각성할 때 오르는 성급(최대 성급에서 멈춤) */
+  starBonus: number;
+  /** 이미 최대 성급이면 성급 대신 주는 골드 */
+  maxStarGold: number;
 }
 
 export type SynergyCategory = 'faction' | 'club' | 'role' | 'unique' | 'platinum';

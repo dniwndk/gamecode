@@ -27,7 +27,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_airi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_asuna",
@@ -60,7 +62,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_asuna",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_fubuki",
@@ -92,7 +96,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_fubuki",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_hanae",
@@ -122,7 +128,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_hanae",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_haruka",
@@ -154,7 +162,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_haruka",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_izumi",
@@ -184,7 +194,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_izumi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_junko",
@@ -216,7 +228,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_junko",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_juri",
@@ -246,7 +260,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_juri",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_kaede",
@@ -276,7 +292,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_kaede",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_kokona",
@@ -306,7 +324,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_kokona",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_kotama",
@@ -336,7 +356,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_kotama",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_kotori",
@@ -366,7 +388,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_kotori",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_michiru",
@@ -398,7 +422,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_michiru",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_nodoka",
@@ -428,7 +454,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_nodoka",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_rabu",
@@ -459,7 +487,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_rabu",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_serika",
@@ -491,7 +521,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_serika",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_serina",
@@ -523,7 +555,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_serina",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_suzumi",
@@ -553,7 +587,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_suzumi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_yoshimi",
@@ -583,7 +619,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_yoshimi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_akari",
@@ -613,7 +651,51 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_akari",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
+  },
+  {
+    "id": "u_aris",
+    "name": "텐도 아리스",
+    "cost": 2,
+    "position": "dual",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_game_dev",
+      "syn_blaster",
+      "syn_unique_level_up",
+      "syn_plat_ending_credits"
+    ],
+    "baseStats": {
+      "hp": 1200,
+      "atk": 138,
+      "def": 45,
+      "spd": 92,
+      "critBps": 1500,
+      "critDamageBps": 5000
+    },
+    "role": "성장형 광역 레일건 / 경험치 20에 AL-1S로 각성",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_aris_skill",
+      "ultimate": "eff_aris_ult",
+      "frontEffects": [
+        "eff_aris_passive"
+      ],
+      "rearAction": "eff_aris_rear_reg",
+      "rearEffects": []
+    },
+    "portraitAssetId": "portrait_u_aris",
+    "shopEligible": true,
+    "awakening": {
+      "intoUnitId": "u_al1s",
+      "counterSynergyId": "syn_unique_level_up",
+      "expRequired": 20,
+      "starBonus": 1,
+      "maxStarGold": 6
+    },
+    "awakenedFrom": null
   },
   {
     "id": "u_ayane",
@@ -645,7 +727,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_ayane",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_chinatsu",
@@ -677,7 +761,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_chinatsu",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_chise",
@@ -707,7 +793,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_chise",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_fuuka",
@@ -739,7 +827,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_fuuka",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_hare",
@@ -771,7 +861,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_hare",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_hasumi",
@@ -803,7 +895,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_hasumi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_hibiki",
@@ -833,7 +927,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_hibiki",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_karin",
@@ -866,7 +962,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_karin",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_kayoko",
@@ -896,7 +994,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_kayoko",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_kirino",
@@ -928,7 +1028,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_kirino",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_maki",
@@ -958,7 +1060,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_maki",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_mashiro",
@@ -988,7 +1092,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_mashiro",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_megu",
@@ -1018,7 +1124,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_megu",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_meru",
@@ -1048,7 +1156,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_meru",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_midori",
@@ -1079,7 +1189,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_midori",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_momiji",
@@ -1111,7 +1223,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_momiji",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_momoi",
@@ -1144,7 +1258,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_momoi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_natsu",
@@ -1174,7 +1290,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_natsu",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_nozomi",
@@ -1205,7 +1323,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_nozomi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_reisa",
@@ -1235,7 +1355,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_reisa",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_shiroko",
@@ -1268,7 +1390,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_shiroko",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_shun",
@@ -1300,7 +1424,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_shun",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_tsubaki",
@@ -1332,7 +1458,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_tsubaki",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_tsukuyo",
@@ -1362,7 +1490,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_tsukuyo",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_yuuka",
@@ -1394,7 +1524,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_yuuka",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_akane",
@@ -1425,7 +1557,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_akane",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_atsuko",
@@ -1457,7 +1591,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_atsuko",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_azusa",
@@ -1491,7 +1627,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_azusa",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_chihiro",
@@ -1523,7 +1661,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_chihiro",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_eimi",
@@ -1555,7 +1695,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_eimi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_hanako",
@@ -1585,7 +1727,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_hanako",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_hifumi",
@@ -1615,7 +1759,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_hifumi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_hiyori",
@@ -1647,7 +1793,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_hiyori",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_iori",
@@ -1679,7 +1827,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_iori",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_izuna",
@@ -1711,7 +1861,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_izuna",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_kasumi",
@@ -1743,7 +1895,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_kasumi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_kazusa",
@@ -1774,7 +1928,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_kazusa",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_koharu",
@@ -1806,7 +1962,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_koharu",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_koyuki",
@@ -1836,7 +1994,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_koyuki",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_marina",
@@ -1868,7 +2028,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_marina",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_mimori",
@@ -1898,7 +2060,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_mimori",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_mina",
@@ -1930,7 +2094,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_mina",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_misaki",
@@ -1962,7 +2128,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_misaki",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_moe",
@@ -1993,7 +2161,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_moe",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_mutsuki",
@@ -2025,7 +2195,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_mutsuki",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_nonomi",
@@ -2058,7 +2230,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_nonomi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_saki",
@@ -2089,7 +2263,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_saki",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_shigure",
@@ -2119,7 +2295,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_shigure",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_shizuko",
@@ -2150,7 +2328,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_shizuko",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_toki",
@@ -2183,7 +2363,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_toki",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_tomoe",
@@ -2215,7 +2397,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_tomoe",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_utaha",
@@ -2245,7 +2429,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_utaha",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_yuzu",
@@ -2278,7 +2464,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_yuzu",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_akemi",
@@ -2309,7 +2497,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_akemi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_ako",
@@ -2341,41 +2531,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_ako",
-    "shopEligible": true
-  },
-  {
-    "id": "u_aris",
-    "name": "텐도 아리스",
-    "cost": 4,
-    "position": "dual",
-    "synergyIds": [
-      "syn_millennium",
-      "syn_game_dev",
-      "syn_blaster",
-      "syn_unique_level_up",
-      "syn_plat_ending_credits"
-    ],
-    "baseStats": {
-      "hp": 1520,
-      "atk": 210,
-      "def": 58,
-      "spd": 90,
-      "critBps": 2400,
-      "critDamageBps": 5000
-    },
-    "role": "에너지 충전형 초거대 광역 레일건 / 후방 포격",
-    "abilityIds": {
-      "basic": "eff_common_basic_atk",
-      "skill": "eff_aris_skill",
-      "ultimate": "eff_aris_ult",
-      "frontEffects": [
-        "eff_aris_passive"
-      ],
-      "rearAction": "eff_aris_rear_reg",
-      "rearEffects": []
-    },
-    "portraitAssetId": "portrait_u_aris",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_aru",
@@ -2408,7 +2566,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_aru",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_cherino",
@@ -2441,7 +2601,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_cherino",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_haruna",
@@ -2473,7 +2635,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_haruna",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_hoshino",
@@ -2506,7 +2670,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_hoshino",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_kanna",
@@ -2537,7 +2703,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_kanna",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_mine",
@@ -2569,7 +2737,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_mine",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_miyako",
@@ -2600,7 +2770,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_miyako",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_miyu",
@@ -2634,7 +2806,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_miyu",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_neru",
@@ -2667,7 +2841,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_neru",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_niya",
@@ -2699,7 +2875,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_niya",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_noa",
@@ -2731,7 +2909,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_noa",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_tsurugi",
@@ -2763,7 +2943,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_tsurugi",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_akira",
@@ -2795,7 +2977,49 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_akira",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
+  },
+  {
+    "id": "u_al1s",
+    "name": "AL-1S",
+    "cost": 5,
+    "position": "dual",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_game_dev",
+      "syn_blaster",
+      "syn_unique_nameless_princess",
+      "syn_plat_ending_credits"
+    ],
+    "baseStats": {
+      "hp": 2050,
+      "atk": 240,
+      "def": 66,
+      "spd": 104,
+      "critBps": 2500,
+      "critDamageBps": 5000
+    },
+    "role": "각성 전용(상점 없음) 광역 방어 무시 캐리 / 존재 효과: 적 전원 받는 피해 증가",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_al1s_skill",
+      "ultimate": "eff_al1s_ult",
+      "frontEffects": [
+        "eff_al1s_passive",
+        "eff_al1s_aura"
+      ],
+      "rearAction": "eff_al1s_rear_reg",
+      "rearEffects": [
+        "eff_al1s_rear_react",
+        "eff_al1s_aura"
+      ]
+    },
+    "portraitAssetId": "portrait_u_al1s",
+    "shopEligible": false,
+    "awakening": null,
+    "awakenedFrom": "u_aris"
   },
   {
     "id": "u_hikari",
@@ -2826,7 +3050,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_hikari",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_himari",
@@ -2858,7 +3084,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_himari",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_hina",
@@ -2892,7 +3120,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_hina",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_hoshino_armed",
@@ -2923,7 +3153,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_hoshino_armed",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_kisaki",
@@ -2957,7 +3189,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_kisaki",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_mika",
@@ -2992,7 +3226,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_mika",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_nagisa",
@@ -3025,7 +3261,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_nagisa",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_rio",
@@ -3057,7 +3295,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_rio",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_saori",
@@ -3089,7 +3329,9 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_saori",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_seia",
@@ -3122,7 +3364,9 @@
       ]
     },
     "portraitAssetId": "portrait_u_seia",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   },
   {
     "id": "u_wakamo",
@@ -3156,6 +3400,8 @@
       "rearEffects": []
     },
     "portraitAssetId": "portrait_u_wakamo",
-    "shopEligible": true
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
   }
 ]

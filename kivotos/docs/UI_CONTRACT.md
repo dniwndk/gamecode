@@ -37,7 +37,7 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 
 | 항목 | M0 | 확정 시점 |
 |---|---|---|
-| `catalog` | 완성 (팩 ba-content-2.4.0, 오파츠 55종 포함) | — |
+| `catalog` | 완성 (팩 ba-content-2.5.0, 오파츠 55종·AL-1S 각성 포함) | — |
 | 오파츠 | `catalog.pack.ooparts` 정의. `OOPART_CHOICE` 단계와 `CHOOSE_OOPART`(payload `{ oopartId }`)·`SKIP_OOPART` 명령 이름만 있음 | M1 런 reducer가 `src/core/ooparts/ooparts.ts`를 부를 때 |
 | `GameSnapshot.run` | 항상 `null` | M1 런 reducer |
 | `GameCommandType` | 이름 목록만. 모든 명령이 `NOT_IMPLEMENTED`로 거부 | M1(준비 단계 명령), M4(런 흐름) |
@@ -70,8 +70,16 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 - 대가 오파츠(`kind: 'drawback'`)는 이득과 대가를 둘 다 보여 준다(사양: 붉은 테두리).
 - 조합은 보상 확정 직후 자동으로 일어난다. 연출 신호는 M2에서 `GameEvent`로 온다(`OOPART_MERGED`, 처음 완성이면 `firstReveal`).
 
+## 각성 화면이 지킬 것
+
+- AL-1S(`awakenedFrom`이 있는 학생)는 상점·영입 목록에 내지 않는다. 상점 후보는 `shopEligible`과 코어 `shopAllows`로 거른다.
+- 아리스 카드에는 코어 `awakeningProgress`가 준 "각성까지 x/20"을 그린다. 화면이 경험치 규칙을 직접 계산하지 않는다.
+- 각성은 전투 정산에서 일어난다. 연출 신호는 M2에서 `GameEvent`(`UNIT_AWAKENED`: 개체, 원래·각성 학생, 성급, 골드, 자동 판매 목록)로 온다.
+- 도감에서 AL-1S는 처음 각성하기 전까지 숨기는 것을 권한다(정해지지 않음, 화면 재량).
+
 ## 변경 기록
 
 - 2026-10-29 M0 초안.
 - 2026-10-30 임시 카탈로그 화면을 `src/ui/blue/`로 교체, 계약 확장 요청 목록 추가.
 - 2026-10-30 오파츠 추가: 카탈로그에 `ooparts`, 단계 `OOPART_CHOICE`, 명령 `CHOOSE_OOPART`·`SKIP_OOPART`(아직 `NOT_IMPLEMENTED`).
+- 2026-10-30 AL-1S 각성: 유닛에 `awakening`·`awakenedFrom` 필드, 팩 ba-content-2.5.0.

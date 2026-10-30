@@ -2,8 +2,8 @@
 
 ## Goal
 - Build the complete single-player web autobattler described in docs/GDD_v2.1.md as amended by docs/GDD_v2.2_amendment.md and docs/GDD_v2.3_amendment.md, plus the OOParts relic system in docs/OOPARTS_v1.md.
-- Shipping scope (pack ba-content-2.4.0): 100 units, 63 synergies, 454 parent effect definitions (399 + 55 OOParts),
-  12 equipment, 13 strategies, 55 OOParts, 13 enemies, 15 combat nodes, 100 dialogue files.
+- Shipping scope (pack ba-content-2.5.0): 101 units (incl. AL-1S, awaken-only), 64 synergies, 461 parent effect definitions (406 + 55 OOParts),
+  12 equipment, 13 strategies, 55 OOParts, 13 enemies, 15 combat nodes, 101 dialogue files.
 - These counts describe this content pack, never hard-code them in the engine.
 
 ## Authority

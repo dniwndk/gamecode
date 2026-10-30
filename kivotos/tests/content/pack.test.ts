@@ -14,27 +14,27 @@ const unitEffectCount = (u: (typeof pack.units)[number]) => {
   return new Set(Object.values(rest).flatMap((v) => (v === null ? [] : Array.isArray(v) ? v : [v]))).size;
 };
 
-describe('정식 콘텐츠 팩 ba-content-2.4.0', () => {
+describe('정식 콘텐츠 팩 ba-content-2.5.0', () => {
   it('정적 검증 오류 0건', () => {
     const report = validateContentPack(pack);
     expect(report.errors).toEqual([]);
   });
 
-  it('기대 개수: 유닛100·시너지63·장비12·전략13·적13·노드15·효과454·대사100·상태20·오파츠55', () => {
+  it('기대 개수: 유닛101·시너지64·장비12·전략13·적13·노드15·효과461·대사101·상태20·오파츠55', () => {
     expect([pack.units, pack.synergies, pack.equipment, pack.strategies, pack.enemies, pack.nodes, pack.effects, pack.dialogue, pack.statuses, pack.ooparts].map((l) => l.length))
-      .toEqual([100, 63, 12, 13, 13, 15, 454, 100, 20, 55]);
+      .toEqual([101, 64, 12, 13, 13, 15, 461, 101, 20, 55]);
   });
 
-  it('코스트 분포 19/26/28/15/12, 구역 분포 전방53·후방36·겸용11 (v2.3 3장)', () => {
+  it('코스트 분포 19/27/28/14/13, 구역 분포 전방53·후방36·겸용12 (v2.3 3장, 아리스 2코·AL-1S 5코)', () => {
     const byCost = [1, 2, 3, 4, 5].map((c) => pack.units.filter((u) => u.cost === c).length);
-    expect(byCost).toEqual([19, 26, 28, 15, 12]);
+    expect(byCost).toEqual([19, 27, 28, 14, 13]);
     const byPos = ['front_only', 'rear_only', 'dual'].map((p) => pack.units.filter((u) => u.position === p).length);
-    expect(byPos).toEqual([53, 36, 11]);
+    expect(byPos).toEqual([53, 36, 12]);
   });
 
-  it('효과 출처: 부록 C 그대로 209 + v2.3 교체·추가 189 + 카이저 론 1 + 오파츠 55', () => {
+  it('효과 출처: 부록 C 그대로 206 + v2.3 교체·추가 199 + 카이저 론 1 + 오파츠 55', () => {
     const prefix = (p: string) => pack.effects.filter((e) => e.catalogNo.startsWith(p)).length;
-    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.')]).toEqual([209, 189, 1, 55]);
+    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.')]).toEqual([206, 199, 1, 55]);
     expect(byId(pack.effects, 'eff_aris_passive').catalogNo).toBe('C.300');
     expect(pack.effects.map((e) => e.id)).not.toContain('eff_syn_jackpot_2');
   });
@@ -42,12 +42,12 @@ describe('정식 콘텐츠 팩 ba-content-2.4.0', () => {
   it('M0에서는 모든 효과가 명세만 있고 실행 연산은 없다(한국어 문장을 실행하지 않는다)', () => {
     expect(pack.effects.every((e) => e.implementation === 'spec_only' && e.handlers.length === 0)).toBe(true);
     const strict = validateContentPack(pack, { requireImplemented: true });
-    expect(strict.errors.filter((e) => e.code === 'NOT_IMPLEMENTED')).toHaveLength(454);
+    expect(strict.errors.filter((e) => e.code === 'NOT_IMPLEMENTED')).toHaveLength(461);
   });
 
-  it('시너지 분류: 진영12·동아리26·역할군7·고유11·플래티넘7, 흥신소68·C&C는 동아리', () => {
+  it('시너지 분류: 진영12·동아리26·역할군7·고유12·플래티넘7, 흥신소68·C&C는 동아리', () => {
     const byCat = ['faction', 'club', 'role', 'unique', 'platinum'].map((c) => pack.synergies.filter((s) => s.category === c).length);
-    expect(byCat).toEqual([12, 26, 7, 11, 7]);
+    expect(byCat).toEqual([12, 26, 7, 12, 7]);
     expect(byId(pack.synergies, 'syn_problem_solver').category).toBe('club');
     expect(byId(pack.synergies, 'syn_cc').category).toBe('club');
     for (const gone of ['syn_vanguard', 'syn_jackpot', 'syn_heavy_armor', 'syn_commander', 'syn_unique_big_sister']) {
@@ -71,10 +71,13 @@ describe('정식 콘텐츠 팩 ba-content-2.4.0', () => {
     }
   });
 
+  const units = new Map(pack.units.map((u) => [u.id, u]));
+
   it('플래티넘: 명단형 5종은 구성원 전원이 모여야 하고, 대항전·총력전은 명단 없이 special로 센다', () => {
     for (const s of pack.synergies.filter((x) => x.category === 'platinum')) {
       if (s.countScope === 'special') expect(s.memberIds).toEqual([]);
-      else expect(s.tiers[0].threshold).toBe(s.memberIds.length);
+      // 각성 학생(AL-1S)은 원래 학생과 같은 사람으로 센다
+      else expect(s.tiers[0].threshold).toBe(s.memberIds.filter((m) => !units.get(m)!.awakenedFrom).length);
     }
     expect(byId(pack.synergies, 'syn_plat_last_line').memberIds).not.toContain('u_hoshino_armed');
   });
@@ -108,6 +111,28 @@ describe('정식 콘텐츠 팩 ba-content-2.4.0', () => {
       expect(a.frontEffects).toEqual([react]);
       expect(a.rearEffects).toEqual([react]);
       expect(byId(pack.effects, react).scope).toBe('both');
+    }
+  });
+
+  it('아리스 각성: 2코 아리스가 경험치 20에 5코 AL-1S가 되고, AL-1S는 상점에 없다 (v2.3 9장)', () => {
+    const aris = byId(pack.units, 'u_aris');
+    const al1s = byId(pack.units, 'u_al1s');
+    expect([aris.cost, al1s.cost, al1s.position]).toEqual([2, 5, 'dual']);
+    expect(aris.awakening).toEqual({ intoUnitId: 'u_al1s', counterSynergyId: 'syn_unique_level_up', expRequired: 20, starBonus: 1, maxStarGold: 6 });
+    expect([al1s.awakenedFrom, al1s.shopEligible, aris.shopEligible]).toEqual(['u_aris', false, true]);
+    expect(pack.units.filter((u) => u.awakening || u.awakenedFrom).map((u) => u.id).sort()).toEqual(['u_al1s', 'u_aris']);
+    // 고유는 갈아 끼우고 나머지 태그는 그대로
+    expect(al1s.synergyIds).toEqual(['syn_millennium', 'syn_game_dev', 'syn_blaster', 'syn_unique_nameless_princess', 'syn_plat_ending_credits']);
+    expect(unitEffectCount(al1s)).toBe(6);
+    expect([...al1s.abilityIds.frontEffects, ...al1s.abilityIds.rearEffects]).toContain('eff_al1s_aura');
+    expect(byId(pack.effects, 'eff_al1s_aura').spec).toMatch(/^존재 효과 「/);
+    expect(byId(pack.synergies, 'syn_unique_nameless_princess').memberIds).toEqual(['u_al1s']);
+    expect(byId(pack.effects, 'eff_syn_uni_aris').spec).toContain('경험치 20');
+    // 게임개발부·엔딩 크레딧은 AL-1S가 있어도 4명 시너지 그대로
+    for (const id of ['syn_game_dev', 'syn_plat_ending_credits']) {
+      const s = byId(pack.synergies, id);
+      expect(s.memberIds).toContain('u_al1s');
+      expect([s.documented.dual, s.documented.maxLegalCount]).toEqual([2, 4]);
     }
   });
 

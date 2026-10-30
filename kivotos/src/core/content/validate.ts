@@ -167,6 +167,34 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
     if (rearCapable && !u.abilityIds.rearAction) err('MISSING_ABILITY', path, '후방 가능 유닛인데 후방 정기 지원이 없음');
   }
 
+  // ── 각성(v2.3 9장): 원래 학생 ↔ 각성 학생이 서로를 가리키고, 각성 학생은 상점에 없으며 같은 구역·같은 시너지 자리를 이어받는다.
+  for (const u of pack.units) {
+    const path = `units.${u.id}.awakening`;
+    const a = u.awakening;
+    if (a) {
+      const into = unitsById.get(a.intoUnitId);
+      if (!into) err('AWAKENING', path, `없는 각성 학생 ${a.intoUnitId}`);
+      else {
+        if (into.awakenedFrom !== u.id) err('AWAKENING', path, `${into.id}의 awakenedFrom이 ${u.id}가 아님`);
+        if (into.shopEligible) err('AWAKENING', path, `각성 학생 ${into.id}가 상점에 나옴`);
+        if (into.awakening) err('AWAKENING', path, `각성 학생 ${into.id}가 다시 각성함(연쇄 각성 없음)`);
+        if (into.cost <= u.cost) err('AWAKENING', path, `각성 학생 코스트 ${into.cost}가 원래 ${u.cost}보다 높지 않음`);
+        if (into.position !== u.position) err('AWAKENING', path, `구역이 다름 ${u.position} → ${into.position}`);
+        const lost = u.synergyIds.filter((s) => synergiesById.get(s)?.category !== 'unique' && !into.synergyIds.includes(s));
+        if (lost.length) err('AWAKENING', path, `각성하면 시너지 자리를 잃음: ${lost.join(', ')}`);
+      }
+      const counter = synergiesById.get(a.counterSynergyId);
+      if (!counter || counter.category !== 'unique' || !u.synergyIds.includes(a.counterSynergyId)) err('AWAKENING', path, `경험치 시너지 ${a.counterSynergyId}는 원래 학생의 고유 시너지여야 함`);
+      if (!Number.isInteger(a.expRequired) || a.expRequired < 1) err('AWAKENING', path, `필요 경험치 ${a.expRequired}`);
+      if (!Number.isInteger(a.starBonus) || a.starBonus < 0 || a.starBonus >= rules.units.maxStar) err('AWAKENING', path, `성급 +${a.starBonus}`);
+      if (!Number.isInteger(a.maxStarGold) || a.maxStarGold < 0) err('AWAKENING', path, `3성 보상 ${a.maxStarGold}G`);
+    }
+    if (u.awakenedFrom) {
+      const from = unitsById.get(u.awakenedFrom);
+      if (!from || from.awakening?.intoUnitId !== u.id) err('AWAKENING', `units.${u.id}.awakenedFrom`, `${u.awakenedFrom}의 각성 대상이 ${u.id}가 아님`);
+    }
+  }
+
   // ── 시너지
   for (const syn of pack.synergies) {
     const path = `synergies.${syn.id}`;
