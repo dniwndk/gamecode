@@ -3,6 +3,7 @@ import type { Position } from '../../core/types/content';
 import type { Ctx } from './app';
 import { cls, h } from './dom';
 import { icon } from './icons';
+import { fxList } from './summary';
 import type { RunView, SynergyStateView, UnitInstanceView } from './model';
 
 export const COST_COLOR = ['#9aa5b1', '#3fb37f', '#3b82f6', '#a855f7', '#f5b400'];
@@ -33,10 +34,6 @@ export function readable(ctx: Ctx, text: string): string {
     .replace(/\(?`st_[a-z_]+`\)?/g, '')
     .replace(/`([^`]+)`/g, '$1')
     .replace(/\s+/g, ' ').replace(/\(\s*\)/g, '').trim();
-}
-
-function readableLimits(text: string): string {
-  return text.split(/[;；]/).map((s) => s.trim()).filter((s) => s && !/handler|7\.4|10\.3|상시·초기|ActionResolver/.test(s)).join(' · ');
 }
 
 export function initials(name: string): string {
@@ -201,7 +198,7 @@ export function synergyTip(ctx: Ctx, s: SynergyStateView, run?: RunView | null):
   return h('div', { class: 'k-syn-tip' },
     h('header', null, synHex(ctx, syn.id, { size: 34 }), h('div', null, h('strong', null, syn.name), h('small', null, scope))),
     h('ol', { class: 'k-tier-list' }, ...syn.tiers.map((t, idx) => h('li', { class: cls(s.activeTier === idx && 'is-active', s.activeTier !== null && idx < s.activeTier && 'is-passed') },
-      h('b', null, String(t.threshold)), h('span', null, readable(ctx, t.spec))))),
+      h('b', null, String(t.threshold)), fxList(ctx, t.spec)))),
     h('div', { class: 'k-tip-members' }, ...syn.memberIds.map((id) => {
       const u = ctx.lookup.unit(id);
       return h('span', { class: cls('k-mini-member', deployed.has(id) ? 'is-deployed' : owned.has(id) ? 'is-owned' : null), title: u.name },
@@ -294,7 +291,7 @@ export function openUnitDetail(ctx: Ctx, unitId: string, inst?: UnitInstanceView
     if (!e) return null;
     return h('div', { class: 'k-skill' },
       h('span', { class: 'k-skill-ico' }, icon(iconName, 26)),
-      h('div', null, h('div', { class: 'k-skill-head' }, h('strong', null, label), sub ? h('small', null, sub) : null), h('p', null, readable(ctx, e.spec)), readableLimits(e.limits) ? h('small', { class: 'k-limits' }, readableLimits(e.limits)) : null));
+      h('div', null, h('div', { class: 'k-skill-head' }, h('strong', null, label), sub ? h('small', null, sub) : null), fxList(ctx, e.spec, { atk: st.atk, hp: st.hp, star }, e.limits)));
   };
   const frontBlock = h('section', { class: cls('k-skillset', activeSide === 'front' ? 'is-on' : 'is-off') },
     h('h3', null, icon('front', 20), '전방에 있을 때'),
@@ -355,13 +352,14 @@ export function openUnitDetail(ctx: Ctx, unitId: string, inst?: UnitInstanceView
           statCell('체력', st.hp.toLocaleString(), 'heart'), statCell('공격력', st.atk, 'sword'), statCell('방어력', st.def, 'shield'),
           statCell('속도', st.spd, 'speed'), statCell('치명', `${st.critBps / 100}%`, 'star'), statCell('치명 피해', `${st.critDamageBps / 100}%`, 'xp')),
         h('div', { class: 'k-detail-syns' }, ...u.synergyIds.map((s) => h('span', { class: 'k-syn-chip' }, synHex(ctx, s, { size: 26 }), ctx.lookup.syn(s)?.name.replace(/^고유:\s*/, '') ?? s))),
+        h('p', { class: 'k-eff-note' }, icon('info', 16), `굵은 숫자는 ${star}성 공격력 ${st.atk}·최대 체력 ${st.hp.toLocaleString()} 기준 예상치예요(적 방어·치명타 반영 전).`),
         activeSide === 'front' ? [frontBlock, rearBlock] : [rearBlock, frontBlock],
         inst ? h('section', { class: 'k-eq-section' }, h('h3', null, icon('equipment', 20), '장비'), eqSlots) : null),
       inst ? h('footer', { class: 'k-detail-foot' },
         h('button', {
           class: 'k-btn is-ghost',
           onclick: async () => {
-            const ok = await ctx.confirm({
+            const ok = inst.star < 3 || await ctx.confirm({
               title: '학생 판매', confirm: `${inst.sellValue}G에 판매`, danger: true,
               body: [`${u.name} ${star}성을 판매합니다.`, star >= 2 ? `판매가 ${inst.sellValue}G (2성 이상 감가 −1G 반영)` : `판매가 ${inst.sellValue}G`, inst.equipment.length ? '장착한 장비는 보관함으로 돌아가요.' : ''].filter(Boolean),
             });

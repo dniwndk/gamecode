@@ -5,6 +5,7 @@ import {
 } from '../components';
 import { cls, h } from '../dom';
 import { icon } from '../icons';
+import { fxList } from '../summary';
 import type { RunView, UiState, UnitInstanceView, Zone } from '../model';
 
 type Loc = { zone: Zone; index: number };
@@ -29,9 +30,22 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
     draw();
   }
 
+  /** 상점 툴팁: 1성 기준 스킬·필살기(후방 전용이면 정기 지원) 요약과 예상 수치 */
+  function shopSkills(u: ReturnType<typeof ctx.lookup.unit>): HTMLElement {
+    const src = { atk: u.baseStats.atk, hp: u.baseStats.hp, star: 1 };
+    const row = (label: string, id: string | null) => {
+      const e = ctx.lookup.effectSpec(id);
+      return e ? h('div', { class: 'k-tip-skill' }, h('b', null, label), fxList(ctx, e.spec, src, e.limits, { compact: true })) : null;
+    };
+    return h('div', { class: 'k-tip-skills' },
+      u.position === 'rear_only' ? row('정기 지원', u.abilityIds.rearAction) : [row('스킬', u.abilityIds.skill), row('필살기', u.abilityIds.ultimate)],
+      h('small', { class: 'k-muted' }, `1성 공격력 ${src.atk}·체력 ${src.hp.toLocaleString()} 기준`));
+  }
+
   async function sell(inst: UnitInstanceView) {
     const u = ctx.lookup.unit(inst.unitId);
-    const ok = await ctx.confirm({
+    // 3성만 되돌리기 아까우니 확인한다. 1·2성은 바로 판다.
+    const ok = inst.star < 3 || await ctx.confirm({
       title: '학생 판매', confirm: `${inst.sellValue}G에 판매`, danger: true,
       body: [`${u.name} ${inst.star}성을 판매합니다.`, inst.star >= 2 ? `판매가 ${inst.sellValue}G (2성 이상 감가 −1G 반영)` : `판매가 ${inst.sellValue}G`],
     });
@@ -204,7 +218,7 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
       run.strategies.length ? h('div', { class: 'k-strats' }, h('small', null, '보유 전략'), ...run.strategies.map((id) => {
         const st = ctx.lookup.strategy(id);
         const chip = h('span', { class: 'k-strat-chip', tabindex: 0 }, icon('strategy', 16), st?.name ?? id);
-        if (st) attachTip(ctx, chip, () => h('div', { class: 'k-strat-tip' }, h('strong', null, st.name), h('p', { class: 'k-benefit' }, readable(ctx, st.benefit)), h('p', { class: 'k-drawback' }, readable(ctx, st.drawback))));
+        if (st) attachTip(ctx, chip, () => h('div', { class: 'k-strat-tip' }, h('strong', null, st.name), fxList(ctx, st.benefit), h('p', { class: 'k-drawback' }, icon('warning', 14), readable(ctx, st.drawback))));
         return chip;
       })) : null);
   }
@@ -217,7 +231,7 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
       h('div', { class: cls('k-sell', sel && 'is-armed'), 'data-drop': 'sell', role: 'button', tabindex: sel ? 0 : -1,
         onclick: () => { if (sel) void sell(sel.inst); },
         onkeydown: (e: Event) => { if ((e as KeyboardEvent).key === 'Enter' && sel) void sell(sel.inst); },
-      }, icon('sell', 26), h('div', null, h('b', null, sel ? `${sel.inst.sellValue}G에 판매` : '판매'), h('small', null, sel ? '누르면 확인창' : '여기로 끌어 놓기'))));
+      }, icon('sell', 26), h('div', null, h('b', null, sel ? `${sel.inst.sellValue}G에 판매` : '판매'), h('small', null, sel ? (sel.inst.star >= 3 ? '누르면 확인창' : '누르면 바로 판매') : '여기로 끌어 놓기'))));
   }
 
   function shopBar(): HTMLElement {
@@ -262,7 +276,8 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
         h('strong', null, u.name), h('small', null, u.role),
         slotV.preview.mergesTo ? h('p', { class: 'k-tip-merge' }, icon('star', 16), `구매하면 ${slotV.preview.mergesTo}성으로 합성돼요`) : null,
         slotV.preview.synergyDelta.length ? h('ul', { class: 'k-delta' }, ...slotV.preview.synergyDelta.map((d) => h('li', null, synHex(ctx, d.synergyId, { size: 20 }), `${ctx.lookup.syn(d.synergyId)?.name} ${d.from} → ${d.to}`))) : h('p', { class: 'k-muted' }, '이미 편성된 학생이라 시너지 수는 그대로예요'),
-        h('small', { class: 'k-muted' }, '편성했을 때 기준')));
+        h('small', { class: 'k-muted' }, '편성했을 때 기준'),
+        shopSkills(u)));
       return card;
     }));
 
