@@ -9,8 +9,6 @@ import type { RunView, SynergyStateView, UnitInstanceView } from './model';
 export const COST_COLOR = ['#9aa5b1', '#3fb37f', '#3b82f6', '#a855f7', '#f5b400'];
 const CATEGORY_COLOR: Record<string, string> = { club: '#14a38b', role: '#1f8fff', unique: '#f0a500', platinum: '#8a9bb4' };
 const FACTION_COLOR: Record<string, string> = { syn_abydos: '#3b82f6', syn_gehenna: '#dc2626', syn_millennium: '#0ea5e9', syn_trinity: '#e0a106', syn_hyakkiyako: '#db2777', syn_shanhaijing: '#16a34a', syn_red_winter: '#b91c1c', syn_valkyrie: '#1d4ed8', syn_srt: '#475569', syn_arius: '#7c3aed', syn_problem_solver: '#9f1239', syn_cc: '#1f2937', syn_highlander: '#0f766e', syn_outlaw: '#a16207' };
-/** 역할군은 하는 일이 바로 떠오르는 색(방패 파랑·공격 주황빨강·저격 초록 …) */
-const ROLE_COLOR: Record<string, string> = { syn_tank: '#2f6bd8', syn_attacker: '#e2483b', syn_sniper: '#0f9f6e', syn_blaster: '#f07a12', syn_healer: '#e0458f', syn_supporter: '#8b5cf6', syn_controller: '#0891b2' };
 
 export const STATUS_LABEL: Record<string, string> = {
   st_atk_down: '공격↓', st_atk_up: '공격↑', st_burn: '화상', st_charge_aris: '충전', st_crit_up: '치명↑', st_damage_reduction: '피해감소',
@@ -46,16 +44,7 @@ export function initials(name: string): string {
 export function synergyColor(ctx: Ctx, synId: string): string {
   const s = ctx.lookup.syn(synId);
   if (!s) return '#64748b';
-  const own = FACTION_COLOR[synId] ?? ROLE_COLOR[synId] ?? (s.category === 'club' ? clubColor(ctx, s.memberIds) : undefined);
-  return own ?? CATEGORY_COLOR[s.category] ?? '#64748b';
-}
-
-/** 동아리는 구성원이 가장 많이 속한 학원의 색을 따른다(모양이 달라 학원 배지와 헷갈리지 않는다) */
-function clubColor(ctx: Ctx, memberIds: readonly string[]): string | undefined {
-  const count = new Map<string, number>();
-  for (const m of memberIds) for (const s of ctx.lookup.unit(m)?.synergyIds ?? []) if (FACTION_COLOR[s]) count.set(s, (count.get(s) ?? 0) + 1);
-  const top = [...count].sort((a, b) => b[1] - a[1])[0];
-  return top ? FACTION_COLOR[top[0]] : undefined;
+  return FACTION_COLOR[synId] ?? CATEGORY_COLOR[s.category] ?? '#64748b';
 }
 
 export function synergyGlyph(ctx: Ctx, synId: string): string {
@@ -75,15 +64,12 @@ export function gfx(ctx: Ctx, path: string, fallback: () => Node, className = ''
 }
 
 /**
- * 시너지 배지. 모양 = 분류(학원 육각·동아리 둥근 사각·역할군 원·고유 방패·플래티넘 팔각), 색 = 학원·역할.
- * 흰 바깥 테 → 진한 안쪽 테 → 색 바탕 + 큰 흰 문양(SVG) 순으로 겹쳐 초상화 위에서도 읽힌다. 문양이 없으면 이름 첫 글자.
+ * 시너지 배지: 모두 같은 남색 육각 + 굵은 흰 문양. 색으로 종류를 나누지 않고 문양 자체로 알아보게 한다.
+ * 흰 바깥 테가 초상화·밝은 패널 어디서나 윤곽을 세우고, 발동 단계만 바깥 테(동·은·금)로 보여 준다. 문양이 없으면 이름 첫 글자.
  */
 export function synHex(ctx: Ctx, synId: string, opts: { size?: number; dim?: boolean; tier?: number | null } = {}): HTMLElement {
-  const color = synergyColor(ctx, synId);
-  const category = ctx.lookup.syn(synId)?.category ?? 'faction';
-  const el = h('span', { class: cls('k-hex', `cat-${category}`, opts.dim && 'is-dim', opts.tier !== undefined && opts.tier !== null && `tier-${opts.tier}`), style: `--c:${color};--s:${opts.size ?? 28}px`, title: ctx.lookup.syn(synId)?.name ?? synId },
-    h('span', { class: 'k-hex-rim' },
-      h('span', { class: 'k-hex-in' }, gfx(ctx, `synergy/${synId}.svg`, () => h('span', { class: 'k-hex-txt' }, synergyGlyph(ctx, synId)), 'k-hex-glyph'))));
+  const el = h('span', { class: cls('k-hex', opts.dim && 'is-dim', opts.tier !== undefined && opts.tier !== null && `tier-${opts.tier}`), style: `--s:${opts.size ?? 28}px`, title: ctx.lookup.syn(synId)?.name ?? synId },
+    h('span', { class: 'k-hex-in' }, gfx(ctx, `synergy/${synId}.svg`, () => { const g = synergyGlyph(ctx, synId); return h('span', { class: cls('k-hex-txt', g.length > 2 && 'is-long') }, g); }, 'k-hex-glyph')));
   return el;
 }
 

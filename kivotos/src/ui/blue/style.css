@@ -172,35 +172,21 @@ kbd { font-family: var(--f-num); }
 .k-track.is-compact .k-track-label { display: none; }
 
 /* ── 육각 시너지 아이콘 ─────────────────────────────────── */
-.k-hex { --s: 28px; --shape: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); --ring: #fff;
+.k-hex { --s: 28px; --ring: #fff; --fill: #1d2f4f; --fill-hi: #2f4d7c;
   width: var(--s); height: calc(var(--s) * 1.1); flex: none; display: grid; place-items: center; position: relative;
-  clip-path: var(--shape); background: var(--ring); filter: drop-shadow(0 1px 2px rgba(8,22,48,.35)); }
-.k-hex.cat-club { --shape: inset(0 round 24%); height: var(--s); }
-.k-hex.cat-role { --shape: circle(50%); height: var(--s); }
-.k-hex.cat-unique { --shape: polygon(50% 0, 100% 14%, 100% 58%, 50% 100%, 0 58%, 0 14%); }
-.k-hex.cat-platinum { --shape: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); height: var(--s); }
-.k-hex-rim { width: calc(100% - max(2px, var(--s) * .08)); height: calc(100% - max(2px, var(--s) * .08)); display: grid; place-items: center;
-  clip-path: var(--shape); background: color-mix(in srgb, var(--c) 62%, #0b1730); }
-.k-hex-in { width: calc(100% - max(2px, var(--s) * .1)); height: calc(100% - max(2px, var(--s) * .1)); display: grid; place-items: center; clip-path: var(--shape);
-  background: radial-gradient(120% 90% at 30% 15%, color-mix(in srgb, var(--c) 55%, #fff) 0%, var(--c) 55%, color-mix(in srgb, var(--c) 80%, #000) 100%);
-  color: #fff; font-weight: 900; line-height: 1; letter-spacing: -.05em; }
-.k-hex.cat-platinum .k-hex-in { background: linear-gradient(140deg, #f4f7fb 0%, #a9b7cc 38%, #e9eef6 52%, #7d8ea8 100%); }
-.k-hex.cat-platinum .k-hex-rim { background: #4b5a73; }
-.k-hex.cat-unique .k-hex-in { background: radial-gradient(120% 90% at 30% 15%, #ffe48a 0%, #f0a500 55%, #b86e00 100%); }
-.k-hex-glyph { width: 84%; height: 84%; object-fit: contain; filter: drop-shadow(0 0 .6px rgba(0,0,0,.8)) drop-shadow(0 1px 1px rgba(0,0,0,.45)); }
-.k-hex-txt { font-size: calc(var(--s) * .5); text-shadow: 0 0 2px rgba(0,0,0,.55), 0 1px 1px rgba(0,0,0,.5); }
-.k-hex.cat-platinum .k-hex-txt, .k-hex.cat-platinum .k-hex-glyph { filter: drop-shadow(0 0 .6px rgba(20,30,50,.9)); }
-.k-hex.cat-platinum .k-hex-txt { color: #24324a; text-shadow: 0 1px 0 rgba(255,255,255,.7); }
-/* 미발동: 색을 옅게만 빼서 어느 시너지인지는 그대로 알아보게 한다 */
-.k-hex.is-dim { --ring: #e3e9f1; filter: none; }
-.k-hex.is-dim .k-hex-rim { background: color-mix(in srgb, var(--c) 45%, #8a98ad); }
-.k-hex.is-dim .k-hex-in { background: linear-gradient(160deg, color-mix(in srgb, var(--c) 30%, #eef3f9), color-mix(in srgb, var(--c) 50%, #b9c5d6)); }
-.k-hex.is-dim .k-hex-glyph { filter: drop-shadow(0 0 .6px rgba(20,30,50,.7)); opacity: .95; }
-.k-hex.is-dim .k-hex-txt { text-shadow: 0 0 2px rgba(20,30,50,.5); }
-/* 발동 단계: 바깥 테가 동(첫 단계)·은·금으로 바뀐다 */
-.k-hex.tier-0 { --ring: #c98a4f; }
-.k-hex.tier-1 { --ring: #d4dbe6; }
-.k-hex.tier-2 { --ring: var(--yellow-d); }
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--ring);
+  filter: drop-shadow(0 1px 2px rgba(8,20,44,.45)); }
+.k-hex-in { width: calc(100% - max(3px, var(--s) * .12)); height: calc(100% - max(3px, var(--s) * .12)); display: grid; place-items: center; clip-path: inherit;
+  background: linear-gradient(165deg, var(--fill-hi) 0%, var(--fill) 60%); color: #fff; font-weight: 900; line-height: 1; letter-spacing: -.05em; }
+.k-hex-glyph { width: 86%; height: 86%; object-fit: contain; }
+.k-hex-txt { font-size: calc(var(--s) * .52); }
+.k-hex-txt.is-long { font-size: calc(var(--s) * .34); letter-spacing: -.08em; }
+/* 미발동: 바탕만 회청색으로 낮추고 문양은 흰색 그대로 둬서 무엇인지는 읽힌다 */
+.k-hex.is-dim { --ring: #e6ebf2; --fill: #7f8ea6; --fill-hi: #97a5bb; filter: none; }
+/* 발동 단계: 바깥 테만 동(첫 단계)·은·금으로 바뀐다 */
+.k-hex.tier-0 { --ring: #d39a62; }
+.k-hex.tier-1 { --ring: #dfe5ee; }
+.k-hex.tier-2 { --ring: #ffcf3a; }
 
 /* ── 초상화·카드 ──────────────────────────────────────────── */
 .k-portrait { position: relative; overflow: hidden; background: linear-gradient(160deg, color-mix(in srgb, var(--fc) 55%, #fff), var(--fc)); }
