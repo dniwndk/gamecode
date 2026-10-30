@@ -123,7 +123,7 @@ export interface UiState {
   run: RunView | null;
   /** 진행 중 런이 저장돼 있는지(홈의 이어하기) */
   hasSavedRun: boolean;
-  savedRun?: { chapter: number; battle: number; runHp: number; runHpMax: number };
+  savedRun?: { chapter: number; battle: number; runHp: number; runHpMax: number; /** 홈 브리핑용 저장 런 스냅샷(있으면 편성·시너지·보스를 보여 준다) */ snapshot?: RunView };
   /** 연출 신호(첫 영입·합성·레벨업 등). id가 증가하며 화면은 마지막으로 본 id 이후만 재생한다. */
   cues: Cue[];
 }

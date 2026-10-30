@@ -247,7 +247,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     return {
       revision, phase, contentVersion: base.contentVersion, rulesVersion: base.rulesVersion,
       run: run && phase !== 'HOME' ? view(run) : null, hasSavedRun: !!run, cues,
-      savedRun: run ? { chapter: run.chapter, battle: run.battle, runHp: run.runHp, runHpMax: rules.run.startRunHp } : undefined,
+      savedRun: run ? { chapter: run.chapter, battle: run.battle, runHp: run.runHp, runHpMax: rules.run.startRunHp, snapshot: view(run) } : undefined,
     };
   }
 
