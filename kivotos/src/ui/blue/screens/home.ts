@@ -71,7 +71,7 @@ function bossOf(ctx: Ctx, chapter: number): string | null {
   return nd?.candidates[0]?.front.find((f) => ctx.lookup.enemy(f.enemyId)?.boss)?.enemyId ?? null;
 }
 
-/** 로고 그림(gfx/ui/logo.svg). 받지 못하면 글자 로고로 돌아간다 */
+/** 타이틀 로고(gfx/ui/logo_title.webp, 사용자 제공 그림의 흰 바탕을 뺀 것). 받지 못하면 글자 로고로 돌아간다 */
 function logo(ctx: Ctx): HTMLElement {
   const text = () => [
     h('div', { class: 'k-logo-halo', 'aria-hidden': 'true' }),
@@ -79,7 +79,7 @@ function logo(ctx: Ctx): HTMLElement {
     h('h1', null, '키보토스', h('br'), '택티컬 프론트라인'),
     h('p', { class: 'k-logo-sub' }, 'Tactical Frontline · 샬레 작전 단말')];
   const box = h('div', { class: 'k-logo has-art' });
-  const img = h('img', { class: 'k-logo-art', src: ctx.art('gfx/ui/logo.svg'), alt: '키보토스 택티컬 프론트라인 · KIVOTOS TACTICAL FRONTLINE', draggable: 'false' });
+  const img = h('img', { class: 'k-logo-art', src: ctx.art('gfx/ui/logo_title.webp'), alt: '키보토스 택티컬 프론트라인 · KIVOTOS TACTICAL FRONTLINE', draggable: 'false' });
   img.addEventListener('error', () => { box.classList.remove('has-art'); box.replaceChildren(...text()); }, { once: true });
   box.append(h('h1', null, img));
   return box;

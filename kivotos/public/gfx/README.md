@@ -10,7 +10,7 @@
 | enemies | 13 | PNG 1024/1536 → WebP 512, 보스 768 | `enemyPortrait`, 전투 적 칸 |
 | equipment | 12 | PNG 512 → WebP 256(알파 유지) | 장비 칩, 장비 선택 카드 |
 | strategies | 13 | PNG 1600×900 → WebP 1200×675 | 전략 선택 카드 위 그림 |
-| ui | 1 | `logo.svg` 그대로 | 홈 로고 |
+| ui | 2 | `logo.svg` 그대로(지금은 쓰지 않음), `logo_title.webp` | 홈 타이틀 로고. `logo_title`은 2026-10-30 사용자가 따로 준 로고 PNG에서 흰 바탕을 빼고 1600px로 줄인 것 |
 | app | 2 | PNG 그대로 | `index.html` 아이콘 |
 
 - 파일이 없거나 받지 못하면 화면은 예전 글자 배지·기본 아이콘으로 돌아간다(`components.ts` `gfx()`).
