@@ -1,8 +1,8 @@
 // 각성 규칙(docs/GDD_v2.3_amendment.md 9장). 경험치를 쌓는 일은 고유 시너지 효과(M3)의 몫이고,
-// 여기서는 전투 정산 때 "누가 무엇으로 바뀌는지"만 정한다. 입력을 고치지 않고 결과를 돌려주는 순수 함수다.
+// 여기서는 전투 정산 때나 준비 단계 합성 직후 "누가 무엇으로 바뀌는지"만 정한다. 입력을 고치지 않고 결과를 돌려주는 순수 함수다.
 import type { ContentPack, UnitDefinition } from '../types/content';
 
-/** 정산 시점에 보유(출전·대기)한 학생 한 명 */
+/** 판정 시점에 보유(출전·대기)한 학생 한 명 */
 export interface OwnedUnitRef {
   instanceId: string;
   unitId: string;
@@ -18,34 +18,31 @@ export interface AwakeningPlan {
   fromUnitId: string;
   intoUnitId: string;
   star: number;
-  /** 이미 최대 성급이라 성급 대신 받는 골드 */
-  gold: number;
   /** 각성하지 않은 같은 학생. 판매 규칙대로 자동 판매한다. */
   autoSellInstanceIds: string[];
 }
 
 /**
- * 이번 정산에서 일어날 각성. 학생마다 런 경험치(expByUnitId, 원래 학생 ID 기준)를 보고 정한다.
- * 이미 각성한 학생(각성 학생을 보유)이나 원래 학생이 없으면 건너뛴다.
+ * 지금 일어날 각성. 런 경험치(expByUnitId, 원래 학생 ID 기준)가 차고 필요 성급의 개체가 있을 때만.
+ * 정산 때와 준비 단계 합성 직후에 부른다. 이미 각성 학생을 보유했으면 건너뛴다.
  */
 export function resolveAwakenings(pack: ContentPack, owned: readonly OwnedUnitRef[], expByUnitId: Readonly<Record<string, number>>): AwakeningPlan[] {
-  const maxStar = pack.rules.units.maxStar;
   const plans: AwakeningPlan[] = [];
   for (const def of pack.units) {
     const a = def.awakening;
     if (!a || (expByUnitId[def.id] ?? 0) < a.expRequired) continue;
     if (owned.some((o) => o.unitId === a.intoUnitId)) continue;
     const copies = owned.filter((o) => o.unitId === def.id);
-    if (copies.length === 0) continue;
-    // 성급 높은 쪽 → 출전 중인 쪽 → 먼저 얻은 쪽
-    const target = [...copies].sort((x, y) => y.star - x.star || Number(y.deployed) - Number(x.deployed) || x.acquiredOrder - y.acquiredOrder)[0];
-    const raised = target.star + a.starBonus;
+    // 필요 성급 이상 중 출전 중인 쪽 → 먼저 얻은 쪽
+    const target = copies
+      .filter((o) => o.star >= a.starRequired)
+      .sort((x, y) => Number(y.deployed) - Number(x.deployed) || x.acquiredOrder - y.acquiredOrder)[0];
+    if (!target) continue;
     plans.push({
       instanceId: target.instanceId,
       fromUnitId: def.id,
       intoUnitId: a.intoUnitId,
-      star: Math.min(raised, maxStar),
-      gold: target.star >= maxStar ? a.maxStarGold : 0,
+      star: target.star,
       autoSellInstanceIds: copies.filter((c) => c !== target).map((c) => c.instanceId),
     });
   }
@@ -57,9 +54,14 @@ export function shopAllows(unit: Pick<UnitDefinition, 'id' | 'shopEligible'>, aw
   return unit.shopEligible && !awakenedFromIds.has(unit.id);
 }
 
-/** 학생 카드의 "각성까지 x/n" 표시. 각성 조건이 없으면 null. */
-export function awakeningProgress(unit: Pick<UnitDefinition, 'awakening'>, exp: number): { exp: number; required: number; ready: boolean } | null {
+/** 학생 카드의 "각성까지 x/n · ★n 필요" 표시. bestStar는 보유한 그 학생의 최고 성급. 각성 조건이 없으면 null. */
+export function awakeningProgress(
+  unit: Pick<UnitDefinition, 'awakening'>,
+  exp: number,
+  bestStar: number,
+): { exp: number; required: number; starRequired: number; starMet: boolean; ready: boolean } | null {
   if (!unit.awakening) return null;
-  const required = unit.awakening.expRequired;
-  return { exp: Math.min(exp, required), required, ready: exp >= required };
+  const { expRequired: required, starRequired } = unit.awakening;
+  const starMet = bestStar >= starRequired;
+  return { exp: Math.min(exp, required), required, starRequired, starMet, ready: starMet && exp >= required };
 }

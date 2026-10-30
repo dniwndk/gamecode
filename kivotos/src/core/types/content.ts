@@ -47,10 +47,8 @@ export interface UnitAwakening {
   /** 경험치를 세는 원래 학생의 고유 시너지 */
   counterSynergyId: string;
   expRequired: number;
-  /** 각성할 때 오르는 성급(최대 성급에서 멈춤) */
-  starBonus: number;
-  /** 이미 최대 성급이면 성급 대신 주는 골드 */
-  maxStarGold: number;
+  /** 이 성급 이상인 개체만 각성한다. 각성 학생은 같은 성급으로 시작한다. */
+  starRequired: number;
 }
 
 export type SynergyCategory = 'faction' | 'club' | 'role' | 'unique' | 'platinum';

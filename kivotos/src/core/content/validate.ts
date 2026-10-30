@@ -186,8 +186,7 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
       const counter = synergiesById.get(a.counterSynergyId);
       if (!counter || counter.category !== 'unique' || !u.synergyIds.includes(a.counterSynergyId)) err('AWAKENING', path, `경험치 시너지 ${a.counterSynergyId}는 원래 학생의 고유 시너지여야 함`);
       if (!Number.isInteger(a.expRequired) || a.expRequired < 1) err('AWAKENING', path, `필요 경험치 ${a.expRequired}`);
-      if (!Number.isInteger(a.starBonus) || a.starBonus < 0 || a.starBonus >= rules.units.maxStar) err('AWAKENING', path, `성급 +${a.starBonus}`);
-      if (!Number.isInteger(a.maxStarGold) || a.maxStarGold < 0) err('AWAKENING', path, `3성 보상 ${a.maxStarGold}G`);
+      if (!Number.isInteger(a.starRequired) || a.starRequired < 1 || a.starRequired > rules.units.maxStar) err('AWAKENING', path, `필요 성급 ${a.starRequired}`);
     }
     if (u.awakenedFrom) {
       const from = unitsById.get(u.awakenedFrom);

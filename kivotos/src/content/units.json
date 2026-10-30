@@ -675,7 +675,7 @@
       "critBps": 1500,
       "critDamageBps": 5000
     },
-    "role": "성장형 광역 레일건 / 경험치 20에 AL-1S로 각성",
+    "role": "성장형 광역 레일건 / 3성·경험치 30에 AL-1S로 각성",
     "abilityIds": {
       "basic": "eff_common_basic_atk",
       "skill": "eff_aris_skill",
@@ -691,9 +691,8 @@
     "awakening": {
       "intoUnitId": "u_al1s",
       "counterSynergyId": "syn_unique_level_up",
-      "expRequired": 20,
-      "starBonus": 1,
-      "maxStarGold": 6
+      "expRequired": 30,
+      "starRequired": 3
     },
     "awakenedFrom": null
   },

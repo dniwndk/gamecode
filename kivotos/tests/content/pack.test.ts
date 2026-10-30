@@ -114,11 +114,11 @@ describe('정식 콘텐츠 팩 ba-content-2.5.0', () => {
     }
   });
 
-  it('아리스 각성: 2코 아리스가 경험치 20에 5코 AL-1S가 되고, AL-1S는 상점에 없다 (v2.3 9장)', () => {
+  it('아리스 각성: 3성 2코 아리스가 경험치 30에 5코 AL-1S가 되고, AL-1S는 상점에 없다 (v2.3 9장)', () => {
     const aris = byId(pack.units, 'u_aris');
     const al1s = byId(pack.units, 'u_al1s');
     expect([aris.cost, al1s.cost, al1s.position]).toEqual([2, 5, 'dual']);
-    expect(aris.awakening).toEqual({ intoUnitId: 'u_al1s', counterSynergyId: 'syn_unique_level_up', expRequired: 20, starBonus: 1, maxStarGold: 6 });
+    expect(aris.awakening).toEqual({ intoUnitId: 'u_al1s', counterSynergyId: 'syn_unique_level_up', expRequired: 30, starRequired: 3 });
     expect([al1s.awakenedFrom, al1s.shopEligible, aris.shopEligible]).toEqual(['u_aris', false, true]);
     expect(pack.units.filter((u) => u.awakening || u.awakenedFrom).map((u) => u.id).sort()).toEqual(['u_al1s', 'u_aris']);
     // 고유는 갈아 끼우고 나머지 태그는 그대로
@@ -127,7 +127,7 @@ describe('정식 콘텐츠 팩 ba-content-2.5.0', () => {
     expect([...al1s.abilityIds.frontEffects, ...al1s.abilityIds.rearEffects]).toContain('eff_al1s_aura');
     expect(byId(pack.effects, 'eff_al1s_aura').spec).toMatch(/^존재 효과 「/);
     expect(byId(pack.synergies, 'syn_unique_nameless_princess').memberIds).toEqual(['u_al1s']);
-    expect(byId(pack.effects, 'eff_syn_uni_aris').spec).toContain('경험치 20');
+    expect(byId(pack.effects, 'eff_syn_uni_aris').spec).toContain('경험치 30');
     // 게임개발부·엔딩 크레딧은 AL-1S가 있어도 4명 시너지 그대로
     for (const id of ['syn_game_dev', 'syn_plat_ending_credits']) {
       const s = byId(pack.synergies, id);

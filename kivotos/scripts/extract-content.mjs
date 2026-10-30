@@ -82,9 +82,7 @@ const units = tableRows(section(v23, '## 3. 유닛 마스터 v2.3 (101명)'), '`
 for (const c of tableRows(section(v23, '## 9. 각성'), '`u_')) {
   const from = units.find((u) => u.id === unticked(c[0])) ?? fail(`9장 원래 학생 ${c[0]} 없음`);
   const into = units.find((u) => u.id === unticked(c[1])) ?? fail(`9장 각성 학생 ${c[1]} 없음`);
-  const star = c[4].match(/^\+(\d+)$/) ?? fail(`9장 성급 칸 ${c[4]}`);
-  const gold = c[5].match(/^(\d+)G$/) ?? fail(`9장 3성 보상 칸 ${c[5]}`);
-  from.awakening = { intoUnitId: into.id, counterSynergyId: unticked(c[2]), expRequired: Number(c[3]), starBonus: Number(star[1]), maxStarGold: Number(gold[1]) };
+  from.awakening = { intoUnitId: into.id, counterSynergyId: unticked(c[2]), expRequired: Number(c[3]), starRequired: Number(c[4]) };
   into.awakenedFrom = from.id;
   into.shopEligible = false;
 }

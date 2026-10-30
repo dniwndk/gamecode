@@ -69,7 +69,7 @@
 | 항목 | 상태 |
 |---|---|
 | 카탈로그 | 아리스 2코, `u_al1s`(5코, 상점 없음, 효과 6개), 고유 시너지 `syn_unique_nameless_princess`, v2.3 9장 각성 표 → `awakening`·`awakenedFrom` |
-| `src/core/awakening/awakening.ts` | 정산 때 각성 대상·성급·골드·자동 판매 결정, 상점 제외, "각성까지 x/20" 표시값 |
+| `src/core/awakening/awakening.ts` | 각성 조건(경험치 30·3성) 판정, 대상·자동 판매 결정, 상점 제외, "각성까지 x/30" 표시값 |
 | 경험치 적립·방주·부활 | 명세만(`spec_only`). M3 효과 엔진에서 |
 | 런 연결 | 없음. M1 런 reducer가 정산에서 `resolveAwakenings`를 부른다 |
 | 초상화·대사 | `public/portraits/u_al1s.webp`(NAI 생성, 시드는 프로젝트 portraits/manifest.json), `docs/dialogue/ko/u_al1s.json` |
