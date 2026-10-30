@@ -1266,3 +1266,19 @@ kbd { font-family: var(--f-num); }
 .is-compact .k-cost, .is-compact .k-odds span, .is-compact .k-stacking, .is-compact .k-muted, .is-compact .k-bench-label small { font-size: 18px; }
 .is-compact .k-card-name, .is-compact .k-trait, .is-compact .k-cb.is-rear .k-cb-name, .is-compact .k-enemy-row strong, .is-compact .k-shop-tip, .is-compact .k-tip { font-size: 18px; }
 .is-compact .k-xp { width: 110px; }
+
+/* ── 셰이더 연출(WebGL2) ─────────────────────────────────────
+   켜지면 배경 캔버스가 CSS 하늘·헤일로·격자를 대신하고, 카드는 스프링으로 기운다. */
+.k-gfx { display: block; pointer-events: none; }
+.k-gfx[hidden] { display: none; }
+.k-gfx-bg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .5s ease; }
+.fx-on .k-gfx-bg { opacity: 1; }
+.fx-on .k-sky, .fx-on .k-halo-bg, .fx-on .k-grid-bg { visibility: hidden; }
+.k-gfx-foil { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 60; mix-blend-mode: screen; }
+.k-gfx-veil { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 95; display: none; }
+.k-gfx-veil.is-on { display: block; }
+.fx-on .k-card:not(.k-ghost), .fx-on .k-shop-card, .fx-on .k-choice-card { transition: box-shadow .14s; transform: perspective(900px) translateY(calc(var(--lift, 0px) + var(--sel, 0px))) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+.fx-on .k-card.is-selected:not(.k-ghost) { --sel: -4px; }
+.fx-on .k-choice-card.is-picked { --sel: -12px; }
+.fx-on .k-shop-card:active { --sel: 2px; }
+.fx-on .k-card:not(.k-ghost):hover { box-shadow: 0 0 0 2px var(--cc), 0 14px 26px rgba(19,36,63,.24); }

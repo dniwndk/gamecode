@@ -237,7 +237,7 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
       const badge = slotV.preview.mergesTo ? h('span', { class: 'k-merge-badge' }, icon('star', 16), `구매하면 ${slotV.preview.mergesTo}성`) : null;
       const card = h('button', {
         class: cls('k-shop-card', !affordable && 'is-poor', slotV.recommended && 'is-rec', slotV.preview.mergesTo && 'is-merge'),
-        style: `--cc:${COST_COLOR[slotV.cost - 1]}`, role: 'listitem',
+        style: `--cc:${COST_COLOR[slotV.cost - 1]}`, role: 'listitem', 'data-cost': String(slotV.cost),
         'aria-label': `${i + 1}번 ${u.name}, ${slotV.cost}골드${affordable ? '' : ', 골드 부족'}${slotV.preview.mergesTo ? `, 구매하면 ${slotV.preview.mergesTo}성 합성` : ''}`,
         onclick: () => void ctx.send('BUY_UNIT', { slotIndex: i }),
       },
@@ -316,16 +316,22 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
       if (c.id <= ctx.ui.lastCue) continue;
       ctx.ui.lastCue = c.id;
       const cardFor = (unitId?: string) => unitId ? el.querySelector(`.k-slot .k-card[data-unit="${unitId}"]`) : null;
-      if (c.kind === 'recruit' && c.unitId) ctx.speak(c.unitId, 'recruit', cardFor(c.unitId), 2000);
+      if (c.kind === 'recruit' && c.unitId) {
+        ctx.speak(c.unitId, 'recruit', cardFor(c.unitId), 2000);
+        const benched = el.querySelectorAll(`.k-bench .k-card[data-unit="${c.unitId}"]`);
+        ctx.fx.burst(benched[benched.length - 1] ?? null, { color: '#45d3ff', ms: 650 });
+      }
       if (c.kind === 'deploy' && c.unitId) ctx.speak(c.unitId, 'deploy', cardFor(c.unitId), 1500);
       if (c.kind === 'merge' && c.unitId) {
         const card = el.querySelector(`.k-slot .k-card[data-unit="${c.unitId}"].star-${c.star}`);
         card?.classList.add('is-merged');
+        ctx.fx.burst(card, { color: c.star === 3 ? '#ffc93c' : '#7cc8ff', size: c.star === 3 ? 420 : 300, ms: c.star === 3 ? 1300 : 1000 });
         ctx.toast(`${ctx.lookup.unit(c.unitId).name} ${c.star}성 합성!`, 'gold');
         if (c.star === 3) ctx.speak(c.unitId, 'star3', card, 2500);
       }
+      if (c.kind === 'levelup') ctx.fx.burst(el.querySelector('.k-lv-big'), { color: '#45d3ff', size: 260 });
       if (c.kind === 'levelup') ctx.toast(`레벨 ${c.amount}! 이제 ${c.amount}명까지 편성할 수 있어요`);
-      if (c.kind === 'vault') { coinRain(); ctx.toast(`금고를 털었어요 +${c.amount}G`, 'gold'); }
+      if (c.kind === 'vault') { coinRain(); ctx.fx.burst({ x: innerWidth / 2, y: innerHeight * 0.4 }, { color: '#ffc93c', size: 520, ms: 1300 }); ctx.toast(`금고를 털었어요 +${c.amount}G`, 'gold'); }
       if (c.kind === 'equip_returned' && c.unitId) ctx.toast(`${ctx.lookup.unit(c.unitId).name}의 맞지 않는 장비가 보관함으로 돌아갔어요`);
     }
   }

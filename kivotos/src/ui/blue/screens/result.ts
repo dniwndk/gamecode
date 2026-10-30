@@ -56,6 +56,8 @@ export function resultPanel(ctx: Ctx, run: RunView, onContinue: () => void): HTM
             h('b', null, total.toLocaleString()));
         }))),
       h('footer', { class: 'k-result-foot' }, cont)));
+  // 승리 MVP 초상화에 빛 폭발(연출 계층이 꺼져 있으면 아무 일 없음)
+  setTimeout(() => { if (win && panel.isConnected) ctx.fx.burst(panel.querySelector('.k-mvp-art'), { color: '#ffc93c', size: 420, ms: 1300 }); }, 380);
   return panel;
 }
 

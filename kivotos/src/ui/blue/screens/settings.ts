@@ -7,7 +7,7 @@ export function mountSettings(ctx: Ctx): Screen {
   const el = h('section', { class: 'k-settings' });
   const st = ctx.settings;
   const draw = () => {
-    const toggle = (id: string, label: string, desc: string, key: 'reduceMotion' | 'noFlash' | 'noShake' | 'dialogue') =>
+    const toggle = (id: string, label: string, desc: string, key: 'reduceMotion' | 'noFlash' | 'noShake' | 'dialogue' | 'fx') =>
       h('label', { class: 'k-toggle', for: id },
         h('div', null, h('b', null, label), h('small', null, desc)),
         h('input', { id, type: 'checkbox', role: 'switch', checked: st[key], onchange: (e: Event) => { st[key] = (e.target as HTMLInputElement).checked; ctx.saveSettings(); draw(); } }),
@@ -18,6 +18,7 @@ export function mountSettings(ctx: Ctx): Screen {
         h('h2', null, '설정')),
       h('div', { class: 'k-panel k-settings-body' },
         h('h3', null, '연출'),
+        toggle('k-set-fx', '고급 그래픽 효과', '흐르는 하늘 배경·카드 광택·전환 파편(WebGL2). 느리면 끄세요', 'fx'),
         toggle('k-set-motion', '애니메이션 줄이기', '전환·컷인·동전 비 연출을 생략합니다', 'reduceMotion'),
         toggle('k-set-flash', '플래시 끄기', '피격 시 하얗게 번쩍이는 효과를 끕니다', 'noFlash'),
         toggle('k-set-shake', '화면 흔들림 끄기', '치명타·필살기 흔들림(최대 4px)을 끕니다', 'noShake'),

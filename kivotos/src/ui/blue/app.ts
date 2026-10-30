@@ -2,6 +2,8 @@
 import type { GameCommandType } from '../../app/gameClient';
 import type { DialogueKey, EnemyDefinition, EquipmentDefinition, StrategyDefinition, SynergyDefinition, UnitDefinition } from '../../core/types/content';
 import { h } from './dom';
+import { chooseFxTier } from './fx/capabilities';
+import { createFx, NO_FX, type Fx } from './fx/engine';
 import { icon } from './icons';
 import type { UiDriver, UiState } from './model';
 import { mountBattle } from './screens/battle';
@@ -22,6 +24,8 @@ export interface Settings {
   noShake: boolean;
   dialogue: boolean;
   defaultSpeed: 1 | 2 | 4;
+  /** WebGL2 셰이더 연출(유체 배경·카드 광택·전환 파편) */
+  fx: boolean;
 }
 
 export interface Screen {
@@ -45,6 +49,8 @@ export interface Ctx {
   mobile(): boolean;
   scale(): number;
   stage: HTMLElement;
+  /** 셰이더 연출. 꺼져 있거나 WebGL2가 없으면 아무 일도 하지 않는다 */
+  fx: Fx;
   go(route: LocalRoute): void;
   lookup: {
     unit(id: string): UnitDefinition;
@@ -69,7 +75,7 @@ export const FACTION_COLOR: Record<string, string> = {
 };
 
 const SETTINGS_KEY = 'kivotos-ui-settings';
-const DEFAULT_SETTINGS: Settings = { reduceMotion: false, noFlash: false, noShake: false, dialogue: true, defaultSpeed: 1 };
+const DEFAULT_SETTINGS: Settings = { reduceMotion: false, noFlash: false, noShake: false, dialogue: true, defaultSpeed: 1, fx: true };
 
 function loadSettings(): Settings {
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -132,6 +138,22 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     root.classList.toggle('no-shake', settings.noShake);
   };
   applySettings();
+
+  // 셰이더 연출: 설정·연출 줄이기·WebGL2 지원에 따라 켜고 끈다. 화면 코드는 ctx.fx만 부른다.
+  let fx: Fx = NO_FX;
+  const syncFx = () => {
+    const want = chooseFxTier(settings) === 'webgl2';
+    if (want && fx === NO_FX) fx = createFx({ root, stage, scale: () => scale, mobile: () => mobile, noFlash: () => settings.noFlash });
+    else fx.setEnabled(want);
+  };
+  syncFx();
+  const fxProxy: Fx = {
+    get on() { return fx.on; },
+    burst: (at, o) => fx.burst(at, o),
+    transition: (k) => fx.transition(k),
+    theme: (c) => fx.theme(c),
+    setEnabled: (on) => fx.setEnabled(on),
+  };
 
   let route: LocalRoute = null;
   let current: Screen | null = null;
@@ -207,11 +229,13 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     settings,
     saveSettings() {
       applySettings();
+      syncFx();
       try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* 무시 */ }
     },
     mobile: () => mobile,
     scale: () => scale,
     stage,
+    fx: fxProxy,
     go(r) { route = r; render(driver.get()); },
     lookup: {
       unit: (id) => units.get(id)!,
@@ -253,16 +277,24 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     }
   }
 
+  // 런 시작·출격·런 종료처럼 큰 장면 전환만 파편으로 부수고, 나머지는 가벼운 빛 쓸기
+  function bigMove(from: string, to: string): boolean {
+    if (to === 'codex' || to === 'settings' || from === 'codex' || from === 'settings') return false;
+    return to === 'setup' || to === 'end' || to.startsWith('battle-') || (from === 'home' && to !== 'home');
+  }
+
   function render(s: UiState) {
     const [key, make] = screenFor(s);
     root.dataset.chapter = String(s.run?.chapter ?? 1);
     root.dataset.phase = s.phase;
+    fx.theme(s.run?.chapter ?? 1);
     if (key === currentKey && current?.update) {
       current.update(s);
       return;
     }
     current?.destroy?.();
     const prev = current;
+    if (prev) fx.transition(bigMove(currentKey, key) ? 'shatter' : 'sweep');
     current = make();
     currentKey = key;
     current.el.classList.add('k-screen');

@@ -206,7 +206,12 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         pulse(a, e.kind === 'rear' ? 'is-support-pulse' : 'is-acting');
         const verb = { basic: '기본 공격', skill: '전투 스킬', ultimate: '필살기', rear: '정기 지원' }[e.kind];
         log(`${nameOf(a.view)} · ${verb}`, e.kind === 'ultimate' ? 'is-ult' : a.view.ref.side === 'enemy' ? 'is-enemy' : '');
-        if (e.kind === 'ultimate') { await cutIn(a); shake(true); await wait(350); }
+        if (e.kind === 'ultimate') {
+          await cutIn(a);
+          if (!skipping) ctx.fx.burst(a.el, { color: a.view.ref.side === 'enemy' ? '#ff6b5a' : '#ffc93c', size: 380, ms: 900 });
+          shake(true);
+          await wait(350);
+        }
         else await wait(e.kind === 'skill' ? 260 : e.kind === 'rear' ? 200 : 180);
         break;
       }
@@ -221,7 +226,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         if (!ctx.settings.noFlash) pulse(t, 'is-flash');
         if (e.shieldAbsorbed) float(t, `−${e.shieldAbsorbed}`, 'shield');
         if (e.amount) float(t, `${e.amount.toLocaleString()}${e.crit ? '!' : ''}`, e.true ? 'true' : e.crit ? 'crit' : 'dmg');
-        if (e.crit) shake(false);
+        if (e.crit) { shake(false); if (!skipping && speed < 4) ctx.fx.burst(t.el, { color: '#ff8a5a', size: 170, ms: 550 }); }
         paint(t);
         await wait(70);
         break;
@@ -261,6 +266,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         if (!t) break;
         t.down = true;
         t.el.classList.add('is-down');
+        if (!skipping) ctx.fx.burst(t.el, { color: t.view.ref.side === 'enemy' ? '#a78bfa' : '#7cc8ff', size: 200, ms: 700 });
         log(`${nameOf(t.view)} 전투불능`, 'is-down');
         if (t.view.unitId && speed === 1 && !skipping) {
           const line = ctx.lookup.line(t.view.unitId, 'defeated');

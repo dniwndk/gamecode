@@ -19,6 +19,7 @@ export function mountStrategyChoice(ctx: Ctx, s: UiState): Screen {
       class: 'k-choice-card', style: `--hue:${HUES[i % HUES.length]}`, 'aria-pressed': 'false',
       onclick: () => {
         picked = id;
+        ctx.fx.burst(card, { color: '#45d3ff', size: 380, ms: 800 });
         cardEls.forEach((c) => { const on = c === card; c.classList.toggle('is-picked', on); c.setAttribute('aria-pressed', on ? 'true' : 'false'); });
         confirm.disabled = false;
       },

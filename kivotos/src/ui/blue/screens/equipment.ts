@@ -19,7 +19,7 @@ export function mountEquipmentChoice(ctx: Ctx, s: UiState): Screen {
     const [zoneLabel, color] = ZONE[eq.zone];
     const card = h('button', {
       class: 'k-choice-card is-eq', style: `--hue:${color}`, 'aria-pressed': 'false',
-      onclick: () => { picked = id; cards.forEach((c) => { c.classList.toggle('is-picked', c === card); c.setAttribute('aria-pressed', c === card ? 'true' : 'false'); }); confirm.disabled = false; },
+      onclick: () => { picked = id; ctx.fx.burst(card, { color: '#45d3ff', size: 380, ms: 800 }); cards.forEach((c) => { c.classList.toggle('is-picked', c === card); c.setAttribute('aria-pressed', c === card ? 'true' : 'false'); }); confirm.disabled = false; },
     },
     h('div', { class: 'k-choice-art' }, h('div', { class: 'k-choice-halo' }), icon('equipment', 72), h('span', { class: 'k-choice-kind' }, zoneLabel)),
     h('h3', null, eq.name),

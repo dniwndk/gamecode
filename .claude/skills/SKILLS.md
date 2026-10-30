@@ -43,7 +43,7 @@
 | `router` | 프로젝트와 요청을 보고 엔진·분야·장르 스킬을 최소한으로 골라 줌. **어떤 스킬을 쓸지 모를 때 여기서 시작** | awesome-gamedev |
 | `phaser-core` | Phaser 4 게임 설정, 씬 수명주기, 에셋 로더, 카메라 | awesome-gamedev |
 | `phaser-arcade-physics` | Phaser 아케이드 물리: 속도·중력·충돌·겹침 | awesome-gamedev |
-| `webgpu-ui-fx` | DOM 화면 위 WebGPU·HTML-in-Canvas 셰이더 연출(등급별 폴백, 유체·박막·파편 전환) | 이 저장소(키보토스) |
+| `webgl-ui-fx` | DOM 화면 위 WebGL2 셰이더 연출(유체 배경·카드 박막 광택·스프링 기울기·파편 전환, CSS 폴백) | 이 저장소(키보토스) |
 | `pixijs-rendering` | PixiJS v8 렌더 계층: Application, Assets, Container/Sprite, ticker | awesome-gamedev |
 | `threejs-scene-setup` | three.js 씬·카메라·렌더러·루프·리사이즈 | awesome-gamedev |
 | `threejs-gltf-loading` | glTF/GLB 모델과 애니메이션 불러오기 | awesome-gamedev |
