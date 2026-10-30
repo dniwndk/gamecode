@@ -15,7 +15,7 @@
 
 ## M0 결과
 
-콘텐츠 팩 `ba-content-2.4.0` / 규칙 `ktfr-rules-2.4.0` (2026-10-30 v2.3.1 문구 정리 + 오파츠 반영). 현재는 팩 `ba-content-2.5.0` / 규칙 `ktfr-rules-2.5.0`(v2.3.4 상점 장수·레벨 XP)
+콘텐츠 팩 `ba-content-2.4.0` / 규칙 `ktfr-rules-2.4.0` (2026-10-30 v2.3.1 문구 정리 + 오파츠 반영). 현재는 팩 `ba-content-2.5.1` / 규칙 `ktfr-rules-2.5.0`(v2.3.4 상점 장수·레벨 XP, 2.5.1은 오파츠 수치 조정 D-020)
 
 | 항목 | 기대 | 실제 |
 |---|---:|---:|
@@ -49,7 +49,7 @@
 | `src/core/rng.ts` | 12.2 xorshift32·FNV-1a32 스트림 시드·rejection sampling·가중 추첨. 골든 출력 270369, 67634689, 2647435461 통과 |
 | `src/core/ooparts/ooparts.ts` | 보상 3택1(등급 추첨, 후보 소진 시 등급 이동, 미보유·전설 제외, 레시피 가중치), 획득·자동 조합, 레시피 공개(프로필), 보상 배지, 도감 숨김, 구조 요청 |
 | 효과 55종 | 2026-10-30 `src/core/ooparts/modifiers.ts`가 오파츠별 보정값(경제·상점·편성·전투)을 내고, 미리보기 세션의 런·전투 흉내가 그대로 쓴다. 작동 41종(일부 적용 10 포함: 2026-10-30 트리니티 동아리 연합 인가증을 일부로 고침, 구성원 집계만 시너지 창에 반영), 시너지 단계 효과를 고치는 14종은 대기(`oopartSupport`, 화면에 「적용 중/일부 적용/대기 중」 표시). 효과 카탈로그의 `implementation`은 아직 `spec_only`: 진짜 전투 엔진(M2)·효과 실행(M3)에서 같은 수치로 다시 붙인다 |
-| 밸런스 측정 | 2026-10-30 자동 플레이 봇(`scripts/balance/`)으로 55종 각각 400판 짝 비교·흐름 1,000판. 결과·한계는 [OOPARTS_BALANCE_v1.md](OOPARTS_BALANCE_v1.md). 조정안은 기획서 미반영(사용자 결정 대기) |
+| 밸런스 측정 | 2026-10-30 자동 플레이 봇(`scripts/balance/`)으로 55종 각각 400판 짝 비교·흐름 1,000판. 결과·한계는 [OOPARTS_BALANCE_v1.md](OOPARTS_BALANCE_v1.md). 조정안 12종은 D-020으로 기획서·빌드에 반영하고 다시 쟀다 |
 | 런 연결 | 2026-10-30부터 미리보기 세션(지금 빌드의 플레이)이 `src/app/runRules.ts`로 코어 함수를 불러 실제로 준다: 런 시작(전략 직후)·정예 승리(장비 뒤)·1·2장 보스 승리·구조 요청(3연패). 3번째 일반 전투 획득은 삭제(D-018). 레시피 공개는 `localStorage` `kivotos-oopart-profile`. M1 런 reducer가 나오면 같은 함수를 reducer가 부른다 |
 
 실행한 검증(2026-10-30, Node 22.22.0): `npm test` 6개 파일 92개 통과, `npm run build` 통과(content:check·content:validate 오류 0·경고 0, typecheck 오류 0).
@@ -84,7 +84,7 @@
 | 런 연결 | 없음. M1 런 reducer가 정산에서 `resolveAwakenings`를 부른다 |
 | 초상화·대사 | `public/portraits/u_al1s.webp`(NAI 생성, 시드는 프로젝트 portraits/manifest.json), `docs/dialogue/ko/u_al1s.json` |
 
-팩 `ba-content-2.5.0`: 유닛 101(코스트 19/27/28/14/13, 겸용 12), 시너지 64(고유 12), 효과 461(부록 C 206 + V 199 + 카이저 론 1 + 오파츠 55), 대사 101, 초상화 101.
+팩 `ba-content-2.5.1`: 유닛 101(코스트 19/27/28/14/13, 겸용 12), 시너지 64(고유 12), 효과 461(부록 C 206 + V 199 + 카이저 론 1 + 오파츠 55), 대사 101, 초상화 101.
 실행한 검증(2026-10-30, Node 22.22.0): `npm test` 7개 파일 100개 통과, `npm run build` 통과(content:check·content:validate 오류 0·경고 0, typecheck 오류 0).
 
 ## 난이도 조정 (2026-10-30, D-017)

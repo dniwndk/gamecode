@@ -101,9 +101,14 @@ describe('미리보기 런: 오파츠 효과', () => {
     await start(d);
     const run = d.get().run!;
     expect(run.board.bench).toHaveLength(10);
-    expect(run.shop.rerollCost).toBe(1);
     expect(run.deployLimit).toBe(run.level + 1);
     expect(run.shop.slots).toHaveLength(6);
+    // 샬레 별관 열쇠: 준비 단계마다 첫 새로고침 무료, 그다음은 블랙마켓 카드 1G
+    expect(run.shop.rerollCost).toBe(0);
+    const gold = run.gold;
+    await d.send('REROLL_SHOP');
+    expect(d.get().run!.gold).toBe(gold);
+    expect(d.get().run!.shop.rerollCost).toBe(1);
   });
 
   it('싯딤의 상자: 전략 4개 중 2개', async () => {
@@ -128,14 +133,14 @@ describe('미리보기 런: 오파츠 효과', () => {
     expect(res.xpGained).toBe(contentPack.rules.xp.perBattle + 1);
   });
 
-  it('색채의 잔광: 이겨도 전투마다 런 체력 −2, ATK +35%', async () => {
+  it('색채의 잔광: 이겨도 전투마다 런 체력 −3', async () => {
     const d = withOoparts(['oop_afterglow_of_color']);
     await start(d);
     await deployAll(d);
     const hp = d.get().run!.runHp;
     await d.send('START_BATTLE');
     expect(d.get().run!.lastResult!.outcome).toBe('win');
-    expect(d.get().run!.runHp).toBe(hp - 2);
+    expect(d.get().run!.runHp).toBe(hp - 3);
   });
 
   it('오파츠 55종 하나씩 가진 채로 1장을 끝까지 진행해도 전투·정산이 깨지지 않는다', async () => {

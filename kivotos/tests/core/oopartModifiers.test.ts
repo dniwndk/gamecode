@@ -13,8 +13,8 @@ describe('오파츠 보정값', () => {
     expect(m.strategyPicks).toBe(1);
   });
 
-  it('경제 오파츠: 네브라 디스크 +4G, 블랙마켓 카드 새로고침 1G·이자 상한 −3, 게마트리아 정산 +4G', () => {
-    expect(oopartModifiers(['oop_nebra_disk']).interestGoldBonus).toBe(4);
+  it('경제 오파츠: 네브라 디스크 +6G, 블랙마켓 카드 새로고침 1G·이자 상한 −3, 게마트리아 정산 +4G', () => {
+    expect(oopartModifiers(['oop_nebra_disk']).interestGoldBonus).toBe(6);
     expect(oopartModifiers(['oop_black_market_card'])).toMatchObject({ rerollCost: 1, interestCapDelta: -3 });
     expect(oopartModifiers(['oop_gematria_contract']).settlementGold).toBe(4);
   });
@@ -22,15 +22,16 @@ describe('오파츠 보정값', () => {
   it('여러 개는 합쳐진다(패배 피해 감소, ATK)', () => {
     const m = oopartModifiers(['oop_okiku_doll', 'oop_afterglow_of_color']);
     expect(m.defeatDamageReduction).toBe(2);
-    expect(m.atkBps).toBe(3500);
-    expect(m.runHpLossPerBattle).toBe(2);
+    expect(m.atkBps).toBe(2000);
+    expect(m.runHpLossPerBattle).toBe(3);
   });
 
   it('전설은 재료 효과를 이어받고 대가를 없앤다', () => {
-    expect(oopartModifiers(['oop_prototype_infinity'])).toMatchObject({ frontUltEnergy: 70, frontSkillLocked: false, exhaustion: false, frontSpd: 15, spRefillUses: 2, spMax: 6, spOnUltimate: true });
-    expect(oopartModifiers(['oop_shittim_chest'])).toMatchObject({ shopSlots: 6, recommendedChanceBps: 8000, strategyChoices: 4, strategyPicks: 2, aronaSlot: true, pranaLock: true });
-    expect(oopartModifiers(['oop_yume_notebook'])).toMatchObject({ rerollCost: 1, interestCapDelta: 0, defeatDamageReduction: 3, lastStandHp: 20, abydosLastStand: 3 });
-    expect(oopartModifiers(['oop_nameless_relic'])).toMatchObject({ atkBps: 3500, healShieldReceivedBps: 0, runHpLossPerBattle: 0, mysticRevives: 2 });
+    expect(oopartModifiers(['oop_prototype_infinity'])).toMatchObject({ frontUltEnergy: 70, frontSkillCdBonus: 0, exhaustion: false, frontSpd: 15, spStartBonus: 1, spRefillUses: 2, spMax: 6, spOnUltimate: true });
+    expect(oopartModifiers(['oop_shittim_chest'])).toMatchObject({ shopSlots: 6, freeRerollPerPrep: 1, recommendedChanceBps: 8000, strategyChoices: 4, strategyPicks: 2, aronaSlot: true, pranaLock: true });
+    expect(oopartModifiers(['oop_yume_notebook'])).toMatchObject({ rerollCost: 1, interestCapDelta: 0, defeatDamageReduction: 5, lastStandHp: 30, abydosLastStand: 3 });
+    expect(oopartModifiers(['oop_nameless_relic'])).toMatchObject({ atkBps: 2000, healShieldReceivedBps: 0, runHpLossPerBattle: 0, firstFallHealBps: 1500, mysticRevives: 2 });
+    expect(oopartModifiers(['oop_prototype_zero'])).toMatchObject({ frontUltEnergy: 70, frontSkillCdBonus: 1 });
   });
 
   it('55종 모두 작동 정도가 정해져 있고, 시너지 단계 효과를 기다리는 것은 14종', () => {

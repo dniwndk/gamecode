@@ -1,6 +1,6 @@
 {
   "packId": "ba-kivotos",
-  "contentVersion": "ba-content-2.5.0",
+  "contentVersion": "ba-content-2.5.1",
   "rulesVersion": "ktfr-rules-2.5.0",
   "expectedCounts": {
     "units": 101,
@@ -29,7 +29,7 @@
     },
     {
       "path": "docs/OOPARTS_v1.md",
-      "sha256": "849e8d20e0cdd6e775631d77bd6278161f83383c254950656de360b188cec99d"
+      "sha256": "9eaa55104de0a8f5ad4c9ded618f0023caa9055ee3c4c1ace520be9da37a93f0"
     }
   ],
   "generatedBy": "scripts/extract-content.mjs"

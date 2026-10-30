@@ -23,6 +23,8 @@ export interface OopartModifiers {
   mergeGold: [number, number];
   // ── 상점 ──
   shopSlots: number | null;
+  /** 준비 단계마다 첫 새로고침 무료 횟수(R06·L01) */
+  freeRerollPerPrep: number;
   recommendedChanceBps: number | null;
   rerollCost: number | null;
   /** 레벨업 직후 첫 갱신의 1번 칸을 그 레벨 최고 코스트로(C03) */
@@ -55,9 +57,12 @@ export interface OopartModifiers {
   atkBps: number;
   critDamageBps: number;
   nonCritDamageBps: number;
-  rearCritBps: number;
-  /** 기본 공격 에너지 추가 획득(C09 +5) */
+  /** 후방 정기 지원(치유·보호막·버프·사격)량(C08 +10%) */
+  rearSupportBps: number;
+  /** 기본 공격 에너지 추가 획득(C09 +10) */
   basicEnergyBonus: number;
+  /** 전투 시작 팀 SP(C07·L05 +1) */
+  spStartBonus: number;
   /** 팀 SP가 0이 될 때 +2, 전투당 횟수(C07 1, L05 2) */
   spRefillUses: number;
   spMax: number | null;
@@ -73,7 +78,7 @@ export interface OopartModifiers {
   /** 진영에서 혼자 출전한 학생 ATK·SPD(U15) */
   loneFactionAtkBps: number;
   loneFactionSpd: number;
-  /** 200AV마다 포격, 아군 오폭 비율(U09) */
+  /** 200AV마다 아군 최고 ATK 100% 포격, 아군 오폭 비율(U09 포격의 60%) */
   pmcBarrage: boolean;
   pmcFriendlyFireBps: number;
   /** 아군 전방 SPD, 600AV 탈진(U11, L05는 탈진 없음) */
@@ -83,9 +88,9 @@ export interface OopartModifiers {
   eliteBossDamageBps: number;
   /** 아군이 받는 치유·보호막 배율 감소(R08 −50%) */
   healShieldReceivedBps: number;
-  /** 전방 필살기 필요 에너지(R10·L05), 전방 전투 스킬 봉인(R10, L05 해제) */
+  /** 전방 필살기 필요 에너지(R10·L05), 전방 전투 스킬 쿨다운 추가 턴(R10 +1, L05 해제) */
   frontUltEnergy: number | null;
-  frontSkillLocked: boolean;
+  frontSkillCdBonus: number;
   // ── 진영·역할 특화(전투) ──
   /** 아비도스 학생이 쓰러지면 남은 아비도스 에너지 100, 전투당 횟수(R01 2, L04 3) */
   abydosLastStand: number;
@@ -109,29 +114,29 @@ export interface OopartModifiers {
 
 const base = (): OopartModifiers => ({
   interestGoldBonus: 0, interestCapDelta: 0, settlementGold: 0, battleXpBonus: 0, defeatDamageReduction: 0, runHpLossPerBattle: 0, lastStandHp: 0, mergeGold: [0, 0],
-  shopSlots: null, recommendedChanceBps: null, rerollCost: null, levelUpTopCostSlot: false, aronaSlot: false, aronaMergeXp: 0, pranaLock: false,
+  shopSlots: null, freeRerollPerPrep: 0, recommendedChanceBps: null, rerollCost: null, levelUpTopCostSlot: false, aronaSlot: false, aronaMergeXp: 0, pranaLock: false,
   benchSlotsBonus: 0, noBenchSellDepreciation: false, deployLimitBonus: 0, millenniumEquipSlotBonus: 0, millenniumEquipStatBps: 0,
   strategyChoices: null, strategyPicks: 1, pandemonium: false, trinityClubBonus: 0, edenFactions: false,
-  atkBps: 0, critDamageBps: 0, nonCritDamageBps: 0, rearCritBps: 0, basicEnergyBonus: 0, spRefillUses: 0, spMax: null, spOnUltimate: false,
+  atkBps: 0, critDamageBps: 0, nonCritDamageBps: 0, rearSupportBps: 0, basicEnergyBonus: 0, spStartBonus: 0, spRefillUses: 0, spMax: null, spOnUltimate: false,
   firstFallHealBps: 0, threeStarHpBps: 0, threeStarHpCapBps: 0, mysticRevives: 0, loneFactionAtkBps: 0, loneFactionSpd: 0,
   pmcBarrage: false, pmcFriendlyFireBps: 0, frontSpd: 0, exhaustion: false, eliteBossDamageBps: 0, healShieldReceivedBps: 0,
-  frontUltEnergy: null, frontSkillLocked: false, abydosLastStand: 0, dragonCenser: false, coupOrder: false, jailbreak: false,
+  frontUltEnergy: null, frontSkillCdBonus: 0, abydosLastStand: 0, dragonCenser: false, coupOrder: false, jailbreak: false,
   wolfseggReflectBps: 0, discoCritBps: 0, goldenFleece: false, atlantisMedal: false, winnipesaukee: false,
 });
 
 type Apply = (m: OopartModifiers) => void;
 
 const APPLY: Record<string, Apply> = {
-  oop_nebra_disk: (m) => { m.interestGoldBonus += 4; },
+  oop_nebra_disk: (m) => { m.interestGoldBonus += 6; },
   oop_roman_dodecahedron: (m) => { m.recommendedChanceBps = Math.max(m.recommendedChanceBps ?? 0, 8000); },
   oop_antikythera: (m) => { m.levelUpTopCostSlot = true; },
   oop_phaistos_disc: (m) => { m.battleXpBonus += 1; },
   oop_haniwa: (m) => { m.benchSlotsBonus += 1; m.noBenchSellDepreciation = true; },
   oop_okiku_doll: (m) => { m.defeatDamageReduction += 2; },
-  oop_baghdad_battery: (m) => { m.spRefillUses = Math.max(m.spRefillUses, 1); },
-  oop_nimrud_lens: (m) => { m.rearCritBps += 1000; },
-  oop_aether_essence: (m) => { m.basicEnergyBonus += 5; },
-  oop_mandragora: (m) => { m.firstFallHealBps = Math.max(m.firstFallHealBps, 800); },
+  oop_baghdad_battery: (m) => { m.spStartBonus = Math.max(m.spStartBonus, 1); m.spRefillUses = Math.max(m.spRefillUses, 1); },
+  oop_nimrud_lens: (m) => { m.rearSupportBps += 1000; },
+  oop_aether_essence: (m) => { m.basicEnergyBonus += 10; },
+  oop_mandragora: (m) => { m.firstFallHealBps = Math.max(m.firstFallHealBps, 1500); },
   oop_voynich: (m) => { m.strategyChoices = Math.max(m.strategyChoices ?? 0, 4); },
   oop_wolfsegg_steel: (m) => { m.wolfseggReflectBps = 1500; },
   oop_disco_colgante: (m) => { m.discoCritBps = 2000; },
@@ -143,9 +148,9 @@ const APPLY: Record<string, Apply> = {
   oop_jailbreak_kit: (m) => { m.jailbreak = true; },
   oop_halo_fragment: (m) => { m.threeStarHpBps = 400; m.threeStarHpCapBps = 2000; },
   oop_momofriends_box: (m) => { m.mergeGold = [m.mergeGold[0] + 1, m.mergeGold[1] + 4]; },
-  oop_gsc_pass: (m) => { m.loneFactionAtkBps += 2000; m.loneFactionSpd += 8; },
-  oop_pmc_contract: (m) => { m.pmcBarrage = true; m.pmcFriendlyFireBps = 4000; },
-  oop_black_market_ammo: (m) => { m.critDamageBps += 4000; m.nonCritDamageBps -= 1000; },
+  oop_gsc_pass: (m) => { m.loneFactionAtkBps += 1000; m.loneFactionSpd += 4; },
+  oop_pmc_contract: (m) => { m.pmcBarrage = true; m.pmcFriendlyFireBps = 6000; },
+  oop_black_market_ammo: (m) => { m.critDamageBps += 6000; m.nonCritDamageBps -= 500; },
   oop_energy_drink: (m) => { m.frontSpd += 15; m.exhaustion = true; },
   oop_black_market_card: (m) => { m.rerollCost = 1; m.interestCapDelta -= 3; },
   oop_foreclosure_photo: (m) => { m.abydosLastStand = Math.max(m.abydosLastStand, 2); },
@@ -153,23 +158,23 @@ const APPLY: Record<string, Apply> = {
   oop_millennium_prize: (m) => { m.millenniumEquipSlotBonus = 1; m.millenniumEquipStatBps = 5000; },
   oop_trinity_club_charter: (m) => { m.trinityClubBonus = 1; },
   oop_prophecy_circuit: (m) => { m.eliteBossDamageBps += 2000; },
-  oop_schale_annex_key: (m) => { m.shopSlots = Math.max(m.shopSlots ?? 0, 6); },
+  oop_schale_annex_key: (m) => { m.shopSlots = Math.max(m.shopSlots ?? 0, 6); m.freeRerollPerPrep = Math.max(m.freeRerollPerPrep, 1); },
   oop_empty_chair: (m) => { m.deployLimitBonus += 1; },
-  oop_afterglow_of_color: (m) => { m.atkBps += 3500; m.healShieldReceivedBps -= 5000; m.runHpLossPerBattle += 2; },
+  oop_afterglow_of_color: (m) => { m.atkBps += 2000; m.healShieldReceivedBps -= 5000; m.runHpLossPerBattle += 3; },
   oop_gematria_contract: (m) => { m.settlementGold += 4; },
-  oop_prototype_zero: (m) => { m.frontUltEnergy = 70; m.frontSkillLocked = true; },
+  oop_prototype_zero: (m) => { m.frontUltEnergy = 70; m.frontSkillCdBonus = 1; },
   // ── 전설: ★는 재료 효과를 다시 켜고, 대가는 없앤다(1.3 「정화」) ──
   oop_shittim_chest: (m) => {
-    m.shopSlots = 6; m.recommendedChanceBps = 8000; m.strategyChoices = 4; m.strategyPicks = 2;
+    m.shopSlots = 6; m.freeRerollPerPrep = 1; m.recommendedChanceBps = 8000; m.strategyChoices = 4; m.strategyPicks = 2;
     m.aronaSlot = true; m.aronaMergeXp = 2; m.pranaLock = true;
   },
   oop_eden_treaty: (m) => { m.trinityClubBonus = 1; m.edenFactions = true; },
   oop_nameless_relic: (m) => {
-    m.atkBps += 3500; m.threeStarHpBps = 400; m.threeStarHpCapBps = 2000; m.firstFallHealBps = Math.max(m.firstFallHealBps, 800); m.mysticRevives = 2;
+    m.atkBps += 2000; m.threeStarHpBps = 400; m.threeStarHpCapBps = 2000; m.firstFallHealBps = Math.max(m.firstFallHealBps, 1500); m.mysticRevives = 2;
   },
-  oop_yume_notebook: (m) => { m.abydosLastStand = 3; m.rerollCost = 1; m.defeatDamageReduction += 3; m.lastStandHp = 20; },
+  oop_yume_notebook: (m) => { m.abydosLastStand = 3; m.rerollCost = 1; m.defeatDamageReduction += 5; m.lastStandHp = 30; },
   oop_prototype_infinity: (m) => {
-    m.frontUltEnergy = 70; m.frontSkillLocked = false; m.frontSpd += 15; m.spRefillUses = 2; m.spMax = 6; m.spOnUltimate = true;
+    m.frontUltEnergy = 70; m.frontSkillCdBonus = 0; m.frontSpd += 15; m.spStartBonus = 1; m.spRefillUses = 2; m.spMax = 6; m.spOnUltimate = true;
   },
 };
 
@@ -177,8 +182,8 @@ const APPLY: Record<string, Apply> = {
 export function oopartModifiers(owned: readonly string[]): OopartModifiers {
   const m = base();
   for (const id of [...owned].sort()) APPLY[id]?.(m);
-  // L05가 있으면 탈진 없음, 스킬 봉인 해제(재료 R10·U11의 대가 제거)
-  if (owned.includes('oop_prototype_infinity')) { m.exhaustion = false; m.frontSkillLocked = false; }
+  // L05가 있으면 탈진 없음, 스킬 쿨다운 추가 없음(재료 R10·U11의 대가 제거)
+  if (owned.includes('oop_prototype_infinity')) { m.exhaustion = false; m.frontSkillCdBonus = 0; }
   return m;
 }
 

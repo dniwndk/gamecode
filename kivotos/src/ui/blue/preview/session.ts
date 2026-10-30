@@ -52,6 +52,8 @@ interface RunState {
   levelUpPending: boolean;
   /** 「후배들을 부탁해」(L04)를 이미 썼는지 */
   lastStandUsed: boolean;
+  /** 이번 준비 단계에서 쓴 무료 새로고침(R06·L01) */
+  freeRerollsUsed: number;
   /** 독립 RNG 스트림(12.2): 상점, 보상 */
   shopRng: Rng;
   rewardRng: Rng;
@@ -117,7 +119,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       history: ['win', 'win', 'loss', 'win', 'win', 'win', 'win', null, null, null, null, null, null, null, null],
       offers: {}, recruited: new Set(), deployed: new Set(),
       oop: { owned: ['oop_nebra_disk', 'oop_voynich', 'oop_nimrud_lens'], rescueUsed: false }, oopOffer: null, oopStartDone: true,
-      runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false,
+      runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false, freeRerollsUsed: 0,
       shopRng: Rng.forStream('KIVO-7Q2M-SCHALE', 'shop'), rewardRng: Rng.forStream('KIVO-7Q2M-SCHALE', 'reward'),
     };
     for (const i of [...r.front, ...r.rear, ...r.bench]) if (i) { r.recruited.add(i.unitId); r.deployed.add(i.unitId); }
@@ -139,7 +141,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   const benchSize = (r: RunState) => rules.board.benchSlots + mods(r).benchSlotsBonus;
   const deployLimit = (r: RunState) => Math.min(rules.run.maxLevel, r.level + mods(r).deployLimitBonus);
   const equipSlots = (r: RunState, unitId: string) => rules.units.equipmentSlots + (isMillennium(unitId) ? mods(r).millenniumEquipSlotBonus : 0);
-  const rerollCost = (r: RunState) => mods(r).rerollCost ?? rules.shop.rerollCost;
+  // 샬레 별관 열쇠(R06·L01): 준비 단계마다 첫 새로고침 무료
+  const rerollCost = (r: RunState) => (r.freeRerollsUsed < mods(r).freeRerollPerPrep ? 0 : mods(r).rerollCost ?? rules.shop.rerollCost);
   const strategyChoices = (r: RunState) => mods(r).strategyChoices ?? 3;
   /** 대기석 칸 수를 오파츠에 맞춘다(C05: 9 → 10). 줄어드는 일은 없다. */
   function fitBench(r: RunState) { while (r.bench.length < benchSize(r)) r.bench.push(null); }
@@ -427,7 +430,6 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       s.atk = Math.round(s.atk * (1 + (om.atkBps + (lone ? om.loneFactionAtkBps : 0)) / 10000));
       if (lone) s.spd += om.loneFactionSpd;
       if (zone === 'front') s.spd += om.frontSpd;
-      else s.critBps += om.rearCritBps;
       s.critDamageBps += om.critDamageBps;
       s.hp = Math.round(s.hp * (1 + hpBps / 10000));
       return s;
@@ -458,7 +460,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     const snapshot: CombatantView[] = live.map((l) => ({ ref: l.ref, unitId: l.unitId, enemyId: l.enemyId, name: l.name, star: l.star, maxHp: l.maxHp, hp: l.hp, shield: 0, energy: 0, boss: l.boss, hasHp: l.hasHp }));
 
     const spMax = { ally: om.spMax ?? rules.battle.teamSp.max, enemy: rules.battle.teamSp.max };
-    const sp = { ally: rules.battle.teamSp.start, enemy: rules.battle.teamSp.start };
+    // 고대 전지(C07)·L05: 전투 시작 팀 SP +1
+    const sp = { ally: Math.min(spMax.ally, rules.battle.teamSp.start + om.spStartBonus), enemy: rules.battle.teamSp.start };
     const contrib = new Map<string, { damage: number; healing: number; shield: number; rearSupport: number }>();
     const c = (l: Live) => { const k = l.unitId!; if (!contrib.has(k)) contrib.set(k, { damage: 0, healing: 0, shield: 0, rearSupport: 0 }); return contrib.get(k)!; };
     const alive = (side: 'ally' | 'enemy', zone?: 'front' | 'rear') => live.filter((l) => l.ref.side === side && l.hasHp && l.hp > 0 && (!zone || l.ref.zone === zone));
@@ -555,11 +558,11 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       const shooter = live.filter((l) => l.ref.side === 'ally' && (l.hasHp ? l.hp > 0 : true)).sort((a, b) => b.atk - a.atk)[0];
       const foes = alive('enemy', 'front');
       if (!shooter || !foes.length) return;
-      hit(av, shooter, foes[Math.floor(rand() * foes.length)], 1.5, shooter.hasHp ? undefined : shooter.ref);
+      hit(av, shooter, foes[Math.floor(rand() * foes.length)], 1, shooter.hasHp ? undefined : shooter.ref);
       const mine = alive('ally', 'front');
       if (!mine.length || !om.pmcFriendlyFireBps) return;
       const t = mine[Math.floor(rand() * mine.length)];
-      let amount = Math.round(shooter.atk * 1.5 * om.pmcFriendlyFireBps / 10000);
+      let amount = Math.round(shooter.atk * om.pmcFriendlyFireBps / 10000);
       const absorbed = Math.min(t.shield, amount);
       t.shield -= absorbed; amount -= absorbed; t.hp = Math.max(0, t.hp - amount);
       events.push({ t: 'damage', av, source: shooter.ref, target: t.ref, amount, crit: false, shieldAbsorbed: absorbed });
@@ -603,27 +606,28 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       const side = a.ref.side;
       const enemySide = foe(side);
       if (!a.hasHp) {
-        // 후방 정기 지원
+        // 후방 정기 지원(님루드 렌즈 C08: 아군 후방 지원량 +10%)
         a.next = av + 160;
+        const rs = side === 'ally' ? 1 + om.rearSupportBps / 10000 : 1;
         const front = alive('ally', 'front');
         events.push({ t: 'action', av, actor: a.ref, kind: 'rear', targets: front.map((f) => f.ref) });
         if (/치유|힐|회복/.test(a.role)) {
           const t = lowest('ally');
           if (t) {
             const before = t.hp;
-            const over = heal(av, a, t, a.atk * 2.2);
+            const over = heal(av, a, t, a.atk * 2.2 * rs);
             c(a).rearSupport += t.hp - before;
             // 황금 양모(C16): 힐러 2단계가 켜져 있으면 넘친 치유의 25%를 보호막으로
             if (om.goldenFleece && healerTier2 && over > 0) { const sh = Math.round(over * 0.25); t.shield += sh; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: sh }); c(a).shield += sh; }
           }
         } else if (/보호막|방어/.test(a.role)) {
-          for (const t of front) { const amt = Math.round(a.atk * 1.4 * healMul); t.shield += amt; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: amt }); c(a).shield += amt; c(a).rearSupport += amt; }
+          for (const t of front) { const amt = Math.round(a.atk * 1.4 * rs * healMul); t.shield += amt; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: amt }); c(a).shield += amt; c(a).rearSupport += amt; }
         } else if (/버프|지휘|관측|증폭/.test(a.role)) {
-          for (const t of front) { events.push({ t: 'status', av, target: t.ref, statusId: 'st_atk_up', op: 'add' }); t.atk = Math.round(t.atk * 1.08); }
+          for (const t of front) { events.push({ t: 'status', av, target: t.ref, statusId: 'st_atk_up', op: 'add' }); t.atk = Math.round(t.atk * (1 + 0.08 * rs)); }
           c(a).rearSupport += 120;
         } else {
           const t = frontTarget(enemySide);
-          if (t) hit(av, a, t, 1.1, a.ref);
+          if (t) hit(av, a, t, 1.1 * rs, a.ref);
         }
         continue;
       }
@@ -656,10 +660,11 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         }
         // 프로토타입 인피니티(L05): 필살기가 해소되면 팀 SP +1(전역 주기당 1회)
         if (side === 'ally' && om.spOnUltimate && pulse !== spUltPulse) { spUltPulse = pulse; sp.ally = Math.min(spMax.ally, sp.ally + 1); events.push({ t: 'resource', av, side, sp: sp.ally }); }
-      } else if (sp[side] >= 1 && a.cd <= 0 && !(allyFront && om.frontSkillLocked)) {
+      } else if (sp[side] >= 1 && a.cd <= 0) {
         sp[side]--;
         // 아틀란티스 메달(C17): 서포터의 첫 스킬은 쿨다운 −1
-        a.cd = side === 'ally' && om.atlantisMedal && a.syn.includes('syn_supporter') && !a.skillUsed ? 1 : 2;
+        a.cd = (side === 'ally' && om.atlantisMedal && a.syn.includes('syn_supporter') && !a.skillUsed ? 1 : 2) + (allyFront ? om.frontSkillCdBonus : 0);
+        // 금지 시제품 No.0(R10): 전방 전투 스킬 쿨다운 +1턴
         a.skillUsed = true;
         // 바그다드 전지(C07)·L05: 팀 SP가 0이 되면 +2
         if (side === 'ally' && sp.ally === 0 && spRefills < om.spRefillUses) { spRefills++; sp.ally = Math.min(spMax.ally, 2); }
@@ -724,7 +729,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       runHp: { before, after: Math.max(0, before - dmg.total), breakdown: dmg.parts },
       income, xpGained: rules.xp.perBattle + om.battleXpBonus, contributions, mvpUnitId: mvp,
     };
-    return { battle: { battleId: `${n.id}-${revision}`, nodeLabel: `${r.chapter}-${r.battle} ${cand.label}`, combatants: snapshot, startSp: { ally: rules.battle.teamSp.start, enemy: rules.battle.teamSp.start }, events }, result };
+    return { battle: { battleId: `${n.id}-${revision}`, nodeLabel: `${r.chapter}-${r.battle} ${cand.label}`, combatants: snapshot, startSp: { ally: Math.min(om.spMax ?? rules.battle.teamSp.max, rules.battle.teamSp.start + om.spStartBonus), enemy: rules.battle.teamSp.start }, events }, result };
   }
 
   function advanceNode(r: RunState) {
@@ -740,6 +745,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       r.offers = {};
     }
     r.chosen = 'A';
+    r.freeRerollsUsed = 0;
     if (!r.locked) rollShop(r);
     else if (mods(r).pranaLock) rollShop(r, true);
   }
@@ -770,7 +776,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       },
       recruited: new Set(chosen.map((u) => u.id)), deployed: new Set(),
       oop: { ...emptyOopartRunState(), owned: [...(opts.ooparts ?? [])] }, oopOffer: null, oopStartDone: false,
-      runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false,
+      runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false, freeRerollsUsed: 0,
       shopRng: Rng.forStream(seed, 'shop'), rewardRng: Rng.forStream(seed, 'reward'),
     };
     // 처음부터 가진 오파츠도 획득 즉시 효과를 받는다(게마트리아의 계약 −25)
@@ -944,7 +950,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       }
       case 'REROLL_SHOP':
         if (r.gold < rerollCost(r)) return no(`새로고침에 ${rerollCost(r)}G가 필요해요 (보유 ${r.gold}G)`);
-        r.gold -= rerollCost(r);
+        if (rerollCost(r) === 0 && r.freeRerollsUsed < mods(r).freeRerollPerPrep) r.freeRerollsUsed++;
+        else r.gold -= rerollCost(r);
         rollShop(r);
         return ok();
       case 'TOGGLE_SHOP_LOCK':
