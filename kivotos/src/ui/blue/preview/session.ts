@@ -173,7 +173,21 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     r.front.forEach((i) => i && add(i.unitId, 'front'));
     r.rear.forEach((i) => i && add(i.unitId, 'rear'));
     if (extra) add(extra, placeable(unitById.get(extra)!).front ? 'front' : 'rear');
-    return new Map([...counts].map(([k, v]) => [k, v.size]));
+    const om = mods(r);
+    // 에덴 조약(L02): 트리니티·아리우스 학생은 두 진영 시너지에 모두 집계
+    if (om.edenFactions) {
+      const both = new Set([...(counts.get('syn_trinity') ?? []), ...(counts.get('syn_arius') ?? [])]);
+      if (both.size) { counts.set('syn_trinity', new Set(both)); counts.set('syn_arius', new Set(both)); }
+    }
+    const out = new Map([...counts].map(([k, v]) => [k, v.size]));
+    // 트리니티 동아리 연합 인가증(R04): 트리니티 학생이 있는 동아리 시너지는 +1(플래티넘 제외)
+    if (om.trinityClubBonus) {
+      for (const [sid, ids] of counts) {
+        if (synById.get(sid)?.category !== 'club') continue;
+        if ([...ids].some((id) => unitById.get(id)!.synergyIds.includes('syn_trinity'))) out.set(sid, ids.size + om.trinityClubBonus);
+      }
+    }
+    return out;
   }
 
   function synergyStates(r: RunState): SynergyStateView[] {
@@ -759,6 +773,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false,
       shopRng: Rng.forStream(seed, 'shop'), rewardRng: Rng.forStream(seed, 'reward'),
     };
+    // 처음부터 가진 오파츠도 획득 즉시 효과를 받는다(게마트리아의 계약 −25)
+    if (r.oop.owned.includes('oop_gematria_contract')) { r.runHpMax -= 25; r.runHp -= 25; }
     fitBench(r);
     if (r.oop.owned.length) {
       r.offers!.strategies = shuffle(pack.strategies.filter((s) => s.offer.chapters.includes(1))).slice(0, strategyChoices(r)).map((s) => s.id);
