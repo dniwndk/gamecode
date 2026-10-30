@@ -1,6 +1,6 @@
 // 전략 선택(장마다 1회, 최대 3장). 리롤 없음, 고른 뒤 확인 버튼 한 번.
 import type { Ctx, Screen } from '../app';
-import { nodeTrack, readable, topBar } from '../components';
+import { gfx, nodeTrack, readable, topBar } from '../components';
 import { cls, h } from '../dom';
 import { icon } from '../icons';
 import type { UiState } from '../model';
@@ -24,7 +24,7 @@ export function mountStrategyChoice(ctx: Ctx, s: UiState): Screen {
         confirm.disabled = false;
       },
     },
-    h('div', { class: 'k-choice-art' }, h('div', { class: 'k-choice-halo' }), icon(loan ? 'gold' : 'strategy', 72), h('span', { class: 'k-choice-kind' }, st.generalPurpose ? '범용 전략' : '특화 전략')),
+    h('div', { class: 'k-choice-art' }, h('div', { class: 'k-choice-halo' }), gfx(ctx, `strategies/${id}.webp`, () => icon(loan ? 'gold' : 'strategy', 72), 'k-choice-img'), h('span', { class: 'k-choice-kind' }, st.generalPurpose ? '범용 전략' : '특화 전략')),
     h('h3', null, st.name),
     h('div', { class: 'k-choice-line is-benefit' }, h('small', null, '이득'), h('p', null, readable(ctx, st.benefit))),
     h('div', { class: 'k-choice-line is-drawback' }, h('small', null, '대가'), h('p', null, readable(ctx, st.drawback))),

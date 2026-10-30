@@ -1,6 +1,6 @@
 // 전투: 이미 계산된 이벤트 로그를 재생만 한다(13.3). 배속·일시정지·건너뛰기는 결과를 바꾸지 않는다.
 import type { Ctx, Screen } from '../app';
-import { DEBUFFS, STATUS_LABEL, enemyPortrait, portrait, shortName, stars } from '../components';
+import { DEBUFFS, STATUS_LABEL, enemyPortrait, portrait, shortName, stars, statusIcon } from '../components';
 import { cls, fill, h, svg } from '../dom';
 import { icon } from '../icons';
 import type { BattleEventView, CombatantView, Ref, UiState } from '../model';
@@ -117,7 +117,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
     l.shieldBar.style.setProperty('--p', `${Math.min(100, (l.shield / max) * 100)}%`);
     l.hpText.textContent = `${Math.ceil(l.hp).toLocaleString()}${l.shield > 0 ? ` +${Math.round(l.shield)}` : ''}`;
     if (l.energyBar) { l.energyBar.style.setProperty('--p', `${l.energy}%`); l.energyBar.parentElement!.classList.toggle('is-full', l.energy >= 100); }
-    fill(l.statusBox, ...l.statuses.slice(0, 4).map((sid) => h('span', { class: cls('k-st', DEBUFFS.has(sid) ? 'is-debuff' : 'is-buff', (sid === 'st_stun' || sid === 'st_silence') && 'is-big') }, STATUS_LABEL[sid] ?? sid)),
+    fill(l.statusBox, ...l.statuses.slice(0, 4).map((sid) => h('span', { class: cls('k-st', DEBUFFS.has(sid) ? 'is-debuff' : 'is-buff', (sid === 'st_stun' || sid === 'st_silence') && 'is-big'), title: STATUS_LABEL[sid] ?? sid }, statusIcon(ctx, sid), STATUS_LABEL[sid] ?? sid)),
       l.statuses.length > 4 ? h('span', { class: 'k-st is-more' }, `+${l.statuses.length - 4}`) : null);
   }
   function paintSp() {

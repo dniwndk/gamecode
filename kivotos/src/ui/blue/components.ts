@@ -58,12 +58,24 @@ export function synergyGlyph(ctx: Ctx, synId: string): string {
   return n.slice(0, 1);
 }
 
-/** 육각 시너지 아이콘(아이콘 파일이 없을 때의 대체 표시: 이름 첫 글자 + 분류색) */
+/** 추가 에셋(public/gfx/). 파일이 없거나 받지 못하면 fallback으로 기존 글자·기본 아이콘 표시를 되돌린다 */
+export function gfx(ctx: Ctx, path: string, fallback: () => Node, className = ''): HTMLElement {
+  const img = h('img', { class: cls('k-gfx-img', className), src: ctx.art(`gfx/${path}`), alt: '', decoding: 'async', draggable: 'false' }) as HTMLImageElement;
+  img.addEventListener('error', () => img.replaceWith(fallback()), { once: true });
+  return img;
+}
+
+/** 육각 시너지 아이콘: 분류색 육각 바탕 + 흰 문양(SVG). 문양이 없으면 이름 첫 글자 */
 export function synHex(ctx: Ctx, synId: string, opts: { size?: number; dim?: boolean; tier?: number | null } = {}): HTMLElement {
   const color = synergyColor(ctx, synId);
   const el = h('span', { class: cls('k-hex', opts.dim && 'is-dim', opts.tier !== undefined && opts.tier !== null && `tier-${opts.tier}`), style: `--c:${color};--s:${opts.size ?? 28}px`, title: ctx.lookup.syn(synId)?.name ?? synId },
-    h('span', { class: 'k-hex-in' }, synergyGlyph(ctx, synId)));
+    h('span', { class: 'k-hex-in' }, gfx(ctx, `synergy/${synId}.svg`, () => document.createTextNode(synergyGlyph(ctx, synId)), 'k-hex-glyph')));
   return el;
+}
+
+/** 상태 아이콘(단색 SVG를 마스크로 써서 글자색을 따른다). 파일이 없으면 빈 칸이고 옆 글자가 그대로 남는다 */
+export function statusIcon(ctx: Ctx, statusId: string): HTMLElement {
+  return h('i', { class: 'k-st-ico', 'aria-hidden': 'true', style: `--m:url("${ctx.art(`gfx/status/${statusId}.svg`)}")` });
 }
 
 export function stars(n: number, max = 3): HTMLElement {
@@ -90,8 +102,8 @@ export function enemyPortrait(ctx: Ctx, enemyId: string, className = ''): HTMLEl
   const e = ctx.lookup.enemy(enemyId);
   const name = e?.name ?? enemyId;
   const label = name.replace(/\s*\(.*\)$/, '').split(/[ :]/).filter(Boolean).pop() ?? name;
-  return h('div', { class: cls('k-enemy-face', e?.boss && 'is-boss', className) },
-    h('span', { class: 'k-enemy-glyph' }, label.slice(0, 2)),
+  return h('div', { class: cls('k-enemy-face', e?.boss && 'is-boss', className), title: name },
+    gfx(ctx, `enemies/${enemyId}.webp`, () => h('span', { class: 'k-enemy-glyph' }, label.slice(0, 2)), 'k-enemy-img'),
     e?.zone === 'rear' ? h('span', { class: 'k-enemy-zone' }, icon('rear', 14)) : null);
 }
 
@@ -137,7 +149,8 @@ export function unitCard(ctx: Ctx, o: CardOpts): HTMLElement {
 export function eqChip(ctx: Ctx, id: string, mini = false): HTMLElement {
   const eq = ctx.lookup.eq(id);
   const zoneColor = eq?.zone === 'front' ? '#ff8a3d' : eq?.zone === 'rear' ? '#7c5cff' : '#1f8fff';
-  return h('span', { class: cls('k-eq', mini && 'is-mini'), style: `--z:${zoneColor}`, title: eq?.name ?? id }, icon('equipment', mini ? 12 : 18), mini ? null : h('span', null, eq?.name ?? id));
+  return h('span', { class: cls('k-eq', mini && 'is-mini'), style: `--z:${zoneColor}`, title: eq?.name ?? id },
+    gfx(ctx, `equipment/${id}.webp`, () => icon('equipment', mini ? 12 : 18), 'k-eq-img'), mini ? null : h('span', null, eq?.name ?? id));
 }
 
 // ── 툴팁 ───────────────────────────────────────────────

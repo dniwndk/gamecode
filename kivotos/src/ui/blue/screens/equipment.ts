@@ -1,6 +1,6 @@
 // 장비 선택(정예·보스 승리 시 3택1). 후보가 없으면 장비 대신 3G.
 import type { Ctx, Screen } from '../app';
-import { readable, topBar } from '../components';
+import { gfx, readable, topBar } from '../components';
 import { cls, h } from '../dom';
 import { icon } from '../icons';
 import type { UiState } from '../model';
@@ -21,7 +21,7 @@ export function mountEquipmentChoice(ctx: Ctx, s: UiState): Screen {
       class: 'k-choice-card is-eq', style: `--hue:${color}`, 'aria-pressed': 'false',
       onclick: () => { picked = id; ctx.fx.burst(card, { color: '#45d3ff', size: 380, ms: 800 }); cards.forEach((c) => { c.classList.toggle('is-picked', c === card); c.setAttribute('aria-pressed', c === card ? 'true' : 'false'); }); confirm.disabled = false; },
     },
-    h('div', { class: 'k-choice-art' }, h('div', { class: 'k-choice-halo' }), icon('equipment', 72), h('span', { class: 'k-choice-kind' }, zoneLabel)),
+    h('div', { class: 'k-choice-art' }, h('div', { class: 'k-choice-halo' }), gfx(ctx, `equipment/${id}.webp`, () => icon('equipment', 72), 'k-choice-eq'), h('span', { class: 'k-choice-kind' }, zoneLabel)),
     h('h3', null, eq.name),
     h('ul', { class: 'k-eq-stats' }, ...Object.entries(eq.stats).map(([k, v]) => h('li', null, h('span', null, STAT_LABEL[k] ?? k), h('b', null, `+${k.endsWith('Bps') ? `${(v ?? 0) / 100}%` : v}`)))),
     h('p', { class: 'k-eq-desc' }, readable(ctx, eq.description)),

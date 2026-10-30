@@ -50,11 +50,7 @@ export function mountHome(ctx: Ctx, s: UiState): Screen {
   const el = h('section', { class: 'k-home' },
     briefing(ctx, s, aide, resume, () => void newGame()),
     h('div', { class: 'k-home-left' },
-      h('div', { class: 'k-logo' },
-        h('div', { class: 'k-logo-halo', 'aria-hidden': 'true' }),
-        h('span', { class: 'k-logo-kicker' }, 'KIVOTOS'),
-        h('h1', null, '키보토스', h('br'), '택티컬 프론트라인'),
-        h('p', { class: 'k-logo-sub' }, 'Tactical Frontline · 샬레 작전 단말')),
+      logo(ctx),
       h('nav', { class: 'k-menu', 'aria-label': '메인 메뉴' },
         menuBtn('이어하기', s.savedRun ? `${s.savedRun.chapter}장 ${s.savedRun.battle}전투 · 런 체력 ${s.savedRun.runHp}/${s.savedRun.runHpMax}` : '진행 중인 작전이 없어요', 'play', resume, { primary: !!resume }),
         menuBtn('새 작전', '시드와 보스를 확인하고 출발', 'flag', () => void newGame(), { primary: !resume }),
@@ -73,6 +69,20 @@ export function mountHome(ctx: Ctx, s: UiState): Screen {
 function bossOf(ctx: Ctx, chapter: number): string | null {
   const nd = ctx.driver.catalog.pack.nodes.find((n) => n.chapter === chapter && n.type === 'boss');
   return nd?.candidates[0]?.front.find((f) => ctx.lookup.enemy(f.enemyId)?.boss)?.enemyId ?? null;
+}
+
+/** 로고 그림(gfx/ui/logo.svg). 받지 못하면 글자 로고로 돌아간다 */
+function logo(ctx: Ctx): HTMLElement {
+  const text = () => [
+    h('div', { class: 'k-logo-halo', 'aria-hidden': 'true' }),
+    h('span', { class: 'k-logo-kicker' }, 'KIVOTOS'),
+    h('h1', null, '키보토스', h('br'), '택티컬 프론트라인'),
+    h('p', { class: 'k-logo-sub' }, 'Tactical Frontline · 샬레 작전 단말')];
+  const box = h('div', { class: 'k-logo has-art' });
+  const img = h('img', { class: 'k-logo-art', src: ctx.art('gfx/ui/logo.svg'), alt: '키보토스 택티컬 프론트라인 · KIVOTOS TACTICAL FRONTLINE', draggable: 'false' });
+  img.addEventListener('error', () => { box.classList.remove('has-art'); box.replaceChildren(...text()); }, { once: true });
+  box.append(h('h1', null, img));
+  return box;
 }
 
 function briefing(ctx: Ctx, s: UiState, aide: HTMLElement, resume: (() => void) | null, newGame: () => void): HTMLElement {
