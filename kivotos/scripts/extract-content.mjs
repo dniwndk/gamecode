@@ -357,6 +357,14 @@ const nodes = tableRows(section(v21, '### E.2 15개 진행 노드(1장 1전투 ~
     candidates: candidates.map((k) => ({ ...k, threat: threats[k.id] ?? threats.A })),
   };
 });
+// v2.3 10장: 노드 배율 덮어쓰기(난이도 조정). 원래 배율 칸이 E.2와 맞아야 한다.
+for (const c of tableRows(section(v23, '## 10. 난이도 조정'), '`node_')) {
+  const node = nodes.find((n) => n.id === unticked(c[0])) ?? fail(`10장의 ${c[0]} 노드가 없음`);
+  const bps = (s) => Math.round(Number((s.match(/^×([\d.]+)$/) ?? fail(`10장 ${node.id} 배율 형식: ${s}`))[1]) * 10000);
+  if (c[1] !== node.type) fail(`10장 ${node.id} 유형 ${c[1]} ≠ ${node.type}`);
+  if (bps(c[2]) !== node.statScaleBps) fail(`10장 ${node.id} 원래 배율 ${c[2]} ≠ E.2 ${node.statScaleBps / 10000}`);
+  node.statScaleBps = bps(c[3]);
+}
 
 // ───────────────────────── 오파츠 ─────────────────────────
 // docs/OOPARTS_v1.md 2~5장의 표. 표마다 칸 구성이 달라 제목으로 배치를 정한다.

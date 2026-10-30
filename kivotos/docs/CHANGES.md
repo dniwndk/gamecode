@@ -21,7 +21,7 @@ M0 합격 기준의 "변경표"다. 각 변경이 콘텐츠 카탈로그(`src/co
 | A13 | 도발은 피도발자의 `tauntedBy`로 | 상태 `st_taunt` 규칙 문장 | M2 | (M2 T19·T20) |
 | A14 | 후속 공격 관찰 제한 허용 | 장비·전략 효과 문장 | M3 | (M3 T26·T27) |
 | A15 | 누락 계수·지속 확정 | 효과 문장 + 10장 | M3 | — |
-| A16 | `node_scaled`는 HP/ATK만 배율 | `nodes.statScaleBps` | M2 | pack.test (1-1 = 0.85) |
+| A16 | `node_scaled`는 HP/ATK만 배율 | `nodes.statScaleBps` | M2 | pack.test (1-1 = 0.85, v2.3.3 난이도 조정 뒤 1.275) |
 | A17 | 비나 열선 = 기본 행동 | 적 `effectIds` | M3 | — |
 | A18 | 근거 없는 "검증 100%" 주장 제거 | 진행 현황에 실측만 기록 | 전 단계 | IMPLEMENTATION_STATUS |
 | A19 | 기능이 다른 대체 추천 제거 | 유닛 `role`만 보존 | — | — |
