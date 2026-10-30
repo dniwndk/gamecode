@@ -45,7 +45,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
     const hpText = h('small', { class: 'k-hp-text' });
     const energyBar = c.hasHp ? h('i', { class: 'k-en-fill' }) : null;
     const statusBox = h('div', { class: 'k-cb-status' });
-    const el = h('div', { class: cls('k-cb', `is-${c.ref.side}`, `is-${c.ref.zone}`, c.boss && 'is-boss', !c.hasHp && 'is-support'), 'data-ref': key(c.ref) },
+    const el = h('div', { class: cls('k-cb', `is-${c.ref.side}`, `is-${c.ref.zone}`, c.boss && 'is-boss', !c.hasHp && 'is-support', c.unitId && `star-${c.star}`), 'data-ref': key(c.ref) },
       h('div', { class: 'k-cb-frame' }, art, h('div', { class: 'k-cb-shade' }),
         c.unitId ? stars(c.star) : null,
         statusBox),
