@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "description": "키보토스 택티컬 프론트라인 — 블루 아카이브 팬메이드 솔로 웹 오토배틀러",
   "type": "module",
-  "engines": { "node": ">=22.12 <23" },
+  "engines": {
+    "node": ">=22.12 <23"
+  },
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.core.json",
@@ -19,9 +21,15 @@
   },
   "devDependencies": {
     "@types/node": "22.18.8",
+    "@webgpu/types": "0.1.74",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
     "vite": "6.4.5",
     "vitest": "5.0.5"
+  },
+  "dependencies": {
+    "@fontsource-variable/noto-sans-kr": "5.3.1",
+    "@fontsource/barlow-condensed": "5.3.0",
+    "@fontsource/black-han-sans": "5.3.0"
   }
 }
