@@ -78,6 +78,9 @@ uniform sampler2D uDye, uVel;
 uniform vec3 uTop, uMid, uLow, uAccent;
 uniform vec3 uHalo;   // 중심(px), 반지름(px)
 uniform vec2 uMouse;
+// 장면 일러스트(메인·장 배경·컷신): 화면을 덮도록 잘라 그리고, 유체로 굴절시킨다
+uniform sampler2D uScene, uScenePrev; uniform float uSceneMix, uSceneFade, uSceneA, uPrevA, uWash, uWashLeft;
+vec2 cover(vec2 uv, float A, float I){ vec2 s = A > I ? vec2(1., I/A) : vec2(A/I, 1.); return (uv-.5)*s/1.04+.5; }
 float hexEdge(vec2 p){
   const vec2 s = vec2(1., 1.7320508);
   vec4 hc = floor(vec4(p, p-vec2(.5,1.))/s.xyxy)+.5;
@@ -99,11 +102,22 @@ void main(){
   col = mix(col, vec3(1.), .9*exp(-pow(length((sp-vec2(.78*uRes.x/uK, -.08*uRes.y/uK))/vec2(1200.,520.)), 2.)*1.6));
   col = mix(col, vec3(1.), .8*exp(-pow(length((sp-vec2(.08*uRes.x/uK, 1.08*uRes.y/uK))/vec2(900.,600.)), 2.)*1.6));
 
+  // 장면 일러스트: 커서 반대쪽으로 살짝 밀리는 시차 + 유체 굴절
+  if (uSceneMix > 0.) {
+    float A = uRes.x/uRes.y;
+    vec2 suv = vec2(vUv.x, 1.-vUv.y) + warp/uRes*1.6 - (uMouse/uRes - .5)*.012;
+    vec3 cur = texture(uScene, cover(suv, A, uSceneA)).rgb;
+    vec3 prev = texture(uScenePrev, cover(suv, A, uPrevA)).rgb;
+    col = mix(col, mix(prev, cur, uSceneFade), uSceneMix);
+  }
+  float wash = uWashLeft > 0. ? mix(uWash, uWash*.15, smoothstep(.3, .62, vUv.x)) : uWash;
+  col = mix(col, vec3(.965, .985, 1.), wash);
+
   // 흐르는 구름(도메인 왜곡 fbm)
   vec2 cp = sp/560. + vec2(uTime*.01, 0.);
   float c = fbm(cp + 1.6*fbm(cp*.6 + vec2(uTime*.015, -uTime*.008)));
   float cloud = smoothstep(.52, .86, c)*(1.-smoothstep(.15, .75, y));
-  col = mix(col, vec3(1.), cloud*.5);
+  col = mix(col, vec3(1.), cloud*.5*(1.-uSceneMix*.85));
 
   // 헤일로 중심에서 퍼지는 빛줄기
   vec2 d = wp - uHalo.xy; float r = length(d); float ang = atan(d.y, d.x);

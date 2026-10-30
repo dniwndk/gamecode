@@ -51,6 +51,8 @@ export interface Ctx {
   stage: HTMLElement;
   /** 셰이더 연출. 꺼져 있거나 WebGL2가 없으면 아무 일도 하지 않는다 */
   fx: Fx;
+  /** public/ 아래 그림 주소(배포 경로 기준). 예: art('cutins/u_aru.webp') */
+  art(path: string): string;
   go(route: LocalRoute): void;
   lookup: {
     unit(id: string): UnitDefinition;
@@ -99,7 +101,9 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
 
   root.replaceChildren();
   root.className = 'k-root';
-  const backdrop = h('div', { class: 'k-backdrop', 'aria-hidden': 'true' }, h('div', { class: 'k-sky' }), h('div', { class: 'k-halo-bg' }), h('div', { class: 'k-grid-bg' }));
+  const scene = h('div', { class: 'k-scene' });
+  const backdrop = h('div', { class: 'k-backdrop', 'aria-hidden': 'true' }, h('div', { class: 'k-sky' }), scene, h('div', { class: 'k-halo-bg' }), h('div', { class: 'k-grid-bg' }));
+  const art = (path: string) => `${import.meta.env.BASE_URL}${path}`;
   const stage = h('div', { class: 'k-stage' });
   const toasts = h('div', { class: 'k-toasts', role: 'status', 'aria-live': 'polite' });
   const layer = h('div', { class: 'k-layer' });
@@ -153,6 +157,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     transition: (k) => fx.transition(k),
     theme: (c) => fx.theme(c),
     setEnabled: (on) => fx.setEnabled(on),
+    scene: (url, o) => fx.scene(url, o),
   };
 
   let route: LocalRoute = null;
@@ -236,6 +241,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     scale: () => scale,
     stage,
     fx: fxProxy,
+    art,
     go(r) { route = r; render(driver.get()); },
     lookup: {
       unit: (id) => units.get(id)!,
@@ -283,8 +289,25 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     return to === 'setup' || to === 'end' || to.startsWith('battle-') || (from === 'home' && to !== 'home');
   }
 
+  // 화면별 배경 일러스트: 메인은 도시 전경, 런 중에는 장 배경, 결말은 컷신. 흰 막(wash)으로 글자 가독성을 지킨다.
+  function applyScene(s: UiState, key: string) {
+    const ch = s.run?.chapter ?? 1;
+    let o: { img: string; mix: number; wash: number; left?: boolean };
+    if (key === 'home' || key === 'codex' || key === 'settings') o = { img: 'bg_home', mix: 1, wash: key === 'home' ? 0.82 : 0.6, left: key === 'home' };
+    else if (key === 'setup') o = { img: 'cut_sortie', mix: 1, wash: 0.5 };
+    else if (key === 'end') o = { img: s.phase === 'RUN_COMPLETE' ? 'cut_clear' : 'cut_defeat', mix: 1, wash: 0.42 };
+    else if (key === 'prep') o = { img: `bg_ch${ch}`, mix: 0.9, wash: 0.5 };
+    else o = { img: `bg_ch${ch}`, mix: 1, wash: 0.36 };
+    const url = art(`keyart/${o.img}.webp`);
+    fx.scene(url, { mix: o.mix, wash: o.wash, washLeft: o.left });
+    scene.style.backgroundImage = `url("${url}")`;
+    scene.style.setProperty('--wash', String(o.wash));
+    scene.classList.toggle('is-left', !!o.left);
+  }
+
   function render(s: UiState) {
     const [key, make] = screenFor(s);
+    applyScene(s, key);
     root.dataset.chapter = String(s.run?.chapter ?? 1);
     root.dataset.phase = s.phase;
     fx.theme(s.run?.chapter ?? 1);

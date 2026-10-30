@@ -20,9 +20,11 @@ export interface Fx {
   transition(kind: 'shatter' | 'sweep'): void;
   theme(chapter: number): void;
   setEnabled(on: boolean): void;
+  /** 배경 장면 일러스트. mix=그림 비율, wash=흰 막(글자 가독성), washLeft=왼쪽만 밝게 */
+  scene(url: string | null, o?: { mix?: number; wash?: number; washLeft?: boolean }): void;
 }
 
-export const NO_FX: Fx = { on: false, burst() {}, transition() {}, theme() {}, setEnabled() {} };
+export const NO_FX: Fx = { on: false, burst() {}, transition() {}, theme() {}, setEnabled() {}, scene() {} };
 
 interface Env {
   root: HTMLElement;
@@ -78,6 +80,35 @@ function build(env: Env): Fx {
   const blank = bg.createTexture()!;
   bg.bindTexture(bg.TEXTURE_2D, blank);
   bg.texImage2D(bg.TEXTURE_2D, 0, bg.RGBA, 1, 1, 0, bg.RGBA, bg.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+
+  // 장면 일러스트 텍스처(주소별 캐시, 바뀌면 0.7초 교차 전환)
+  type SceneTex = { tex: WebGLTexture; aspect: number };
+  const sceneCache = new Map<string, Promise<SceneTex | null>>();
+  const scn = { cur: null as SceneTex | null, prev: null as SceneTex | null, fade: 1, mix: 0, wantMix: 0, wash: 0, wantWash: 0, left: 0, url: '' };
+  function loadScene(url: string): Promise<SceneTex | null> {
+    let p = sceneCache.get(url);
+    if (!p) {
+      p = new Promise((resolve) => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => {
+          const gl = bg!;
+          const tex = gl.createTexture()!;
+          gl.bindTexture(gl.TEXTURE_2D, tex);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          resolve({ tex, aspect: img.naturalWidth / Math.max(1, img.naturalHeight) });
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+      });
+      sceneCache.set(url, p);
+    }
+    return p;
+  }
 
   // 인스턴스 사각형(카드·폭발)
   const quad = (stride: number, attrs: number[]) => {
@@ -274,6 +305,18 @@ function build(env: Env): Fx {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, fluid ? fluid.vel.read.tex : blank);
     gl.uniform1i(u.uVel, 1);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, scn.cur?.tex ?? blank);
+    gl.uniform1i(u.uScene, 2);
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, (scn.prev ?? scn.cur)?.tex ?? blank);
+    gl.uniform1i(u.uScenePrev, 3);
+    gl.uniform1f(u.uSceneA, scn.cur?.aspect ?? 1);
+    gl.uniform1f(u.uPrevA, (scn.prev ?? scn.cur)?.aspect ?? 1);
+    gl.uniform1f(u.uSceneFade, scn.prev ? scn.fade : 1);
+    gl.uniform1f(u.uSceneMix, scn.cur ? scn.mix : 0);
+    gl.uniform1f(u.uWash, scn.wash);
+    gl.uniform1f(u.uWashLeft, scn.left);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -373,6 +416,9 @@ function build(env: Env): Fx {
       sky.top[i] += (sky.wantTop[i] - sky.top[i]) * Math.min(1, dt * 2);
       sky.accent[i] += (sky.wantAccent[i] - sky.accent[i]) * Math.min(1, dt * 2);
     }
+    scn.fade = Math.min(1, scn.fade + dt / 0.7);
+    scn.mix += (scn.wantMix - scn.mix) * Math.min(1, dt * 3);
+    scn.wash += (scn.wantWash - scn.wash) * Math.min(1, dt * 3);
     const t0 = performance.now();
     stepSprings(dt);
     feedFluid(dt);
@@ -435,6 +481,22 @@ function build(env: Env): Fx {
       const [top, accent] = SKY[chapter] ?? SKY[1];
       sky.wantTop = hexToRgb(top);
       sky.wantAccent = hexToRgb(accent);
+    },
+    scene(url, o = {}) {
+      scn.wantWash = o.wash ?? 0.3;
+      scn.left = o.washLeft ? 1 : 0;
+      if (!url) { scn.wantMix = 0; return; }
+      scn.wantMix = o.mix ?? 1;
+      if (url === scn.url) return;
+      scn.url = url;
+      void loadScene(url).then((t) => {
+        if (!t || scn.url !== url) return;
+        scn.prev = scn.cur;
+        scn.cur = t;
+        scn.fade = scn.prev ? 0 : 1;
+        if (!scn.prev) scn.mix = 0;
+        schedule();
+      });
     },
     setEnabled(on) {
       if (disabledForGood) on = false;

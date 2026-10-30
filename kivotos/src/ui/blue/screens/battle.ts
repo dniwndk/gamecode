@@ -57,6 +57,15 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
   }
 
   for (const c of battle.combatants) live.set(key(c.ref), combatantEl(c));
+  // 필살기 컷인 그림을 미리 받아 둔다(컷인은 1.2초라 그때 받으면 늦다)
+  const cutinOk = new Set<string>();
+  for (const c of battle.combatants) {
+    if (!c.unitId || c.ref.side !== 'ally') continue;
+    const id = c.unitId;
+    const img = new Image();
+    img.onload = () => cutinOk.add(id);
+    img.src = ctx.art(`cutins/${id}.webp`);
+  }
   const row = (side: 'ally' | 'enemy', zone: 'front' | 'rear', n: number) => h('div', { class: `k-bf-row is-${side} is-${zone}` },
     ...Array.from({ length: n }, (_, i) => live.get(`${side}-${zone}-${i}`)?.el ?? h('div', { class: 'k-cb-empty' })));
 
@@ -183,9 +192,13 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
   async function cutIn(l: Live) {
     if (skipping || speed === 4 || ctx.settings.reduceMotion || !l.view.unitId) return;
     const line = ctx.settings.dialogue ? ctx.lookup.line(l.view.unitId, 'ultimate') : null;
+    const wide = cutinOk.has(l.view.unitId);
+    cutin.classList.toggle('is-wide', wide);
     cutin.replaceChildren(
       h('div', { class: 'k-cutin-band' }),
-      h('div', { class: 'k-cutin-art' }, portrait(ctx, l.view.unitId)),
+      wide
+        ? h('div', { class: 'k-cutin-wide' }, h('img', { src: ctx.art(`cutins/${l.view.unitId}.webp`), alt: '', draggable: 'false' }))
+        : h('div', { class: 'k-cutin-art' }, portrait(ctx, l.view.unitId)),
       h('div', { class: 'k-cutin-text' }, h('small', null, 'EX SKILL'), h('b', null, nameOf(l.view)), line ? h('p', null, line) : null));
     cutin.classList.remove('is-on');
     void cutin.offsetWidth;

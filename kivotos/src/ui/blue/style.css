@@ -1282,3 +1282,34 @@ kbd { font-family: var(--f-num); }
 .fx-on .k-choice-card.is-picked { --sel: -12px; }
 .fx-on .k-shop-card:active { --sel: 2px; }
 .fx-on .k-card:not(.k-ghost):hover { box-shadow: 0 0 0 2px var(--cc), 0 14px 26px rgba(19,36,63,.24); }
+
+/* ── 배경 일러스트(NAI 키아트). 셰이더가 켜지면 배경 캔버스가 같은 그림을 굴절시켜 그린다 ── */
+.k-scene { position: absolute; inset: 0; background: center / cover no-repeat; transition: background-image .6s ease; }
+.k-scene::after { content: ""; position: absolute; inset: 0; background: rgba(246,251,255,var(--wash, .4)); }
+.k-scene.is-left::after { background: linear-gradient(90deg, rgba(246,251,255,var(--wash, .8)) 0%, rgba(246,251,255,var(--wash, .8)) 30%, rgba(246,251,255,.12) 62%); }
+.fx-on .k-scene { visibility: hidden; }
+
+/* 필살기 컷인(학생별 NAI 액션 일러스트, 2.4:1 띠) */
+.k-cutin-wide { position: absolute; left: -40px; right: -40px; top: 300px; height: 470px; overflow: hidden;
+  clip-path: polygon(0 10%, 100% 0, 100% 90%, 0 100%); animation: k-cut-wide 1.2s cubic-bezier(.2,.9,.2,1) both;
+  box-shadow: 0 0 0 6px #fff; filter: drop-shadow(0 18px 30px rgba(10,30,70,.35)); }
+.k-cutin-wide img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; display: block; animation: k-cut-pan 1.2s linear both; }
+.k-cutin-wide::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 40%, rgba(8,34,80,.62) 100%); }
+.k-cutin.is-wide .k-cutin-band { top: 280px; height: 510px; }
+.k-cutin.is-wide .k-cutin-text { left: auto; right: 120px; top: 540px; text-align: right; z-index: 1; }
+.k-cutin.is-wide .k-cutin-text b { text-shadow: 0 4px 18px rgba(0,0,0,.55); }
+@keyframes k-cut-wide { 0% { transform: translateX(-30%) skewX(-8deg); opacity: 0; } 16% { transform: none; opacity: 1; } 84% { transform: none; opacity: 1; } 100% { transform: translateX(18%) skewX(8deg); opacity: 0; } }
+@keyframes k-cut-pan { from { transform: scale(1.12) translateX(-2%); } to { transform: scale(1.02) translateX(2%); } }
+.is-mobile .k-cutin-wide { top: 30vh; height: 34vh; left: -20px; right: -20px; }
+.is-mobile .k-cutin.is-wide .k-cutin-band { top: 28vh; height: 38vh; }
+.is-mobile .k-cutin.is-wide .k-cutin-text { right: 20px; top: auto; bottom: 26vh; }
+.is-mobile .k-cutin.is-wide .k-cutin-text b { font-size: 44px; }
+
+/* 장 클리어 승리 컷신 */
+.k-next-art { position: absolute; inset: 0; overflow: hidden; animation: k-in .5s ease both; }
+.k-next-art img { width: 100%; height: 100%; object-fit: cover; display: block; animation: k-cut-pan 3.4s linear both; }
+.k-next-art b { position: absolute; left: 80px; top: 70px; font-family: var(--f-num); font-style: italic; font-weight: 800; font-size: 96px; color: #fff; letter-spacing: .04em;
+  text-shadow: 0 4px 0 var(--blue), 0 10px 30px rgba(0,0,0,.35); }
+.k-next:has(.k-next-art) .k-next-card { position: absolute; right: 60px; bottom: 60px; animation-delay: .8s; }
+.is-mobile .k-next-art b { font-size: 40px; left: 20px; top: 24px; }
+.k-home-foot span { padding: 3px 10px; border-radius: 6px; background: rgba(255,255,255,.78); backdrop-filter: blur(4px); }
