@@ -162,10 +162,10 @@ describe('정식 콘텐츠 팩 ba-content-2.5.0', () => {
     expect(r.shop.levels.find((l) => l.level === 8)!.costOddsPct).toEqual([12, 20, 35, 27, 6]);
   });
 
-  it('난이도 v2.3.3: 일반·정예 노드 배율은 E.2의 1.5배, 보스 노드는 그대로 (v2.3 10장)', () => {
+  it('난이도 v2.3.3: 최종 보스 노드만 E.2 배율 그대로, 나머지 14개는 1.5배 (v2.3 10장)', () => {
     const e2 = [8500, 9500, 10000, 10000, 10000, 11500, 12500, 13500, 10500, 10000, 12000, 13000, 13500, 14000, 10000];
-    expect(pack.nodes.map((n) => n.statScaleBps)).toEqual(pack.nodes.map((n, i) => (n.type === 'boss' ? e2[i] : e2[i] * 1.5)));
-    expect(pack.nodes.filter((n) => n.type === 'boss').map((n) => n.statScaleBps)).toEqual([10000, 10000, 10000]);
+    expect(pack.nodes.map((n) => n.statScaleBps)).toEqual(pack.nodes.map((n, i) => (n.id === 'node_3_5' ? e2[i] : e2[i] * 1.5)));
+    expect(pack.nodes.filter((n) => n.type === 'boss').map((n) => n.statScaleBps)).toEqual([15000, 15000, 10000]);
   });
 
   it('노드: 장마다 일반3·정예1·보스1, 최종전은 비나+골리앗+성가대 (E.2)', () => {
