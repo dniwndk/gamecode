@@ -28,6 +28,8 @@ export interface SfxOpts {
   rare?: boolean;
   /** cutin: EX 연쇄 두 번째부터 짧은 컷인 */
   short?: boolean;
+  /** hit·crit: 총성만(착탄음·폭발·도탄 없이). 전투 중에는 총성만 낸다(사용자 지시 2026-10-31) */
+  gunOnly?: boolean;
 }
 
 export interface Sfx {
@@ -51,11 +53,12 @@ export function routeSfx(name: SfxName, o: SfxOpts = {}): SfxShot[] {
       const gun = o.foe ? 'GUN_FOE' : pick([['GUN_HG', 'GUN_SMG'], ['GUN_AR', 'GUN_SMG'], ['GUN_SG', 'GUN_MG'], ['GUN_SG', 'GUN_RG']][p]);
       const target = o.foe; // 적이 쐈으면 맞은 쪽은 아군 학생
       const impact = o.shielded ? 'HIT_SHIELD' : !target && p <= 1 ? 'HIT_ROBOT' : (['HIT_BODY_L', 'HIT_BODY_M', 'HIT_BODY_H', 'HIT_BODY_H'] as const)[p];
+      if (o.gunOnly) return [[gun, 0, p === 0 ? 0.75 : 1]];
       const out: SfxShot[] = [[gun, 0, p === 0 ? 0.75 : 1], [impact, 35, 1]];
       if (p >= 3) out.push(['EXPL_SMALL', 60, 0.7]);
       return out;
     }
-    case 'crit': return [[o.foe ? 'GUN_FOE' : 'GUN_SR', 0, 1], [o.shielded ? 'HIT_SHIELD' : 'HIT_CRIT', 40, 1]];
+    case 'crit': return o.gunOnly ? [[o.foe ? 'GUN_FOE' : 'GUN_SR', 0, 1]] : [[o.foe ? 'GUN_FOE' : 'GUN_SR', 0, 1], [o.shielded ? 'HIT_SHIELD' : 'HIT_CRIT', 40, 1]];
     case 'ult': return [['ULT_HIT', 0, 1]];
     case 'cutin': return [[o.short ? 'CUTIN_SHORT' : 'CUTIN', 0, 1]];
     case 'down': return [[o.who === 'boss' ? 'KO_BOSS' : o.who === 'ally' ? 'KO_ALLY' : 'KO_ENEMY', 0, 1]];
@@ -249,15 +252,14 @@ export function createSfx(volume: () => number, url: (path: string) => string = 
         if (p <= 0) shot(t, 0, foe, 0.7);
         else if (p === 1) { shot(t, 1, foe, 0.8); shot(t + 0.06, 1, foe, 0.6); }
         else shot(t, p, foe);
-        impact(t + 0.035 + p * 0.01, p, !!o.shielded);
+        if (!o.gunOnly) impact(t + 0.035 + p * 0.01, p, !!o.shielded);
         break;
       }
       case 'crit': {
         // 치명: 저격총. 큰 총성 + 탄이 스치는 「피융」 + 묵직한 착탄
         const foe = !!o.foe;
         shot(t, 3, foe, 1.05);
-        tone('sine', 2900 * jitter(), 1500, t + 0.02, 0.14, 0.07, 0.002);
-        impact(t + 0.05, 3, !!o.shielded);
+        if (!o.gunOnly) { tone('sine', 2900 * jitter(), 1500, t + 0.02, 0.14, 0.07, 0.002); impact(t + 0.05, 3, !!o.shielded); }
         break;
       }
       case 'cutin':

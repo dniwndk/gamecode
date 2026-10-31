@@ -30,3 +30,14 @@ describe('routeSfx: 옛 이름 → 효과음 파일', () => {
     expect(routeSfx('NOPE')).toEqual([]);
   });
 });
+
+describe('전투 중 총성만', () => {
+  it('gunOnly면 총성 하나만', () => {
+    for (const power of [0, 1, 2, 3]) {
+      const r = routeSfx('hit', { power, gunOnly: true });
+      expect(r).toHaveLength(1);
+      expect(r[0][0]).toMatch(/^GUN_/);
+    }
+    expect(routeSfx('crit', { gunOnly: true }).map(([id]) => id)).toEqual(['GUN_SR']);
+  });
+});

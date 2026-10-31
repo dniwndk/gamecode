@@ -172,7 +172,18 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     root.classList.toggle('no-shake', settings.noShake);
   };
   applySettings();
-  const sfx = createSfx(() => settings.sfxVolume, art);
+  const rawSfx = createSfx(() => settings.sfxVolume, art);
+  // 전투 중에는 기본 총격음만 낸다(사용자 지시 2026-10-31). 착탄·필살기·발동·연쇄·버튼음 등은 전투 화면에서 모두 끈다
+  const sfx: Sfx = {
+    play(name, o) {
+      if (driver.get().phase === 'BATTLE') {
+        if (name !== 'hit' && name !== 'crit') return;
+        o = { ...o, gunOnly: true };
+      }
+      rawSfx.play(name, o);
+    },
+    setVolume: (v) => rawSfx.setVolume(v),
+  };
   const bgm = createBgm(art, () => settings.bgmVolume);
 
   // 셰이더 연출: 설정·연출 줄이기·WebGL2 지원에 따라 켜고 끈다. 화면 코드는 ctx.fx만 부른다.
