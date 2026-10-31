@@ -19,7 +19,7 @@ const SOURCE_TITLE: Record<string, [string, string]> = {
 /** 오파츠 그림(없으면 번호) */
 export function oopartArt(ctx: Ctx, id: string, className = 'k-oop-img'): HTMLElement {
   const def = ctx.lookup.oopart(id);
-  return gfx(ctx, `ooparts/${id}.webp`, () => h('span', { class: 'k-oop-code' }, def?.code ?? '?'), className);
+  return gfx(ctx, `ooparts/${id}.webp`, () => h('span', { class: 'k-oop-code' }, def?.name.slice(0, 1) ?? '?'), className);
 }
 
 /** 툴팁·카드 공용 본문 */
@@ -39,7 +39,7 @@ const SUPPORT_LABEL = { active: '적용 중', partial: '일부 적용', pending:
 export function oopartSupportLine(ctx: Ctx, id: string): HTMLElement | null {
   const s = ctx.state().oopartSupport?.[id];
   if (!s) return null;
-  return h('p', { class: `k-oop-support is-${s.level}` }, h('b', null, SUPPORT_LABEL[s.level]), s.waiting ? ` · ${s.waiting}` : '');
+  return h('p', { class: `k-oop-support is-${s.level}` }, h('b', null, SUPPORT_LABEL[s.level]), s.waiting ? ` ${s.waiting}` : '');
 }
 
 export function mountOopartChoice(ctx: Ctx, s: UiState): Screen {
@@ -73,7 +73,7 @@ export function mountOopartChoice(ctx: Ctx, s: UiState): Screen {
       },
     },
     h('div', { class: 'k-choice-art k-oop-choice-art' }, h('div', { class: 'k-choice-halo' }), oopartArt(ctx, id, 'k-choice-eq'),
-      h('span', { class: 'k-choice-kind' }, `${o.code} · ${label}`),
+      h('span', { class: 'k-choice-kind' }, label),
       badge ? h('span', { class: 'k-oop-recipe' }, `조합 재료 (${badge.owned}/${badge.total})`) : null),
     h('h3', null, o.name),
     h('div', { class: 'k-oop-card-text' }, ...oopartBody(ctx, id)),
@@ -99,7 +99,7 @@ export function oopartChip(ctx: Ctx, id: string): HTMLElement {
   const color = OOPART_RARITY[o?.rarity ?? 'common'][1];
   const chip = h('span', { class: cls('k-oop-chip', o?.kind === 'drawback' && 'is-drawback'), style: `--rc:${color}`, tabindex: 0, 'aria-label': o?.name ?? id }, oopartArt(ctx, id, 'k-oop-chip-img'));
   attachTip(ctx, chip, () => h('div', { class: 'k-oop-tip' },
-    h('div', { class: 'k-oop-tip-head' }, h('strong', null, o?.name ?? id), h('small', null, o ? `${o.code} · ${OOPART_RARITY[o.rarity][0]}` : '')),
+    h('div', { class: 'k-oop-tip-head' }, h('strong', null, o?.name ?? id), h('small', null, o ? OOPART_RARITY[o.rarity][0] : '')),
     ...oopartBody(ctx, id)));
   return chip;
 }
@@ -115,7 +115,7 @@ export function openOwnedOoparts(ctx: Ctx, ids: readonly string[]): void {
     return h('article', { class: cls('k-oop-row', o?.kind === 'drawback' && 'is-drawback'), style: `--rc:${color}` },
       h('div', { class: 'k-oop-row-art' }, oopartArt(ctx, id, 'k-oop-row-img')),
       h('div', { class: 'k-oop-row-body' },
-        h('div', { class: 'k-oop-row-head' }, h('strong', null, o?.name ?? id), h('small', null, o ? `${o.code} · ${label}` : '')),
+        h('div', { class: 'k-oop-row-head' }, h('strong', null, o?.name ?? id), h('small', null, o ? label : '')),
         ...oopartBody(ctx, id)));
   });
   const panel = h('div', { class: 'k-dialog k-oop-list' },

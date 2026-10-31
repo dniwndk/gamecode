@@ -404,7 +404,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
       const parts = (c.consumed ?? []).map((id) => oops.get(id)?.name ?? id);
       const box = h('div', { class: 'k-oop-merge' },
         h('div', { class: 'k-oop-merge-art' }, oopartArt(ctx, c.oopartId, 'k-oop-merge-img')),
-        h('small', null, `${leg?.code ?? ''} · 전설 오파츠 완성`),
+        h('small', null, '전설 오파츠 완성'),
         h('h2', null, leg?.name ?? c.oopartId),
         h('p', { class: 'k-oop-merge-parts' }, `${parts.join(' + ')} → 하나로 합쳐졌어요`),
         ...oopartBody(ctx, c.oopartId),
