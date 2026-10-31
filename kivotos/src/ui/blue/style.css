@@ -187,11 +187,26 @@ kbd { font-family: var(--f-num); }
 .k-hex.tier-0 { --ring: #d39a62; }
 .k-hex.tier-1 { --ring: #dfe5ee; }
 .k-hex.tier-2 { --ring: #ffcf3a; }
-/* 플래티넘 단계(v2.3.5): 색 대신 글자 표식으로 구분하고, 육각 테두리만 밝게 */
-.k-hex.tier-plat { --ring: #f4f8ff; filter: drop-shadow(0 0 6px rgba(160, 200, 255, .9)); }
-.k-plat-tag { flex: none; display: inline-block; font-size: 13px; font-weight: 900; letter-spacing: .04em; color: #fff; background: var(--ink); padding: 1px 7px; border-radius: 4px; margin-right: 6px; vertical-align: 1px; }
-.k-step.is-plat { box-shadow: inset 0 0 0 1.5px currentColor; }
-.k-tier-list li.is-plat b { box-shadow: inset 0 0 0 2px var(--ink); }
+/* 플래티넘 단계(v2.3.5): TFT 플래티넘처럼 무지갯빛 테가 돌고 빛줄기가 지나간다 */
+@property --plat-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+:root { --plat-sheen: conic-gradient(from var(--plat-ang), #ffffff, #5fc8ff, #b07bff, #ff8fc8, #ffd25a, #58e8b4, #ffffff); }
+.k-hex.tier-plat { background: var(--plat-sheen); animation: k-plat-spin 3.2s linear infinite;
+  filter: drop-shadow(0 0 1px rgba(8, 20, 44, .7)) drop-shadow(0 0 5px rgba(140, 190, 255, .95)) drop-shadow(0 0 10px rgba(200, 150, 255, .6)); }
+.k-hex.tier-plat .k-hex-in { width: calc(100% - max(5px, var(--s) * .2)); height: calc(100% - max(5px, var(--s) * .2)); }
+.k-hex.tier-plat::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.95) 50%, transparent 62%) no-repeat; background-size: 250% 100%;
+  animation: k-plat-glint 2.6s ease-in-out infinite; }
+@keyframes k-plat-spin { to { --plat-ang: 360deg; } }
+@keyframes k-plat-glint { 0%, 40% { background-position: 130% 0; } 100% { background-position: -30% 0; } }
+.k-syn.is-plat { background: linear-gradient(90deg, rgba(200, 225, 255, .35), transparent 80%); }
+.k-syn.is-plat::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; background: var(--plat-sheen); animation: k-plat-spin 3.2s linear infinite; }
+.k-plat-tag { --plat-ang: 120deg; flex: none; display: inline-block; font-size: 13px; font-weight: 900; letter-spacing: .04em; color: var(--ink);
+  background: linear-gradient(100deg, #d9f2ff, #8fd6ff 25%, #c9a6ff 50%, #ffc0de 72%, #ffe9a3); box-shadow: 0 0 0 1px rgba(19,36,63,.25), 0 0 6px rgba(186,214,255,.9);
+  padding: 1px 7px; border-radius: 4px; margin-right: 6px; vertical-align: 1px; }
+.k-step.is-plat { position: relative; color: var(--ink-3); box-shadow: 0 0 0 1.5px #c9dcf5; }
+.k-step.is-plat.cur { color: var(--ink); background: linear-gradient(100deg, #d9f2ff, #8fd6ff 25%, #c9a6ff 50%, #ffc0de 72%, #ffe9a3); box-shadow: 0 0 6px rgba(186,214,255,.95); }
+.k-tier-list li.is-plat b { color: var(--ink); background: linear-gradient(100deg, #d9f2ff, #8fd6ff 25%, #c9a6ff 50%, #ffc0de 72%, #ffe9a3); box-shadow: 0 0 0 1.5px #b7cdee, 0 0 6px rgba(186,214,255,.9); }
+@media (prefers-reduced-motion: reduce) { .k-hex.tier-plat, .k-syn.is-plat::before { animation: none; } .k-hex.tier-plat::after { display: none; } }
 
 /* ── 초상화·카드 ──────────────────────────────────────────── */
 .k-portrait { position: relative; overflow: hidden; background: linear-gradient(160deg, color-mix(in srgb, var(--fc) 55%, #fff), var(--fc)); }
