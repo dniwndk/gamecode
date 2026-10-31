@@ -257,7 +257,7 @@ export const actives: Record<string, Active> = {
   akira_skill: A((c, u) => { const t = c.highestAtk(c.foes(u)); c.hit(u, t, 1.75, S); atkDown(c, u, t, 2500, 'akira_skill'); atkUp(c, u, u, 2500, 'akira_skill'); }),
   akira_ult: A((c, u) => { const ts = c.foes(u); c.hit(u, ts, c.v(u, [2.45, 2.85, 3.5]), X); for (const t of ts) { silence(c, u, t, 'akira_ult'); defDown(c, u, t, 2500, 'akira_ult'); } }),
   al1s_skill: A((c, u) => { const ts = c.foes(u); c.hit(u, ts, 1.7, S); for (const t of ts) spdDown(c, u, t, 15, 'al1s_skill'); c.gainEnergy(u, 25); }),
-  al1s_ult: A((c, u) => { const r = c.hit(u, c.foes(u), c.v(u, [3.0, 3.6, 4.4]), X, { true: true }); c.gainEnergy(u, Math.min(45, 15 * r.filter((x) => x.killed).length)); }),
+  al1s_ult: A((c, u) => { const r = c.hit(u, c.foes(u), c.v(u, [2.0, 2.4, 2.9]), X, { true: true }); c.gainEnergy(u, Math.min(20, 10 * r.filter((x) => x.killed).length)); }),
   al1s_rear_reg: A((c, u) => { c.hit(u, c.foes(u), 1.4, R, { true: true }); const t = c.sortBy(c.mates(u), (x) => x.energy)[0]; if (t) c.gainEnergy(t, 15); }),
   hikari_skill: A((c, u) => { for (const t of c.mates(u)) { dmgUp(c, u, t, { dmgUp: 2800 }, 'hikari_skill'); critUp(c, u, t, 0, 'hikari_skill', 2, 3500); } c.hit(u, c.pick(u), 1.55, S); }),
   hikari_ult: A((c, u) => { c.hit(u, c.foes(u), c.v(u, [2.4, 2.8, 3.45]), X); for (const t of c.mates(u)) c.advance(t, 0.25); }),

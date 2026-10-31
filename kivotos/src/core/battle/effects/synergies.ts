@@ -915,14 +915,14 @@ const UNIQUE: Record<string, SynFx> = {
       c.proc('synergy', 'syn_unique_nameless_princess', `방주 기동 ${a.d.ark}단계`, a, a.d.ark);
       if (a.d.ark === 3 && c.battleOnce(a, 'ark')) {
         c.proc('synergy', 'syn_unique_nameless_princess', '아트라하시스 주포 발사!', a);
-        c.hit(a, c.front('enemy'), 6.0, 'synergy', { true: true, fx: 'syn_uni_al1s' });
-        for (const u of allyFront(c).filter((x) => x.alive)) c.gainEnergy(u, 40);
+        c.hit(a, c.front('enemy'), 3.5, 'synergy', { true: true, fx: 'syn_uni_al1s' });
+        for (const u of allyFront(c).filter((x) => x.alive)) c.gainEnergy(u, 20);
       }
     });
     if (mem(c, 'syn_game_dev').some((x) => x !== a)) c.saves.push((u) => {
       if (u !== a || !c.battleOnce(a, 'hero_party')) return false;
-      a.hp = Math.floor(a.maxHp * 0.5);
-      c.mod(a, { atkPct: 3000 }, 'uni_al1s');
+      a.hp = Math.floor(a.maxHp * 0.3);
+      c.mod(a, { atkPct: 1500 }, 'uni_al1s');
       c.proc('synergy', 'syn_unique_nameless_princess', '용사의 동료 · 다시 일어선다', a);
       c.log({ t: 'heal', av: c.av, source: a.ref, target: a.ref, amount: a.hp });
       return true;
