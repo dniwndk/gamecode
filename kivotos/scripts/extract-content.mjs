@@ -519,7 +519,7 @@ const excludeMaxStarOwned = /3성을 보유한 학생은 그 3성을 팔기 전�
 if (!excludeMaxStarOwned) fail('11.1 3성 제외 규칙 문장을 찾지 못함');
 
 const rules = {
-  rulesVersion: 'ktfr-rules-2.6.0',
+  rulesVersion: 'ktfr-rules-2.6.1',
   source: 'GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.',
   run: {
     chapters: 3, battlesPerChapter: 5,
@@ -542,8 +542,9 @@ const rules = {
     eventLimit: 20000, globalPulseAv: 100,
     escalation: { startAv: 1000, stepAv: 100, damageBpsPerStep: 2000 },
     teamSp: { start: 3, max: 5 }, energy: { start: 0, max: 100 },
-    // v2.4 1장: 진짜 전투 엔진의 적 능력치 보정(노드 배율 위에 HP·ATK·DEF에 한 번 더 곱한다)
-    enemyStatBps: { hp: 7500, atk: 7000, def: 9000 },
+    // v2.4 1장: 진짜 전투 엔진의 적 능력치 보정(노드 배율 위에 HP·ATK·DEF에 한 번 더 곱한다).
+    // v2.4.1(2026-10-31 사용자 "지금보다 2배는 어렵게"): 7500/7000/9000 → 보정 없음. 봇 평균 승리 9.77 → 5.04(절반)
+    enemyStatBps: { hp: 10000, atk: 10000, def: 10000 },
   },
   rng: { algorithm: 'xorshift32', zeroSeedReplacement: 0x6d2b79f5, streams: ['setup', 'shop', 'reward', 'battle', 'initiative'] },
   ooparts: oopartRules,
@@ -568,7 +569,7 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-2.9.0',
+  contentVersion: 'ba-content-2.9.1',
   rulesVersion: rules.rulesVersion,
   expectedCounts: { units: 101, synergies: 64, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 470, dialogueFiles: 101, statuses: 20, ooparts: 55 },
   sources: [
