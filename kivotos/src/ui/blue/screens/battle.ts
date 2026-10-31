@@ -160,8 +160,11 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
     if (pct >= l.ghostP || skipping) { l.hpGhost.style.transition = 'none'; l.hpGhost.style.setProperty('--p', `${pct}%`); void l.hpGhost.offsetWidth; l.hpGhost.style.transition = ''; }
     else l.hpGhost.style.setProperty('--p', `${pct}%`);
     l.ghostP = pct;
-    l.shieldBar.style.setProperty('--p', `${Math.min(100, (l.shield / max) * 100)}%`);
-    l.hpText.textContent = `${Math.ceil(l.hp).toLocaleString()}${l.shield > 0 ? ` +${Math.round(l.shield)}` : ''}`;
+    // 보호막: 수치는 적지 않고, 남은 체력의 오른쪽 끝에서 보호막만큼 반투명하게 덮는다(체력보다 크면 체력 전체)
+    const sh = Math.min(Math.max(0, l.shield), l.hp);
+    l.shieldBar.style.setProperty('--l', `${((l.hp - sh) / max) * 100}%`);
+    l.shieldBar.style.setProperty('--p', `${(sh / max) * 100}%`);
+    l.hpText.textContent = Math.ceil(l.hp).toLocaleString();
     if (l.energyBar) { l.energyBar.style.setProperty('--p', `${l.energy}%`); l.energyBar.parentElement!.classList.toggle('is-full', l.energy >= 100); }
     fill(l.statusBox, ...l.statuses.slice(0, 4).map((sid) => h('span', { class: cls('k-st', DEBUFFS.has(sid) ? 'is-debuff' : 'is-buff', (sid === 'st_stun' || sid === 'st_silence') && 'is-big'), title: STATUS_LABEL[sid] ?? sid }, statusIcon(ctx, sid), STATUS_LABEL[sid] ?? sid)),
       l.statuses.length > 4 ? h('span', { class: 'k-st is-more' }, `+${l.statuses.length - 4}`) : null);
