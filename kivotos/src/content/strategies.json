@@ -75,7 +75,7 @@
       "eff_str_rapid_fire"
     ],
     "benefit": "아군 전방 유닛의 SPD +14 증가. 기본 공격(`basic_resolved`)과 후속 공격(`followup_attack`)으로 가하는 피해 +35% 증가.",
-    "drawback": "단발 필살기 위주의 느린 스트라이커에게는 효율이 낮음.",
+    "drawback": "단발 필살기 위주의 느린 어태커에게는 효율이 낮음.",
     "stacking": "중복 획득 불가",
     "generalPurpose": true
   },
@@ -144,8 +144,7 @@
           "dual"
         ],
         "anyTagOf": [
-          "syn_vanguard",
-          "syn_heavy_armor"
+          "syn_tank"
         ],
         "minCount": 2,
         "chapters": [
@@ -155,7 +154,7 @@
         ]
       }
     },
-    "offerText": "전방 탱커/중장갑 유닛 2명 이상 보유 시 또는 2~3장 시작 시 등장",
+    "offerText": "전방 탱커(`syn_tank`) 유닛 2명 이상 보유 시 또는 2~3장 시작 시 등장",
     "effectIds": [
       "eff_str_iron_frontline"
     ],
@@ -199,7 +198,7 @@
       "eff_str_mystic_resonance"
     ],
     "benefit": "아군이 가하는 모든 `true`(방어 무시) 피해량 +40% 증가. 아군이 적에게 디버프를 부여할 때 50% 확률로 자신의 에너지를 10 회복(턴당 1회).",
-    "drawback": "`true` 피해를 가진 유닛(`u_iori`, `u_wakamo`)이나 시너지(`syn_hyakkiyako`, `syn_special_armor`)가 없으면 효율이 낮음.",
+    "drawback": "`true` 피해를 가진 유닛(`u_iori`, `u_wakamo`)이나 시너지(`syn_hyakkiyako`)가 없으면 효율이 낮음.",
     "stacking": "중복 획득 불가",
     "generalPurpose": false
   },
@@ -218,7 +217,7 @@
       "eff_str_overclock"
     ],
     "benefit": "아군 전방 유닛이 필살기를 사용할 때마다 자신의 쿨다운 중인 전투 스킬 쿨다운을 1턴 감소시키고 다음 행동 시간을 25% 당김(턴당 1회).",
-    "drawback": "스킬 사용 빈도가 급증하므로 팀 SP 공급 수단(`u_himari`, `syn_tactical_support`, 평타 요원)이 뒷받침되어야 함.",
+    "drawback": "스킬 사용 빈도가 급증하므로 팀 SP 공급 수단(`u_himari`, `u_nagisa`, `syn_supporter`, 평타 요원)이 뒷받침되어야 함.",
     "stacking": "중복 획득 불가",
     "generalPurpose": true
   },

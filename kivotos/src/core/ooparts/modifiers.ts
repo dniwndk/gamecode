@@ -1,0 +1,231 @@
+// 오파츠 효과를 런·상점·전투가 읽는 보정값으로 모은다(docs/OOPARTS_v1.md 2~5장).
+// 효과 문장은 산문이라, 여기서 오파츠 ID별로 수치를 옮겨 적는다. 전설의 ★ 계승은 재료 효과를 그대로 다시 켠다.
+// 시너지 단계 효과(연속 타격·조준 등)를 고치는 효과는 그 시너지 효과가 실행될 때(M3) 켜진다. 어느 쪽인지는 OOPART_SUPPORT.
+
+/** 보유 오파츠 전체를 합친 보정값. 0·false가 기본(효과 없음). */
+export interface OopartModifiers {
+  // ── 정산·경제 ──
+  /** 이자 계산 때 보유 골드에 더하는 값(C01) */
+  interestGoldBonus: number;
+  /** 이자 상한 증감(U12 −3) */
+  interestCapDelta: number;
+  /** 정산마다 고정 골드(R09) */
+  settlementGold: number;
+  /** 전투 종료 XP 증감(C04) */
+  battleXpBonus: number;
+  /** 패배 시 런 체력 피해 감소(C06 2, L04 3). 최소 1 */
+  defeatDamageReduction: number;
+  /** 전투가 끝날 때마다 런 체력 감소(R08) */
+  runHpLossPerBattle: number;
+  /** 런 체력이 처음 0이 되면 이 값으로 버틴다(L04, 최종 보스 패배 제외). 0이면 없음 */
+  lastStandHp: number;
+  /** 합성 완성 골드: 2성, 3성(U14) */
+  mergeGold: [number, number];
+  // ── 상점 ──
+  shopSlots: number | null;
+  /** 준비 단계마다 첫 새로고침 무료 횟수(R06·L01) */
+  freeRerollPerPrep: number;
+  recommendedChanceBps: number | null;
+  rerollCost: number | null;
+  /** 레벨업 직후 첫 갱신의 1번 칸을 그 레벨 최고 코스트로(C03) */
+  levelUpTopCostSlot: boolean;
+  /** 합성이 완성될 때마다 XP(L01 아로나 추천, v2.3.8) */
+  aronaMergeXp: number;
+  /** 잠가도 노드 진입 무료 갱신이 빈칸만 채운다(L01 프라나) */
+  pranaLock: boolean;
+  // ── 편성·대기석 ──
+  benchSlotsBonus: number;
+  /** 대기석에서 판 2성 이상의 감가 없음(C05) */
+  noBenchSellDepreciation: boolean;
+  deployLimitBonus: number;
+  /** 밀레니엄 학생 장비 칸 +1, 장착 장비 능력치 배율(R03) */
+  millenniumEquipSlotBonus: number;
+  millenniumEquipStatBps: number;
+  // ── 전략·장 시작 ──
+  strategyChoices: number | null;
+  strategyPicks: number;
+  /** 장 시작마다 1성 게헨나 1명 2성 승급, 없으면 골드(R02) */
+  pandemonium: boolean;
+  // ── 시너지 집계 ──
+  /** 트리니티 학생이 출전한 동아리 시너지 +1(R04, L02) */
+  trinityClubBonus: number;
+  /** 트리니티·아리우스 학생이 두 진영 시너지에 모두 집계(L02) */
+  edenFactions: boolean;
+  // ── 전투 ──
+  atkBps: number;
+  critDamageBps: number;
+  nonCritDamageBps: number;
+  /** 후방 정기 지원(치유·보호막·버프·사격)량(C08 +10%) */
+  rearSupportBps: number;
+  /** 기본 공격 에너지 추가 획득(C09 +10) */
+  basicEnergyBonus: number;
+  /** 전투 시작 팀 SP(C07·L05 +1) */
+  spStartBonus: number;
+  /** 팀 SP가 0이 될 때 +2, 전투당 횟수(C07 1, L05 2) */
+  spRefillUses: number;
+  spMax: number | null;
+  /** 아군 필살기가 해소될 때 팀 SP +1, 전역 주기당 1회(L05) */
+  spOnUltimate: boolean;
+  /** 첫 아군 쓰러짐 때 남은 전방 회복(최대 HP bps, C10·L03) */
+  firstFallHealBps: number;
+  /** 출전한 3성 1명당 최대 HP bps, 상한(U13·L03) */
+  threeStarHpBps: number;
+  threeStarHpCapBps: number;
+  /** 3성이 처음 쓰러지면 HP 40%로 부활 + ATK +25%, 전투당 최대 인원(L03) */
+  mysticRevives: number;
+  /** 진영에서 혼자 출전한 학생 ATK·SPD(U15) */
+  loneFactionAtkBps: number;
+  loneFactionSpd: number;
+  /** 200AV마다 아군 최고 ATK 100% 포격, 아군 오폭 비율(U09 포격의 60%) */
+  pmcBarrage: boolean;
+  pmcFriendlyFireBps: number;
+  /** 아군 전방 SPD, 600AV 탈진(U11, L05는 탈진 없음) */
+  frontSpd: number;
+  exhaustion: boolean;
+  /** 정예·보스에게 주는 피해(R05) */
+  eliteBossDamageBps: number;
+  /** 아군이 받는 치유·보호막 배율 감소(R08 −50%) */
+  healShieldReceivedBps: number;
+  /** 전방 필살기 필요 에너지(R10·L05), 전방 전투 스킬 쿨다운 추가 턴(R10 +1, L05 해제) */
+  frontUltEnergy: number | null;
+  frontSkillCdBonus: number;
+  // ── 진영·역할 특화(전투) ──
+  /** 아비도스 학생이 쓰러지면 남은 아비도스 에너지 100, 전투당 횟수(R01 2, L04 3) */
+  abydosLastStand: number;
+  /** 산해경 필살기 연환(U01) */
+  dragonCenser: boolean;
+  /** 붉은겨울 서기장·쿠데타(U02) */
+  coupOrder: boolean;
+  /** 무법자 악명(U06) */
+  jailbreak: boolean;
+  /** 도발 중 탱커 반사(C12) */
+  wolfseggReflectBps: number;
+  /** 블래스터 광역 3명 이상 CRIT(C15) */
+  discoCritBps: number;
+  /** 힐러 2단계 넘친 치유 보호막(C16) */
+  goldenFleece: boolean;
+  /** 서포터 첫 스킬 쿨다운 −1(C17) */
+  atlantisMedal: boolean;
+  /** 컨트롤러 기절이 보스에 막히면 지연 15% + 제어 상태(C18) */
+  winnipesaukee: boolean;
+}
+
+const base = (): OopartModifiers => ({
+  interestGoldBonus: 0, interestCapDelta: 0, settlementGold: 0, battleXpBonus: 0, defeatDamageReduction: 0, runHpLossPerBattle: 0, lastStandHp: 0, mergeGold: [0, 0],
+  shopSlots: null, freeRerollPerPrep: 0, recommendedChanceBps: null, rerollCost: null, levelUpTopCostSlot: false, aronaMergeXp: 0, pranaLock: false,
+  benchSlotsBonus: 0, noBenchSellDepreciation: false, deployLimitBonus: 0, millenniumEquipSlotBonus: 0, millenniumEquipStatBps: 0,
+  strategyChoices: null, strategyPicks: 1, pandemonium: false, trinityClubBonus: 0, edenFactions: false,
+  atkBps: 0, critDamageBps: 0, nonCritDamageBps: 0, rearSupportBps: 0, basicEnergyBonus: 0, spStartBonus: 0, spRefillUses: 0, spMax: null, spOnUltimate: false,
+  firstFallHealBps: 0, threeStarHpBps: 0, threeStarHpCapBps: 0, mysticRevives: 0, loneFactionAtkBps: 0, loneFactionSpd: 0,
+  pmcBarrage: false, pmcFriendlyFireBps: 0, frontSpd: 0, exhaustion: false, eliteBossDamageBps: 0, healShieldReceivedBps: 0,
+  frontUltEnergy: null, frontSkillCdBonus: 0, abydosLastStand: 0, dragonCenser: false, coupOrder: false, jailbreak: false,
+  wolfseggReflectBps: 0, discoCritBps: 0, goldenFleece: false, atlantisMedal: false, winnipesaukee: false,
+});
+
+type Apply = (m: OopartModifiers) => void;
+
+const APPLY: Record<string, Apply> = {
+  oop_nebra_disk: (m) => { m.interestGoldBonus += 6; },
+  oop_roman_dodecahedron: (m) => { m.recommendedChanceBps = Math.max(m.recommendedChanceBps ?? 0, 8000); },
+  oop_antikythera: (m) => { m.levelUpTopCostSlot = true; },
+  oop_phaistos_disc: (m) => { m.battleXpBonus += 1; },
+  oop_haniwa: (m) => { m.benchSlotsBonus += 1; m.noBenchSellDepreciation = true; },
+  oop_okiku_doll: (m) => { m.defeatDamageReduction += 2; },
+  oop_baghdad_battery: (m) => { m.spStartBonus = Math.max(m.spStartBonus, 1); m.spRefillUses = Math.max(m.spRefillUses, 1); },
+  oop_nimrud_lens: (m) => { m.rearSupportBps += 1000; },
+  oop_aether_essence: (m) => { m.basicEnergyBonus += 10; },
+  oop_mandragora: (m) => { m.firstFallHealBps = Math.max(m.firstFallHealBps, 1500); },
+  oop_voynich: (m) => { m.strategyChoices = Math.max(m.strategyChoices ?? 0, 4); },
+  oop_wolfsegg_steel: (m) => { m.wolfseggReflectBps = 1500; },
+  oop_disco_colgante: (m) => { m.discoCritBps = 2000; },
+  oop_golden_fleece: (m) => { m.goldenFleece = true; },
+  oop_atlantis_medal: (m) => { m.atlantisMedal = true; },
+  oop_winnipesaukee_stone: (m) => { m.winnipesaukee = true; },
+  oop_dragon_censer: (m) => { m.dragonCenser = true; },
+  oop_coup_order: (m) => { m.coupOrder = true; },
+  oop_jailbreak_kit: (m) => { m.jailbreak = true; },
+  oop_halo_fragment: (m) => { m.threeStarHpBps = 400; m.threeStarHpCapBps = 2000; },
+  oop_momofriends_box: (m) => { m.mergeGold = [m.mergeGold[0] + 1, m.mergeGold[1] + 4]; },
+  oop_gsc_pass: (m) => { m.loneFactionAtkBps += 1000; m.loneFactionSpd += 4; },
+  oop_pmc_contract: (m) => { m.pmcBarrage = true; m.pmcFriendlyFireBps = 6000; },
+  oop_black_market_ammo: (m) => { m.critDamageBps += 6000; m.nonCritDamageBps -= 500; },
+  oop_energy_drink: (m) => { m.frontSpd += 15; m.exhaustion = true; },
+  oop_black_market_card: (m) => { m.rerollCost = 1; m.interestCapDelta -= 3; },
+  oop_foreclosure_photo: (m) => { m.abydosLastStand = Math.max(m.abydosLastStand, 2); },
+  oop_pandemonium_summons: (m) => { m.pandemonium = true; },
+  oop_millennium_prize: (m) => { m.millenniumEquipSlotBonus = 1; m.millenniumEquipStatBps = 5000; },
+  oop_trinity_club_charter: (m) => { m.trinityClubBonus = 1; },
+  oop_prophecy_circuit: (m) => { m.eliteBossDamageBps += 2000; },
+  // v2.3.7(2026-10-31 사용자 요청): 상점 6칸을 없애고 준비 단계마다 무료 새로고침 4회
+  oop_schale_annex_key: (m) => { m.freeRerollPerPrep = Math.max(m.freeRerollPerPrep, 4); },
+  oop_empty_chair: (m) => { m.deployLimitBonus += 1; },
+  oop_afterglow_of_color: (m) => { m.atkBps += 2000; m.healShieldReceivedBps -= 5000; m.runHpLossPerBattle += 3; },
+  oop_gematria_contract: (m) => { m.settlementGold += 4; },
+  oop_prototype_zero: (m) => { m.frontUltEnergy = 70; m.frontSkillCdBonus = 1; },
+  // ── 전설: ★는 재료 효과를 다시 켜고, 대가는 없앤다(1.3 「정화」) ──
+  oop_shittim_chest: (m) => {
+    // v2.3.8(2026-10-31 사용자 요청): 상점 6번째 칸(아로나 추천 칸)을 없애고, 합성할 때마다 XP +2로
+    m.freeRerollPerPrep = 4; m.recommendedChanceBps = 8000; m.strategyChoices = 4; m.strategyPicks = 2;
+    m.aronaMergeXp = 2; m.pranaLock = true;
+  },
+  oop_eden_treaty: (m) => { m.trinityClubBonus = 1; m.edenFactions = true; },
+  oop_nameless_relic: (m) => {
+    m.atkBps += 2000; m.threeStarHpBps = 400; m.threeStarHpCapBps = 2000; m.firstFallHealBps = Math.max(m.firstFallHealBps, 1500); m.mysticRevives = 2;
+  },
+  oop_yume_notebook: (m) => { m.abydosLastStand = 3; m.rerollCost = 1; m.defeatDamageReduction += 5; m.lastStandHp = 30; },
+  oop_prototype_infinity: (m) => {
+    m.frontUltEnergy = 70; m.frontSkillCdBonus = 0; m.frontSpd += 15; m.spStartBonus = 1; m.spRefillUses = 2; m.spMax = 6; m.spOnUltimate = true;
+  },
+};
+
+/** 보유 오파츠(획득 순)의 보정값을 합친다. 전설은 재료를 지우고 들어오므로 겹쳐 세지 않는다. */
+export function oopartModifiers(owned: readonly string[]): OopartModifiers {
+  const m = base();
+  for (const id of [...owned].sort()) APPLY[id]?.(m);
+  // L05가 있으면 탈진 없음, 스킬 쿨다운 추가 없음(재료 R10·U11의 대가 제거)
+  if (owned.includes('oop_prototype_infinity')) { m.exhaustion = false; m.frontSkillCdBonus = 0; }
+  return m;
+}
+
+export type OopartSupportLevel = 'active' | 'partial' | 'pending';
+export interface OopartSupport {
+  level: OopartSupportLevel;
+  /** partial·pending일 때 아직 작동하지 않는 부분 */
+  waiting?: string;
+}
+
+/**
+ * 지금 빌드에서 어디까지 작동하는지. 목록에 없는 오파츠는 전부 작동(active).
+ * waiting은 화면에 그대로 나가는 짧은 조건 문구(사용자 지시 2026-10-31: 「조건: 최소 ~ 시너지 발동」 형식).
+ * 시너지 단계 효과가 전투에 들어오면(M3) 이 조건에서 작동한다.
+ */
+const SUPPORT: Record<string, OopartSupport> = {
+  oop_wolfsegg_steel: { level: 'partial', waiting: '조건: 최소 탱커 3 시너지 발동' },
+  oop_istanbul_rocket: { level: 'pending', waiting: '조건: 최소 어태커 3 시너지 발동' },
+  oop_quimbaya_plane: { level: 'pending', waiting: '조건: 최소 스나이퍼 2 시너지 발동' },
+  oop_golden_fleece: { level: 'partial', waiting: '조건: 최소 힐러 4 시너지 발동' },
+  oop_zero_star_review: { level: 'pending', waiting: '조건: 최소 미식연구회 2 시너지 발동' },
+  oop_tsc_first_edition: { level: 'pending', waiting: '조건: 최소 게임개발부 2 시너지 발동' },
+  oop_half_donut: { level: 'pending', waiting: '조건: 최소 생활안전국 2 시너지 발동' },
+  oop_wrong_answer_note: { level: 'pending', waiting: '조건: 최소 보충수업부 2 시너지 발동' },
+  oop_dessert_stamp: { level: 'pending', waiting: '조건: 최소 디저트부 2 시너지 발동' },
+  oop_hot_spring_map: { level: 'pending', waiting: '조건: 최소 온천개발부 2 시너지 발동' },
+  oop_tsurugi_novel: { level: 'pending', waiting: '조건: 최소 정의실현위원회 2 시너지 발동' },
+  oop_coup_order: { level: 'partial', waiting: '조건: 최소 붉은겨울 2 시너지 발동' },
+  oop_arrest_warrant: { level: 'pending', waiting: '조건: 최소 발키리 2 시너지 발동' },
+  oop_rabbit_radio: { level: 'pending', waiting: '조건: 최소 SRT 4 시너지 발동' },
+  oop_express_ticket: { level: 'pending', waiting: '조건: 최소 하이랜더 2 시너지 발동' },
+  oop_onibi_seal: { level: 'pending', waiting: '조건: 최소 백귀야행 2 시너지 발동' },
+  oop_squad_manual: { level: 'pending', waiting: '조건: 최소 아리우스 2 시너지 발동' },
+  oop_foreclosure_photo: { level: 'partial', waiting: '조건: 최소 아비도스 4 시너지 발동' },
+  oop_millennium_prize: { level: 'partial', waiting: '조건: 최소 밀레니엄 2 시너지 발동' },
+  oop_prophecy_circuit: { level: 'partial', waiting: '조건: 보스 HP 임계 패턴 발동' },
+  oop_empty_chair: { level: 'partial', waiting: '조건: 학원 대항전 달성' },
+  oop_trinity_club_charter: { level: 'partial', waiting: '조건: 늘어난 인원으로 동아리 시너지 발동' },
+  oop_eden_treaty: { level: 'partial', waiting: '조건: 동아리 시너지 발동' },
+  oop_yume_notebook: { level: 'partial', waiting: '조건: 최소 아비도스 4 시너지 발동' },
+};
+
+export function oopartSupport(id: string): OopartSupport {
+  return SUPPORT[id] ?? { level: 'active' };
+}

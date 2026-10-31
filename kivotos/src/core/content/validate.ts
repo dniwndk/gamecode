@@ -40,6 +40,7 @@ const ID_PREFIX = {
   strategies: 'str_',
   nodes: 'node_',
   statuses: 'st_',
+  ooparts: 'oop_',
 } as const;
 
 /** 효과 문장에 남아 있으면 안 되는 원안의 가상 연산·미정 표식(14.1) */
@@ -68,6 +69,7 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
     effects: pack.effects,
     equipment: pack.equipment,
     strategies: pack.strategies,
+    ooparts: pack.ooparts,
     enemies: pack.enemies,
     nodes: pack.nodes,
     statuses: pack.statuses,
@@ -165,16 +167,49 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
     if (rearCapable && !u.abilityIds.rearAction) err('MISSING_ABILITY', path, '후방 가능 유닛인데 후방 정기 지원이 없음');
   }
 
+  // ── 각성(v2.3 9장): 원래 학생 ↔ 각성 학생이 서로를 가리키고, 각성 학생은 상점에 없으며 같은 구역·같은 시너지 자리를 이어받는다.
+  for (const u of pack.units) {
+    const path = `units.${u.id}.awakening`;
+    const a = u.awakening;
+    if (a) {
+      const into = unitsById.get(a.intoUnitId);
+      if (!into) err('AWAKENING', path, `없는 각성 학생 ${a.intoUnitId}`);
+      else {
+        if (into.awakenedFrom !== u.id) err('AWAKENING', path, `${into.id}의 awakenedFrom이 ${u.id}가 아님`);
+        if (into.shopEligible) err('AWAKENING', path, `각성 학생 ${into.id}가 상점에 나옴`);
+        if (into.awakening) err('AWAKENING', path, `각성 학생 ${into.id}가 다시 각성함(연쇄 각성 없음)`);
+        if (into.cost <= u.cost) err('AWAKENING', path, `각성 학생 코스트 ${into.cost}가 원래 ${u.cost}보다 높지 않음`);
+        if (into.position !== u.position) err('AWAKENING', path, `구역이 다름 ${u.position} → ${into.position}`);
+        const lost = u.synergyIds.filter((s) => synergiesById.get(s)?.category !== 'unique' && !into.synergyIds.includes(s));
+        if (lost.length) err('AWAKENING', path, `각성하면 시너지 자리를 잃음: ${lost.join(', ')}`);
+      }
+      const counter = synergiesById.get(a.counterSynergyId);
+      if (!counter || counter.category !== 'unique' || !u.synergyIds.includes(a.counterSynergyId)) err('AWAKENING', path, `경험치 시너지 ${a.counterSynergyId}는 원래 학생의 고유 시너지여야 함`);
+      if (!Number.isInteger(a.expRequired) || a.expRequired < 1) err('AWAKENING', path, `필요 경험치 ${a.expRequired}`);
+      if (!Number.isInteger(a.starRequired) || a.starRequired < 1 || a.starRequired > rules.units.maxStar) err('AWAKENING', path, `필요 성급 ${a.starRequired}`);
+    }
+    if (u.awakenedFrom) {
+      const from = unitsById.get(u.awakenedFrom);
+      if (!from || from.awakening?.intoUnitId !== u.id) err('AWAKENING', `units.${u.id}.awakenedFrom`, `${u.awakenedFrom}의 각성 대상이 ${u.id}가 아님`);
+    }
+  }
+
   // ── 시너지
   for (const syn of pack.synergies) {
     const path = `synergies.${syn.id}`;
-    if (!['deployed_all', 'front_only', 'rear_only'].includes(syn.countScope)) err('RANGE', path, `집계 범위 ${syn.countScope}`);
+    if (!['deployed_all', 'front_only', 'rear_only', 'special'].includes(syn.countScope)) err('RANGE', path, `집계 범위 ${syn.countScope}`);
     if (syn.tiers.length === 0) err('SYNERGY_TIERS', path, '단계가 없음');
     syn.tiers.forEach((t, i) => {
       if (!Number.isInteger(t.threshold) || t.threshold < 1) err('SYNERGY_TIERS', `${path}.tiers.${i}`, `요구 수 ${t.threshold}`);
       if (i > 0 && t.threshold <= syn.tiers[i - 1].threshold) err('SYNERGY_TIERS', `${path}.tiers.${i}`, '요구 수가 오름차순이 아님');
       if (t.effectIds.length === 0) err('SYNERGY_TIERS', `${path}.tiers.${i}`, '단계 효과 ID가 없음');
       for (const id of t.effectIds) bind(id, syn.id, `${path}.tiers.${i}`, ['synergy_container']);
+      // 플래티넘 단계(v2.3.5): 진영·역할군의 마지막 단계, 6명 이상
+      if (t.grade === 'platinum') {
+        if (!['faction', 'role'].includes(syn.category)) err('SYNERGY_TIERS', `${path}.tiers.${i}`, `플래티넘 단계는 진영·역할군에만 둔다(${syn.category})`);
+        if (i !== syn.tiers.length - 1) err('SYNERGY_TIERS', `${path}.tiers.${i}`, '플래티넘 단계는 마지막 단계여야 함');
+        if (t.threshold < 6) err('SYNERGY_TIERS', `${path}.tiers.${i}`, `플래티넘 단계 요구 수 ${t.threshold} < 6`);
+      } else if (t.grade !== 'normal') err('RANGE', `${path}.tiers.${i}`, `단계 등급 ${t.grade}`);
     });
     for (const m of syn.memberIds) {
       const unit = unitsById.get(m);
@@ -188,7 +223,9 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
     }
     if (comp.maxLegalCount !== doc.maxLegalCount) err('SYNERGY_COMPOSITION', path, `최대 합법 집계 ${comp.maxLegalCount} — 기획서 표 ${doc.maxLegalCount}`);
     const top = syn.tiers.at(-1)?.threshold ?? 0;
-    if (comp.maxLegalCount < top) err('SYNERGY_UNREACHABLE', path, `최고 단계 ${top}명인데 합법 편성으로 최대 ${comp.maxLegalCount}명`);
+    if (syn.countScope === 'special') {
+      if (syn.memberIds.length) err('SYNERGY_COMPOSITION', path, 'special 집계 시너지는 구성원 명단을 두지 않음');
+    } else if (comp.maxLegalCount < top) err('SYNERGY_UNREACHABLE', path, `최고 단계 ${top}명인데 합법 편성으로 최대 ${comp.maxLegalCount}명`);
   }
 
   // ── 장비
@@ -211,6 +248,46 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
   }
   const unconditionalFirst = pack.strategies.filter((s) => s.offer.chapters.includes(1)).length;
   if (unconditionalFirst < 3) err('STRATEGY_POOL', 'strategies', `1장에 조건 없이 나오는 전략 ${unconditionalFirst}개 — 3택1 후보가 모자람(5.4)`);
+
+  // ── 오파츠(docs/OOPARTS_v1.md)
+  const oopById = new Map(pack.ooparts.map((o) => [o.id, o]));
+  const recipeOf = new Map<string, string>();
+  for (const o of pack.ooparts) {
+    const path = `ooparts.${o.id}`;
+    if (!['common', 'uncommon', 'rare', 'legendary'].includes(o.rarity)) err('RANGE', path, `등급 ${o.rarity}`);
+    if (o.code[0] !== { common: 'C', uncommon: 'U', rare: 'R', legendary: 'L' }[o.rarity]) err('OOPART_CODE', path, `번호 ${o.code}가 등급 ${o.rarity}와 맞지 않음`);
+    if (!o.benefit.trim()) err('RANGE', path, '효과 문장이 없음');
+    if ((o.kind === 'drawback') !== (o.drawback !== null)) err('OOPART_KIND', path, '대가 오파츠 표시와 대가 문장이 맞지 않음');
+    if ((o.kind === 'synergy') !== (o.synergyIds.length > 0)) err('OOPART_KIND', path, '시너지 특화 표시와 대상 시너지가 맞지 않음');
+    for (const syn of o.synergyIds) if (!synergiesById.has(syn)) err('MISSING_SYNERGY', path, `없는 시너지 ${syn}`);
+    for (const id of o.effectIds) bind(id, o.id, path, ['oopart_container']);
+    if ((o.rarity === 'legendary') !== (o.recipe !== null)) err('OOPART_RECIPE', path, '전설만 레시피를 가진다');
+    if (!o.recipe) continue;
+    if (o.recipe.length < 2) err('OOPART_RECIPE', path, '재료가 2개 미만');
+    for (const part of o.recipe) {
+      const item = oopById.get(part);
+      if (!item) err('OOPART_RECIPE', path, `없는 재료 ${part}`);
+      else if (item.rarity === 'legendary') err('OOPART_RECIPE', path, `전설 ${part}를 재료로 씀`);
+      const other = recipeOf.get(part);
+      if (other) err('OOPART_RECIPE', path, `${part}가 ${other}의 재료이기도 함(재료는 레시피 하나에만)`);
+      recipeOf.set(part, o.id);
+    }
+    const rares = o.recipe.filter((p) => oopById.get(p)?.rarity === 'rare').length;
+    if (rares !== 1) err('OOPART_RECIPE', path, `희귀 재료 ${rares}개(레시피마다 정확히 1개)`);
+  }
+  const oopRules = rules.ooparts;
+  for (const src of oopRules.sources) {
+    const path = `rules.ooparts.${src.id}`;
+    for (const ch of src.chapters) {
+      const odds = src.oddsByChapter[String(ch)];
+      if (!odds || odds.length !== oopRules.rarityOrder.length || odds.reduce((a, b) => a + b, 0) !== 100) err('OOPART_ODDS', path, `${ch}장 등급 확률이 ${oopRules.rarityOrder.length}칸·100%가 아님`);
+      const pool = oopRules.rarityOrder.filter((_, i) => (odds?.[i] ?? 0) > 0);
+      const available = pool.flatMap((r) => pack.ooparts.filter((o) => o.rarity === r)).length;
+      if (available < src.choices) err('OOPART_ODDS', path, `${ch}장 후보 ${available}개로 ${src.choices}택을 채우지 못함`);
+    }
+    if (src.choices < 1 || (src.grant && src.choices !== 1)) err('OOPART_ODDS', path, `제안 칸 ${src.choices}`);
+  }
+  if (!(oopRules.recipeWeight >= 1)) err('OOPART_ODDS', 'rules.ooparts.recipeWeight', `가중치 ${oopRules.recipeWeight}`);
 
   // ── 적
   for (const en of pack.enemies) {
@@ -260,9 +337,11 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
   let effectsImplemented = 0;
   for (const effect of pack.effects) {
     const path = `effects.${effect.id}`;
-    if (!owners.has(effect.id)) err('UNUSED_EFFECT', path, '어떤 유닛·시너지·장비·전략·적에도 묶이지 않음');
+    if (!owners.has(effect.id)) err('UNUSED_EFFECT', path, '어떤 유닛·시너지·장비·전략·오파츠·적에도 묶이지 않음');
     if (PLACEHOLDER.test(effect.spec) || PLACEHOLDER.test(effect.limits)) err('PLACEHOLDER', path, '명세에 가상 연산(*_op)이나 미정 표식이 남아 있음');
     for (const st of effect.spec.match(/\bst_[a-z_]+/g) ?? []) if (!statusIds.has(st)) err('MISSING_STATUS', path, `없는 상태 ${st}`);
+    // v2.1 6장: 시너지는 최고 단계 하나만 등록한다. v2.3 이후 본문은 하위 단계 효과를 참조 표기 없이 모두 적어야 한다.
+    if (/^V\./.test(effect.catalogNo) && effect.spec.includes('[하위 효과 포함]')) err('TIER_REFERENCE', path, '「[하위 효과 포함]」 참조만으로는 하위 단계 효과가 등록되지 않음 — 본문에 풀어 적어야 함');
     if (effect.implementation === 'implemented') {
       if (effect.handlers.length === 0) err('IMPLEMENTATION', path, 'implemented인데 handler가 없음');
       else effectsImplemented++;
