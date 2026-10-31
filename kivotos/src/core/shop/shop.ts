@@ -76,6 +76,17 @@ export function costOdds(pack: ContentPack, level: number): number[] {
  * 남은 장수가 0인 코스트는 확률을 비례 재분배하고, 모두 0이면 빈칸(null).
  */
 export function rollShop(pack: ContentPack, input: ShopRollInput, rng: Rng): (string | null)[] {
+  return rollShopDetailed(pack, input, rng).slots;
+}
+
+export interface ShopRoll {
+  slots: (string | null)[];
+  /** 칸마다 추천 모드가 실제로 추천 집합에서 뽑았는지(화면의 「추천」 표시). 일반 모드로 뽑힌 5번 칸은 false */
+  recommended: boolean[];
+}
+
+/** rollShop과 같은 추첨(같은 난수 소비)에 칸별 추천 여부를 더해 돌려준다. */
+export function rollShopDetailed(pack: ContentPack, input: ShopRollInput, rng: Rng): ShopRoll {
   const { recommendedSlotIndex } = pack.rules.shop;
   const slots = input.slots ?? pack.rules.shop.slots;
   const recommendedModeChanceBps = input.recommendedChanceBps ?? pack.rules.shop.recommendedModeChanceBps;
@@ -88,7 +99,9 @@ export function rollShop(pack: ContentPack, input: ShopRollInput, rng: Rng): (st
   const recommended = new Set([...input.owned.map((o) => o.unitId), ...(tracked?.memberIds ?? [])]);
 
   const out: (string | null)[] = [];
+  const rec: boolean[] = [];
   for (let slot = 0; slot < slots; slot++) {
+    rec.push(false);
     const tierLeft = byCost.map((ids) => ids.reduce((a, id) => a + remaining.get(id)!, 0));
     const weights = odds.map((p, c) => (tierLeft[c] > 0 ? p : 0));
     if (!weights.some((w) => w > 0)) { out.push(null); continue; }
@@ -96,12 +109,12 @@ export function rollShop(pack: ContentPack, input: ShopRollInput, rng: Rng): (st
     const cost = slot === 0 && input.topCostFirstSlot ? weights.reduce((hi, w, c) => (w > 0 ? c : hi), 0) : rng.weightedIndex(weights);
     let pool = byCost[cost];
     if (slot === recommendedSlotIndex && rng.chance(recommendedModeChanceBps)) {
-      const rec = pool.filter((id) => recommended.has(id) && remaining.get(id)! > 0);
-      if (rec.length) pool = rec;
+      const recPool = pool.filter((id) => recommended.has(id) && remaining.get(id)! > 0);
+      if (recPool.length) { pool = recPool; rec[slot] = true; }
     }
     const id = pool[rng.weightedIndex(pool.map((x) => remaining.get(x)!))];
     remaining.set(id, remaining.get(id)! - 1);
     out.push(id);
   }
-  return out;
+  return { slots: out, recommended: rec };
 }
