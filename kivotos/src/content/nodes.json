@@ -139,7 +139,7 @@
     "chapter": 1,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 18000,
+    "statScaleBps": 21000,
     "candidates": [
       {
         "id": "A",
@@ -169,7 +169,7 @@
     "chapter": 1,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 15000,
+    "statScaleBps": 16200,
     "candidates": [
       {
         "id": "A",
@@ -355,7 +355,7 @@
     "chapter": 2,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 22050,
+    "statScaleBps": 25000,
     "candidates": [
       {
         "id": "A",
@@ -389,7 +389,7 @@
     "chapter": 2,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 27000,
+    "statScaleBps": 29000,
     "candidates": [
       {
         "id": "A",
@@ -590,7 +590,7 @@
     "chapter": 3,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 26250,
+    "statScaleBps": 30000,
     "candidates": [
       {
         "id": "A",
@@ -628,7 +628,7 @@
     "chapter": 3,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 16000,
+    "statScaleBps": 16800,
     "candidates": [
       {
         "id": "A",
@@ -820,7 +820,7 @@
     "chapter": 4,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 65000,
+    "statScaleBps": 80000,
     "candidates": [
       {
         "id": "A",
@@ -850,7 +850,7 @@
     "chapter": 4,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 55000,
+    "statScaleBps": 58000,
     "candidates": [
       {
         "id": "A",
@@ -993,7 +993,7 @@
     "chapter": 5,
     "battle": 3,
     "type": "normal",
-    "statScaleBps": 110000,
+    "statScaleBps": 120000,
     "candidates": [
       {
         "id": "A",
@@ -1050,7 +1050,7 @@
     "chapter": 5,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 75000,
+    "statScaleBps": 90000,
     "candidates": [
       {
         "id": "A",
@@ -1084,7 +1084,7 @@
     "chapter": 5,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 60000,
+    "statScaleBps": 65000,
     "candidates": [
       {
         "id": "A",
