@@ -267,7 +267,14 @@ export interface RulesConfig {
   sell: { formula: string; depreciationFromStar: number; depreciationGold: number };
   defeatDamage: { chapterBase: number[]; perSurvivingEnemyFront: number; eliteBonus: number; bossBonus: number; finalBossLossEndsRun: boolean };
   units: { maxStar: number; mergeCount: number; starStatMultiplierBps: number[]; equipmentSlots: number };
-  battle: { maxAv: number; eventLimit: number; globalPulseAv: number; teamSp: { start: number; max: number }; energy: { start: number; max: number } };
+  battle: {
+    eventLimit: number;
+    globalPulseAv: number;
+    /** 시간 제한 없음(v2.3.6). 오래 끄는 전투는 양쪽 피해가 함께 커진다(13장). */
+    escalation: { startAv: number; stepAv: number; damageBpsPerStep: number };
+    teamSp: { start: number; max: number };
+    energy: { start: number; max: number };
+  };
   rng: { algorithm: string; zeroSeedReplacement: number; streams: string[] };
   ooparts: OopartRules;
 }

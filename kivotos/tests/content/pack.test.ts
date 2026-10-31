@@ -14,7 +14,7 @@ const unitEffectCount = (u: (typeof pack.units)[number]) => {
   return new Set(Object.values(rest).flatMap((v) => (v === null ? [] : Array.isArray(v) ? v : [v]))).size;
 };
 
-describe('정식 콘텐츠 팩 ba-content-2.6.0', () => {
+describe('정식 콘텐츠 팩 ba-content-2.7.0', () => {
   it('정적 검증 오류 0건', () => {
     const report = validateContentPack(pack);
     expect(report.errors).toEqual([]);
@@ -186,10 +186,11 @@ describe('정식 콘텐츠 팩 ba-content-2.6.0', () => {
     expect(r.ooparts.sources.map((s) => s.id)).toEqual(['run_start', 'elite', 'boss', 'rescue']);
   });
 
-  it('난이도 v2.3.3: 최종 보스 노드만 E.2 배율 그대로, 나머지 14개는 1.5배 (v2.3 10장)', () => {
+  it('난이도 v2.3.6: E.2 × 10장(최종 보스 빼고 1.5배) × 13장 추가 배율, 최종 보스도 오른다 (v2.3 10·13장)', () => {
     const e2 = [8500, 9500, 10000, 10000, 10000, 11500, 12500, 13500, 10500, 10000, 12000, 13000, 13500, 14000, 10000];
-    expect(pack.nodes.map((n) => n.statScaleBps)).toEqual(pack.nodes.map((n, i) => (n.id === 'node_3_5' ? e2[i] : e2[i] * 1.5)));
-    expect(pack.nodes.filter((n) => n.type === 'boss').map((n) => n.statScaleBps)).toEqual([15000, 15000, 10000]);
+    const add = [1.2, 1.2, 1.3, 1.3, 1.4, 1.4, 1.4, 1.4, 1.4, 1.5, 1.5, 1.4, 1.5, 1.25, 2.4];
+    expect(pack.nodes.map((n) => n.statScaleBps)).toEqual(pack.nodes.map((n, i) => Math.round((n.id === 'node_3_5' ? e2[i] : e2[i] * 1.5) * add[i])));
+    expect(pack.nodes.filter((n) => n.type === 'boss').map((n) => n.statScaleBps)).toEqual([21000, 22500, 24000]);
   });
 
   it('노드: 장마다 일반3·정예1·보스1, 최종전은 비나+골리앗+성가대 (E.2)', () => {
@@ -199,7 +200,7 @@ describe('정식 콘텐츠 팩 ba-content-2.6.0', () => {
     const final = byId(pack.nodes, 'node_3_5').candidates[0];
     expect(final.front.map((s) => s.enemyId)).toEqual(['boss_binah_decagram', 'en_automaton_goliath']);
     expect(final.rear).toEqual([{ enemyId: 'en_justina_choir_rear', index: 0 }]);
-    expect(byId(pack.nodes, 'node_1_1').statScaleBps).toBe(12750); // E.2 0.85 × v2.3 10장 1.5
+    expect(byId(pack.nodes, 'node_1_1').statScaleBps).toBe(15300); // E.2 0.85 × v2.3 10장 1.5 × 13장 1.2
   });
 
   it('T76: 대사 파일마다 7개 상황 키가 있다', () => {

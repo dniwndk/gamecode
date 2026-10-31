@@ -768,7 +768,9 @@ kbd { font-family: var(--f-num); }
 .k-av { flex: 1; display: flex; align-items: center; gap: 12px; }
 .k-av-bar { flex: 1; height: 10px; border-radius: 5px; background: #e1eaf5; position: relative; overflow: hidden; }
 .k-av-bar i { position: absolute; inset: 0; width: var(--p, 0%); background: linear-gradient(90deg, var(--blue), var(--cyan)); transition: width .2s linear; }
-.k-av small { font-family: var(--f-num); font-weight: 800; font-size: 20px; color: var(--ink-2); width: 80px; }
+.k-av small { font-family: var(--f-num); font-weight: 800; font-size: 20px; color: var(--ink-2); min-width: 80px; white-space: nowrap; }
+.k-av.is-hot .k-av-bar i { background: linear-gradient(90deg, #ff9a3c, #ff4d4d); }
+.k-av.is-hot small { color: #e0452b; }
 .k-battle-ctrls { display: flex; align-items: center; gap: 10px; }
 .k-speeds { display: flex; background: var(--panel-2); border-radius: 999px; padding: 4px; box-shadow: inset 0 0 0 1px var(--line); }
 .k-speed { width: 60px; height: 44px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-family: var(--f-num); font-size: 22px; font-weight: 800; color: var(--ink-2); }
@@ -1252,7 +1254,7 @@ kbd { font-family: var(--f-num); }
 .is-mobile .k-battle-top::after { left: -10px; right: -10px; }
 .is-mobile .k-battle-title strong { font-size: 16px; }
 .is-mobile .k-av { order: 3; width: 100%; flex: none; }
-.is-mobile .k-av small { font-size: 14px; width: 60px; }
+.is-mobile .k-av small { font-size: 14px; min-width: 60px; }
 .is-mobile .k-battle-ctrls { margin-left: auto; gap: 6px; }
 .is-mobile .k-speed { width: 44px; height: 40px; font-size: 16px; }
 .is-mobile .k-ctrl { height: 44px; min-width: 44px; font-size: 14px; padding: 0 10px; }

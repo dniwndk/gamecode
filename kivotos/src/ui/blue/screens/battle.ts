@@ -72,6 +72,9 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
   const timeline = h('div', { class: 'k-timeline', 'aria-label': '행동 순서' });
   const avFill = h('i');
   const avText = h('small', null, 'AV 0');
+  const escStartAv = ctx.driver.catalog.rules.battle.escalation.startAv;
+  let escBps = 0;
+  const avBox = h('div', { class: 'k-av', title: '시간 제한 없음 · 오래 끌면 양쪽 피해가 함께 커지는 격화' }, h('div', { class: 'k-av-bar' }, avFill), avText);
   const spBox = h('div', { class: 'k-sp', 'aria-label': '팀 SP' });
   const logList = h('ol', { class: 'k-log-list' });
   const beams = svg('svg', { class: 'k-beams', viewBox: '0 0 1920 1080', preserveAspectRatio: 'none' }) as SVGSVGElement;
@@ -91,7 +94,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
   const el = h('section', { class: 'k-battle' },
     h('header', { class: 'k-battle-top' },
       h('div', { class: 'k-battle-title' }, h('span', { class: `k-node-badge is-${run.nodeType}` }, icon(run.nodeType === 'boss' ? 'skull' : run.nodeType === 'elite' ? 'diamond' : 'sword', 16), run.nodeType === 'boss' ? '보스' : run.nodeType === 'elite' ? '정예' : '전투'), h('strong', null, battle.nodeLabel)),
-      h('div', { class: 'k-av' }, h('div', { class: 'k-av-bar' }, avFill), avText),
+      avBox,
       h('div', { class: 'k-battle-ctrls' }, h('div', { class: 'k-speeds', role: 'group', 'aria-label': '배속' }, ...speedBtns), pauseBtn, skipBtn)),
     timeline,
     field,
@@ -209,8 +212,9 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
 
   // ── 이벤트 적용 ───────────────────────────────────────
   async function apply(e: BattleEventView) {
-    avFill.style.setProperty('--p', `${Math.min(100, (e.av / 1000) * 100)}%`);
-    avText.textContent = `AV ${e.av}`;
+    // 시간 제한은 없다. 막대는 격화가 시작되는 AV까지 차오르고, 그 뒤로는 격화 수치를 함께 보여 준다.
+    avFill.style.setProperty('--p', `${Math.min(100, (e.av / escStartAv) * 100)}%`);
+    avText.textContent = escBps ? `AV ${e.av} · 격화 +${escBps / 100}%` : `AV ${e.av}`;
     switch (e.t) {
       case 'timeline': paintTimeline(e.upcoming); break;
       case 'action': {
@@ -288,6 +292,11 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         await wait(160);
         break;
       }
+      case 'escalation':
+        escBps = e.damageBps;
+        avBox.classList.toggle('is-hot', escBps > 0);
+        avText.textContent = `AV ${e.av} · 격화 +${escBps / 100}%`;
+        break;
       case 'end':
         break;
     }

@@ -2,6 +2,7 @@
 // 상점·오파츠 규칙을 흉내 내지 않고 코어 함수를 그대로 부르도록 연다. 화면 컴포넌트는 이 파일을 쓰지 않는다.
 export { Rng, streamSeed } from '../core/rng';
 export { aronaPick, costOdds, remainingCopies, rollShop, shopExcluded, type OwnedCopy } from '../core/shop/shop';
+export { escalationDamageBps } from '../core/battle/escalation';
 export { oopartModifiers, oopartSupport, type OopartModifiers, type OopartSupport } from '../core/ooparts/modifiers';
 export {
   acquireOopart, emptyOopartProfile, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, rollOopartOffer,

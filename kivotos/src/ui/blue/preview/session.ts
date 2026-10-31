@@ -7,7 +7,7 @@
 import type { CommandResult, ContentCatalog, GameCommandType, GameSnapshot, RunPhase } from '../../../app/gameClient';
 import type { BaseStats, EnemyDefinition, NodeDefinition, OopartSourceId, UnitDefinition } from '../../../core/types/content';
 import {
-  acquireOopart, costOdds, emptyOopartProfile, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
+  acquireOopart, costOdds, emptyOopartProfile, escalationDamageBps, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
   rollShop as rollShopCore, type OopartModifiers, type OopartProfile, type OopartRunState,
 } from '../../../app/runRules';
 import type {
@@ -530,6 +530,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         if (om.eliteBossDamageBps && (tgt.boss || n.type === 'elite')) m *= 1 + om.eliteBossDamageBps / 10000;
       }
       m *= 1 + (tgt.dmgTakenBps + (tgt.controlled ? 2000 : 0)) / 10000;
+      // 격화(13장): 시간 제한 대신 1000AV부터 양쪽 피해가 함께 커진다
+      m *= 1 + escalationDamageBps(av, rules.battle) / 10000;
       const defMul = opt.trueDmg ? 1 : 100 / (100 + tgt.def);
       let amount = Math.max(1, Math.round(src.atk * m * defMul * (0.92 + rand() * 0.16) * (isCrit ? 1 + src.critDmg / 10000 : 1)));
       const absorbed = Math.min(tgt.shield, amount);
@@ -571,23 +573,26 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
 
     let av = 0;
     let outcome: 'win' | 'loss' = 'loss';
-    let reason: ResultView['reason'] = 'timeout';
+    let reason: ResultView['reason'] = 'both_wiped';
     let nextPmc = 200;
+    let escBps = 0;
     let exhausted = false;
     let spUltPulse = -1;
     let censerPulse = -1;
     let censerChain = 0;
     const censerUsed = new Set<Live>();
-    for (let guard = 0; guard < 500; guard++) {
+    // 시간 제한 없음(13장). 격화로 반드시 끝나지만, 흉내 엔진의 안전장치로 행동 수 상한을 둔다(넘으면 패배 처리).
+    for (let guard = 0; guard < 4000; guard++) {
       if (!alive('enemy', 'front').length) { outcome = 'win'; reason = 'enemy_front_wiped'; break; }
       if (!alive('ally', 'front').length) { outcome = 'loss'; reason = 'ally_front_wiped'; break; }
       const actors = live.filter((l) => (l.hasHp ? l.hp > 0 : alive('ally', 'front').length > 0));
       actors.sort((a, b) => a.next - b.next);
       const a = actors[0];
       av = Math.round(a.next);
-      if (av > rules.battle.maxAv) { av = rules.battle.maxAv; break; }
       while (om.pmcBarrage && nextPmc <= av && alive('enemy', 'front').length) { pmc(nextPmc); nextPmc += 200; }
       if (!alive('enemy', 'front').length || !alive('ally', 'front').length) continue;
+      const esc = escalationDamageBps(av, rules.battle);
+      if (esc !== escBps) { escBps = esc; events.push({ t: 'escalation', av, damageBps: esc }); }
       // 엔지니어부 불법 에너지 드링크(U11): 600AV부터 전방 탈진
       if (om.exhaustion && !exhausted && av >= 600) {
         exhausted = true;

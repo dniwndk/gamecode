@@ -6,7 +6,7 @@ import { icon } from '../icons';
 import type { RunView, UiState } from '../model';
 
 const REASON: Record<string, string> = {
-  enemy_front_wiped: '적 전방 전멸', ally_front_wiped: '아군 전방 전멸', both_wiped: '양쪽 전방 전멸', timeout: '시간 초과 (1000 AV)',
+  enemy_front_wiped: '적 전방 전멸', ally_front_wiped: '아군 전방 전멸', both_wiped: '양쪽 전방 전멸',
 };
 
 export function resultPanel(ctx: Ctx, run: RunView, onContinue: () => void): HTMLElement {

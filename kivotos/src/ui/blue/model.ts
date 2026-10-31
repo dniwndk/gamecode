@@ -42,7 +42,7 @@ export interface NodeCandidateView {
 
 export interface ResultView {
   outcome: 'win' | 'loss';
-  reason: 'enemy_front_wiped' | 'ally_front_wiped' | 'both_wiped' | 'timeout';
+  reason: 'enemy_front_wiped' | 'ally_front_wiped' | 'both_wiped';
   runHp: { before: number; after: number; breakdown: { label: string; value: number }[] };
   income: { label: string; value: number }[];
   xpGained: number;
@@ -60,6 +60,8 @@ export type BattleEventView =
   | { t: 'status'; av: number; target: Ref; statusId: string; op: 'add' | 'remove'; replacedFrom?: string }
   | { t: 'resource'; av: number; side: Side; sp?: number; energy?: { unit: Ref; value: number } }
   | { t: 'timeline'; av: number; upcoming: Ref[] }
+  /** 격화 단계가 바뀐 순간. damageBps는 지금 양쪽 모든 피해에 더해지는 비율(시간 제한 대신, GDD v2.3 13장) */
+  | { t: 'escalation'; av: number; damageBps: number }
   | { t: 'defeated'; av: number; target: Ref; by?: Ref }
   | { t: 'end'; av: number; outcome: 'win' | 'loss'; reason: ResultView['reason'] };
 
