@@ -217,7 +217,7 @@ const SUPPORT: Record<string, OopartSupport> = {
   oop_foreclosure_photo: { level: 'partial', waiting: `아비도스 "합동 사격" 한도 무시는 ${WAIT}` },
   oop_millennium_prize: { level: 'partial', waiting: `밀레니엄 시너지 보호막 중 +100%는 ${WAIT}` },
   oop_prophecy_circuit: { level: 'partial', waiting: '보스 HP 임계 패턴 피해 감소는 보스 패턴이 전투에 들어오면(M2) 작동' },
-  oop_empty_chair: { level: 'partial', waiting: `플래티넘 「학원 대항전」 조건은 ${WAIT}` },
+  oop_empty_chair: { level: 'partial', waiting: `이스터에그 「학원 대항전」 조건은 ${WAIT}` },
   oop_trinity_club_charter: { level: 'partial', waiting: `구성원 +1은 시너지 창에 반영되고, 늘어난 동아리 단계 효과는 ${WAIT}` },
   oop_eden_treaty: { level: 'partial', waiting: `두 진영 집계·동아리 +1은 시너지 창에 반영되고, 그 단계 효과와 디버프 전염은 ${WAIT}` },
   oop_yume_notebook: { level: 'partial', waiting: `아비도스 "합동 사격"과의 연결은 ${WAIT}` },

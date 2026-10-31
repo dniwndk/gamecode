@@ -706,7 +706,7 @@
     "effectIds": [
       "eff_oop_trinity_club_charter"
     ],
-    "benefit": "트리니티 학생이 1명 이상 출전한 동아리 시너지는 구성원 수를 +1로 센다(플래티넘 제외)",
+    "benefit": "트리니티 학생이 1명 이상 출전한 동아리 시너지는 구성원 수를 +1로 센다(이스터에그 제외)",
     "drawback": null,
     "recipe": null,
     "flavor": "티파티 도장이 찍힌 인가증. 동아리가 하나 더 생긴다"
@@ -751,7 +751,7 @@
     "effectIds": [
       "eff_oop_empty_chair"
     ],
-    "benefit": "출전 한도 레벨 + 1(최대 10). 플래티넘 「학원 대항전」의 레벨 10 조건도 레벨 9에서 충족 가능",
+    "benefit": "출전 한도 레벨 + 1(최대 10). 이스터에그 「학원 대항전」의 레벨 10 조건도 레벨 9에서 충족 가능",
     "drawback": null,
     "recipe": null,
     "flavor": "사라진 회장의 의자. 누군가 앉을 자리가 남아 있다"

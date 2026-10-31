@@ -14,15 +14,15 @@ const unitEffectCount = (u: (typeof pack.units)[number]) => {
   return new Set(Object.values(rest).flatMap((v) => (v === null ? [] : Array.isArray(v) ? v : [v]))).size;
 };
 
-describe('정식 콘텐츠 팩 ba-content-2.5.1', () => {
+describe('정식 콘텐츠 팩 ba-content-2.6.0', () => {
   it('정적 검증 오류 0건', () => {
     const report = validateContentPack(pack);
     expect(report.errors).toEqual([]);
   });
 
-  it('기대 개수: 유닛101·시너지64·장비12·전략13·적13·노드15·효과461·대사101·상태20·오파츠55', () => {
+  it('기대 개수: 유닛101·시너지64·장비12·전략13·적13·노드15·효과470·대사101·상태20·오파츠55', () => {
     expect([pack.units, pack.synergies, pack.equipment, pack.strategies, pack.enemies, pack.nodes, pack.effects, pack.dialogue, pack.statuses, pack.ooparts].map((l) => l.length))
-      .toEqual([101, 64, 12, 13, 13, 15, 461, 101, 20, 55]);
+      .toEqual([101, 64, 12, 13, 13, 15, 470, 101, 20, 55]);
   });
 
   it('코스트 분포 19/27/28/14/13, 구역 분포 전방53·후방36·겸용12 (v2.3 3장, 아리스 2코·AL-1S 5코)', () => {
@@ -32,9 +32,9 @@ describe('정식 콘텐츠 팩 ba-content-2.5.1', () => {
     expect(byPos).toEqual([53, 36, 12]);
   });
 
-  it('효과 출처: 부록 C 그대로 206 + v2.3 교체·추가 199 + 카이저 론 1 + 오파츠 55', () => {
+  it('효과 출처: 부록 C 그대로 206 + v2.3 교체·추가 208 + 카이저 론 1 + 오파츠 55', () => {
     const prefix = (p: string) => pack.effects.filter((e) => e.catalogNo.startsWith(p)).length;
-    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.')]).toEqual([206, 199, 1, 55]);
+    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.')]).toEqual([206, 208, 1, 55]);
     expect(byId(pack.effects, 'eff_aris_passive').catalogNo).toBe('C.300');
     expect(pack.effects.map((e) => e.id)).not.toContain('eff_syn_jackpot_2');
   });
@@ -42,11 +42,11 @@ describe('정식 콘텐츠 팩 ba-content-2.5.1', () => {
   it('M0에서는 모든 효과가 명세만 있고 실행 연산은 없다(한국어 문장을 실행하지 않는다)', () => {
     expect(pack.effects.every((e) => e.implementation === 'spec_only' && e.handlers.length === 0)).toBe(true);
     const strict = validateContentPack(pack, { requireImplemented: true });
-    expect(strict.errors.filter((e) => e.code === 'NOT_IMPLEMENTED')).toHaveLength(461);
+    expect(strict.errors.filter((e) => e.code === 'NOT_IMPLEMENTED')).toHaveLength(470);
   });
 
-  it('시너지 분류: 진영12·동아리26·역할군7·고유12·플래티넘7, 흥신소68·C&C는 동아리', () => {
-    const byCat = ['faction', 'club', 'role', 'unique', 'platinum'].map((c) => pack.synergies.filter((s) => s.category === c).length);
+  it('시너지 분류: 진영12·동아리26·역할군7·고유12·이스터에그7, 흥신소68·C&C는 동아리', () => {
+    const byCat = ['faction', 'club', 'role', 'unique', 'easteregg'].map((c) => pack.synergies.filter((s) => s.category === c).length);
     expect(byCat).toEqual([12, 26, 7, 12, 7]);
     expect(byId(pack.synergies, 'syn_problem_solver').category).toBe('club');
     expect(byId(pack.synergies, 'syn_cc').category).toBe('club');
@@ -55,9 +55,9 @@ describe('정식 콘텐츠 팩 ba-content-2.5.1', () => {
     }
   });
 
-  it('T33: 아비도스·백귀야행 최고 단계는 5명이며 연결 ID는 _6을 유지한다(A11)', () => {
+  it('T33: 아비도스·백귀야행 최고 일반 단계는 5명이며 연결 ID는 _6을 유지한다(A11)', () => {
     for (const id of ['syn_abydos', 'syn_hyakkiyako']) {
-      const top = byId(pack.synergies, id).tiers.at(-1)!;
+      const top = byId(pack.synergies, id).tiers.filter((t) => t.grade === 'normal').at(-1)!;
       expect(top.threshold).toBe(5);
       expect(top.effectIds[0]).toMatch(/_6$/);
     }
@@ -73,8 +73,24 @@ describe('정식 콘텐츠 팩 ba-content-2.5.1', () => {
 
   const units = new Map(pack.units.map((u) => [u.id, u]));
 
-  it('플래티넘: 명단형 5종은 구성원 전원이 모여야 하고, 대항전·총력전은 명단 없이 special로 센다', () => {
-    for (const s of pack.synergies.filter((x) => x.category === 'platinum')) {
+  it('플래티넘 단계(v2.3.5): 구성원이 많은 9종의 마지막 단계, 6명 이상, 최고 일반 단계 + 2명', () => {
+    const plat = pack.synergies.filter((s) => s.tiers.some((t) => t.grade === 'platinum'));
+    expect(plat.map((s) => s.id).sort()).toEqual(
+      ['syn_blaster', 'syn_controller', 'syn_gehenna', 'syn_healer', 'syn_hyakkiyako', 'syn_millennium', 'syn_sniper', 'syn_supporter', 'syn_trinity'],
+    );
+    for (const s of plat) {
+      const top = s.tiers.at(-1)!;
+      expect(top.grade, s.id).toBe('platinum');
+      expect(top.threshold, s.id).toBe(Math.max(6, s.tiers.at(-2)!.threshold + 2));
+      expect(top.spec.startsWith('플래티넘 「'), s.id).toBe(true);
+    }
+    // 전방 전용 역할군은 전방 4칸이라 6명에 닿지 않아 빠진다
+    for (const id of ['syn_tank', 'syn_attacker']) expect(byId(pack.synergies, id).tiers.every((t) => t.grade === 'normal')).toBe(true);
+  });
+
+  it('이스터에그(옛 플래티넘): 명단형 5종은 구성원 전원이 모여야 하고, 대항전·총력전은 명단 없이 special로 센다', () => {
+    for (const s of pack.synergies.filter((x) => x.category === 'easteregg')) {
+      expect(s.tiers.every((t) => t.grade === 'normal'), s.id).toBe(true);
       if (s.countScope === 'special') expect(s.memberIds).toEqual([]);
       // 각성 학생(AL-1S)은 원래 학생과 같은 사람으로 센다
       else expect(s.tiers[0].threshold).toBe(s.memberIds.filter((m) => !units.get(m)!.awakenedFrom).length);
@@ -194,8 +210,9 @@ describe('정식 콘텐츠 팩 ba-content-2.5.1', () => {
     expect(top('syn_gourmet')).toContain('별점 0개');
     expect(top('syn_problem_solver')).toContain('의뢰비');
     expect(top('syn_attacker')).toContain('연속으로 때리면');
-    expect(top('syn_blaster')).toContain('DEF -15%');
-    expect(top('syn_supporter')).toContain('지속 +1턴');
+    expect(top('syn_blaster')).toContain('DEF -25%'); // 플래티넘 단계가 3명 적중 약화를 이어받아 올린다
+    expect(top('syn_supporter')).toContain('버프 지속 +2턴');
+    expect(top('syn_trinity')).toContain('받는 치유량 +20%'); // 2단계 전방 치유 보정을 플래티넘에도 적는다
     expect(top('syn_controller')).toContain('지속 +1턴');
     expect(top('syn_tank')).toContain('도발');
     expect(top('syn_valkyrie')).toContain('수배자');

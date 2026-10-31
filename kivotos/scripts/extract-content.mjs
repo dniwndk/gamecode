@@ -108,9 +108,9 @@ const v23Spec = (id) => v23Effects.get(id)?.lines.find((l) => l.startsWith('- �
 
 function parseTierCell(s) {
   return s.split(';').map((part) => {
-    const m = part.trim().match(/^(\d+): (eff_[a-z0-9_]+)$/);
+    const m = part.trim().match(/^(\d+)(\(플래티넘\))?: (eff_[a-z0-9_]+)$/);
     if (!m) fail(`시너지 단계 칸을 읽지 못함: ${part}`);
-    return { threshold: Number(m[1]), effectIds: [m[2]] };
+    return { threshold: Number(m[1]), grade: m[2] ? 'platinum' : 'normal', effectIds: [m[3]] };
   });
 }
 const synergies = tableRows(section(v23, '## 4. 시너지 v2.3 (64종)'), '`syn_').map((c) => {
@@ -555,9 +555,9 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-2.5.1',
+  contentVersion: 'ba-content-2.6.0',
   rulesVersion: rules.rulesVersion,
-  expectedCounts: { units: 101, synergies: 64, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 461, dialogueFiles: 101, statuses: 20, ooparts: 55 },
+  expectedCounts: { units: 101, synergies: 64, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 470, dialogueFiles: 101, statuses: 20, ooparts: 55 },
   sources: [
     { path: 'docs/GDD_v2.1.md', sha256: sha256(v21Text) },
     { path: 'docs/GDD_v2.2_amendment.md', sha256: sha256(v22Text) },

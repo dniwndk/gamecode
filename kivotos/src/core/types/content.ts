@@ -51,15 +51,20 @@ export interface UnitAwakening {
   starRequired: number;
 }
 
-export type SynergyCategory = 'faction' | 'club' | 'role' | 'unique' | 'platinum';
+/** easteregg: v2.3.5 전 이름은 platinum. 극악 조건의 원작 재현 시너지(ID는 syn_plat_* 그대로). */
+export type SynergyCategory = 'faction' | 'club' | 'role' | 'unique' | 'easteregg';
 /**
  * front_only/rear_only: 실제 그 구역에 놓인 구성원만 센다(고유 시너지).
- * special: 구성원 명단 없이 출전 편성 전체로 판정한다(v2.3 플래티넘 「학원 대항전」·「총력전 만점」).
+ * special: 구성원 명단 없이 출전 편성 전체로 판정한다(이스터에그 「학원 대항전」·「총력전 만점」).
  */
 export type SynergyCountScope = 'deployed_all' | 'front_only' | 'rear_only' | 'special';
 
+/** platinum: 구성원이 많은 시너지의 6명 이상 고등급 단계(v2.3.5). 이스터에그보다는 약하다. */
+export type SynergyTierGrade = 'normal' | 'platinum';
+
 export interface SynergyTier {
   threshold: number;
+  grade: SynergyTierGrade;
   effectIds: string[];
   /** 사람이 읽는 명세. 런타임에서 해석·실행하지 않는다. */
   spec: string;

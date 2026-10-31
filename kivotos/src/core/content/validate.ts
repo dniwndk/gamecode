@@ -204,6 +204,12 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
       if (i > 0 && t.threshold <= syn.tiers[i - 1].threshold) err('SYNERGY_TIERS', `${path}.tiers.${i}`, '요구 수가 오름차순이 아님');
       if (t.effectIds.length === 0) err('SYNERGY_TIERS', `${path}.tiers.${i}`, '단계 효과 ID가 없음');
       for (const id of t.effectIds) bind(id, syn.id, `${path}.tiers.${i}`, ['synergy_container']);
+      // 플래티넘 단계(v2.3.5): 진영·역할군의 마지막 단계, 6명 이상
+      if (t.grade === 'platinum') {
+        if (!['faction', 'role'].includes(syn.category)) err('SYNERGY_TIERS', `${path}.tiers.${i}`, `플래티넘 단계는 진영·역할군에만 둔다(${syn.category})`);
+        if (i !== syn.tiers.length - 1) err('SYNERGY_TIERS', `${path}.tiers.${i}`, '플래티넘 단계는 마지막 단계여야 함');
+        if (t.threshold < 6) err('SYNERGY_TIERS', `${path}.tiers.${i}`, `플래티넘 단계 요구 수 ${t.threshold} < 6`);
+      } else if (t.grade !== 'normal') err('RANGE', `${path}.tiers.${i}`, `단계 등급 ${t.grade}`);
     });
     for (const m of syn.memberIds) {
       const unit = unitsById.get(m);

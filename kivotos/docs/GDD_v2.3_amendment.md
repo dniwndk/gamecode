@@ -6,12 +6,13 @@
 
 ## 0. 바뀐 것 한눈에
 
-- **시너지 63종으로 재편.** 학원 진영 12종은 효과를 그대로 두고 구성원만 다시 센다. 역할·장갑·고유·경제(한탕) 시너지는 폐기하고 동아리 26종, 역할군 7종, 고유 11종, 플래티넘 7종을 새로 둔다.
+- **시너지 63종으로 재편.** 학원 진영 12종은 효과를 그대로 두고 구성원만 다시 센다. 역할·장갑·고유·경제(한탕) 시너지는 폐기하고 동아리 26종, 역할군 7종, 고유 11종, 이스터에그 7종(v2.3.5 전 이름은 플래티넘)을 새로 둔다.
 - **흥신소68·C&C는 진영에서 동아리로 옮긴다.** ID(`syn_problem_solver`, `syn_cc`)는 유지하고 효과를 교체한다.
 - **학생 100명.** 원작 동아리 구성원 40명을 추가한다(3장, 8장 근거).
 - **코스트별 기준선(2장)을 정하고 기존 60명을 맞춘다.** 1코는 단순하게(성장형 예외), 5코는 출전만으로 덱이 강해지는 「존재 효과」를 갖는다.
 - **고유 시너지는 추천 11종만 넣는다.** 예비안(하루카·세리나·키리노·유우카·네루)은 이번 팩에 없다.
-- **플래티넘 2종(학원 대항전·총력전 만점)은 구성원 명단이 없다.** 집계 범위 `special`: 출전 편성 전체로 판정하며, 구성원 수 기반 도달 가능성 검사에서 빠진다.
+- **플래티넘 단계·이스터에그 시너지(v2.3.5, 12장).** 구성원이 많은 시너지 9종(게헨나·밀레니엄·트리니티·백귀야행·블래스터·힐러·서포터·컨트롤러·스나이퍼)에 6명 이상에서 켜지는 **플래티넘 단계**를 더한다. 극악 조건이던 기존 플래티넘 7종은 분류를 **이스터에그**로 바꾼다. 위력 순서는 일반 단계 < 플래티넘 단계 < 이스터에그.
+- **이스터에그 2종(학원 대항전·총력전 만점)은 구성원 명단이 없다.** 집계 범위 `special`: 출전 편성 전체로 판정하며, 구성원 수 기반 도달 가능성 검사에서 빠진다.
 - 전략 「철벽의 전선」의 보유 조건 태그를 `syn_tank`로 바꾼다(7장).
 - **상점 재고·레벨 XP(v2.3.4, 11장).** 상점을 무한 재고에서 롤토체스식 코스트별 장수 제한으로 바꾸고, 3성을 보유한 학생은 그 3성을 팔기 전까지 상점에 나오지 않는다. 레벨업에 필요한 XP를 약 40% 늘린다.
 - **난이도 상향(v2.3.3, 10장).** 최종 보스 노드를 뺀 14개 노드(일반·정예·1·2장 보스)의 적 능력치 배율(HP·ATK)을 1.5배로 올린다.
@@ -19,10 +20,11 @@
 
 ## 1. 판정 원칙
 
-- 유닛 태그 = 진영(1~2) + 동아리(0~1) + 역할군(1) + 고유(0~1) + 플래티넘(0~n).
+- 유닛 태그 = 진영(1~2) + 동아리(0~1) + 역할군(1) + 고유(0~1) + 이스터에그(0~n).
 - 각성 학생(9장)은 원래 학생과 **같은 사람으로 센다.** 둘은 한 편성에 함께 있을 수 없으므로, 구성원 수·F/R/D·최대 합법은 원래 학생 한 명으로 센다. 「아리스」를 요구하는 조건은 AL-1S도 채운다.
-- 동아리·역할군·고유·플래티넘의 집계 범위는 별도 표기가 없으면 `deployed_all`(전방+후방 출전). 고유는 주인 구역을 따른다.
-- 플래티넘의 "3성" 조건은 단계 수와 별개로 효과 문장의 발동 조건에서 판정한다(구성원이 다 모여도 성급이 모자라면 꺼짐).
+- 동아리·역할군·고유·이스터에그의 집계 범위는 별도 표기가 없으면 `deployed_all`(전방+후방 출전). 고유는 주인 구역을 따른다.
+- 이스터에그의 "3성" 조건은 단계 수와 별개로 효과 문장의 발동 조건에서 판정한다(구성원이 다 모여도 성급이 모자라면 꺼짐).
+- **플래티넘은 분류가 아니라 단계 등급이다(v2.3.5).** 4장 단계 칸에 `8(플래티넘): eff_…`처럼 적은 단계가 플래티넘 단계다. 다른 단계와 똑같이 구성원 수로 켜지고, 켜지면 그 시너지의 최고 단계로 등록된다(12장).
 - 원작과 같은 이름인 동아리(대책위원회, RABBIT 소대, CCC 등)는 진영과 구성원이 같아 따로 두지 않는다.
 - 시너지는 도달한 최고 단계 하나만 등록한다(v2.1 6장). 그래서 상위 단계 본문은 하위 단계에서 이어지는 효과를 **모두 문장으로 다시 적는다**. 「[하위 효과 포함]」 같은 참조 표기는 쓰지 않는다(v2.3.1에서 33개 단계를 이렇게 풀어 씀).
 
@@ -151,10 +153,10 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | ID | 이름 | 분류 | 집계 범위 | 단계 | F/R/D | 최대 합법 | 구성원 |
 |---|---|---|---|---|---|---|---|
 | `syn_abydos` | 아비도스 | faction | `deployed_all` | 2: eff_syn_abydos_2; 4: eff_syn_abydos_4; 5: eff_syn_abydos_6 | 5/1/0 | 5 | serika, shiroko, ayane, nonomi, hoshino, hoshino_armed |
-| `syn_gehenna` | 게헨나 | faction | `deployed_all` | 2: eff_syn_gehenna_2; 4: eff_syn_gehenna_4; 6: eff_syn_gehenna_6 | 9/5/2 | 10 | haruka, junko, fuuka, kayoko, iori, mutsuki, aru, ako, hina, chinatsu, haruna, izumi, akari, juri, kasumi, megu |
-| `syn_millennium` | 밀레니엄 | faction | `deployed_all` | 2: eff_syn_millennium_2; 4: eff_syn_millennium_4; 6: eff_syn_millennium_6 | 7/12/3 | 10 | kotama, asuna, yuuka, momoi, hare, karin, toki, neru, aris, al1s, himari, rio, akane, midori, yuzu, chihiro, maki, noa, koyuki, utaha, hibiki, kotori, eimi |
-| `syn_trinity` | 트리니티 | faction | `deployed_all` | 2: eff_syn_trinity_2; 4: eff_syn_trinity_4; 6: eff_syn_trinity_6 | 9/8/2 | 10 | suzumi, serina, hasumi, azusa, koharu, mika, hifumi, hanako, nagisa, seia, tsurugi, mashiro, mine, hanae, reisa, kazusa, yoshimi, airi, natsu |
-| `syn_hyakkiyako` | 백귀야행 | faction | `deployed_all` | 2: eff_syn_hyakkiyako_2; 4: eff_syn_hyakkiyako_4; 5: eff_syn_hyakkiyako_6 | 6/4/0 | 8 | michiru, tsubaki, izuna, shizuko, wakamo, tsukuyo, mimori, kaede, niya, chise |
+| `syn_gehenna` | 게헨나 | faction | `deployed_all` | 2: eff_syn_gehenna_2; 4: eff_syn_gehenna_4; 6: eff_syn_gehenna_6; 8(플래티넘): eff_syn_gehenna_plat | 9/5/2 | 10 | haruka, junko, fuuka, kayoko, iori, mutsuki, aru, ako, hina, chinatsu, haruna, izumi, akari, juri, kasumi, megu |
+| `syn_millennium` | 밀레니엄 | faction | `deployed_all` | 2: eff_syn_millennium_2; 4: eff_syn_millennium_4; 6: eff_syn_millennium_6; 8(플래티넘): eff_syn_millennium_plat | 7/12/3 | 10 | kotama, asuna, yuuka, momoi, hare, karin, toki, neru, aris, al1s, himari, rio, akane, midori, yuzu, chihiro, maki, noa, koyuki, utaha, hibiki, kotori, eimi |
+| `syn_trinity` | 트리니티 | faction | `deployed_all` | 2: eff_syn_trinity_2; 4: eff_syn_trinity_4; 6: eff_syn_trinity_6; 8(플래티넘): eff_syn_trinity_plat | 9/8/2 | 10 | suzumi, serina, hasumi, azusa, koharu, mika, hifumi, hanako, nagisa, seia, tsurugi, mashiro, mine, hanae, reisa, kazusa, yoshimi, airi, natsu |
+| `syn_hyakkiyako` | 백귀야행 | faction | `deployed_all` | 2: eff_syn_hyakkiyako_2; 4: eff_syn_hyakkiyako_4; 5: eff_syn_hyakkiyako_6; 7(플래티넘): eff_syn_hyakkiyako_plat | 6/4/0 | 8 | michiru, tsubaki, izuna, shizuko, wakamo, tsukuyo, mimori, kaede, niya, chise |
 | `syn_shanhaijing` | 산해경 | faction | `deployed_all` | 2: eff_syn_shanhaijing_2; 4: eff_syn_shanhaijing_4 | 2/0/2 | 4 | kokona, shun, mina, kisaki |
 | `syn_red_winter` | 붉은겨울 | faction | `deployed_all` | 2: eff_syn_red_winter_2; 4: eff_syn_red_winter_4 | 4/3/0 | 7 | nodoka, momiji, marina, cherino, tomoe, meru, shigure |
 | `syn_valkyrie` | 발키리 | faction | `deployed_all` | 2: eff_syn_valkyrie_2; 3: eff_syn_valkyrie_3 | 3/0/0 | 3 | fubuki, kirino, kanna |
@@ -190,11 +192,11 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | `syn_life_safety` | 생활안전국 | club | `deployed_all` | 2: eff_syn_life_safety_2 | 2/0/0 | 2 | fubuki, kirino |
 | `syn_tank` | 탱커 | role | `deployed_all` | 2: eff_syn_tank_2; 3: eff_syn_tank_3; 4: eff_syn_tank_4 | 13/0/0 | 4 | haruka, yuuka, tsubaki, marina, atsuko, hoshino, miyako, akemi, hoshino_armed, eimi, mine, natsu, tsukuyo |
 | `syn_attacker` | 어태커 | role | `deployed_all` | 2: eff_syn_attacker_2; 3: eff_syn_attacker_3; 4: eff_syn_attacker_4 | 18/0/0 | 4 | serika, asuna, shiroko, nozomi, iori, izuna, aru, neru, mika, wakamo, akira, izumi, midori, tsurugi, reisa, kazusa, yoshimi, shigure |
-| `syn_sniper` | 스나이퍼 | role | `deployed_all` | 2: eff_syn_sniper_2; 4: eff_syn_sniper_4 | 6/3/0 | 7 | fubuki, hasumi, karin, shun, azusa, hiyori, saori, haruna, mashiro |
-| `syn_blaster` | 블래스터 | role | `deployed_all` | 2: eff_syn_blaster_2; 4: eff_syn_blaster_4; 6: eff_syn_blaster_6 | 12/7/3 | 10 | junko, michiru, rabu, momoi, momiji, nonomi, mutsuki, toki, moe, aris, al1s, hina, hikari, akari, kasumi, megu, akane, yuzu, maki, hibiki, kaede, chise, misaki |
-| `syn_healer` | 힐러 | role | `deployed_all` | 2: eff_syn_healer_2; 4: eff_syn_healer_4 | 0/7/2 | 8 | serina, kokona, fuuka, ayane, koharu, shizuko, chinatsu, hanako, hanae |
-| `syn_supporter` | 서포터 | role | `deployed_all` | 2: eff_syn_supporter_2; 4: eff_syn_supporter_4 | 1/16/2 | 9 | kotama, nodoka, saki, ako, cherino, himari, rio, kisaki, juri, chihiro, noa, utaha, kotori, hifumi, nagisa, airi, mimori, niya, tomoe |
-| `syn_controller` | 컨트롤러 | role | `deployed_all` | 2: eff_syn_controller_2; 4: eff_syn_controller_4 | 3/3/4 | 10 | suzumi, hare, kayoko, kirino, mina, miyu, kanna, koyuki, seia, meru |
+| `syn_sniper` | 스나이퍼 | role | `deployed_all` | 2: eff_syn_sniper_2; 4: eff_syn_sniper_4; 6(플래티넘): eff_syn_sniper_plat | 6/3/0 | 7 | fubuki, hasumi, karin, shun, azusa, hiyori, saori, haruna, mashiro |
+| `syn_blaster` | 블래스터 | role | `deployed_all` | 2: eff_syn_blaster_2; 4: eff_syn_blaster_4; 6: eff_syn_blaster_6; 8(플래티넘): eff_syn_blaster_plat | 12/7/3 | 10 | junko, michiru, rabu, momoi, momiji, nonomi, mutsuki, toki, moe, aris, al1s, hina, hikari, akari, kasumi, megu, akane, yuzu, maki, hibiki, kaede, chise, misaki |
+| `syn_healer` | 힐러 | role | `deployed_all` | 2: eff_syn_healer_2; 4: eff_syn_healer_4; 6(플래티넘): eff_syn_healer_plat | 0/7/2 | 8 | serina, kokona, fuuka, ayane, koharu, shizuko, chinatsu, hanako, hanae |
+| `syn_supporter` | 서포터 | role | `deployed_all` | 2: eff_syn_supporter_2; 4: eff_syn_supporter_4; 6(플래티넘): eff_syn_supporter_plat | 1/16/2 | 9 | kotama, nodoka, saki, ako, cherino, himari, rio, kisaki, juri, chihiro, noa, utaha, kotori, hifumi, nagisa, airi, mimori, niya, tomoe |
+| `syn_controller` | 컨트롤러 | role | `deployed_all` | 2: eff_syn_controller_2; 4: eff_syn_controller_4; 6(플래티넘): eff_syn_controller_plat | 3/3/4 | 10 | suzumi, hare, kayoko, kirino, mina, miyu, kanna, koyuki, seia, meru |
 | `syn_unique_dawn_horus` | 「으헤~ 아저씨는 좀 쉴래」 | unique | `front_only` | 1: eff_syn_uni_hoshino | 1/0/0 | 1 | hoshino |
 | `syn_unique_outlaw_boss` | 「계획대로야!」 | unique | `front_only` | 1: eff_syn_uni_aru | 1/0/0 | 1 | aru |
 | `syn_unique_head_prefect` | 「조금만 쉬고 싶어」 | unique | `front_only` | 1: eff_syn_uni_hina | 1/0/0 | 1 | hina |
@@ -207,13 +209,13 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | `syn_unique_bank_robber` | 「은행 털러 가자」 | unique | `front_only` | 1: eff_syn_uni_shiroko | 1/0/0 | 1 | shiroko |
 | `syn_unique_gold_card` | 「골드 카드」 | unique | `front_only` | 1: eff_syn_uni_nonomi | 1/0/0 | 1 | nonomi |
 | `syn_unique_caspalug` | 「카스팔루그」 | unique | `front_only` | 1: eff_syn_uni_kazusa | 1/0/0 | 1 | kazusa |
-| `syn_plat_vanitas` | 「Vanitas vanitatum」 | platinum | `deployed_all` | 5: eff_syn_plat_vanitas | 3/2/0 | 5 | azusa, atsuko, hiyori, saori, misaki |
-| `syn_plat_ending_credits` | 「엔딩 크레딧」 | platinum | `deployed_all` | 4: eff_syn_plat_ending_credits | 1/1/2 | 4 | momoi, aris, al1s, midori, yuzu |
-| `syn_plat_codename` | 「코드네임 00~05」 | platinum | `deployed_all` | 5: eff_syn_plat_codename | 4/1/0 | 5 | asuna, karin, toki, neru, akane |
-| `syn_plat_tea_party` | 「티파티 삼두정치」 | platinum | `deployed_all` | 3: eff_syn_plat_tea_party | 1/2/0 | 3 | mika, nagisa, seia |
-| `syn_plat_last_line` | 「아비도스 최후의 방어선」 | platinum | `deployed_all` | 5: eff_syn_plat_last_line | 4/1/0 | 5 | serika, shiroko, ayane, nonomi, hoshino |
-| `syn_plat_school_battle` | 「키보토스 학원 대항전」 | platinum | `special` | 10: eff_syn_plat_school_battle | 0/0/0 | 0 | — |
-| `syn_plat_total_assault` | 「총력전 만점」 | platinum | `special` | 10: eff_syn_plat_total_assault | 0/0/0 | 0 | — |
+| `syn_plat_vanitas` | 「Vanitas vanitatum」 | easteregg | `deployed_all` | 5: eff_syn_plat_vanitas | 3/2/0 | 5 | azusa, atsuko, hiyori, saori, misaki |
+| `syn_plat_ending_credits` | 「엔딩 크레딧」 | easteregg | `deployed_all` | 4: eff_syn_plat_ending_credits | 1/1/2 | 4 | momoi, aris, al1s, midori, yuzu |
+| `syn_plat_codename` | 「코드네임 00~05」 | easteregg | `deployed_all` | 5: eff_syn_plat_codename | 4/1/0 | 5 | asuna, karin, toki, neru, akane |
+| `syn_plat_tea_party` | 「티파티 삼두정치」 | easteregg | `deployed_all` | 3: eff_syn_plat_tea_party | 1/2/0 | 3 | mika, nagisa, seia |
+| `syn_plat_last_line` | 「아비도스 최후의 방어선」 | easteregg | `deployed_all` | 5: eff_syn_plat_last_line | 4/1/0 | 5 | serika, shiroko, ayane, nonomi, hoshino |
+| `syn_plat_school_battle` | 「키보토스 학원 대항전」 | easteregg | `special` | 10: eff_syn_plat_school_battle | 0/0/0 | 0 | — |
+| `syn_plat_total_assault` | 「총력전 만점」 | easteregg | `special` | 10: eff_syn_plat_total_assault | 0/0/0 | 0 | — |
 
 ### 4.1 동아리 원작 설정
 
@@ -1446,6 +1448,62 @@ v2.3.2 아리스 각성(2026-10-30): 아래 V.190~V.199는 아리스를 2코 기
 - 본문: 「빠밤! 레벨업」의 경험치와 레벨을 그대로 이어받아 계속 쌓는다: 적 처치 경험치 1(정예·보스는 3), 출전한 전투에서 이기면 1, 경험치 5마다 레벨업해 런이 끝날 때까지 AL-1S ATK +5% 영구 누적(레벨 10까지, +50%). 「아트라하시스의 방주」: AL-1S가 필살기를 쓸 때마다 방주 기동 1단계(전투 종료까지, 최대 3). 3단계가 된 즉시 방주 주포가 적 전원에게 ATK 600% 방어 무시(`true`) 피해를 주고 아군 전원 에너지 +40(전투당 1회). 「용사의 동료」: 게임개발부 구성원이 1명 이상 함께 출전해 있으면, AL-1S가 처음 전투불능이 될 때 HP 50%로 다시 일어나고 전투 종료까지 ATK +30%(전투당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
+v2.3.5 플래티넘 단계(2026-10-31): 아래 V.200~V.208은 구성원이 많은 시너지 9종에 더한 플래티넘 단계다(12장). 1장 규칙대로 하위 단계에서 이어지는 효과를 모두 문장으로 다시 적고, 그 위에 시너지 고유 동작의 연쇄·누적 한 가지를 더한다.
+
+### V.200 `eff_syn_gehenna_plat`
+- 출처/구역: 시너지 syn_gehenna (4단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「만마전 총폭격」. 게헨나 구성원 ATK +60%, CRIT_DMG +0.75 증가(게헨나가 아닌 아군은 절반). 게헨나 전방 유닛이 스킬/필살기로 피해를 입힐 때 대상에게 ATK 70% 추가 폭발 피해(유닛당 턴당 1회). 게헨나 유닛이 스킬/필살기로 피해를 입힐 때 적 전방 전체에 ATK 110% 광역 폭격 및 자신의 에너지 +15 회복(턴당 최대 3회, root당 1회). 광역 폭격이 3번 터질 때마다 적 전원에게 ATK 180% "총폭격"을 하고, 총폭격 피해는 이번 전투에서 터질 때마다 +20%씩 누적된다
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.201 `eff_syn_millennium_plat`
+- 출처/구역: 시너지 syn_millennium (4단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「밀레니엄 프라이스」. 전투 시작 및 매 2턴 시작마다 아군 전방 전원에게 2턴간 최대 HP 40% 보호막 및 에너지 +25 부여. 밀레니엄 구성원 ATK +55%. 보호막 보유 전방 아군의 가하는 피해 +45% 및 CRIT +20% 증가. 아군 보호막이 피해로 깨지면 깨진 보호막 양의 60%를 그 공격자에게 방어 무시(`true`) 피해로 되돌린다(유닛당 턴당 1회)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.202 `eff_syn_trinity_plat`
+- 출처/구역: 시너지 syn_trinity (4단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「삼위일체의 종」. 트리니티 구성원 최대 HP +60%, ATK +60%, 받는 치유량 +65%. 아군 전방이 받는 치유량 +20%. 아군 전방이 치유받을 때 디버프 1개 해제 및 2턴간 가하는 피해 +40%, CRIT +25% 획득. 매 턴 첫 치유 시 팀 SP +1 및 전방 전원 에너지 +15 회복(턴당 1회). 최대 HP를 넘친 치유량은 "종소리"로 쌓이고, 아군 전원 최대 HP 합계의 25%에 이르면 적 전원에게 쌓인 양의 150% 피해를 준 뒤 다시 0부터 쌓는다
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.203 `eff_syn_hyakkiyako_plat`
+- 출처/구역: 시너지 syn_hyakkiyako (4단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「백야제 대행렬」. 아군 전원 SPD +24(백귀야행은 SPD +45, ATK +60%, CRIT +25%). 백귀야행 유닛이 기본 공격/스킬 해소 시 대상에게 ATK 45%의 `true` 피해(도깨비불) 추가 부여(유닛당 턴당 1회). 백귀야행 유닛이 행동 해소 시 최전열 적에게 ATK 90% `true` 피해 및 2턴간 받는 피해 +15% 부여, 이어서 적 전방 전체에 ATK 120% `true` 피해(백야제 만개화)를 입히고 아군 전방 전원 행동을 10% 당긴다(턴당 최대 4회, root당 1회). 한 턴에 백귀야행 유닛이 3번 이상 행동하면 그 턴 끝에 적 전원에게 ATK 200% `true` 피해(대행렬)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.204 `eff_syn_blaster_plat`
+- 출처/구역: 시너지 syn_blaster (3단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「연쇄 폭발」. 블래스터 구성원의 광역 공격 피해 +65%. 3명 이상 맞히면 대상들에게 2턴간 DEF -25%(`st_def_down`)를 걸고 팀 SP +1(SP는 턴당 1회). 블래스터의 광역 공격으로 적이 쓰러지면 그 자리에서 폭발해 같은 구역의 적 전원에게 블래스터 ATK 60% 피해. 폭발로 쓰러진 적도 다시 폭발한다(공격 1번당 최대 4연쇄)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.205 `eff_syn_healer_plat`
+- 출처/구역: 시너지 syn_healer (3단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「응급 연쇄 치료」. 힐러 구성원의 치유량 +60%. 최대 HP를 넘친 치유량은 2턴짜리 보호막으로 바뀜. 힐러가 치유할 때마다 HP 비율이 가장 낮은 다른 아군 1명에게 그 치유량의 50%를 한 번 더 치유한다. 힐러에게 치유받은 아군은 "회복의 축복" 1중첩(가하는 피해 +4%, 최대 5중첩, 전투 종료까지)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.206 `eff_syn_supporter_plat`
+- 출처/구역: 시너지 syn_supporter (3단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「총지원 태세」. 서포터 구성원이 건 버프 지속 +2턴. 전투 시작 시 팀 SP +2. 서포터가 버프를 걸면 대상 에너지 +15. 한 아군에게 서포터 버프가 3개 이상 겹치면 그 아군의 다음 필살기 피해 +60%(아군 1명당 전투당 2회)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.207 `eff_syn_controller_plat`
+- 출처/구역: 시너지 syn_controller (3단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「제압 전파」. 컨트롤러 구성원이 건 기절·침묵·지연 지속 +1턴(보스 제외). 제어 상태인 적이 받는 피해 +35%. 제어가 풀린 적의 다음 행동 20% 지연. 제어 상태인 적이 쓰러지면 그 제어를 남은 지속 그대로 가장 가까운 다른 적에게 옮긴다(보스에게는 지속 1턴으로 옮김)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.208 `eff_syn_sniper_plat`
+- 출처/구역: 시너지 syn_sniper (3단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「연속 조준」. 스나이퍼 구성원 CRIT +45%. 전투 시작 시 HP가 가장 높은 적을 조준하고, 스나이퍼 구성원이 조준한 적에게 주는 치명 피해 +80%. 조준한 적이 쓰러지면 즉시 남은 적 중 HP가 가장 높은 적을 새로 조준하고 스나이퍼 구성원 전원 에너지 +30
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
 ## 6. 삭제된 효과
 
 폐기한 역할·장갑·고유 시너지의 단계 효과와, 밸런스 조정으로 학생에게서 뗀 효과 43개다. 카탈로그에서 뺀다. v2.2 3장의 한탕(`syn_jackpot`)과 그 효과 3개는 이 판부터 읽지 않는다.
@@ -1635,3 +1693,41 @@ v2.2 1.2의 "다음 XP" 줄을 대체한다. XP 구매(4G에 4 XP)와 전투당 
 - 누적 XP: 레벨 6은 18 → 26, 레벨 8은 62 → 86, 레벨 10은 138 → 194(약 1.4배).
 - 레벨이 곧 편성 인원이라, 같은 골드로 쓸 수 있는 학생 수와 4·5코 확률이 모두 늦게 오른다.
 - `scripts/extract-content.mjs`가 이 표로 XP를 덮어쓰며, v2.2 줄이 v2.2 개정안과 다르면 멈춘다.
+
+## 12. 플래티넘 단계와 이스터에그 시너지
+
+v2.3.5(2026-10-31 사용자 요청): "소속 인원이 많은 시너지는 6 이상의 고등급 시너지를 만들고 플래티넘 시너지로 만들어. 난이도 극악의 기존 플래티넘 시너지는 이스터에그 시너지로 바꿔. 플래티넘 시너지는 강력하지만, 이스터에그 시너지만큼 강하지 않아."
+
+### 12.1 플래티넘 단계를 받는 시너지
+
+대상은 구성원 9명 이상이면서 합법 편성으로 6명 이상 출전할 수 있는 시너지다. 요구 인원은 지금 최고 단계 + 2명(최소 6명)이다.
+
+| 시너지 | 구성원 | 최대 합법 | 기존 단계 | 플래티넘 단계 |
+|---|---:|---:|---|---|
+| 게헨나 | 16 | 10 | 2/4/6 | **8명** 「만마전 총폭격」 |
+| 밀레니엄 | 22 | 10 | 2/4/6 | **8명** 「밀레니엄 프라이스」 |
+| 트리니티 | 19 | 10 | 2/4/6 | **8명** 「삼위일체의 종」 |
+| 백귀야행 | 10 | 8 | 2/4/5 | **7명** 「백야제 대행렬」 |
+| 블래스터 | 22 | 10 | 2/4/6 | **8명** 「연쇄 폭발」 |
+| 힐러 | 9 | 8 | 2/4 | **6명** 「응급 연쇄 치료」 |
+| 서포터 | 19 | 9 | 2/4 | **6명** 「총지원 태세」 |
+| 컨트롤러 | 10 | 10 | 2/4 | **6명** 「제압 전파」 |
+| 스나이퍼 | 9 | 7 | 2/4 | **6명** 「연속 조준」 |
+
+- 구성원 수는 AL-1S를 아리스와 같은 사람으로 센 값이다.
+- **탱커(13명)·어태커(18명)는 빠진다.** 둘 다 전원 전방 전용이라 전방 4칸을 넘을 수 없어 6명에 닿지 않는다.
+- 붉은겨울(7명)·아비도스(6명)·동아리는 인원이 적어 대상이 아니다.
+- 오파츠 집계 보정(R04 트리니티 동아리 +1, L02 에덴 조약의 트리니티·아리우스 동시 집계)도 플래티넘 단계에 그대로 쓴다. 예를 들어 에덴 조약이 있으면 트리니티 6명 + 아리우스 2명으로 트리니티 8명이 된다.
+
+### 12.2 이스터에그 시너지
+
+기존 플래티넘 7종(「Vanitas vanitatum」, 「엔딩 크레딧」, 「코드네임 00~05」, 「티파티 삼두정치」, 「아비도스 최후의 방어선」, 「키보토스 학원 대항전」, 「총력전 만점」)은 분류만 `platinum`에서 `easteregg`로 바꾼다. ID(`syn_plat_*`)·조건·효과·아이콘은 그대로다. 저장 데이터와 오파츠 문장이 이 ID를 가리키고 있어서 ID는 바꾸지 않는다.
+
+- 「티파티 삼두정치」의 "켜진 진영 시너지가 한 단계 위로"는 플래티넘 단계까지 올린다. 게헨나 6명에 티파티가 켜지면 게헨나 플래티넘 단계가 켜진다.
+- 오파츠 R04 「트리니티 동아리 연합 인가증」의 "플래티넘 제외"는 "이스터에그 제외"로 읽는다.
+
+### 12.3 위력 순서
+
+- **일반 단계 < 플래티넘 단계.** 플래티넘 단계는 바로 아래 단계의 수치를 약 1.3~1.5배로 올리고, 시너지 고유 동작에 연쇄·누적 하나(총폭격 누적, 보호막 반사, 종소리, 대행렬, 연쇄 폭발, 연쇄 치료, 버프 중첩 필살기, 제어 전파, 연속 조준)를 더한다.
+- **플래티넘 단계 < 이스터에그.** 플래티넘은 숫자와 연쇄로 세지만 규칙을 깨지 않는다. 부활, 전원 HP 1 버티기, 다른 시너지 단계 올리기, 자동 레일건, 전투 시작 즉시 행동처럼 규칙을 깨는 효과는 이스터에그에만 둔다.
+- 수치는 제안값이다. 진짜 전투 엔진(M2·M3)이 들어오면 같은 덱으로 플래티넘과 이스터에그를 비교해, 플래티넘이 이스터에그를 넘으면 플래티넘을 내린다.

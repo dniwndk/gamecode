@@ -1,6 +1,6 @@
 {
   "packId": "ba-kivotos",
-  "contentVersion": "ba-content-2.5.1",
+  "contentVersion": "ba-content-2.6.0",
   "rulesVersion": "ktfr-rules-2.5.0",
   "expectedCounts": {
     "units": 101,
@@ -9,7 +9,7 @@
     "strategies": 13,
     "enemies": 13,
     "nodes": 15,
-    "effects": 461,
+    "effects": 470,
     "dialogueFiles": 101,
     "statuses": 20,
     "ooparts": 55
@@ -25,11 +25,11 @@
     },
     {
       "path": "docs/GDD_v2.3_amendment.md",
-      "sha256": "224009e87e54ff820f4b52b9aa2c0127dc145aea6927a06d738602e4366fb683"
+      "sha256": "52ac192820ecf2e794e670e078fb8f0ab7edf45908ebeaf9fda274f5f2d7f1bd"
     },
     {
       "path": "docs/OOPARTS_v1.md",
-      "sha256": "9eaa55104de0a8f5ad4c9ded618f0023caa9055ee3c4c1ace520be9da37a93f0"
+      "sha256": "bb567cca108e196d75a0ba153a873df4ff59b3e75b54226fd12a5cb27456c458"
     }
   ],
   "generatedBy": "scripts/extract-content.mjs"

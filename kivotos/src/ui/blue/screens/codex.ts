@@ -7,7 +7,7 @@ import { icon } from '../icons';
 
 type Tab = 'units' | 'synergies' | 'ooparts';
 const RARITY_LABEL: Record<string, string> = { common: '일반', uncommon: '고급', rare: '희귀', legendary: '전설' };
-const CAT_LABEL: Record<string, string> = { faction: '학원', club: '동아리', role: '역할군', unique: '고유', platinum: '플래티넘' };
+const CAT_LABEL: Record<string, string> = { faction: '학원', club: '동아리', role: '역할군', unique: '고유', easteregg: '이스터에그' };
 
 export function mountCodex(ctx: Ctx): Screen {
   const { pack } = ctx.driver.catalog;
@@ -53,12 +53,12 @@ export function mountCodex(ctx: Ctx): Screen {
         const b = h('button', { class: 'k-codex-item', 'aria-label': `${u.name} 상세`, onclick: () => openUnitDetail(ctx, u.id) }, card);
         return b;
       }), units.length ? null : h('p', { class: 'k-empty' }, '조건에 맞는 학생이 없어요. 필터를 하나 풀어 보세요.'))
-      : h('div', { class: 'k-codex-syns' }, ...['faction', 'club', 'role', 'unique', 'platinum'].map((cat) => h('section', null,
+      : h('div', { class: 'k-codex-syns' }, ...['faction', 'club', 'role', 'unique', 'easteregg'].map((cat) => h('section', null,
         h('h3', null, CAT_LABEL[cat]),
         h('div', { class: 'k-codex-syn-grid' }, ...pack.synergies.filter((s) => s.category === cat).map((s) => {
           const item = h('button', { class: 'k-codex-syn', onclick: () => { syn = s.id; tab = 'units'; draw(); } },
             synHex(ctx, s.id, { size: 40 }),
-            h('div', null, h('b', null, s.name.replace(/^고유:\s*/, '')), h('small', null, `${s.tiers.map((t) => t.threshold).join(' / ')} · ${s.memberIds.length}명`)));
+            h('div', null, h('b', null, s.name.replace(/^고유:\s*/, '')), h('small', null, `${s.tiers.map((t) => (t.grade === 'platinum' ? `${t.threshold} 플래티넘` : t.threshold)).join(' / ')} · ${s.memberIds.length}명`)));
           attachTip(ctx, item, () => synergyTip(ctx, { synergyId: s.id, count: 0, nextThreshold: s.tiers[0].threshold, activeTier: null, tracked: false }, null));
           return item;
         })))));

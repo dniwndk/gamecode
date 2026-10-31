@@ -183,7 +183,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       if (both.size) { counts.set('syn_trinity', new Set(both)); counts.set('syn_arius', new Set(both)); }
     }
     const out = new Map([...counts].map(([k, v]) => [k, v.size]));
-    // 트리니티 동아리 연합 인가증(R04): 트리니티 학생이 있는 동아리 시너지는 +1(플래티넘 제외)
+    // 트리니티 동아리 연합 인가증(R04): 트리니티 학생이 있는 동아리 시너지는 +1(이스터에그 제외)
     if (om.trinityClubBonus) {
       for (const [sid, ids] of counts) {
         if (synById.get(sid)?.category !== 'club') continue;
