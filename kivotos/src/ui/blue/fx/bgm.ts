@@ -1,21 +1,24 @@
 // 배경 음악. 화면 단계마다 곡 하나를 정하고(bgmFor), 바뀌면 짧게 겹쳐 넘긴다(크로스페이드).
 // 게임 결과와 무관한 표현 계층이다. 브라우저 자동 재생 제한 때문에 첫 클릭·키 입력 뒤에 소리가 난다.
 
-export type BgmTrack = 'lobby' | 'prep';
+export type BgmTrack = 'lobby' | 'prep' | 'battle';
 
 /** 곡 파일(public/ 기준). 사용자 제공 2026-10-31 */
 export const BGM_FILES: Record<BgmTrack, string> = {
   lobby: 'audio/bgm/lobby.mp3',
   prep: 'audio/bgm/prep.mp3',
+  /** 전투 화면 공통(장 구분 없음, 사용자 지시 2026-10-31) */
+  battle: 'audio/bgm/battle.mp3',
 };
 
 /**
  * 화면 단계 → 곡. 메인 로비(홈·도감·설정·런 설정)는 lobby, 출격 대기(전략·준비·보상·다음 전투 안내)는 prep.
- * 전투·런 종료는 아직 곡이 없어 조용히 둔다(null).
+ * 전투는 장·보스 구분 없이 battle 한 곡. 런 종료는 조용히 둔다(null).
  */
 export function bgmFor(phase: string, route: string | null): BgmTrack | null {
   if (phase === 'HOME' || route === 'codex' || route === 'settings' || phase === 'RUN_SETUP') return 'lobby';
-  if (phase === 'BATTLE' || phase === 'RUN_COMPLETE' || phase === 'RUN_FAILED') return null;
+  if (phase === 'BATTLE') return 'battle';
+  if (phase === 'RUN_COMPLETE' || phase === 'RUN_FAILED') return null;
   return 'prep';
 }
 

@@ -31,7 +31,7 @@ export function mountSettings(ctx: Ctx): Screen {
           }, `${v}x`)))),
         h('h3', null, '소리'),
         h('label', { class: 'k-toggle', for: 'k-set-bgm' },
-          h('div', null, h('b', null, `배경 음악 ${st.bgmVolume}%`), h('small', null, '메인 로비·출격 대기 화면 음악. 0이면 꺼집니다')),
+          h('div', null, h('b', null, `배경 음악 ${st.bgmVolume}%`), h('small', null, '로비·출격 대기·전투 음악. 0이면 꺼집니다')),
           h('input', { id: 'k-set-bgm', class: 'k-range', type: 'range', min: '0', max: '100', step: '5', value: String(st.bgmVolume),
             oninput: (e: Event) => { st.bgmVolume = Number((e.target as HTMLInputElement).value); ctx.saveSettings(); (e.target as HTMLElement).previousElementSibling!.querySelector('b')!.textContent = `배경 음악 ${st.bgmVolume}%`; } })),
         h('label', { class: 'k-toggle', for: 'k-set-sfx' },

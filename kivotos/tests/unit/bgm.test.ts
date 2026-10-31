@@ -10,7 +10,8 @@ describe('bgmFor', () => {
   it('출격 대기 곡: 런 안의 전투 밖 화면', () => {
     for (const p of ['STRATEGY_CHOICE', 'PREPARATION', 'RESULT', 'EQUIPMENT_CHOICE', 'OOPART_CHOICE', 'NEXT_NODE']) expect(bgmFor(p, null)).toBe('prep');
   });
-  it('전투·런 종료는 곡 없음', () => {
-    for (const p of ['BATTLE', 'RUN_COMPLETE', 'RUN_FAILED']) expect(bgmFor(p, null)).toBeNull();
+  it('전투는 장 구분 없이 한 곡, 런 종료는 곡 없음', () => {
+    expect(bgmFor('BATTLE', null)).toBe('battle');
+    for (const p of ['RUN_COMPLETE', 'RUN_FAILED']) expect(bgmFor(p, null)).toBeNull();
   });
 });
