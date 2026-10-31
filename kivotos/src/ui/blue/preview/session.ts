@@ -7,8 +7,8 @@
 import type { CommandResult, ContentCatalog, GameCommandType, GameSnapshot, RunPhase } from '../../../app/gameClient';
 import type { BaseStats, EnemyDefinition, NodeDefinition, OopartSourceId, UnitDefinition } from '../../../core/types/content';
 import {
-  acquireOopart, costOdds, emptyOopartProfile, escalationDamageBps, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
-  rollShop as rollShopCore, type OopartModifiers, type OopartProfile, type OopartRunState,
+  acquireOopart, costOdds, emptyOopartProfile, emptyRunStacks, escalationDamageBps, resolveAwakenings, runStackLines, settleRunStacks, stackBattleBonuses, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
+  rollShop as rollShopCore, type OopartModifiers, type RunStacks, type OopartProfile, type OopartRunState,
 } from '../../../app/runRules';
 import type {
   BattleEventView, BattleView, CombatantView, Cue, Ref, ResultView, RunView, ShopSlotView, SynergyStateView, UiDriver, UiState,
@@ -54,6 +54,10 @@ interface RunState {
   lastStandUsed: boolean;
   /** 이번 준비 단계에서 쓴 무료 새로고침(R06·L01) */
   freeRerollsUsed: number;
+  /** 런 동안 쌓이는 시너지 스택(코어 runStacks) */
+  stacks: RunStacks;
+  /** 각성을 마친 원래 학생(상점·판매 규칙) */
+  awakenedFrom: Set<string>;
   /** 독립 RNG 스트림(12.2): 상점, 보상 */
   shopRng: Rng;
   rewardRng: Rng;
@@ -120,6 +124,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       offers: {}, recruited: new Set(), deployed: new Set(),
       oop: { owned: ['oop_nebra_disk', 'oop_voynich', 'oop_nimrud_lens'], rescueUsed: false }, oopOffer: null, oopStartDone: true,
       runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false, freeRerollsUsed: 0,
+      stacks: emptyRunStacks(), awakenedFrom: new Set(),
       shopRng: Rng.forStream('KIVO-7Q2M-SCHALE', 'shop'), rewardRng: Rng.forStream('KIVO-7Q2M-SCHALE', 'reward'),
     };
     for (const i of [...r.front, ...r.rear, ...r.bench]) if (i) { r.recruited.add(i.unitId); r.deployed.add(i.unitId); }
@@ -142,7 +147,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   const deployLimit = (r: RunState) => Math.min(rules.run.maxLevel, r.level + mods(r).deployLimitBonus);
   const equipSlots = (r: RunState, unitId: string) => rules.units.equipmentSlots + (isMillennium(unitId) ? mods(r).millenniumEquipSlotBonus : 0);
   // 샬레 별관 열쇠(R06·L01): 준비 단계마다 첫 새로고침 무료
-  const rerollCost = (r: RunState) => (r.freeRerollsUsed < mods(r).freeRerollPerPrep ? 0 : mods(r).rerollCost ?? rules.shop.rerollCost);
+  // 「골드 카드」(노노미): 출전한 전투 다음 준비 단계 첫 새로고침 무료
+  const rerollCost = (r: RunState) => (r.stacks.goldCardReroll || r.freeRerollsUsed < mods(r).freeRerollPerPrep ? 0 : mods(r).rerollCost ?? rules.shop.rerollCost);
   const strategyChoices = (r: RunState) => mods(r).strategyChoices ?? 3;
   /** 대기석 칸 수를 오파츠에 맞춘다(C05: 9 → 10). 줄어드는 일은 없다. */
   function fitBench(r: RunState) { while (r.bench.length < benchSize(r)) r.bench.push(null); }
@@ -193,6 +199,9 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     return out;
   }
 
+  /** 지금 켜진 시너지와 단계 index */
+  const activeTierMap = (r: RunState): Record<string, number> => Object.fromEntries(synergyStates(r).filter((x) => x.activeTier !== null).map((x) => [x.synergyId, x.activeTier!]));
+
   function synergyStates(r: RunState): SynergyStateView[] {
     const counts = synergyCounts(r);
     const out: SynergyStateView[] = [];
@@ -201,9 +210,9 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       let activeTier: number | null = null;
       syn.tiers.forEach((t, idx) => { if (count >= t.threshold) activeTier = idx; });
       const next = syn.tiers.find((t) => t.threshold > count)?.threshold ?? null;
-      out.push({ synergyId: sid, count, nextThreshold: next, activeTier, tracked: r.tracked === sid });
+      out.push({ synergyId: sid, count, nextThreshold: next, activeTier, tracked: r.tracked === sid, stacks: runStackLines(r.stacks, sid, r.awakenedFrom.size > 0) });
     }
-    if (r.tracked && !counts.has(r.tracked)) out.push({ synergyId: r.tracked, count: 0, nextThreshold: synById.get(r.tracked)!.tiers[0].threshold, activeTier: null, tracked: true });
+    if (r.tracked && !counts.has(r.tracked)) out.push({ synergyId: r.tracked, count: 0, nextThreshold: synById.get(r.tracked)!.tiers[0].threshold, activeTier: null, tracked: true, stacks: runStackLines(r.stacks, r.tracked, r.awakenedFrom.size > 0) });
     const rank = (s: SynergyStateView) => (s.activeTier !== null ? 0 : s.nextThreshold !== null && s.nextThreshold - s.count === 1 ? 1 : 2);
     return out.sort((a, b) => rank(a) - rank(b) || (b.activeTier ?? -1) - (a.activeTier ?? -1) || b.count - a.count);
   }
@@ -230,7 +239,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   function rollShop(r: RunState, keepOffered = false) {
     const m = mods(r);
     const fresh = rollShopCore(pack, {
-      level: r.level, owned: all(r).map((i) => ({ unitId: i.unitId, star: i.star })), trackedSynergyId: r.tracked,
+      level: r.level, owned: all(r).map((i) => ({ unitId: i.unitId, star: i.star })), trackedSynergyId: r.tracked, awakenedFromIds: r.awakenedFrom,
       slots: m.shopSlots ?? undefined, recommendedChanceBps: m.recommendedChanceBps ?? undefined,
       topCostFirstSlot: m.levelUpTopCostSlot && r.levelUpPending, aronaLastSlot: m.aronaSlot,
     }, r.shopRng);
@@ -399,10 +408,35 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         }
       }
     }
+    awaken(r);
+  }
+
+  /** 각성 경험치는 「빠밤! 레벨업」 런 스택 하나로 센다(각성 표의 원래 학생 모두에게) */
+  const awakeningExp = (r: RunState) => Object.fromEntries(pack.units.filter((u) => u.awakening).map((u) => [u.id, r.stacks.levelUpExp]));
+
+  /** 각성(코어 resolveAwakenings, 9장): 경험치 30 + 3성 아리스 → 그 자리에서 3성 AL-1S, 남은 아리스는 자동 판매 */
+  function awaken(r: RunState) {
+    const deployedIds = new Set(deployedInsts(r).map((i) => i.instanceId));
+    const owned = all(r).map((i) => ({ instanceId: i.instanceId, unitId: i.unitId, star: i.star, deployed: deployedIds.has(i.instanceId), acquiredOrder: Number(i.instanceId.slice(1)) }));
+    for (const plan of resolveAwakenings(pack, owned, awakeningExp(r))) {
+      const at = locate(r, plan.instanceId)!;
+      r[at.zone][at.index]!.unitId = plan.intoUnitId;
+      for (const id of plan.autoSellInstanceIds) {
+        const s = locate(r, id);
+        if (!s) continue;
+        const inst = r[s.zone][s.index]!;
+        r.gold += sellValue(inst, r);
+        r.stash.push(...inst.equipment);
+        r[s.zone][s.index] = null;
+      }
+      r.awakenedFrom.add(plan.fromUnitId);
+      r.recruited.add(plan.intoUnitId);
+      cue({ kind: 'awaken', unitId: plan.intoUnitId, star: plan.star });
+    }
   }
 
   // ── 전투 흉내 ────────────────────────────────────────────
-  function simulate(r: RunState): { battle: BattleView; result: ResultView } {
+  function simulate(r: RunState): { battle: BattleView; result: ResultView; stacks: RunStacks } {
     const n = node(r);
     const cand = n.candidates.find((c) => c.id === r.chosen) ?? n.candidates[0];
     const scale = n.statScaleBps / 10000;
@@ -422,12 +456,16 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     const factionsOf = (unitId: string) => unitById.get(unitId)!.synergyIds.filter((s) => synById.get(s)?.category === 'faction');
     const factionCount = new Map<string, number>();
     for (const id of new Set(deployedInsts(r).map((i) => i.unitId))) for (const f of factionsOf(id)) factionCount.set(f, (factionCount.get(f) ?? 0) + 1);
+    // 런 스택(레벨업·보충수업·업무량)의 ATK 보정과 에너지 100 시작
+    const activeTiers = activeTierMap(r);
+    const stackBonus = stackBattleBonuses(pack, r.stacks, activeTiers);
+    const levelUpKills: { eliteOrBoss: boolean }[] = [];
     const hpBps = Math.min(om.threeStarHpCapBps, om.threeStarHpBps * deployedInsts(r).filter((i) => i.star === 3).length);
     const allyStats = (i: Inst, zone: 'front' | 'rear'): BaseStats => {
       const s = stats(i, r);
       const fac = factionsOf(i.unitId);
       const lone = om.loneFactionAtkBps > 0 && fac.length > 0 && fac.every((f) => factionCount.get(f) === 1);
-      s.atk = Math.round(s.atk * (1 + (om.atkBps + (lone ? om.loneFactionAtkBps : 0)) / 10000));
+      s.atk = Math.round(s.atk * (1 + (om.atkBps + (lone ? om.loneFactionAtkBps : 0) + (stackBonus.atkBpsByUnit[i.unitId] ?? 0)) / 10000));
       if (lone) s.spd += om.loneFactionSpd;
       if (zone === 'front') s.spd += om.frontSpd;
       s.critDamageBps += om.critDamageBps;
@@ -442,6 +480,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       live.push(mk({ side: 'enemy', zone, index: slot.index }, e.name, s, { enemyId: e.id, boss: e.boss, role: e.role }));
     };
     cand.front.forEach((s) => addEnemy(s, 'front'));
+    for (const l of live) if (l.unitId && stackBonus.fullEnergy.includes(l.unitId)) l.energy = 100;
     cand.rear.forEach((s) => addEnemy(s, 'rear'));
 
     const events: BattleEventView[] = [];
@@ -513,6 +552,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         }
       } else {
         events.push({ t: 'defeated', av, target: tgt.ref, by: by?.ref });
+        // 빠밤! 레벨업·이름 없는 신들의 왕녀: 아리스·AL-1S의 처치 경험치(정예·보스 3)
+        if (by?.unitId === 'u_aris' || by?.unitId === 'u_al1s') levelUpKills.push({ eliteOrBoss: tgt.boss || n.type === 'elite' });
         if (by && by.ref.side === 'ally' && om.jailbreak && by.syn.includes('syn_outlaw') && notoriety < 6) {
           notoriety++;
           for (const l of live) if (l.ref.side === 'ally' && l.syn.includes('syn_outlaw')) l.atk = Math.round(l.atk * (1 + 0.08 * notoriety) / (1 + 0.08 * (notoriety - 1)));
@@ -726,6 +767,11 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     if (sb) income.push({ label: `${streakNext}${outcome === 'win' ? '연승' : '연패'}`, value: sb.gold });
     income.push({ label: capBonus(r) ? `이자 (세미나 상한 +${capBonus(r)})` : '이자', value: interest(r) });
     if (om.settlementGold) income.push({ label: '오파츠 · 게마트리아의 계약', value: om.settlementGold });
+    // 런 스택 정산(코어 settleRunStacks): 보충수업 합격 골드 등
+    const stackSettle = settleRunStacks(pack, r.stacks, {
+      outcome, deployedUnitIds: deployedInsts(r).map((i) => i.unitId), ownedUnitIds: all(r).map((i) => i.unitId), activeTiers, levelUpKills,
+    });
+    income.push(...stackSettle.income);
     const contributions = [...contrib].map(([unitId, v]) => ({ unitId, ...v }));
     const score = (x: typeof contributions[number]) => x.damage + x.healing * 1.2 + x.shield + x.rearSupport * 0.5;
     const mvp = outcome === 'win' ? [...contributions].sort((a2, b2) => score(b2) - score(a2))[0]?.unitId ?? null : null;
@@ -734,7 +780,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       runHp: { before, after: Math.max(0, before - dmg.total), breakdown: dmg.parts },
       income, xpGained: rules.xp.perBattle + om.battleXpBonus, contributions, mvpUnitId: mvp,
     };
-    return { battle: { battleId: `${n.id}-${revision}`, nodeLabel: `${r.chapter}-${r.battle} ${cand.label}`, combatants: snapshot, startSp: { ally: Math.min(om.spMax ?? rules.battle.teamSp.max, rules.battle.teamSp.start + om.spStartBonus), enemy: rules.battle.teamSp.start }, events }, result };
+    return { stacks: stackSettle.next, battle: { battleId: `${n.id}-${revision}`, nodeLabel: `${r.chapter}-${r.battle} ${cand.label}`, combatants: snapshot, startSp: { ally: Math.min(om.spMax ?? rules.battle.teamSp.max, rules.battle.teamSp.start + om.spStartBonus), enemy: rules.battle.teamSp.start }, events }, result };
   }
 
   function advanceNode(r: RunState) {
@@ -782,6 +828,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       recruited: new Set(chosen.map((u) => u.id)), deployed: new Set(),
       oop: { ...emptyOopartRunState(), owned: [...(opts.ooparts ?? [])] }, oopOffer: null, oopStartDone: false,
       runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false, freeRerollsUsed: 0,
+      stacks: emptyRunStacks(), awakenedFrom: new Set(),
       shopRng: Rng.forStream(seed, 'shop'), rewardRng: Rng.forStream(seed, 'reward'),
     };
     // 처음부터 가진 오파츠도 획득 즉시 효과를 받는다(게마트리아의 계약 −25)
@@ -916,6 +963,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         const at = locate(r, String(payload.instanceId));
         if (!at) return no('학생을 찾을 수 없어요', 'INVALID_PAYLOAD');
         const inst = r[at.zone][at.index]!;
+        if (unitById.get(inst.unitId)!.awakenedFrom) return no(`${unitById.get(inst.unitId)!.name}은(는) 팔 수 없어요`);
         r.gold += sellValue(inst, r);
         r.stash.push(...inst.equipment);
         r[at.zone][at.index] = null;
@@ -955,7 +1003,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       }
       case 'REROLL_SHOP':
         if (r.gold < rerollCost(r)) return no(`새로고침에 ${rerollCost(r)}G가 필요해요 (보유 ${r.gold}G)`);
-        if (rerollCost(r) === 0 && r.freeRerollsUsed < mods(r).freeRerollPerPrep) r.freeRerollsUsed++;
+        if (r.stacks.goldCardReroll) r.stacks.goldCardReroll = false;
+        else if (rerollCost(r) === 0 && r.freeRerollsUsed < mods(r).freeRerollPerPrep) r.freeRerollsUsed++;
         else r.gold -= rerollCost(r);
         rollShop(r);
         return ok();
@@ -1009,9 +1058,10 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       }
       case 'START_BATTLE': {
         if (!r.front.some(Boolean)) return no('전방에 최소 1명이 필요해요');
-        const { battle, result } = simulate(r);
+        const { battle, result, stacks } = simulate(r);
         r.lastBattle = battle;
         r.lastResult = result;
+        r.stacks = stacks;
         // 결과는 재생 전에 먼저 확정된다(13.3)
         r.runHp = result.runHp.after;
         // 후배들을 부탁해(L04): 런 체력이 처음 0이 되면 버틴다(최종 보스 패배 제외)
@@ -1020,6 +1070,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         r.gold += result.income.reduce((a, b) => a + b.value, 0);
         r.xp += result.xpGained;
         levelUp(r);
+        awaken(r);
         r.streak = r.streak.kind === result.outcome ? { kind: result.outcome, count: r.streak.count + 1 } : { kind: result.outcome, count: 1 };
         r.history[(r.chapter - 1) * rules.run.battlesPerChapter + r.battle - 1] = result.outcome;
         phase = 'BATTLE';

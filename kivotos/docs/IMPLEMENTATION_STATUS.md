@@ -80,8 +80,8 @@
 |---|---|
 | 카탈로그 | 아리스 2코, `u_al1s`(5코, 상점 없음, 효과 6개), 고유 시너지 `syn_unique_nameless_princess`, v2.3 9장 각성 표 → `awakening`·`awakenedFrom` |
 | `src/core/awakening/awakening.ts` | 각성 조건(경험치 30·3성) 판정, 대상·자동 판매 결정, 상점 제외, "각성까지 x/30" 표시값 |
-| 경험치 적립·방주·부활 | 명세만(`spec_only`). M3 효과 엔진에서 |
-| 런 연결 | 없음. M1 런 reducer가 정산에서 `resolveAwakenings`를 부른다 |
+| 경험치 적립·방주·부활 | 경험치·레벨 ATK는 `src/core/synergy/runStacks.ts`(2026-10-31, D-023)가 계산하고 미리보기 런이 쓴다. 방주·부활은 명세만(M3) |
+| 런 연결 | 미리보기 런이 정산·3성 합성 직후 `resolveAwakenings`를 부른다(D-023). M1 런 reducer도 같은 함수를 부른다 |
 | 초상화·대사 | `public/portraits/u_al1s.webp`(NAI 생성, 시드는 프로젝트 portraits/manifest.json), `docs/dialogue/ko/u_al1s.json` |
 
 팩 `ba-content-2.5.1`: 유닛 101(코스트 19/27/28/14/13, 겸용 12), 시너지 64(고유 12), 효과 461(부록 C 206 + V 199 + 카이저 론 1 + 오파츠 55), 대사 101, 초상화 101.
@@ -96,3 +96,12 @@
 팩 `ba-content-2.6.0`: 시너지 64(분류 진영 12·동아리 26·역할군 7·고유 12·이스터에그 7), 플래티넘 단계 9개(v2.3 12장), 효과 470(부록 C 206 + V 208 + 카이저 론 1 + 오파츠 55).
 플래티넘 단계 효과는 다른 시너지 효과와 같이 명세만 있다(M3). 미리보기 세션은 구성원 수로 단계를 켜고 시너지 창·도감에 표시만 한다.
 실행한 검증(2026-10-31): `npm test` 134개 통과, `npm run build` 통과(content:check·content:validate 오류 0·경고 0, typecheck 오류 0).
+
+## 런 스택 표시·패배 삽화 (2026-10-31, D-023)
+
+| 항목 | 상태 |
+|---|---|
+| `src/core/synergy/runStacks.ts` | 전투를 넘어 쌓이는 시너지 스택 6종(빠밤! 레벨업·이름 없는 신들의 왕녀 경험치, 보충수업 중첩, 업무량·휴식, 디저트 타임, 골드 카드 무료 새로고침)의 정산·전투 시작 보정·표시 줄. 테스트 `tests/core/runStacks.test.ts` |
+| 화면 | `SynergyStateView.stacks`를 시너지 툴팁 「지금까지 쌓인 스택」에 그대로 보여 준다. 각성은 `awaken` 신호로 알림 |
+| 패배 삽화 | `public/defeat/<unitId>.webp` 101장(NAI, 프로젝트 defeat/generate_defeat.py·manifest.json). 결과 화면이 패배일 때 쓰고, 없으면 기본 초상화 |
+

@@ -59,7 +59,7 @@ export function mountCodex(ctx: Ctx): Screen {
           const item = h('button', { class: 'k-codex-syn', onclick: () => { syn = s.id; tab = 'units'; draw(); } },
             synHex(ctx, s.id, { size: 40 }),
             h('div', null, h('b', null, s.name.replace(/^고유:\s*/, '')), h('small', null, `${s.tiers.map((t) => (t.grade === 'platinum' ? `${t.threshold} 플래티넘` : t.threshold)).join(' / ')} · ${s.memberIds.length}명`)));
-          attachTip(ctx, item, () => synergyTip(ctx, { synergyId: s.id, count: 0, nextThreshold: s.tiers[0].threshold, activeTier: null, tracked: false }, null));
+          attachTip(ctx, item, () => synergyTip(ctx, { synergyId: s.id, count: 0, nextThreshold: s.tiers[0].threshold, activeTier: null, tracked: false, stacks: null }, null));
           return item;
         })))));
 

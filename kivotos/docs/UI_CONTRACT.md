@@ -84,3 +84,10 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 - 2026-10-30 오파츠 추가: 카탈로그에 `ooparts`, 단계 `OOPART_CHOICE`, 명령 `CHOOSE_OOPART`·`SKIP_OOPART`(아직 `NOT_IMPLEMENTED`).
 - 2026-10-30 AL-1S 각성: 유닛에 `awakening`·`awakenedFrom` 필드, 팩 ba-content-2.5.0.
 - 2026-10-30 v2.3.4: 미리보기 세션이 `src/app/runRules.ts`(코어 상점·오파츠 함수 창구)로 상점 장수 제한·3성 제외와 오파츠 보상을 실제로 처리. 화면 모양에 `RunView.ooparts`, `UiState.oopartRevealed`, 신호 `oopart`·`oopart_merge` 추가. 화면 컴포넌트는 `runRules.ts`를 쓰지 않는다.
+
+## 런 스택·패배 삽화 (2026-10-31)
+
+- `run.synergies[].stacks`: 런 동안 쌓인 스택 줄 `{ label, value, progress: { current, max } | null, note }[]` 또는 `null`. 화면은 계산하지 않고 그대로 보여 준다(아리스 경험치·레벨, 보충수업 중첩, 업무량, 디저트 타임, 골드 카드).
+- 신호 `awaken`(`unitId`: 각성 학생, `star`): 아리스가 AL-1S로 각성한 순간.
+- 패배 결과 화면의 학생 그림은 `defeat/<unitId>.webp`(배포 경로 기준). 없으면 기본 초상화를 쓴다.
+

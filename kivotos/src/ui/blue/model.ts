@@ -23,6 +23,8 @@ export interface SynergyStateView {
   nextThreshold: number | null;
   activeTier: number | null; // tiers 배열의 index
   tracked: boolean;
+  /** 런 동안 쌓이는 스택(아리스 경험치·보충수업 등). 없으면 null. 툴팁에 그대로 보여 준다 */
+  stacks: { label: string; value: string; progress: { current: number; max: number } | null; note: string | null }[] | null;
 }
 
 export interface ShopSlotView {
@@ -152,7 +154,7 @@ export interface UiState {
 
 export interface Cue {
   id: number;
-  kind: 'recruit' | 'deploy' | 'merge' | 'levelup' | 'equip_returned' | 'oopart' | 'oopart_merge';
+  kind: 'recruit' | 'deploy' | 'merge' | 'levelup' | 'equip_returned' | 'oopart' | 'oopart_merge' | 'awaken';
   unitId?: string;
   /** oopart: 얻은 오파츠, oopart_merge: 완성된 전설 */
   oopartId?: string;

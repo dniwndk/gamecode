@@ -3,6 +3,10 @@
 export { Rng, streamSeed } from '../core/rng';
 export { aronaPick, costOdds, remainingCopies, rollShop, shopExcluded, type OwnedCopy } from '../core/shop/shop';
 export { escalationDamageBps } from '../core/battle/escalation';
+export { resolveAwakenings, type OwnedUnitRef } from '../core/awakening/awakening';
+export {
+  emptyRunStacks, runStackLines, settleRunStacks, stackBattleBonuses, LEVEL_UP_SYN, PRINCESS_SYN, type RunStacks, type StackLine,
+} from '../core/synergy/runStacks';
 export { oopartModifiers, oopartSupport, type OopartModifiers, type OopartSupport } from '../core/ooparts/modifiers';
 export {
   acquireOopart, emptyOopartProfile, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, rollOopartOffer,

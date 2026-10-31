@@ -98,6 +98,14 @@ export function portrait(ctx: Ctx, unitId: string, className = ''): HTMLElement 
   return box;
 }
 
+/** 패배 결과 화면용 삽화(public/defeat). 없으면 기본 초상화로 */
+export function defeatArt(ctx: Ctx, unitId: string, className = ''): HTMLElement {
+  const box = portrait(ctx, unitId, className);
+  const img = h('img', { src: ctx.art(`defeat/${unitId}.webp`), alt: '', decoding: 'async', draggable: 'false' }) as HTMLImageElement;
+  img.addEventListener('load', () => { box.replaceChildren(img); box.classList.add('is-defeat-art'); });
+  return box;
+}
+
 export function enemyPortrait(ctx: Ctx, enemyId: string, className = ''): HTMLElement {
   const e = ctx.lookup.enemy(enemyId);
   const name = e?.name ?? enemyId;
@@ -200,6 +208,11 @@ export function synergyTip(ctx: Ctx, s: SynergyStateView, run?: RunView | null):
   const scope = syn.countScope === 'front_only' ? '전방에 놓인 구성원만 셉니다' : syn.countScope === 'rear_only' ? '후방에 놓인 구성원만 셉니다' : '편성된 구성원(전방+후방)을 셉니다';
   return h('div', { class: 'k-syn-tip' },
     h('header', null, synHex(ctx, syn.id, { size: 34 }), h('div', null, h('strong', null, syn.name), h('small', null, scope))),
+    // 런 동안 쌓인 스택(값은 게임 쪽이 준다)
+    s.stacks?.length ? h('div', { class: 'k-stack-box' }, h('span', { class: 'k-stack-title' }, '지금까지 쌓인 스택'), ...s.stacks.map((l) => h('div', { class: 'k-stack-line' },
+      h('div', { class: 'k-stack-head' }, h('b', null, l.label), h('strong', null, l.value)),
+      l.progress ? h('div', { class: 'k-stack-bar' }, h('i', { style: `--p:${Math.min(100, (l.progress.current / Math.max(1, l.progress.max)) * 100)}%` })) : null,
+      l.note ? h('small', null, l.note) : null))) : null,
     h('ol', { class: 'k-tier-list' }, ...syn.tiers.map((t, idx) => h('li', { class: cls(s.activeTier === idx && 'is-active', s.activeTier !== null && idx < s.activeTier && 'is-passed', t.grade === 'platinum' && 'is-plat') },
       h('b', null, String(t.threshold)), t.grade === 'platinum' ? platTier(ctx, t.spec) : fxList(ctx, t.spec)))),
     h('div', { class: 'k-tip-members' }, ...syn.memberIds.map((id) => {

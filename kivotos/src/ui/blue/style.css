@@ -915,6 +915,7 @@ kbd { font-family: var(--f-num); }
 .k-result-hero { position: relative; background: linear-gradient(170deg, #9fd6ff, #e8f5ff 70%); overflow: hidden; }
 .k-result.is-loss .k-result-hero { background: linear-gradient(170deg, #b8c3d6, #eef2f8 70%); }
 .k-result.is-loss .k-mvp-art { filter: grayscale(.55) brightness(.95); }
+.k-result.is-loss .k-mvp-art.is-defeat-art { filter: none; }
 .k-result.is-loss .k-mvp-tag { background: #dfe6f0; box-shadow: 0 4px 0 #b3c0d3; }
 .k-mvp { position: absolute; inset: 0; }
 .k-mvp-art { position: absolute; inset: 0; background: transparent; }
@@ -1518,3 +1519,14 @@ kbd { font-family: var(--f-num); }
 .k-choice-card .k-strat-effects { margin: 0 22px 14px; padding: 10px 12px; border-radius: 8px; background: rgba(18,140,255,.07); }
 .is-compact .k-eff-line { font-size: 19px; } .is-compact .k-eff-v { font-size: 21px; } .is-compact .k-eff-when, .is-compact .k-eff-limits span, .is-compact .k-eff-note { font-size: 17px; }
 .is-mobile .k-eff-line { font-size: 14px; } .is-mobile .k-eff-v { font-size: 15px; }
+
+/* 시너지 툴팁: 런 동안 쌓인 스택 */
+.k-stack-box { margin: 10px 0 4px; padding: 10px 12px; border-radius: 10px; background: #eef6ff; border: 1px solid #cfe2fb; display: grid; gap: 8px; }
+.k-stack-title { font-size: 13px; font-weight: 800; color: var(--blue); letter-spacing: .02em; }
+.k-stack-line { display: grid; gap: 4px; }
+.k-stack-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.k-stack-head b { font-size: 15px; color: var(--ink-2); }
+.k-stack-head strong { font-family: var(--f-num); font-size: 16px; color: var(--ink); }
+.k-stack-bar { height: 8px; border-radius: 4px; background: #d9e6f5; overflow: hidden; }
+.k-stack-bar i { display: block; height: 100%; width: var(--p, 0%); background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+.k-stack-line small { font-size: 13px; color: var(--ink-2); }
