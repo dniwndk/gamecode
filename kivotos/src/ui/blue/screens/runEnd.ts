@@ -11,6 +11,7 @@ export function mountRunEnd(ctx: Ctx, s: UiState): Screen {
   const mvp = run.lastResult?.mvpUnitId ?? run.board.front.find(Boolean)?.unitId ?? null;
   const line = mvp ? ctx.lookup.line(mvp, 'victory') : null;
   const active = run.synergies.filter((x) => x.activeTier !== null);
+  setTimeout(() => ctx.sfx.play(clear ? 'RUN_CLEAR' : 'RUN_FAIL'), 300);
 
   const boardRow = (list: typeof run.board.front, n: number, zone: string) => h('div', { class: `k-report-row is-${zone}` },
     ...Array.from({ length: n }, (_, i) => { const x = list[i]; return h('div', { class: 'k-report-slot' }, x ? portrait(ctx, x.unitId) : null, x ? h('span', null, '★'.repeat(x.star)) : null); }));

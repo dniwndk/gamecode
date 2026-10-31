@@ -1,20 +1,33 @@
-// 합성 효과음(WebAudio). 소리 파일 없이 발진기·잡음으로 바로 만든다. 나중에 효과음 파일이 생기면
-// 같은 이름(play('hit', …))으로 파일 재생기로 바꾸면 되고, 화면 쪽 호출은 그대로 둔다.
-// 게임 결과와 무관하다. 볼륨 0이면 오디오 장치를 아예 열지 않는다.
+// 효과음. 사용자 제공 효과음 파일(public/audio/sfx, 2026-10-31)을 WebAudio로 재생하고,
+// 파일이 아직 안 읽혔거나 없으면 같은 이름의 합성음(발진기·잡음)으로 대신한다.
+// 화면 쪽은 옛 이름(play('hit', …))이나 파일 ID(play('UI_CLICK'))로 부른다. 게임 결과와 무관하다.
+// 볼륨 0이면 오디오 장치를 아예 열지 않는다.
+import { SFX_BANK } from './sfxBank';
 
-export type SfxName =
+/** 화면 연출이 부르는 옛 이름. 파일 ID로 옮겨 재생한다(routeSfx) */
+export type SfxLegacy =
   | 'hit' | 'crit' | 'ult' | 'cutin' | 'down' | 'shieldBreak' | 'heal' | 'shield'
   | 'proc' | 'chain' | 'escalation' | 'synergy' | 'victory' | 'defeat';
+/** 옛 이름 또는 효과음 묶음의 ID(예: 'UI_CLICK', 'SHOP_BUY') */
+export type SfxName = SfxLegacy | (string & {});
 
 export interface SfxOpts {
   /** 0~3 세기(가벼움·보통·묵직·폭발) */
   power?: number;
   /** 연쇄 단계. 높을수록 음이 올라간다 */
   step?: number;
-  /** 쏜 쪽이 적이면 true. 적 총성은 조금 낮고 탁하게 해 아군 사격과 귀로 구분한다 */
+  /** 쏜 쪽이 적이면 true. 적 총성을 쓴다 */
   foe?: boolean;
-  /** 보호막이 받은 탄. 몸통 피격음 대신 금속성 「팅」 */
+  /** 보호막이 받은 탄. 몸통 피격음 대신 보호막 「팅」 */
   shielded?: boolean;
+  /** down: 누가 쓰러졌나 */
+  who?: 'ally' | 'enemy' | 'boss';
+  /** synergy: 플래티넘 */
+  plat?: boolean;
+  /** proc: 희귀·전설 오파츠·플래티넘 */
+  rare?: boolean;
+  /** cutin: EX 연쇄 두 번째부터 짧은 컷인 */
+  short?: boolean;
 }
 
 export interface Sfx {
@@ -22,12 +35,59 @@ export interface Sfx {
   setVolume(v: number): void;
 }
 
-export function createSfx(volume: () => number): Sfx {
+/** 재생할 파일 하나: ID, 지연(ms), 볼륨 배율 */
+export type SfxShot = [id: string, delayMs: number, gain: number];
+
+const pick = <T>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)];
+
+/**
+ * 옛 이름 + 옵션 → 재생할 파일 ID 목록. 순수 함수라 테스트로 고정한다.
+ * 타격은 「총성 → 35ms 뒤 착탄음」 두 겹. 학생별 무기 데이터가 생기면 GUN_* 선택을 무기 기준으로 바꾼다.
+ */
+export function routeSfx(name: SfxName, o: SfxOpts = {}): SfxShot[] {
+  const p = Math.max(0, Math.min(3, Math.round(o.power ?? 1)));
+  switch (name) {
+    case 'hit': {
+      const gun = o.foe ? 'GUN_FOE' : pick([['GUN_HG', 'GUN_SMG'], ['GUN_AR', 'GUN_SMG'], ['GUN_SG', 'GUN_MG'], ['GUN_SG', 'GUN_RG']][p]);
+      const target = o.foe; // 적이 쐈으면 맞은 쪽은 아군 학생
+      const impact = o.shielded ? 'HIT_SHIELD' : !target && p <= 1 ? 'HIT_ROBOT' : (['HIT_BODY_L', 'HIT_BODY_M', 'HIT_BODY_H', 'HIT_BODY_H'] as const)[p];
+      const out: SfxShot[] = [[gun, 0, p === 0 ? 0.75 : 1], [impact, 35, 1]];
+      if (p >= 3) out.push(['EXPL_SMALL', 60, 0.7]);
+      return out;
+    }
+    case 'crit': return [[o.foe ? 'GUN_FOE' : 'GUN_SR', 0, 1], [o.shielded ? 'HIT_SHIELD' : 'HIT_CRIT', 40, 1]];
+    case 'ult': return [['ULT_HIT', 0, 1]];
+    case 'cutin': return [[o.short ? 'CUTIN_SHORT' : 'CUTIN', 0, 1]];
+    case 'down': return [[o.who === 'boss' ? 'KO_BOSS' : o.who === 'ally' ? 'KO_ALLY' : 'KO_ENEMY', 0, 1]];
+    case 'shieldBreak': return [['SHIELD_BREAK', 0, 1]];
+    case 'heal': return [['HEAL', 0, 0.8]];
+    case 'shield': return [['SHIELD_UP', 0, 0.8]];
+    case 'proc': return [[o.rare ? 'PROC_RARE' : 'PROC', 0, 1]];
+    case 'chain': {
+      const n = Math.max(1, Math.min(11, (o.step ?? 0) + 1));
+      return n >= 10 ? [[`CHAIN_${String(n).padStart(2, '0')}`, 0, 1], ['CHAIN_MAX', 80, 1]] : [[`CHAIN_${String(n).padStart(2, '0')}`, 0, 1]];
+    }
+    case 'escalation': return [['ESCALATION', 0, 1]];
+    case 'synergy': return [[o.plat ? 'SYNERGY_PLAT' : 'SYNERGY_ON', 0, 1]];
+    case 'victory': return [['WIN', 0, 1]];
+    case 'defeat': return [['LOSE', 0, 1]];
+    // 'SHOP_LOCK:2'처럼 변주 번호를 정할 수 있다(잠금 _1 · 해제 _2, 연승 _1 · 연패 _2)
+    default: return SFX_BANK[name.split(':')[0]] ? [[name, 0, 1]] : [];
+  }
+}
+
+const LEGACY = new Set<string>(['hit', 'crit', 'ult', 'cutin', 'down', 'shieldBreak', 'heal', 'shield', 'proc', 'chain', 'escalation', 'synergy', 'victory', 'defeat']);
+
+export function createSfx(volume: () => number, url: (path: string) => string = (x) => x): Sfx {
   let ac: AudioContext | null = null;
   let master: GainNode | null = null;
   let comp: DynamicsCompressorNode | null = null;
   let noiseBuf: AudioBuffer | null = null;
   const recent = new Map<string, number>();
+  const buffers = new Map<string, AudioBuffer[]>();
+  let loading = false;
+  let active = 0;
+  const MAX_ACTIVE = 12;
 
   function ensure(): AudioContext | null {
     if (volume() <= 0) return null;
@@ -45,7 +105,63 @@ export function createSfx(volume: () => number): Sfx {
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
     if (ac.state === 'suspended') void ac.resume();
+    if (!loading) { loading = true; void loadAll(ac); }
     return ac;
+  }
+
+  // 파일 읽기: 브라우저가 Ogg Vorbis를 풀 수 있으면 ogg, 아니면 m4a(AAC). 미리보기 묶음은 window.__KIVO_SFX(data URI)를 먼저 본다
+  async function loadAll(a: AudioContext) {
+    const probe = typeof Audio !== 'undefined' ? new Audio() : null;
+    const ext = probe && probe.canPlayType('audio/ogg; codecs="vorbis"') ? 'ogg' : 'm4a';
+    const atlas = (window as unknown as { __KIVO_SFX?: Record<string, string> }).__KIVO_SFX;
+    // 자주 나는 소리(UI·타격·발동)부터 읽는다
+    const first = /^(UI_|GUN_(HG|SMG|AR|SG|MG|SR|FOE)|HIT_|PROC|CHAIN_0|SHOP_|UNIT_)/;
+    const ids = Object.keys(SFX_BANK).sort((x, y) => Number(!first.test(x)) - Number(!first.test(y)));
+    let next = 0;
+    const worker = async () => {
+      while (next < ids.length) {
+        const id = ids[next++];
+        const [n] = SFX_BANK[id];
+        const list: AudioBuffer[] = [];
+        for (let i = 1; i <= n; i++) {
+          const file = `${id}_${i}`;
+          try {
+            const inline = atlas?.[`${file}.${ext}`];
+            let data: ArrayBuffer;
+            if (inline) {
+              const bin = atob(inline.slice(inline.indexOf(',') + 1));
+              const u8 = new Uint8Array(bin.length);
+              for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+              data = u8.buffer;
+            } else {
+              const res = await fetch(url(`audio/sfx/${file}.${ext}`));
+              if (!res.ok) continue;
+              data = await res.arrayBuffer();
+            }
+            list.push(await a.decodeAudioData(data));
+          } catch { /* 이 변주는 건너뛴다 */ }
+        }
+        if (list.length) buffers.set(id, list);
+      }
+    };
+    await Promise.all(Array.from({ length: 6 }, worker));
+  }
+
+  function playFile(key: string, when: number, gain: number): boolean {
+    const [id, nth] = key.split(':');
+    const list = buffers.get(id);
+    if (!list) return false;
+    if (active >= MAX_ACTIVE) return true;
+    const a = ac!;
+    const src = a.createBufferSource();
+    src.buffer = nth ? list[Math.min(list.length, Number(nth)) - 1] : pick(list);
+    const g = a.createGain();
+    g.gain.value = (SFX_BANK[id]?.[1] ?? 0.85) * gain;
+    src.connect(g).connect(master!);
+    active++;
+    src.onended = () => { active--; };
+    src.start(when);
+    return true;
   }
 
   function env(g: GainNode, t: number, peak: number, attack: number, decay: number) {
@@ -114,6 +230,16 @@ export function createSfx(volume: () => number): Sfx {
     if (now - (recent.get(name) ?? -1e9) < 25) return;
     recent.set(name, now);
     const t = a.currentTime + 0.005;
+    const shots = routeSfx(name, o);
+    if (shots.length && shots.every(([id]) => buffers.has(id.split(':')[0]))) {
+      for (const [id, d, gn] of shots) playFile(id, t + d / 1000, gn);
+      return;
+    }
+    if (!LEGACY.has(name)) return;
+    synth(name as SfxLegacy, o, t);
+  }
+
+  function synth(name: SfxLegacy, o: SfxOpts, t: number) {
     const p = Math.max(0, Math.min(3, o.power ?? 1));
     const step = o.step ?? 0;
     switch (name) {

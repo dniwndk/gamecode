@@ -147,7 +147,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
     l.el.classList.toggle('is-wounded', on);
     if (on && !skipping) {
       pulse(l, 'is-wound-in');
-      if (!l.down) float(l, '부상', 'wound', { dy: -60 });
+      if (!l.down) { float(l, '부상', 'wound', { dy: -60 }); ctx.sfx.play('WOUNDED'); }
     }
   }
   function paint(l: Live) {
@@ -341,7 +341,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         h('b', null, syn.tiers.length > 1 ? `${syn.name} ${syn.tiers[top.activeTier!]?.threshold ?? top.count}` : syn.name),
         h('div', { class: 'k-syn-online-rest' }, ...ranked.slice(1, 7).map((x) => synHex(ctx, x.synergyId, { size: 44, tier: x.activeTier })))));
     el.append(banner);
-    ctx.sfx.play('synergy');
+    ctx.sfx.play('synergy', { plat });
     await wait(plat ? 1500 : 1150);
     banner.classList.add('is-out');
     setTimeout(() => banner.remove(), 300);
@@ -369,7 +369,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
     if (skipping || speed === 4 || ctx.settings.reduceMotion || !l.view.unitId) return;
     const ms = cutinMs(ex);
     cutin.style.setProperty('--cut-ms', `${ms}ms`);
-    ctx.sfx.play('cutin');
+    ctx.sfx.play('cutin', { short: ex >= 2 });
     const line = ctx.settings.dialogue ? ctx.lookup.line(l.view.unitId, 'ultimate') : null;
     const wide = cutinOk.has(l.view.unitId);
     cutin.classList.toggle('is-wide', wide);
@@ -439,7 +439,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         }
         if (e.amount) float(t, `${e.amount.toLocaleString()}${e.crit ? '!' : ''}`, e.true ? 'true' : e.crit ? 'crit' : 'dmg', { size: floatSize(info), impact: imp });
         // 오버킬: 남은 체력보다 훨씬 큰 한 방
-        if (hpBefore > 0 && t.hp <= 0 && e.amount >= hpBefore * 1.5 && e.amount - hpBefore >= t.view.maxHp * 0.2) float(t, `OVERKILL +${Math.round(e.amount - hpBefore).toLocaleString()}`, 'overkill', { dy: 46, impact: 2 });
+        if (hpBefore > 0 && t.hp <= 0 && e.amount >= hpBefore * 1.5 && e.amount - hpBefore >= t.view.maxHp * 0.2) { float(t, `OVERKILL +${Math.round(e.amount - hpBefore).toLocaleString()}`, 'overkill', { dy: 46, impact: 2 }); if (!skipping) ctx.sfx.play('OVERKILL'); }
         if (!skipping) ctx.sfx.play(e.crit ? 'crit' : 'hit', { power: imp, foe: src?.view.ref.side === 'enemy', shielded: e.shieldAbsorbed > 0 && !e.amount });
         if (imp >= 2) jolt(shakePx(imp), src, t);
         if (e.crit && !skipping && speed < 4) ctx.fx.burst(t.el, { color: '#ff8a5a', size: imp >= 3 ? 240 : 170, ms: 550 });
@@ -484,7 +484,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         if (!t) break;
         t.down = true;
         t.el.classList.add('is-down');
-        if (!skipping) { ctx.fx.burst(t.el, { color: t.view.ref.side === 'enemy' ? '#a78bfa' : '#7cc8ff', size: t.view.boss ? 420 : 200, ms: t.view.boss ? 1000 : 700 }); ctx.sfx.play('down'); }
+        if (!skipping) { ctx.fx.burst(t.el, { color: t.view.ref.side === 'enemy' ? '#a78bfa' : '#7cc8ff', size: t.view.boss ? 420 : 200, ms: t.view.boss ? 1000 : 700 }); ctx.sfx.play('down', { who: t.view.boss ? 'boss' : t.view.ref.side === 'enemy' ? 'enemy' : 'ally' }); }
         log(`${nameOf(t.view)} 전투불능`, 'is-down');
         if (t.view.unitId && speed === 1 && !skipping) {
           const line = ctx.lookup.line(t.view.unitId, 'defeated');
@@ -503,7 +503,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         const grade = procGrade(e.cause);
         procBanner(e, grade);
         if (n >= 2) { showChain(n); if (!skipping) ctx.sfx.play('chain', { step: n - 1 }); }
-        else if (!skipping) ctx.sfx.play('proc', { step: grade === 'normal' ? 0 : 4 });
+        else if (!skipping) ctx.sfx.play('proc', { step: grade === 'normal' ? 0 : 4, rare: grade !== 'normal' });
         log(`  ✦ ${e.cause.kind === 'oopart' ? ctx.lookup.oopart(e.cause.id)?.name ?? e.cause.id : ctx.lookup.syn(e.cause.id)?.name ?? e.cause.id} · ${e.label}`, 'is-proc');
         await wait(grade === 'legend' || grade === 'plat' ? 420 : grade === 'gold' ? 300 : 200);
         break;
@@ -520,6 +520,9 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
   }
 
   async function play() {
+    if (run.nodeType === 'boss') ctx.sfx.play('BOSS_ALERT');
+    else if (run.nodeType === 'elite') ctx.sfx.play('ELITE_ALERT');
+    ctx.sfx.play('BTL_START');
     await new Promise((r) => setTimeout(r, ctx.settings.reduceMotion ? 0 : 350));
     if (await synergyOnline()) await wait(150);
     for (const e of battle.events) {
