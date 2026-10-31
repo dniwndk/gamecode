@@ -20,6 +20,9 @@ interface Live {
   ghostP: number;
   shieldBar: HTMLElement;
   hpText: HTMLElement;
+  /** 보호막 수치 배지(체력바 오른쪽, 보호막이 있을 때만) */
+  shieldBadge: HTMLElement;
+  hpTicks: HTMLElement;
   energyBar: HTMLElement | null;
   statusBox: HTMLElement;
   hp: number;
@@ -52,6 +55,8 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
     const hpGhost = h('i', { class: 'k-hp-ghost' });
     const shieldBar = h('i', { class: 'k-shield-fill' });
     const hpText = h('small', { class: 'k-hp-text' });
+    const shieldBadge = h('b', { class: 'k-sh-badge', 'aria-label': '보호막' });
+    const hpTicks = h('i', { class: 'k-hp-ticks', 'aria-hidden': 'true' });
     const energyBar = c.hasHp ? h('i', { class: 'k-en-fill' }) : null;
     const statusBox = h('div', { class: 'k-cb-status' });
     const el = h('div', { class: cls('k-cb', `is-${c.ref.side}`, `is-${c.ref.zone}`, c.boss && 'is-boss', !c.hasHp && 'is-support', c.unitId && `star-${c.star}`), 'data-ref': key(c.ref) },
@@ -60,9 +65,9 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         statusBox),
       h('div', { class: 'k-cb-name' }, isEnemy ? (c.boss ? icon('skull', 16) : null) : null, h('span', null, nameOf(c))),
       c.hasHp ? h('div', { class: 'k-cb-bars' },
-        h('div', { class: 'k-hp' }, hpGhost, hpBar, shieldBar, hpText),
+        h('div', { class: 'k-hp-row' }, h('div', { class: 'k-hp' }, hpGhost, hpBar, shieldBar, hpTicks, hpText), shieldBadge),
         h('div', { class: 'k-en' }, energyBar!)) : h('div', { class: 'k-cb-support' }, icon('rear', 14), '지원'));
-    return { view: c, el, art, wounded: false, hpBar, hpGhost, ghostP: 100, shieldBar, hpText, energyBar, statusBox, hp: c.hp, shield: c.shield, energy: c.energy, statuses: [], down: false };
+    return { view: c, el, art, wounded: false, hpBar, hpGhost, ghostP: 100, shieldBar, hpText, shieldBadge, hpTicks, energyBar, statusBox, hp: c.hp, shield: c.shield, energy: c.energy, statuses: [], down: false };
   }
 
   for (const c of battle.combatants) live.set(key(c.ref), combatantEl(c));
@@ -154,14 +159,26 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
     if (!l.view.hasHp) return;
     const max = l.view.maxHp;
     setWounded(l, isWounded(l.hp, max));
-    const pct = (l.hp / max) * 100;
+    // 보호막은 체력 뒤에 이어 붙인다. 체력+보호막이 최대 체력을 넘으면 막대 전체를 그 합으로 줄여 보여 준다
+    const total = Math.max(max, l.hp + Math.max(0, l.shield));
+    const pct = (l.hp / total) * 100;
+    const ratio = l.hp / max;
     l.hpBar.style.setProperty('--p', `${pct}%`);
+    l.el.classList.toggle('hp-mid', ratio < 0.5 && ratio >= 0.25);
+    l.el.classList.toggle('hp-low', ratio < 0.25 && l.hp > 0);
+    // 눈금: 500 체력마다(큰 체력은 1000마다) 한 칸 — 남은 체력을 칸 수로 읽는다
+    const unit = max >= 6000 ? 1000 : 500;
+    l.hpTicks.style.setProperty('--tick', `${(unit / total) * 100}%`);
     // 잔상: 줄어들 때는 잠깐 남았다가 따라오고, 치유로 늘 때는 바로 맞춘다
     if (pct >= l.ghostP || skipping) { l.hpGhost.style.transition = 'none'; l.hpGhost.style.setProperty('--p', `${pct}%`); void l.hpGhost.offsetWidth; l.hpGhost.style.transition = ''; }
     else l.hpGhost.style.setProperty('--p', `${pct}%`);
     l.ghostP = pct;
-    l.shieldBar.style.setProperty('--p', `${Math.min(100, (l.shield / max) * 100)}%`);
-    l.hpText.textContent = `${Math.ceil(l.hp).toLocaleString()}${l.shield > 0 ? ` +${Math.round(l.shield)}` : ''}`;
+    const sh = Math.max(0, l.shield);
+    l.shieldBar.style.setProperty('--l', `${pct}%`);
+    l.shieldBar.style.setProperty('--p', `${(sh / total) * 100}%`);
+    l.hpText.textContent = Math.ceil(l.hp).toLocaleString();
+    l.el.classList.toggle('is-shielded', sh > 0);
+    l.shieldBadge.textContent = sh > 0 ? Math.round(sh).toLocaleString() : '';
     if (l.energyBar) { l.energyBar.style.setProperty('--p', `${l.energy}%`); l.energyBar.parentElement!.classList.toggle('is-full', l.energy >= 100); }
     fill(l.statusBox, ...l.statuses.slice(0, 4).map((sid) => h('span', { class: cls('k-st', DEBUFFS.has(sid) ? 'is-debuff' : 'is-buff', (sid === 'st_stun' || sid === 'st_silence') && 'is-big'), title: STATUS_LABEL[sid] ?? sid }, statusIcon(ctx, sid), STATUS_LABEL[sid] ?? sid)),
       l.statuses.length > 4 ? h('span', { class: 'k-st is-more' }, `+${l.statuses.length - 4}`) : null);
@@ -449,8 +466,8 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         const t = live.get(key(e.target));
         const src = live.get(key(e.source));
         if (!t) break;
-        if (e.t === 'heal') { t.hp = Math.min(t.view.maxHp, t.hp + e.amount); float(t, `+${e.amount}`, 'heal'); }
-        else { t.shield += e.amount; float(t, `보호막 +${e.amount}`, 'shield'); }
+        if (e.t === 'heal') { t.hp = Math.min(t.view.maxHp, t.hp + e.amount); float(t, `+${e.amount}`, 'heal'); if (e.amount > 0 && !skipping) pulse(t, 'is-heal-in'); }
+        else { t.shield += e.amount; float(t, `보호막 +${e.amount}`, 'shield'); if (e.amount > 0 && !skipping) pulse(t, 'is-shield-in'); }
         if (!skipping && e.amount > 0) ctx.sfx.play(e.t);
         if (src && src.view.ref.zone === 'rear' && src.view.ref.side === 'ally') beam(src, t, e.t);
         if (src && src !== t && src.view.ref.zone === 'rear') log(`  ↳ ${nameOf(src.view)} → ${nameOf(t.view)} ${e.t === 'heal' ? '치유' : '보호막'} ${e.amount}`, 'is-support');

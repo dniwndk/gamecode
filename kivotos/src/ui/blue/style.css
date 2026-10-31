@@ -824,12 +824,33 @@ kbd { font-family: var(--f-num); }
 .k-cb.is-rear .k-cb-name { font-size: 15px; }
 .k-cb.is-enemy .k-cb-name .ico { color: #6f4ad8; }
 .k-cb-bars { display: flex; flex-direction: column; gap: 3px; }
-.k-hp { position: relative; height: 16px; border-radius: 4px; background: #2a3550; overflow: hidden; }
-.k-hp-fill { position: absolute; left: 0; top: 0; bottom: 0; width: var(--p, 100%); background: linear-gradient(180deg, #6ee794, var(--hp)); transition: width .25s ease-out; }
-.k-cb.is-enemy .k-hp-fill { background: linear-gradient(180deg, #ff8f8f, #e5383b); }
-.k-shield-fill { position: absolute; left: 0; top: 0; height: 6px; width: var(--p, 0%); background: linear-gradient(90deg, #fff, var(--shield)); box-shadow: 0 0 6px #fff; transition: width .2s; }
-.k-hp-text { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-num); font-size: 15px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
-.k-en { height: 6px; border-radius: 3px; background: #e1e7f0; overflow: hidden; }
+.k-hp-row { display: flex; align-items: center; gap: 4px; }
+/* 체력바: 굵게(22px), 진한 테, 눈금, 체력 단계별 색(초록 → 노랑 → 빨강 깜빡임) */
+.k-hp { position: relative; flex: 1; min-width: 0; height: 22px; border-radius: 5px; background: #1b2438; overflow: hidden; box-shadow: 0 0 0 2px #0f1a2e, 0 2px 4px rgba(0,0,0,.35); }
+.k-hp-fill { position: absolute; left: 0; top: 0; bottom: 0; width: var(--p, 100%); background: linear-gradient(180deg, #9ff5b8 0%, #3fd774 45%, #1fae55 100%); transition: width .25s ease-out, background .3s; }
+.k-cb.hp-mid .k-hp-fill { background: linear-gradient(180deg, #ffe9a0 0%, #ffc531 45%, #e09a00 100%); }
+.k-cb.hp-low .k-hp-fill { background: linear-gradient(180deg, #ffb0a8 0%, #ff4d4d 45%, #c81e1e 100%); animation: k-hp-low .7s ease-in-out infinite; }
+@keyframes k-hp-low { 50% { filter: brightness(1.45); } }
+.k-cb.is-enemy .k-hp-fill { background: linear-gradient(180deg, #ffb0a8 0%, #f0484b 45%, #b81f22 100%); }
+.k-cb.is-enemy.hp-low .k-hp-fill { animation: k-hp-low .7s ease-in-out infinite; }
+/* 보호막: 체력 뒤에 이어 붙는 하늘색 빗금 칸 */
+.k-shield-fill { position: absolute; top: 0; bottom: 0; left: var(--l, 0%); width: var(--p, 0%); background: repeating-linear-gradient(-45deg, #e8f7ff 0 5px, #7fd0ff 5px 10px); box-shadow: inset 0 0 0 1.5px #fff, 0 0 8px rgba(127,208,255,.9); transition: width .2s, left .25s ease-out; }
+.k-hp-ticks { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(90deg, transparent 0 calc(var(--tick, 25%) - 2px), rgba(15,26,46,.55) calc(var(--tick, 25%) - 2px) var(--tick, 25%)); }
+.k-hp-text { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-num); font-size: 17px; font-weight: 800; color: #fff; letter-spacing: .02em; -webkit-text-stroke: 3px #0f1a2e; paint-order: stroke fill; }
+.k-sh-badge { flex: none; display: none; align-items: center; gap: 2px; height: 22px; padding: 0 7px 0 5px; border-radius: 5px; font-family: var(--f-num); font-size: 15px; font-weight: 800; color: #0b4a7a; background: linear-gradient(180deg, #ffffff, #bfe7ff); box-shadow: 0 0 0 2px #2a8fe0, 0 0 10px rgba(127,208,255,.9); }
+.k-sh-badge::before { content: ""; width: 14px; height: 15px; background: #2a8fe0; clip-path: polygon(50% 0, 100% 18%, 92% 62%, 50% 100%, 8% 62%, 0 18%); }
+.k-cb.is-shielded .k-sh-badge { display: inline-flex; }
+/* 보호막이 있는 동안 카드에 하늘색 방벽 테 */
+.k-cb.is-shielded .k-cb-frame { box-shadow: 0 0 0 3px #7fd0ff, 0 0 0 5px rgba(255,255,255,.85), 0 0 22px rgba(127,208,255,.85), 0 8px 18px rgba(19,36,63,.2); }
+.k-cb.is-shielded .k-cb-shade::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(190,235,255,.35) 45%, transparent 60%); background-size: 260% 100%; animation: k-barrier 2.4s linear infinite; }
+@keyframes k-barrier { from { background-position: 130% 0; } to { background-position: -130% 0; } }
+.k-cb.is-shield-in .k-hp-row { animation: k-bar-pop .4s ease-out; }
+.k-cb.is-shield-in .k-sh-badge { animation: k-badge-pop .4s cubic-bezier(.2,.9,.3,1.5); }
+@keyframes k-badge-pop { from { transform: scale(1.6); } }
+.k-cb.is-heal-in .k-hp { animation: k-heal-glow .5s ease-out; }
+@keyframes k-heal-glow { 30% { box-shadow: 0 0 0 2px #0f1a2e, 0 0 14px 3px rgba(122,240,162,.95); } }
+@keyframes k-bar-pop { 30% { transform: scaleY(1.25); } }
+.k-en { height: 8px; border-radius: 4px; background: #d5deea; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(15,26,46,.25); }
 .k-en-fill { display: block; height: 100%; width: var(--p, 0%); background: var(--energy); transition: width .2s; }
 .k-en.is-full { box-shadow: 0 0 10px var(--energy); }
 .k-en.is-full .k-en-fill { background: linear-gradient(90deg, #ffd166, var(--energy), #ffd166); background-size: 200% 100%; animation: k-glow 0.8s linear infinite; }
@@ -1396,8 +1417,10 @@ kbd { font-family: var(--f-num); }
 .is-mobile .k-cb.is-rear .k-hp { height: 8px; }
 .is-mobile .k-cb.is-rear .k-hp-text { display: none; }
 .is-mobile .k-cb-name { font-size: 14px; }
-.is-mobile .k-hp { height: 13px; }
-.is-mobile .k-hp-text { font-size: 12px; }
+.is-mobile .k-hp { height: 15px; }
+.is-mobile .k-sh-badge { height: 15px; font-size: 11px; padding: 0 4px 0 3px; }
+.is-mobile .k-sh-badge::before { width: 10px; height: 11px; }
+.is-mobile .k-hp-text { font-size: 12px; -webkit-text-stroke-width: 2px; }
 .is-mobile .k-st { font-size: 12px; padding: 0 4px; }
 .is-mobile .k-float { font-size: 22px; }
 .is-mobile .k-float.is-crit { font-size: 30px; }
