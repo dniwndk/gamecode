@@ -7,7 +7,7 @@
 import type { CommandResult, ContentCatalog, GameCommandType, GameSnapshot, RunPhase } from '../../../app/gameClient';
 import type { BaseStats, EnemyDefinition, NodeDefinition, OopartSourceId, UnitDefinition } from '../../../core/types/content';
 import {
-  acquireOopart, costOdds, emptyOopartProfile, emptyRunStacks, escalationDamageBps, resolveAwakenings, runStackLines, settleRunStacks, stackBattleBonuses, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
+  acquireOopart, costOdds, emptyOopartProfile, emptyRunStacks, escalationDamageBps, resolveAwakenings, runStackLines, settleRunStacks, stackBattleBonuses, HEAD_PREFECT_SYN, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
   rollShop as rollShopCore, type OopartModifiers, type RunStacks, type OopartProfile, type OopartRunState,
 } from '../../../app/runRules';
 import type {
@@ -481,13 +481,21 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     };
     cand.front.forEach((s) => addEnemy(s, 'front'));
     for (const l of live) if (l.unitId && stackBonus.fullEnergy.includes(l.unitId)) l.energy = 100;
+    const fullEnergyAtStart = live.filter((l) => l.unitId && stackBonus.fullEnergy.includes(l.unitId));
     cand.rear.forEach((s) => addEnemy(s, 'rear'));
 
     const events: BattleEventView[] = [];
+    // 연출용 발동 표시(결과·난수와 무관). 같은 보정을 주는 오파츠가 여럿이면 보유한 쪽 이름으로 보인다.
+    const ownedOop = new Set(r.oop.owned);
+    const oopOf = (...ids: string[]) => ids.find((id) => ownedOop.has(id)) ?? ids[0];
+    const proc = (av: number, kind: 'synergy' | 'oopart', id: string, label: string, unit?: Live, chain?: number) => {
+      events.push({ t: 'proc', av, cause: { kind, id }, label, unit: unit?.ref, ...(chain ? { chain } : {}) });
+    };
     // 쿠데타 명령서(U02): 전투 시작 서기장(체리노 우선, 없으면 무작위 전방 붉은겨울)
     let coupLeft = 3;
     let coupBonus = 0;
     const makeSecretary = (l: Live, av: number) => {
+      proc(av, 'oopart', 'oop_coup_order', av === 0 ? '서기장 임명' : '쿠데타! 새 서기장', l);
       l.secretary = true; l.atk = Math.round(l.atk * (1.4 + coupBonus)); l.dmgTakenBps = -2000;
       events.push({ t: 'status', av, target: l.ref, statusId: 'st_atk_up', op: 'add' }, { t: 'status', av, target: l.ref, statusId: 'st_damage_reduction', op: 'add' });
     };
@@ -497,6 +505,10 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       if (pickRw) makeSecretary(pickRw, 0);
     }
     const snapshot: CombatantView[] = live.map((l) => ({ ref: l.ref, unitId: l.unitId, enemyId: l.enemyId, name: l.name, star: l.star, maxHp: l.maxHp, hp: l.hp, shield: 0, energy: 0, boss: l.boss, hasHp: l.hasHp }));
+    for (const l of fullEnergyAtStart) {
+      proc(0, 'synergy', HEAD_PREFECT_SYN, '푹 쉬었다 · 에너지 100', l);
+      events.push({ t: 'resource', av: 0, side: 'ally', energy: { unit: l.ref, value: 100 } });
+    }
 
     const spMax = { ally: om.spMax ?? rules.battle.teamSp.max, enemy: rules.battle.teamSp.max };
     // 고대 전지(C07)·L05: 전투 시작 팀 SP +1
@@ -533,6 +545,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     function onFall(av: number, tgt: Live, by: Live | null) {
       if (tgt.ref.side === 'ally') {
         if (revives < om.mysticRevives && tgt.star === 3 && !tgt.revived) {
+          proc(av, 'oopart', 'oop_nameless_relic', '신비 부활!', tgt);
           revives++; tgt.revived = true; tgt.hp = Math.round(tgt.maxHp * 0.4); tgt.atk = Math.round(tgt.atk * 1.25);
           events.push({ t: 'heal', av, source: tgt.ref, target: tgt.ref, amount: tgt.hp }, { t: 'status', av, target: tgt.ref, statusId: 'st_atk_up', op: 'add' });
           return;
@@ -540,11 +553,14 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         events.push({ t: 'defeated', av, target: tgt.ref, by: by?.ref });
         if (!firstFall) {
           firstFall = true;
-          if (om.firstFallHealBps) for (const f of alive('ally', 'front')) heal(av, tgt, f, f.maxHp * om.firstFallHealBps / 10000);
+          if (om.firstFallHealBps && alive('ally', 'front').length) {
+            proc(av, 'oopart', oopOf('oop_mandragora', 'oop_nameless_relic'), '첫 쓰러짐 · 전방 회복');
+            for (const f of alive('ally', 'front')) heal(av, tgt, f, f.maxHp * om.firstFallHealBps / 10000);
+          }
         }
         if (abydosUses < om.abydosLastStand && tgt.syn.includes('syn_abydos')) {
           const rest = alive('ally', 'front').filter((l) => l.syn.includes('syn_abydos'));
-          if (rest.length) { abydosUses++; for (const l of rest) { l.energy = 100; events.push({ t: 'resource', av, side: 'ally', energy: { unit: l.ref, value: 100 } }); } }
+          if (rest.length) { abydosUses++; proc(av, 'oopart', oopOf('oop_foreclosure_photo', 'oop_yume_notebook'), '최후의 저항 · 에너지 충전!', tgt, abydosUses); for (const l of rest) { l.energy = 100; events.push({ t: 'resource', av, side: 'ally', energy: { unit: l.ref, value: 100 } }); } }
         }
         if (om.coupOrder && tgt.secretary && coupLeft > 0) {
           const heir = alive('ally', 'front').filter((l) => l.syn.includes('syn_red_winter')).sort((a, b) => b.atk - a.atk)[0];
@@ -556,6 +572,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         if (by?.unitId === 'u_aris' || by?.unitId === 'u_al1s') levelUpKills.push({ eliteOrBoss: tgt.boss || n.type === 'elite' });
         if (by && by.ref.side === 'ally' && om.jailbreak && by.syn.includes('syn_outlaw') && notoriety < 6) {
           notoriety++;
+          proc(av, 'oopart', 'oop_jailbreak_kit', notoriety === 6 ? '대탈옥! 전방 일제 사격' : `악명 ${notoriety}`, by, notoriety);
           for (const l of live) if (l.ref.side === 'ally' && l.syn.includes('syn_outlaw')) l.atk = Math.round(l.atk * (1 + 0.08 * notoriety) / (1 + 0.08 * (notoriety - 1)));
           if (notoriety === 6) for (const t of alive('enemy', 'front')) hit(av, by, t, 1.35, undefined, { trueDmg: true });
         }
@@ -585,6 +602,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       // 볼프세크 철편(C12): 도발 중인 아군이 받은 피해의 15%를 공격자에게(턴당 3회)
       if (om.wolfseggReflectBps && tgt.ref.side === 'ally' && tgt.taunt && tgt.reflects < 3 && src.hasHp && src.hp > 0) {
         tgt.reflects++;
+        proc(av, 'oopart', 'oop_wolfsegg_steel', '피해 반사', tgt);
         const back = Math.round((amount + absorbed) * om.wolfseggReflectBps / 10000);
         if (back > 0) {
           src.hp = Math.max(0, src.hp - back);
@@ -601,6 +619,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       const shooter = live.filter((l) => l.ref.side === 'ally' && (l.hasHp ? l.hp > 0 : true)).sort((a, b) => b.atk - a.atk)[0];
       const foes = alive('enemy', 'front');
       if (!shooter || !foes.length) return;
+      proc(av, 'oopart', 'oop_pmc_contract', '정기 포격', shooter.hasHp ? shooter : undefined);
       hit(av, shooter, foes[Math.floor(rand() * foes.length)], 1, shooter.hasHp ? undefined : shooter.ref);
       const mine = alive('ally', 'front');
       if (!mine.length || !om.pmcFriendlyFireBps) return;
@@ -664,7 +683,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
             const over = heal(av, a, t, a.atk * 2.2 * rs);
             c(a).rearSupport += t.hp - before;
             // 황금 양모(C16): 힐러 2단계가 켜져 있으면 넘친 치유의 25%를 보호막으로
-            if (om.goldenFleece && healerTier2 && over > 0) { const sh = Math.round(over * 0.25); t.shield += sh; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: sh }); c(a).shield += sh; }
+            if (om.goldenFleece && healerTier2 && over > 0) { proc(av, 'oopart', 'oop_golden_fleece', '넘친 치유 → 보호막', t); const sh = Math.round(over * 0.25); t.shield += sh; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: sh }); c(a).shield += sh; }
           }
         } else if (/보호막|방어/.test(a.role)) {
           for (const t of front) { const amt = Math.round(a.atk * 1.4 * rs * healMul); t.shield += amt; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: amt }); c(a).shield += amt; c(a).rearSupport += amt; }
@@ -691,6 +710,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         if (side === 'ally' && om.dragonCenser && a.syn.includes('syn_shanhaijing')) {
           if (pulse !== censerPulse) { censerPulse = pulse; censerChain = 0; censerUsed.clear(); }
           censerChain++; censerUsed.add(a);
+          if (censerChain >= 2) proc(av, 'oopart', 'oop_dragon_censer', `향로 연쇄 · 피해 +${15 * (censerChain - 1)}%`, a, censerChain);
           mult = 1 + 0.15 * (censerChain - 1);
         }
         const aoe = /광역|폭발|포격/.test(a.role);
@@ -698,6 +718,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
           const ts = alive(enemySide, 'front');
           // 디스코 콜간테(C15): 블래스터 광역이 3명 이상을 맞히면 CRIT +20%
           const critBonus = side === 'ally' && om.discoCritBps && a.syn.includes('syn_blaster') && ts.length >= 3 ? om.discoCritBps : 0;
+          if (critBonus) proc(av, 'oopart', 'oop_disco_colgante', '광역 치명 +20%', a);
           for (const t of ts) hit(av, a, t, 1.5 * mult, undefined, { critBonus });
         } else hit(av, a, lowest(enemySide) ?? target, 2.6 * mult);
         if (side === 'ally' && om.dragonCenser && a.syn.includes('syn_shanhaijing')) {
@@ -705,15 +726,16 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
           if (next) { next.energy = Math.min(100, next.energy + 35); events.push({ t: 'resource', av, side, energy: { unit: next.ref, value: next.energy } }); }
         }
         // 프로토타입 인피니티(L05): 필살기가 해소되면 팀 SP +1(전역 주기당 1회)
-        if (side === 'ally' && om.spOnUltimate && pulse !== spUltPulse) { spUltPulse = pulse; sp.ally = Math.min(spMax.ally, sp.ally + 1); events.push({ t: 'resource', av, side, sp: sp.ally }); }
+        if (side === 'ally' && om.spOnUltimate && pulse !== spUltPulse) { spUltPulse = pulse; proc(av, 'oopart', 'oop_prototype_infinity', '필살기 해소 · SP +1', a); sp.ally = Math.min(spMax.ally, sp.ally + 1); events.push({ t: 'resource', av, side, sp: sp.ally }); }
       } else if (sp[side] >= 1 && a.cd <= 0) {
         sp[side]--;
         // 아틀란티스 메달(C17): 서포터의 첫 스킬은 쿨다운 −1
         a.cd = (side === 'ally' && om.atlantisMedal && a.syn.includes('syn_supporter') && !a.skillUsed ? 1 : 2) + (allyFront ? om.frontSkillCdBonus : 0);
+        if (side === 'ally' && om.atlantisMedal && a.syn.includes('syn_supporter') && !a.skillUsed) proc(av, 'oopart', 'oop_atlantis_medal', '첫 스킬 쿨다운 −1', a);
         // 금지 시제품 No.0(R10): 전방 전투 스킬 쿨다운 +1턴
         a.skillUsed = true;
         // 바그다드 전지(C07)·L05: 팀 SP가 0이 되면 +2
-        if (side === 'ally' && sp.ally === 0 && spRefills < om.spRefillUses) { spRefills++; sp.ally = Math.min(spMax.ally, 2); }
+        if (side === 'ally' && sp.ally === 0 && spRefills < om.spRefillUses) { spRefills++; proc(av, 'oopart', oopOf('oop_baghdad_battery', 'oop_prototype_infinity'), 'SP 바닥 · +2 충전', a); sp.ally = Math.min(spMax.ally, 2); }
         events.push({ t: 'action', av, actor: a.ref, kind: 'skill', targets: [target.ref] });
         events.push({ t: 'resource', av, side, sp: sp[side] });
         if (/탱커|방어|도발|방패/.test(a.role)) {
@@ -730,6 +752,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
               events.push({ t: 'status', av, target: target.ref, statusId: 'st_delayed', op: 'add', replacedFrom: 'st_stun' });
               // 위니퍼소키 돌(C18): 컨트롤러의 기절이 보스에 막히면 행동 15% 지연 + 1턴 받는 피해 +20%
               if (side === 'ally' && om.winnipesaukee && a.syn.includes('syn_controller')) {
+                proc(av, 'oopart', 'oop_winnipesaukee_stone', '보스 행동 지연', target);
                 target.next += 0.15 * (10000 / target.spd); target.controlled = true;
                 events.push({ t: 'status', av, target: target.ref, statusId: 'st_vuln', op: 'add' });
               }

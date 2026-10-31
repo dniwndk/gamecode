@@ -880,20 +880,130 @@ kbd { font-family: var(--f-num); }
 .k-log-list li.is-down { color: var(--ink-3); }
 .k-battle.is-paused .k-field::after { content: "일시정지 · Space"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 12px 28px; border-radius: 999px; background: rgba(19,36,63,.85); color: #fff; font-weight: 800; z-index: 6; }
 
+/* ── 타격감·뽕맛 연출(2안, fx/battleFx.ts가 세기를 정한다) ── */
+.k-toggle input.k-range { position: static; opacity: 1; width: 280px; height: 28px; accent-color: var(--blue); cursor: pointer; }
+/* 히트스톱: 전장 안 모든 움직임을 잠깐 멈춘다 */
+.k-field.is-stop, .k-field.is-stop * { animation-play-state: paused !important; }
+.k-field.is-stop .k-cb.is-hit-2 .k-cb-frame, .k-field.is-stop .k-cb.is-hit-3 .k-cb-frame { filter: brightness(1.35) contrast(1.1); }
+/* 방향성 흔들림 */
+.k-field.is-jolt { animation: k-jolt .26s cubic-bezier(.2,.7,.3,1); }
+@keyframes k-jolt { 12% { transform: translate(var(--jx), var(--jy)); } 40% { transform: translate(calc(var(--jx) * -.45), calc(var(--jy) * -.45)); } 70% { transform: translate(calc(var(--jx) * .18), calc(var(--jy) * .18)); } }
+.no-shake .k-field.is-jolt { animation: none; }
+/* 피해량 비례 피격: 묵직(2)은 크게 밀리고 붉게, 폭발(3)은 더 크게 */
+.k-cb.is-enemy { --kd: -1; }
+.k-cb.is-ally { --kd: 1; }
+.k-cb.is-hit-2 .k-cb-frame { animation: k-hit-heavy .3s cubic-bezier(.2,.8,.3,1); --kb: 10px; }
+.k-cb.is-hit-3 .k-cb-frame { animation: k-hit-heavy .38s cubic-bezier(.2,.8,.3,1); --kb: 18px; }
+@keyframes k-hit-heavy { 15% { transform: translateY(calc(var(--kb) * var(--kd))) scale(.95) rotate(-2deg); } 45% { transform: translateY(calc(var(--kb) * var(--kd) * -.25)) rotate(1deg); } }
+/* 붉은 틴트는 그림자 층(.k-cb-shade)에 — 3성 반짝임이 쓰는 ::before를 건드리지 않는다 */
+.k-cb.is-hit-2 .k-cb-shade { animation: k-tint .42s ease-out; }
+.k-cb.is-hit-3 .k-cb-shade { animation: k-tint-hard .5s ease-out; }
+@keyframes k-tint { 0% { background-color: rgba(255,40,40,.45); } 100% { background-color: rgba(255,40,40,0); } }
+@keyframes k-tint-hard { 0% { background-color: rgba(255,50,30,.7); } 100% { background-color: rgba(255,50,30,0); } }
+/* 체력 잔상 */
+.k-hp-ghost { position: absolute; left: 0; top: 0; bottom: 0; width: var(--p, 100%); background: #fff; opacity: .85; transition: width .45s ease-in .32s; }
+/* 숫자: 크기는 인라인 font-size, 큰 숫자는 튕기며 떨림, 작은 숫자는 흐리게 */
+.k-float.is-faint { opacity: .82; -webkit-text-stroke-width: 1px; }
+.k-float.is-big { animation: k-float-big 1.25s cubic-bezier(.2,.8,.3,1) forwards; z-index: 2; }
+@keyframes k-float-big { 0% { opacity: 0; transform: translate(-50%, 6px) scale(.4); } 10% { opacity: 1; transform: translate(-50%, -14px) scale(1.35); } 16% { transform: translate(calc(-50% - 3px), -14px) scale(1.1) rotate(-3deg); } 22% { transform: translate(calc(-50% + 3px), -16px) scale(1.05) rotate(2deg); } 30% { transform: translate(-50%, -18px) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -64px); } }
+.k-float.is-break { font-family: var(--f-num); font-style: italic; font-size: 30px; color: #fff; -webkit-text-stroke: 0; background: linear-gradient(90deg, #4aa8ff, #9fdcff); padding: 1px 14px; border-radius: 6px; letter-spacing: .12em; }
+.k-float.is-overkill { font-family: var(--f-num); font-style: italic; font-size: 26px; color: #fff; -webkit-text-stroke: 0; background: linear-gradient(90deg, #e5383b, #ff8a3c); padding: 2px 14px; border-radius: 6px; letter-spacing: .06em; }
+.k-shard { position: absolute; width: 14px; height: 6px; border-radius: 2px; box-shadow: 0 0 6px rgba(255,255,255,.9); animation: k-shard .6s cubic-bezier(.2,.8,.3,1) forwards; }
+@keyframes k-shard { from { transform: translate(-50%, -50%) rotate(var(--r)); opacity: 1; } to { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(calc(var(--r) + 240deg)); opacity: 0; } }
+/* 컷인 동안 전장 흑백 정지 → 컷인이 빠지면 첫 타격이 색과 함께 터진다 */
+.k-field.is-mono .k-bf-row, .k-field.is-mono .k-field-plane { filter: grayscale(.85) brightness(.82); transition: filter .12s; }
+.k-field .k-bf-row, .k-field .k-field-plane { transition: filter .25s; }
+/* 발동 배너(왼쪽 피드) */
+.k-proc-feed { position: absolute; left: 40px; top: 30px; width: 380px; display: flex; flex-direction: column; gap: 8px; z-index: 7; pointer-events: none; }
+.k-proc { display: flex; align-items: center; gap: 12px; padding: 8px 18px 8px 10px; border-radius: 12px; background: rgba(19,36,63,.88); color: #fff; box-shadow: 0 8px 20px rgba(19,36,63,.3), inset 0 0 0 1.5px rgba(255,255,255,.18); animation: k-proc-in .28s cubic-bezier(.2,.9,.3,1.2); transform-origin: left center; }
+.k-proc > div { min-width: 0; display: flex; flex-direction: column; }
+.k-proc small { font-size: 14px; font-weight: 700; color: #b9d6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-proc b { font-size: 20px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-proc-oop { width: 46px; height: 46px; flex: none; border-radius: 10px; background: #fff; display: grid; place-items: center; overflow: hidden; }
+.k-proc-oop img { width: 100%; height: 100%; object-fit: contain; }
+.k-proc.is-enemy { background: rgba(120,24,30,.88); }
+.k-proc.is-gold { background: linear-gradient(90deg, rgba(120,84,0,.95), rgba(19,36,63,.92)); box-shadow: 0 0 0 2px #ffc93c, 0 0 22px rgba(255,201,60,.55); }
+.k-proc.is-gold b { color: #ffe08a; font-size: 22px; }
+.k-proc.is-legend, .k-proc.is-plat { position: relative; overflow: hidden; background: linear-gradient(100deg, #2b1a5e, #13243f 60%); box-shadow: 0 0 0 2px #fff, 0 0 30px rgba(170,140,255,.8); }
+.k-proc.is-legend b, .k-proc.is-plat b { font-size: 24px; background: linear-gradient(90deg, #ffd6f5, #c7f0ff, #fff3b0, #ffd6f5); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.k-proc.is-legend::after, .k-proc.is-plat::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.45) 50%, transparent 65%); background-size: 250% 100%; animation: k-plat-glint 1.2s ease-out 1 both; }
+.k-proc.is-out { animation: k-proc-out .26s ease forwards; }
+@keyframes k-proc-in { from { opacity: 0; transform: translateX(-60px) scale(.9); } }
+@keyframes k-proc-out { to { opacity: 0; transform: translateX(-40px); } }
+.k-proc-pop { position: absolute; transform: translate(-50%, -50%); z-index: 3; animation: k-proc-pop .85s cubic-bezier(.2,.9,.3,1.3) forwards; }
+.k-proc-pop .k-gfx-img { width: 52px; height: 52px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.4)); }
+@keyframes k-proc-pop { 0% { opacity: 0; transform: translate(-50%, -30%) scale(.3); } 25% { opacity: 1; transform: translate(-50%, -50%) scale(1.25); } 40% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -110%) scale(.9); } }
+.k-cb.is-proc .k-cb-frame { animation: k-proc-ring .55s ease-out; }
+@keyframes k-proc-ring { 30% { box-shadow: 0 0 0 5px #ffc93c, 0 0 30px rgba(255,201,60,.9); } }
+/* 연쇄 카운터(오른쪽) */
+.k-chain { position: absolute; right: 70px; top: 42%; z-index: 7; pointer-events: none; display: flex; flex-direction: column; align-items: flex-end; opacity: 0; transform: translateY(-50%); transition: opacity .2s; }
+.k-chain.is-on { opacity: 1; }
+.k-chain small { font-family: var(--f-num); font-style: italic; font-weight: 800; letter-spacing: .35em; font-size: 22px; color: var(--blue-d); }
+.k-chain b { font-family: var(--f-num); font-style: italic; font-weight: 900; line-height: .9; font-size: calc(64px + var(--n, 1) * 12px); color: #fff; -webkit-text-stroke: 3px var(--navy); paint-order: stroke fill; text-shadow: 0 6px 0 rgba(19,36,63,.25); }
+.k-chain.is-pop b { animation: k-chain-pop .32s cubic-bezier(.2,.9,.3,1.4); }
+@keyframes k-chain-pop { from { transform: scale(1.7) rotate(-6deg); } }
+.k-chain.is-gold b { color: #ffd166; -webkit-text-stroke-color: #7a4b00; }
+.k-chain.is-plat b { background: linear-gradient(90deg, #ff9ad5, #8be3ff, #fff08a, #ff9ad5); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 0; filter: drop-shadow(0 0 2px var(--navy)) drop-shadow(0 4px 0 rgba(19,36,63,.35)); animation: k-chain-pop .32s cubic-bezier(.2,.9,.3,1.4), k-glow 1s linear infinite; }
+/* EX 연쇄 */
+.k-exchain { position: absolute; right: 120px; top: 200px; z-index: 32; pointer-events: none; text-align: right; animation: k-exchain .5s cubic-bezier(.2,.9,.3,1.3) both; }
+.k-exchain small { display: block; font-family: var(--f-num); font-style: italic; font-weight: 800; letter-spacing: .3em; font-size: 26px; color: var(--yellow); text-shadow: 0 2px 0 var(--navy); }
+.k-exchain b { font-family: var(--f-num); font-style: italic; font-weight: 900; font-size: calc(70px + var(--n) * 10px); color: #fff; -webkit-text-stroke: 3px #e5383b; paint-order: stroke fill; }
+@keyframes k-exchain { from { opacity: 0; transform: translateX(120px) skewX(-12deg); } }
+/* 전투 시작 시너지 선언 */
+.k-syn-online { position: absolute; left: 0; right: 0; top: 380px; height: 300px; z-index: 33; pointer-events: none; display: flex; align-items: center; justify-content: center; gap: 36px; }
+.k-syn-online-band { position: absolute; left: -60px; right: -60px; top: 40px; bottom: 40px; transform: skewY(-3deg); background: linear-gradient(90deg, transparent, rgba(19,36,63,.92) 15%, rgba(19,36,63,.92) 85%, transparent); animation: k-online-band .35s cubic-bezier(.2,.9,.2,1) both; }
+@keyframes k-online-band { from { transform: skewY(-3deg) scaleY(0); } to { transform: skewY(-3deg) scaleY(1); } }
+.k-syn-online > .k-hex { position: relative; animation: k-online-hex .6s cubic-bezier(.2,.9,.3,1.4) both; }
+.k-syn-online-text { position: relative; color: #fff; display: flex; flex-direction: column; gap: 4px; animation: k-online-text .5s cubic-bezier(.2,.9,.2,1) both; }
+@keyframes k-online-text { from { opacity: 0; transform: translateX(160px); } }
+.k-syn-online-text small { font-family: var(--f-num); font-style: italic; font-weight: 800; letter-spacing: .3em; font-size: 24px; color: var(--cyan); }
+.k-syn-online-text b { font-size: 64px; font-weight: 900; font-style: italic; letter-spacing: -.02em; }
+.k-syn-online-rest { display: flex; gap: 8px; margin-top: 6px; }
+.k-syn-online.is-plat .k-syn-online-band { background: linear-gradient(90deg, transparent, rgba(43,26,94,.95) 15%, rgba(19,36,63,.95) 85%, transparent); box-shadow: 0 0 60px rgba(170,140,255,.6); }
+.k-syn-online.is-plat .k-syn-online-text small { background: linear-gradient(90deg, #ff9ad5, #8be3ff, #fff08a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.k-syn-online.is-out { animation: k-banner-out .3s ease forwards; }
+@keyframes k-online-hex { from { opacity: 0; transform: scale(2.2) rotate(-30deg); } }
+/* 격화: 가장자리 붉은 맥동(세기 --heat) + 경보 띠 */
+.k-heat { position: absolute; inset: -20px; pointer-events: none; z-index: 0; opacity: 0; border-radius: 30px; box-shadow: inset 0 0 calc(40px + var(--heat, 0) * 120px) calc(var(--heat, 0) * 30px) rgba(229,56,59,.75); transition: opacity .4s; }
+.k-field.is-heated .k-heat { opacity: calc(.35 + var(--heat, 0) * .65); animation: k-heat 1.6s ease-in-out infinite; }
+@keyframes k-heat { 50% { opacity: calc(.15 + var(--heat, 0) * .4); } }
+.k-esc-banner { position: absolute; left: 50%; top: 190px; z-index: 31; pointer-events: none; transform: translateX(-50%); padding: 10px 40px; border-radius: 10px; color: #fff; text-align: center;
+  background: repeating-linear-gradient(-45deg, #e5383b 0 18px, #b4232a 18px 36px); box-shadow: 0 0 0 3px #fff, 0 10px 30px rgba(180,35,42,.45); animation: k-esc 1.6s ease both; }
+.k-esc-banner small { display: block; font-family: var(--f-num); font-weight: 800; font-style: italic; letter-spacing: .35em; font-size: 16px; }
+.k-esc-banner b { font-size: 30px; font-weight: 900; }
+@keyframes k-esc { 0% { opacity: 0; transform: translateX(-50%) scaleX(0); } 12% { opacity: 1; transform: translateX(-50%) scaleX(1.05); } 18% { transform: translateX(-50%) scaleX(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+.k-log-list li.is-proc { color: #a06a00; font-weight: 700; }
+.is-mobile .k-proc-feed { left: 6px; top: 4px; width: 230px; gap: 4px; }
+.is-mobile .k-proc { padding: 4px 10px 4px 6px; gap: 8px; }
+.is-mobile .k-proc b { font-size: 15px; }
+.is-mobile .k-proc small { font-size: 12px; }
+.is-mobile .k-proc-oop { width: 30px; height: 30px; }
+.is-mobile .k-proc .k-hex { --s: 30px !important; }
+.is-mobile .k-chain { right: 10px; }
+.is-mobile .k-chain b { font-size: calc(40px + var(--n, 1) * 6px); }
+.is-mobile .k-syn-online { position: fixed; top: 30%; height: 180px; gap: 14px; }
+.is-mobile .k-syn-online > .k-hex { --s: 70px !important; }
+.is-mobile .k-syn-online-text b { font-size: 30px; }
+.is-mobile .k-syn-online-rest .k-hex { --s: 26px !important; }
+.is-mobile .k-esc-banner { position: fixed; top: 80px; padding: 6px 18px; }
+.is-mobile .k-esc-banner b { font-size: 18px; }
+.is-mobile .k-exchain { position: fixed; right: 16px; top: 120px; }
+.is-mobile .k-exchain b { font-size: 44px; }
+
 /* 필살기 컷인 */
 .k-cutin { position: absolute; inset: 0; pointer-events: none; z-index: 30; display: none; }
 .k-cutin.is-on { display: block; }
 .k-cutin-band { position: absolute; left: -100px; right: -100px; top: 360px; height: 330px; background: linear-gradient(90deg, rgba(18,140,255,.95), rgba(69,211,255,.92) 60%, rgba(255,255,255,.9));
-  transform: skewY(-6deg); animation: k-band 1.2s cubic-bezier(.2,.9,.2,1) both; box-shadow: 0 0 0 8px rgba(255,255,255,.6), 0 30px 60px rgba(19,36,63,.3); }
+  transform: skewY(-6deg); animation: k-band var(--cut-ms, 1.2s) cubic-bezier(.2,.9,.2,1) both; box-shadow: 0 0 0 8px rgba(255,255,255,.6), 0 30px 60px rgba(19,36,63,.3); }
 .k-cutin-band::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.12) 0 4px, transparent 4px 40px); }
 @keyframes k-band { 0% { transform: skewY(-6deg) scaleY(0); } 15% { transform: skewY(-6deg) scaleY(1); } 85% { transform: skewY(-6deg) scaleY(1); opacity: 1; } 100% { transform: skewY(-6deg) scaleY(.2); opacity: 0; } }
-.k-cutin-art { position: absolute; left: 160px; top: 260px; width: 560px; height: 500px; animation: k-cut-art 1.2s cubic-bezier(.2,.9,.2,1) both; }
+.k-cutin-art { position: absolute; left: 160px; top: 260px; width: 560px; height: 500px; animation: k-cut-art var(--cut-ms, 1.2s) cubic-bezier(.2,.9,.2,1) both; }
 .k-cutin-art .k-portrait { width: 100%; height: 100%; background: transparent;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 80%, transparent), linear-gradient(180deg, transparent, #000 20%, #000 80%, transparent); -webkit-mask-composite: source-in;
   mask-image: linear-gradient(90deg, transparent, #000 18%, #000 80%, transparent), linear-gradient(180deg, transparent, #000 20%, #000 80%, transparent); mask-composite: intersect; }
 .k-cutin-art img { object-position: 50% 14%; transform: scale(1.25); transform-origin: 50% 20%; }
 @keyframes k-cut-art { 0% { transform: translateX(-260px); opacity: 0; } 18% { transform: translateX(0); opacity: 1; } 80% { transform: translateX(40px); opacity: 1; } 100% { transform: translateX(120px); opacity: 0; } }
-.k-cutin-text { position: absolute; left: 780px; top: 420px; color: #fff; animation: k-cut-text 1.2s cubic-bezier(.2,.9,.2,1) both; }
+.k-cutin-text { position: absolute; left: 780px; top: 420px; color: #fff; animation: k-cut-text var(--cut-ms, 1.2s) cubic-bezier(.2,.9,.2,1) both; }
 .k-cutin-text small { font-family: var(--f-num); font-style: italic; font-weight: 800; letter-spacing: .3em; font-size: 28px; color: var(--yellow); }
 .k-cutin-text b { display: block; font-size: 84px; font-weight: 900; font-style: italic; letter-spacing: -.03em; text-shadow: 0 4px 0 rgba(19,36,63,.25); }
 .k-cutin-text p { margin: 4px 0 0; font-size: 28px; font-weight: 700; max-width: 900px; color: var(--navy); background: rgba(255,255,255,.9); padding: 8px 18px; border-radius: 10px; display: inline-block; }
@@ -1396,7 +1506,7 @@ kbd { font-family: var(--f-num); }
 
 /* 필살기 컷인(학생별 NAI 액션 일러스트, 2.4:1 띠) */
 .k-cutin-wide { position: absolute; left: -40px; right: -40px; top: 300px; height: 470px; overflow: hidden;
-  clip-path: polygon(0 10%, 100% 0, 100% 90%, 0 100%); animation: k-cut-wide 1.2s cubic-bezier(.2,.9,.2,1) both;
+  clip-path: polygon(0 10%, 100% 0, 100% 90%, 0 100%); animation: k-cut-wide var(--cut-ms, 1.2s) cubic-bezier(.2,.9,.2,1) both;
   box-shadow: 0 0 0 6px #fff; filter: drop-shadow(0 18px 30px rgba(10,30,70,.35)); }
 .k-cutin-wide img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; display: block; animation: k-cut-pan 1.2s linear both; }
 .k-cutin-wide::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 40%, rgba(8,34,80,.62) 100%); }

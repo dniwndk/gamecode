@@ -60,6 +60,7 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 | 레벨업 미리보기 | 카탈로그 `rules.xp.xpToNext`로 「구매 후 Lv」 표시 | 구매 횟수별 결과 레벨·XP |
 | 연출 신호 | `UiState.cues`(첫 영입·첫 배치·합성·레벨업·금고·장비 반환) | `GameEvent`로 같은 신호 |
 | 전투 재생 | `run.lastBattle`(전투원 초기값 + 이벤트 로그, 사양서 11.2 모양). v2.3.6부터 시간 제한이 없어 결과 사유에 `timeout`이 없고, 격화 단계가 바뀔 때 `{ t: 'escalation', av, damageBps }` 이벤트가 온다(GDD v2.3 13장). 시간 막대는 격화 시작(`rules.battle.escalation.startAv`)까지의 진행으로 그린다 | M2 전투 이벤트 |
+| 발동 표시 | 전투 이벤트 `{ t: 'proc', av, cause: { kind: 'synergy' \| 'oopart', id }, label, unit?, chain? }`(선택). 시너지·오파츠가 발동한 순간 바로 앞에 끼우고, 그 뒤 피해·치유·자원 이벤트가 효과다. 화면은 발동 배너·연쇄 카운터·효과음에 쓴다. 미리보기 흉내 전투는 오파츠 15종과 「조금만 쉬고 싶어」 휴식만 보낸다 | 코어 효과 처리기가 발동할 때마다 같은 모양으로 보냄. chain은 같은 효과가 이어진 횟수(연쇄·누적). 보내지 않아도 결과는 같고 연출만 빠진다 |
 | 노드 진행 기록 | `run.nodeHistory`(15칸 승/패) | 런 상태에 포함 |
 | 패배 피해 미리보기 | `run.node.defeatDamagePreview` | 후보별 예상 피해 |
 

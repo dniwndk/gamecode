@@ -4,6 +4,7 @@ import type { DialogueKey, EnemyDefinition, EquipmentDefinition, OopartDefinitio
 import { h } from './dom';
 import { chooseFxTier } from './fx/capabilities';
 import { createFx, NO_FX, type Fx } from './fx/engine';
+import { createSfx, type Sfx } from './fx/sfx';
 import { icon } from './icons';
 import type { UiDriver, UiState } from './model';
 import { mountBattle } from './screens/battle';
@@ -27,6 +28,8 @@ export interface Settings {
   defaultSpeed: 1 | 2 | 4;
   /** WebGL2 셰이더 연출(유체 배경·카드 광택·전환 파편) */
   fx: boolean;
+  /** 효과음 볼륨 0~100(0이면 오디오 장치를 열지 않는다) */
+  sfxVolume: number;
 }
 
 export interface Screen {
@@ -52,6 +55,8 @@ export interface Ctx {
   stage: HTMLElement;
   /** 셰이더 연출. 꺼져 있거나 WebGL2가 없으면 아무 일도 하지 않는다 */
   fx: Fx;
+  /** 효과음(합성음). 볼륨 0이면 아무 일도 하지 않는다 */
+  sfx: Sfx;
   /** public/ 아래 그림 주소(배포 경로 기준). 예: art('cutins/u_aru.webp') */
   art(path: string): string;
   go(route: LocalRoute): void;
@@ -79,7 +84,7 @@ export const FACTION_COLOR: Record<string, string> = {
 };
 
 const SETTINGS_KEY = 'kivotos-ui-settings';
-const DEFAULT_SETTINGS: Settings = { reduceMotion: false, noFlash: false, noShake: false, dialogue: true, defaultSpeed: 1, fx: true };
+const DEFAULT_SETTINGS: Settings = { reduceMotion: false, noFlash: false, noShake: false, dialogue: true, defaultSpeed: 1, fx: true, sfxVolume: 60 };
 
 function loadSettings(): Settings {
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -145,6 +150,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     root.classList.toggle('no-shake', settings.noShake);
   };
   applySettings();
+  const sfx = createSfx(() => settings.sfxVolume);
 
   // 셰이더 연출: 설정·연출 줄이기·WebGL2 지원에 따라 켜고 끈다. 화면 코드는 ctx.fx만 부른다.
   let fx: Fx = NO_FX;
@@ -238,12 +244,14 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     saveSettings() {
       applySettings();
       syncFx();
+      sfx.setVolume(settings.sfxVolume);
       try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* 무시 */ }
     },
     mobile: () => mobile,
     scale: () => scale,
     stage,
     fx: fxProxy,
+    sfx,
     art,
     go(r) { route = r; render(driver.get()); },
     lookup: {

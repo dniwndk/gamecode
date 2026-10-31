@@ -5,7 +5,7 @@ export { costOdds, remainingCopies, rollShop, shopExcluded, type OwnedCopy } fro
 export { escalationDamageBps } from '../core/battle/escalation';
 export { resolveAwakenings, type OwnedUnitRef } from '../core/awakening/awakening';
 export {
-  emptyRunStacks, runStackLines, settleRunStacks, stackBattleBonuses, LEVEL_UP_SYN, PRINCESS_SYN, type RunStacks, type StackLine,
+  emptyRunStacks, runStackLines, settleRunStacks, stackBattleBonuses, HEAD_PREFECT_SYN, LEVEL_UP_SYN, PRINCESS_SYN, type RunStacks, type StackLine,
 } from '../core/synergy/runStacks';
 export { oopartModifiers, oopartSupport, type OopartModifiers, type OopartSupport } from '../core/ooparts/modifiers';
 export {

@@ -65,7 +65,15 @@ export type BattleEventView =
   /** 격화 단계가 바뀐 순간. damageBps는 지금 양쪽 모든 피해에 더해지는 비율(시간 제한 대신, GDD v2.3 13장) */
   | { t: 'escalation'; av: number; damageBps: number }
   | { t: 'defeated'; av: number; target: Ref; by?: Ref }
+  /**
+   * 연출용 표시 이벤트(선택). 시너지·오파츠가 발동한 순간을 알린다. 바로 뒤에 오는 피해·치유·자원 이벤트가 그 효과다.
+   * 결과에는 영향이 없고, 코어가 보내지 않으면 화면은 발동 배너·연쇄 카운터만 생략한다.
+   * chain: 같은 효과가 이어진 횟수(용의 향로 연쇄 2, 악명 3 …). 없으면 화면이 한 행동 안의 발동 수로 센다.
+   */
+  | { t: 'proc'; av: number; cause: ProcCause; label: string; unit?: Ref; chain?: number }
   | { t: 'end'; av: number; outcome: 'win' | 'loss'; reason: ResultView['reason'] };
+
+export interface ProcCause { kind: 'synergy' | 'oopart'; id: string }
 
 export interface CombatantView {
   ref: Ref;
