@@ -2,6 +2,8 @@
 
 > **새 게임 · 이름이 남는 동안** — 괴담과 격리 구역이 일상인 도시에서 한 사람의 생애를 자동으로 살아 내는 텍스트 인생 시뮬레이션.
 > 플레이: **https://dniwndk.github.io/gamecode/name-remains/** · 소스와 실행 방법: [name-remains/README.md](name-remains/README.md)
+>
+> **개발 중 · 키보토스 택티컬 프론트라인** — 블루 아카이브 팬메이드 솔로 웹 오토배틀러. 지금은 기반 단계(M0)라 플레이할 수 없다. [kivotos/README.md](kivotos/README.md)
 
 마법공학 도시 에르덴(공력 184년)에서 한 시민의 열세 살부터 마지막 날까지를 사는 텍스트 생애 시뮬레이션. 설계는 [design/plan.md](design/plan.md).
 

@@ -1,0 +1,279 @@
+[
+  {
+    "id": "en_helmet_thug",
+    "name": "카타카타 헬멧단 돌격병",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 1100,
+      "atk": 95,
+      "def": 35,
+      "spd": 100,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_helmet_skill"
+    ],
+    "ai": "SP ≥ 1이고 쿨다운 0일 때 최전열 아군에게 140% 연사 스킬 사용, 아니면 기본 공격",
+    "role": "1장 일반 전방 보병 (단일 타격)",
+    "counterplay": "기본적인 탱커(`u_haruka`, `u_yuuka`)나 1코스트 딜러 점사로 손쉽게 제압"
+  },
+  {
+    "id": "en_helmet_grenadier",
+    "name": "카타카타 헬멧단 척탄병",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 920,
+      "atk": 110,
+      "def": 25,
+      "spd": 96,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_grenade_skill"
+    ],
+    "ai": "전방 2인 대상 수류탄 투척(ATK 115% 광역 피해, 쿨다운 2턴)",
+    "role": "1장 일반 광역 압박 보병",
+    "counterplay": "체력이 낮으므로 `u_junko`, `u_momoi` 광역기나 `u_hasumi` 저격으로 먼저 끊어낸다"
+  },
+  {
+    "id": "en_sukeban_smg",
+    "name": "스케반 거리 불량배 (SMG)",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 1350,
+      "atk": 118,
+      "def": 45,
+      "spd": 112,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_sukeban_skill"
+    ],
+    "ai": "자신에게 SPD +15 버프를 걸고 최전열 아군을 빠르게 연타",
+    "role": "1~2장 고속 단일 압박 딜러",
+    "counterplay": "`u_tsubaki`의 도발이나 `u_suzumi`의 기절로 행동 템포를 끊는다"
+  },
+  {
+    "id": "en_sukeban_shield",
+    "name": "스케반 방패 돌격조",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 2100,
+      "atk": 85,
+      "def": 85,
+      "spd": 90,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_shield_up"
+    ],
+    "ai": "첫 턴 자신에게 DEF +40% 및 1턴 도발 부여, 이후 기본 공격",
+    "role": "1~2장 적 전방 방어벽",
+    "counterplay": "`u_shiroko`, `u_azusa`의 방어력 감소나 `u_iori`의 관통/방어무시 피해로 돌파"
+  },
+  {
+    "id": "en_pmc_heavy",
+    "name": "카이저 PMC 중장갑 보병",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 2800,
+      "atk": 140,
+      "def": 105,
+      "spd": 95,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_pmc_shield"
+    ],
+    "ai": "체력 70% 이하 시 최대 HP 20% 보호막 전개 및 최전열 강타(ATK 150%)",
+    "role": "1장 정예 및 2장 일반 중장갑 탱커",
+    "counterplay": "중장갑 카운터인 `u_iori`, `u_nonomi`, `u_hasumi` 또는 방어 감소 디버프 활용"
+  },
+  {
+    "id": "en_pmc_sniper",
+    "name": "카이저 PMC 지정사수 (후방)",
+    "zone": "rear",
+    "boss": false,
+    "baseStats": {
+      "hp": 1400,
+      "atk": 165,
+      "def": 40,
+      "spd": 102,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_en_pmc_rear_snipe"
+    ],
+    "ai": "후방 정기 행동(`rear_action`)마다 아군 전방 중 현재 HP가 가장 낮은 대상을 ATK 135%로 저격",
+    "role": "적 후방 저격 지원병 (아군 저체력 전방 마무리 위협)",
+    "counterplay": "`u_serina`, `u_ayane`의 위기 반응 치유/보호막으로 저체력 아군을 보호하고 적 전방을 빨리 전멸시켜 전투 종료"
+  },
+  {
+    "id": "en_sweeper_drone",
+    "name": "자율기계 스위퍼 (자폭/방전형)",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 1900,
+      "atk": 155,
+      "def": 60,
+      "spd": 118,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_sweeper_shock"
+    ],
+    "ai": "고속 접근 후 아군 전방 전체에 ATK 110% 전기 충격 피해",
+    "role": "2장 다수 군집 광역 딜러",
+    "counterplay": "`u_nonomi`, `u_mutsuki`, `u_momoi`, `u_aris`의 광역 화력으로 일거에 청소"
+  },
+  {
+    "id": "en_automaton_goliath",
+    "name": "데카그라마톤 중기갑 골리앗",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 4800,
+      "atk": 195,
+      "def": 125,
+      "spd": 92,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_goliath_laser",
+      "eff_en_goliath_ult"
+    ],
+    "ai": "2턴마다 아군 전방 전체에 레이저 포격(ATK 145%), 에너지 100 도달 시 최전열에 과출력 빔(ATK 260%)",
+    "role": "2장 정예 및 3장 수문장 중기갑 병기",
+    "counterplay": "`u_yuuka`, `u_shizuko`의 전체 보호막과 `u_azusa`, `u_rio`의 방어력 감소로 대응"
+  },
+  {
+    "id": "en_justina_follower",
+    "name": "유스티나 성도회 미메시스",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 3400,
+      "atk": 210,
+      "def": 75,
+      "spd": 110,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_justina_smite"
+    ],
+    "ai": "스킬로 아군 전방 2명에게 ATK 155% 피해 및 받는 치유량 -20%(2턴) 부여",
+    "role": "3장 일반/정예 고화력 신비 병종",
+    "counterplay": "치유에만 의존하기보다 `syn_millennium` 보호막이나 `u_tsubaki`/`u_hoshino`의 피해 감소·기절로 대응"
+  },
+  {
+    "id": "en_justina_choir_rear",
+    "name": "유스티나 성가대 환영 (후방)",
+    "zone": "rear",
+    "boss": false,
+    "baseStats": {
+      "hp": 2000,
+      "atk": 180,
+      "def": 50,
+      "spd": 108,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_en_choir_rear_buff"
+    ],
+    "ai": "후방 정기 행동(`rear_action`)마다 적 전방 전체에 ATK +20% 버프 및 최대 HP 10% 회복 부여",
+    "role": "3장 적 후방 강화/회복 지원",
+    "counterplay": "적 전방의 버프를 찍어누르는 순간 폭딜(`u_mika`, `u_wakamo`, `u_aru`)로 적 전방을 하나씩 빠르게 끊어낸다"
+  },
+  {
+    "id": "boss_kaiten_fx_mk0",
+    "name": "카이텐 FX Mk.0 (1장 보스)",
+    "zone": "front",
+    "boss": true,
+    "baseStats": {
+      "hp": 6500,
+      "atk": 175,
+      "def": 95,
+      "spd": 104,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_boss_kaiten_aura",
+      "eff_boss_kaiten_ult"
+    ],
+    "ai": "턴 시작 시 붉은 오라(ATK +25%)와 분홍 방패(DEF +40% 및 보호막)를 교대 전개. 에너지 100 시 '파이널 머신건 & 소드'로 아군 전방 전체에 ATK 180% 피해",
+    "role": "1장 최종 보스 (공방 태세 변환 기믹 시험)",
+    "counterplay": "대응 A(방어 약화·점사): 시로코/아즈사의 방깎과 하스미/이오리의 단일 딜로 방패 태세를 강제 돌파 / 대응 B(광역 보호막·유지력): 유우카/후우카/세리나로 보스 필살기를 받아내며 지구전 승리"
+  },
+  {
+    "id": "boss_chesed_core",
+    "name": "데카그라마톤의 예언자: 헤세드 (2장 보스)",
+    "zone": "front",
+    "boss": true,
+    "baseStats": {
+      "hp": 11500,
+      "atk": 215,
+      "def": 130,
+      "spd": 98,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_boss_chesed_wave",
+      "eff_boss_chesed_exposed",
+      "eff_boss_chesed_ult"
+    ],
+    "ai": "전방 슬롯 2~3번의 호위 스위퍼(`en_sweeper_drone`)와 함께 등장. 호위기가 모두 처치되거나 매 3번째 자신의 턴마다 외장 장갑이 열리며 1턴간 DEF -60% 및 받는 피해 +35% 노출 상태가 됨. 에너지 100 시 전체 방전 포격(ATK 200%)",
+    "role": "2장 최종 보스 (호위기 광역 정리 후 본체 노출 극딜 기믹 시험)",
+    "counterplay": "대응 A(광역 청소 후 극딜): 노노미·무츠키·모모이·아리스로 호위 스위퍼를 빠르게 지워 노출 상태를 유도 / 대응 B(방어 무시 직격): 와카모·이오리·백귀야행·특수장갑의 `true` 피해로 외장 장갑과 무관하게 본체 직격"
+  },
+  {
+    "id": "boss_binah_decagram",
+    "name": "데카그라마톤의 제3예언자: 비나 (3장 최종 보스)",
+    "zone": "front",
+    "boss": true,
+    "baseStats": {
+      "hp": 22000,
+      "atk": 265,
+      "def": 160,
+      "spd": 108,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_boss_binah_laser",
+      "eff_boss_binah_sandstorm",
+      "eff_boss_binah_ult"
+    ],
+    "ai": "1) 기본 공격 대신 최전열 아군에게 열선 레이저(ATK 190% + DEF -20%) 발사. 2) HP 60% 최초 도달 시 '대사막의 모래폭풍'(전방 전체 ATK 160% 피해 + SPD -15, 전투당 1회 확정) 발동. 3) 에너지 100 도달 시 '정화의 폭풍 미사일'(전방 전체 ATK 235% 피해) 발사.",
+    "role": "3장 최종 보스 (초고방어 장갑 파쇄 + 단일/광역 복합 생존력 최종 시험)",
+    "counterplay": "대응 A(방어 파쇄 + 결전 스트라이커): 아즈사·리오·시로코로 DEF 160을 깎고 미카·와카모·이오리·아루(아코+히마리 지원)로 장갑을 뚫어 단기 격파 / 대응 B(철벽 요새 + 지속 누적): 호시노·유우카·츠바키·코하루·시즈코·밀레니엄 6단계 보호막으로 미사일 폭격을 모두 흡수하며 어설트/중장갑 중첩 딜로 격파"
+  }
+]

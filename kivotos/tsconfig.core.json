@@ -1,0 +1,9 @@
+{
+  // 코어·콘텐츠·UI 계약은 DOM 없이 컴파일돼야 한다. window·document를 쓰면 여기서 실패한다.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src/core", "src/content", "src/app"]
+}

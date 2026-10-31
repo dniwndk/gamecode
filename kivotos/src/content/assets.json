@@ -1,0 +1,911 @@
+[
+  {
+    "id": "portrait_u_airi",
+    "unitId": "u_airi",
+    "kind": "portrait",
+    "path": "portraits/u_airi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_asuna",
+    "unitId": "u_asuna",
+    "kind": "portrait",
+    "path": "portraits/u_asuna.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_fubuki",
+    "unitId": "u_fubuki",
+    "kind": "portrait",
+    "path": "portraits/u_fubuki.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hanae",
+    "unitId": "u_hanae",
+    "kind": "portrait",
+    "path": "portraits/u_hanae.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_haruka",
+    "unitId": "u_haruka",
+    "kind": "portrait",
+    "path": "portraits/u_haruka.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_izumi",
+    "unitId": "u_izumi",
+    "kind": "portrait",
+    "path": "portraits/u_izumi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_junko",
+    "unitId": "u_junko",
+    "kind": "portrait",
+    "path": "portraits/u_junko.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_juri",
+    "unitId": "u_juri",
+    "kind": "portrait",
+    "path": "portraits/u_juri.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_kaede",
+    "unitId": "u_kaede",
+    "kind": "portrait",
+    "path": "portraits/u_kaede.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_kokona",
+    "unitId": "u_kokona",
+    "kind": "portrait",
+    "path": "portraits/u_kokona.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_kotama",
+    "unitId": "u_kotama",
+    "kind": "portrait",
+    "path": "portraits/u_kotama.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_kotori",
+    "unitId": "u_kotori",
+    "kind": "portrait",
+    "path": "portraits/u_kotori.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_michiru",
+    "unitId": "u_michiru",
+    "kind": "portrait",
+    "path": "portraits/u_michiru.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_nodoka",
+    "unitId": "u_nodoka",
+    "kind": "portrait",
+    "path": "portraits/u_nodoka.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_rabu",
+    "unitId": "u_rabu",
+    "kind": "portrait",
+    "path": "portraits/u_rabu.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_serika",
+    "unitId": "u_serika",
+    "kind": "portrait",
+    "path": "portraits/u_serika.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_serina",
+    "unitId": "u_serina",
+    "kind": "portrait",
+    "path": "portraits/u_serina.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_suzumi",
+    "unitId": "u_suzumi",
+    "kind": "portrait",
+    "path": "portraits/u_suzumi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_yoshimi",
+    "unitId": "u_yoshimi",
+    "kind": "portrait",
+    "path": "portraits/u_yoshimi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_akari",
+    "unitId": "u_akari",
+    "kind": "portrait",
+    "path": "portraits/u_akari.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_aris",
+    "unitId": "u_aris",
+    "kind": "portrait",
+    "path": "portraits/u_aris.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_ayane",
+    "unitId": "u_ayane",
+    "kind": "portrait",
+    "path": "portraits/u_ayane.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_chinatsu",
+    "unitId": "u_chinatsu",
+    "kind": "portrait",
+    "path": "portraits/u_chinatsu.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_chise",
+    "unitId": "u_chise",
+    "kind": "portrait",
+    "path": "portraits/u_chise.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_fuuka",
+    "unitId": "u_fuuka",
+    "kind": "portrait",
+    "path": "portraits/u_fuuka.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hare",
+    "unitId": "u_hare",
+    "kind": "portrait",
+    "path": "portraits/u_hare.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hasumi",
+    "unitId": "u_hasumi",
+    "kind": "portrait",
+    "path": "portraits/u_hasumi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hibiki",
+    "unitId": "u_hibiki",
+    "kind": "portrait",
+    "path": "portraits/u_hibiki.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_karin",
+    "unitId": "u_karin",
+    "kind": "portrait",
+    "path": "portraits/u_karin.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_kayoko",
+    "unitId": "u_kayoko",
+    "kind": "portrait",
+    "path": "portraits/u_kayoko.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_kirino",
+    "unitId": "u_kirino",
+    "kind": "portrait",
+    "path": "portraits/u_kirino.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_maki",
+    "unitId": "u_maki",
+    "kind": "portrait",
+    "path": "portraits/u_maki.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_mashiro",
+    "unitId": "u_mashiro",
+    "kind": "portrait",
+    "path": "portraits/u_mashiro.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_megu",
+    "unitId": "u_megu",
+    "kind": "portrait",
+    "path": "portraits/u_megu.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_meru",
+    "unitId": "u_meru",
+    "kind": "portrait",
+    "path": "portraits/u_meru.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_midori",
+    "unitId": "u_midori",
+    "kind": "portrait",
+    "path": "portraits/u_midori.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_momiji",
+    "unitId": "u_momiji",
+    "kind": "portrait",
+    "path": "portraits/u_momiji.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_momoi",
+    "unitId": "u_momoi",
+    "kind": "portrait",
+    "path": "portraits/u_momoi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_natsu",
+    "unitId": "u_natsu",
+    "kind": "portrait",
+    "path": "portraits/u_natsu.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_nozomi",
+    "unitId": "u_nozomi",
+    "kind": "portrait",
+    "path": "portraits/u_nozomi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_reisa",
+    "unitId": "u_reisa",
+    "kind": "portrait",
+    "path": "portraits/u_reisa.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_shiroko",
+    "unitId": "u_shiroko",
+    "kind": "portrait",
+    "path": "portraits/u_shiroko.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_shun",
+    "unitId": "u_shun",
+    "kind": "portrait",
+    "path": "portraits/u_shun.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_tsubaki",
+    "unitId": "u_tsubaki",
+    "kind": "portrait",
+    "path": "portraits/u_tsubaki.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_tsukuyo",
+    "unitId": "u_tsukuyo",
+    "kind": "portrait",
+    "path": "portraits/u_tsukuyo.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_yuuka",
+    "unitId": "u_yuuka",
+    "kind": "portrait",
+    "path": "portraits/u_yuuka.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_akane",
+    "unitId": "u_akane",
+    "kind": "portrait",
+    "path": "portraits/u_akane.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_atsuko",
+    "unitId": "u_atsuko",
+    "kind": "portrait",
+    "path": "portraits/u_atsuko.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_azusa",
+    "unitId": "u_azusa",
+    "kind": "portrait",
+    "path": "portraits/u_azusa.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_chihiro",
+    "unitId": "u_chihiro",
+    "kind": "portrait",
+    "path": "portraits/u_chihiro.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_eimi",
+    "unitId": "u_eimi",
+    "kind": "portrait",
+    "path": "portraits/u_eimi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hanako",
+    "unitId": "u_hanako",
+    "kind": "portrait",
+    "path": "portraits/u_hanako.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hifumi",
+    "unitId": "u_hifumi",
+    "kind": "portrait",
+    "path": "portraits/u_hifumi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hiyori",
+    "unitId": "u_hiyori",
+    "kind": "portrait",
+    "path": "portraits/u_hiyori.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_iori",
+    "unitId": "u_iori",
+    "kind": "portrait",
+    "path": "portraits/u_iori.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_izuna",
+    "unitId": "u_izuna",
+    "kind": "portrait",
+    "path": "portraits/u_izuna.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_kasumi",
+    "unitId": "u_kasumi",
+    "kind": "portrait",
+    "path": "portraits/u_kasumi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_kazusa",
+    "unitId": "u_kazusa",
+    "kind": "portrait",
+    "path": "portraits/u_kazusa.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_koharu",
+    "unitId": "u_koharu",
+    "kind": "portrait",
+    "path": "portraits/u_koharu.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_koyuki",
+    "unitId": "u_koyuki",
+    "kind": "portrait",
+    "path": "portraits/u_koyuki.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_marina",
+    "unitId": "u_marina",
+    "kind": "portrait",
+    "path": "portraits/u_marina.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_mimori",
+    "unitId": "u_mimori",
+    "kind": "portrait",
+    "path": "portraits/u_mimori.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_mina",
+    "unitId": "u_mina",
+    "kind": "portrait",
+    "path": "portraits/u_mina.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_misaki",
+    "unitId": "u_misaki",
+    "kind": "portrait",
+    "path": "portraits/u_misaki.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_moe",
+    "unitId": "u_moe",
+    "kind": "portrait",
+    "path": "portraits/u_moe.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_mutsuki",
+    "unitId": "u_mutsuki",
+    "kind": "portrait",
+    "path": "portraits/u_mutsuki.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_nonomi",
+    "unitId": "u_nonomi",
+    "kind": "portrait",
+    "path": "portraits/u_nonomi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_saki",
+    "unitId": "u_saki",
+    "kind": "portrait",
+    "path": "portraits/u_saki.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_shigure",
+    "unitId": "u_shigure",
+    "kind": "portrait",
+    "path": "portraits/u_shigure.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_shizuko",
+    "unitId": "u_shizuko",
+    "kind": "portrait",
+    "path": "portraits/u_shizuko.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_toki",
+    "unitId": "u_toki",
+    "kind": "portrait",
+    "path": "portraits/u_toki.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_tomoe",
+    "unitId": "u_tomoe",
+    "kind": "portrait",
+    "path": "portraits/u_tomoe.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_utaha",
+    "unitId": "u_utaha",
+    "kind": "portrait",
+    "path": "portraits/u_utaha.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_yuzu",
+    "unitId": "u_yuzu",
+    "kind": "portrait",
+    "path": "portraits/u_yuzu.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_akemi",
+    "unitId": "u_akemi",
+    "kind": "portrait",
+    "path": "portraits/u_akemi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_ako",
+    "unitId": "u_ako",
+    "kind": "portrait",
+    "path": "portraits/u_ako.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_aru",
+    "unitId": "u_aru",
+    "kind": "portrait",
+    "path": "portraits/u_aru.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_cherino",
+    "unitId": "u_cherino",
+    "kind": "portrait",
+    "path": "portraits/u_cherino.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_haruna",
+    "unitId": "u_haruna",
+    "kind": "portrait",
+    "path": "portraits/u_haruna.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hoshino",
+    "unitId": "u_hoshino",
+    "kind": "portrait",
+    "path": "portraits/u_hoshino.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_kanna",
+    "unitId": "u_kanna",
+    "kind": "portrait",
+    "path": "portraits/u_kanna.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_mine",
+    "unitId": "u_mine",
+    "kind": "portrait",
+    "path": "portraits/u_mine.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_miyako",
+    "unitId": "u_miyako",
+    "kind": "portrait",
+    "path": "portraits/u_miyako.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_miyu",
+    "unitId": "u_miyu",
+    "kind": "portrait",
+    "path": "portraits/u_miyu.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_neru",
+    "unitId": "u_neru",
+    "kind": "portrait",
+    "path": "portraits/u_neru.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_niya",
+    "unitId": "u_niya",
+    "kind": "portrait",
+    "path": "portraits/u_niya.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_noa",
+    "unitId": "u_noa",
+    "kind": "portrait",
+    "path": "portraits/u_noa.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_tsurugi",
+    "unitId": "u_tsurugi",
+    "kind": "portrait",
+    "path": "portraits/u_tsurugi.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_akira",
+    "unitId": "u_akira",
+    "kind": "portrait",
+    "path": "portraits/u_akira.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_al1s",
+    "unitId": "u_al1s",
+    "kind": "portrait",
+    "path": "portraits/u_al1s.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hikari",
+    "unitId": "u_hikari",
+    "kind": "portrait",
+    "path": "portraits/u_hikari.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_himari",
+    "unitId": "u_himari",
+    "kind": "portrait",
+    "path": "portraits/u_himari.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hina",
+    "unitId": "u_hina",
+    "kind": "portrait",
+    "path": "portraits/u_hina.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_hoshino_armed",
+    "unitId": "u_hoshino_armed",
+    "kind": "portrait",
+    "path": "portraits/u_hoshino_armed.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_kisaki",
+    "unitId": "u_kisaki",
+    "kind": "portrait",
+    "path": "portraits/u_kisaki.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_mika",
+    "unitId": "u_mika",
+    "kind": "portrait",
+    "path": "portraits/u_mika.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_nagisa",
+    "unitId": "u_nagisa",
+    "kind": "portrait",
+    "path": "portraits/u_nagisa.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_rio",
+    "unitId": "u_rio",
+    "kind": "portrait",
+    "path": "portraits/u_rio.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_saori",
+    "unitId": "u_saori",
+    "kind": "portrait",
+    "path": "portraits/u_saori.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_seia",
+    "unitId": "u_seia",
+    "kind": "portrait",
+    "path": "portraits/u_seia.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_wakamo",
+    "unitId": "u_wakamo",
+    "kind": "portrait",
+    "path": "portraits/u_wakamo.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  }
+]

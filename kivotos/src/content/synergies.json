@@ -1,0 +1,2270 @@
+[
+  {
+    "id": "syn_abydos",
+    "name": "아비도스",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_abydos_2"
+        ],
+        "spec": "전투 시작 시 아비도스 구성원의 ATK +15%, DEF +15% 증가 및 초기 에너지 +20 획득."
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_abydos_4"
+        ],
+        "spec": "[하위 효과 포함] 전투 시작 시 아군 전원의 ATK +20%, DEF +20%(아비도스는 +30%) 및 초기 에너지 +35 획득. 아비도스 구성원이 필살기 해소 시 생존한 전방 아비도스 유닛들이 최전열 적에게 ATK 80% 합동 후속 사격(턴당 최대 2회, root당 1회)."
+      },
+      {
+        "threshold": 5,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_abydos_6"
+        ],
+        "spec": "[하위 효과 포함] 전투 시작 시 아군 전원 ATK +30%, DEF +30%(아비도스는 +50%) 및 초기 에너지 +50 획득. 아비도스 구성원이 필살기 해소 시 전방 아비도스 유닛 전원이 적 전체에 ATK 110% 합동 일제 사격을 가하고 에너지 +15 회복(턴당 최대 2회, root당 1회)."
+      }
+    ],
+    "memberIds": [
+      "u_serika",
+      "u_ayane",
+      "u_shiroko",
+      "u_nonomi",
+      "u_hoshino",
+      "u_hoshino_armed"
+    ],
+    "documented": {
+      "frontOnly": 5,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 5
+    }
+  },
+  {
+    "id": "syn_gehenna",
+    "name": "게헨나",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_gehenna_2"
+        ],
+        "spec": "게헨나 구성원의 ATK +16%, CRIT_DMG +0.20 증가."
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_gehenna_4"
+        ],
+        "spec": "[하위 효과 포함] 게헨나 구성원의 ATK +28%, CRIT_DMG +0.35 증가. 게헨나 전방 유닛이 스킬/필살기로 피해를 입힐 때 대상에게 ATK 70% 추가 폭발 피해(유닛당 턴당 1회)."
+      },
+      {
+        "threshold": 6,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_gehenna_6"
+        ],
+        "spec": "[하위 효과 포함] 게헨나 구성원의 ATK +45%, CRIT_DMG +0.55 증가(비게헨나 절반). 게헨나 유닛이 스킬/필살기로 피해를 입힐 때 적 전방 전체에 ATK 110% 광역 폭격 및 자신의 에너지 +15 회복(턴당 최대 2회, root당 1회)."
+      },
+      {
+        "threshold": 8,
+        "grade": "platinum",
+        "effectIds": [
+          "eff_syn_gehenna_plat"
+        ],
+        "spec": "플래티넘 「만마전 총폭격」. 게헨나 구성원 ATK +60%, CRIT_DMG +0.75 증가(게헨나가 아닌 아군은 절반). 게헨나 전방 유닛이 스킬/필살기로 피해를 입힐 때 대상에게 ATK 70% 추가 폭발 피해(유닛당 턴당 1회). 게헨나 유닛이 스킬/필살기로 피해를 입힐 때 적 전방 전체에 ATK 110% 광역 폭격 및 자신의 에너지 +15 회복(턴당 최대 3회, root당 1회). 광역 폭격이 3번 터질 때마다 적 전원에게 ATK 180% \"총폭격\"을 하고, 총폭격 피해는 이번 전투에서 터질 때마다 +20%씩 누적된다"
+      }
+    ],
+    "memberIds": [
+      "u_haruka",
+      "u_izumi",
+      "u_junko",
+      "u_juri",
+      "u_akari",
+      "u_chinatsu",
+      "u_fuuka",
+      "u_kayoko",
+      "u_megu",
+      "u_iori",
+      "u_kasumi",
+      "u_mutsuki",
+      "u_ako",
+      "u_aru",
+      "u_haruna",
+      "u_hina"
+    ],
+    "documented": {
+      "frontOnly": 9,
+      "rearOnly": 5,
+      "dual": 2,
+      "maxLegalCount": 10
+    }
+  },
+  {
+    "id": "syn_millennium",
+    "name": "밀레니엄",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_millennium_2"
+        ],
+        "spec": "전투 시작 시 아군 전방 전원에게 2턴간 최대 HP 15% 보호막 부여, 밀레니엄 구성원 ATK +14% 증가."
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_millennium_4"
+        ],
+        "spec": "[하위 효과 포함] 전투 시작 및 매 2턴 시작마다 아군 전방 전원에게 2턴간 최대 HP 22% 보호막 부여. 밀레니엄 구성원 ATK +25%, 보호막 보유 전방 아군의 가하는 피해 +20% 증가."
+      },
+      {
+        "threshold": 6,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_millennium_6"
+        ],
+        "spec": "[하위 효과 포함] 전투 시작 및 매 2턴 시작마다 아군 전방 전원에게 2턴간 최대 HP 32% 보호막 및 에너지 +20 부여. 밀레니엄 구성원 ATK +40%, 보호막 보유 전방 아군의 가하는 피해 +35% 및 CRIT +15% 증가."
+      },
+      {
+        "threshold": 8,
+        "grade": "platinum",
+        "effectIds": [
+          "eff_syn_millennium_plat"
+        ],
+        "spec": "플래티넘 「밀레니엄 프라이스」. 전투 시작 및 매 2턴 시작마다 아군 전방 전원에게 2턴간 최대 HP 40% 보호막 및 에너지 +25 부여. 밀레니엄 구성원 ATK +55%. 보호막 보유 전방 아군의 가하는 피해 +45% 및 CRIT +20% 증가. 아군 보호막이 피해로 깨지면 깨진 보호막 양의 60%를 그 공격자에게 방어 무시(`true`) 피해로 되돌린다(유닛당 턴당 1회)"
+      }
+    ],
+    "memberIds": [
+      "u_asuna",
+      "u_kotama",
+      "u_kotori",
+      "u_aris",
+      "u_hare",
+      "u_hibiki",
+      "u_karin",
+      "u_maki",
+      "u_midori",
+      "u_momoi",
+      "u_yuuka",
+      "u_akane",
+      "u_chihiro",
+      "u_eimi",
+      "u_koyuki",
+      "u_toki",
+      "u_utaha",
+      "u_yuzu",
+      "u_neru",
+      "u_noa",
+      "u_al1s",
+      "u_himari",
+      "u_rio"
+    ],
+    "documented": {
+      "frontOnly": 7,
+      "rearOnly": 12,
+      "dual": 3,
+      "maxLegalCount": 10
+    }
+  },
+  {
+    "id": "syn_trinity",
+    "name": "트리니티",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_trinity_2"
+        ],
+        "spec": "트리니티 구성원 최대 HP +15%, ATK +15% 증가. 아군 전방이 받는 치유량 +20% 증가."
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_trinity_4"
+        ],
+        "spec": "[하위 효과 포함] 트리니티 구성원 최대 HP +28%, ATK +28%, 받는 치유량 +35%. 아군 전방이 치유받을 때(`healed`) 2턴간 가하는 피해 +18% 증가 및 매 턴 첫 치유 시 팀 SP +1 회복(턴당 1회)."
+      },
+      {
+        "threshold": 6,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_trinity_6"
+        ],
+        "spec": "[하위 효과 포함] 트리니티 구성원 최대 HP +45%, ATK +45%, 받는 치유량 +50%. 아군 전방이 치유받을 때 디버프 1개 해제 및 2턴간 가하는 피해 +32%, CRIT +20% 획득, 매 턴 첫 치유 시 팀 SP +1 및 전방 전원 에너지 +15 회복(턴당 1회)."
+      },
+      {
+        "threshold": 8,
+        "grade": "platinum",
+        "effectIds": [
+          "eff_syn_trinity_plat"
+        ],
+        "spec": "플래티넘 「삼위일체의 종」. 트리니티 구성원 최대 HP +60%, ATK +60%, 받는 치유량 +65%. 아군 전방이 받는 치유량 +20%. 아군 전방이 치유받을 때 디버프 1개 해제 및 2턴간 가하는 피해 +40%, CRIT +25% 획득. 매 턴 첫 치유 시 팀 SP +1 및 전방 전원 에너지 +15 회복(턴당 1회). 최대 HP를 넘친 치유량은 \"종소리\"로 쌓이고, 아군 전원 최대 HP 합계의 25%에 이르면 적 전원에게 쌓인 양의 150% 피해를 준 뒤 다시 0부터 쌓는다"
+      }
+    ],
+    "memberIds": [
+      "u_airi",
+      "u_hanae",
+      "u_serina",
+      "u_suzumi",
+      "u_yoshimi",
+      "u_hasumi",
+      "u_mashiro",
+      "u_natsu",
+      "u_reisa",
+      "u_azusa",
+      "u_hanako",
+      "u_hifumi",
+      "u_kazusa",
+      "u_koharu",
+      "u_mine",
+      "u_tsurugi",
+      "u_mika",
+      "u_nagisa",
+      "u_seia"
+    ],
+    "documented": {
+      "frontOnly": 9,
+      "rearOnly": 8,
+      "dual": 2,
+      "maxLegalCount": 10
+    }
+  },
+  {
+    "id": "syn_hyakkiyako",
+    "name": "백귀야행",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_hyakkiyako_2"
+        ],
+        "spec": "백귀야행 구성원 SPD +12, ATK +15% 증가. 백귀야행 유닛이 기본 공격/스킬 해소 시 대상에게 ATK 45%의 `true` 피해(도깨비불) 추가 부여(유닛당 턴당 1회)."
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_hyakkiyako_4"
+        ],
+        "spec": "[하위 효과 포함] 아군 전원 SPD +10(백귀야행은 SPD +22, ATK +30%). 백귀야행 유닛이 행동 해소 시 최전열 적에게 ATK 90% `true` 피해 및 2턴간 받는 피해 +15% 부여(턴당 최대 3회, root당 1회)."
+      },
+      {
+        "threshold": 5,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_hyakkiyako_6"
+        ],
+        "spec": "[하위 효과 포함] 아군 전원 SPD +18(백귀야행은 SPD +35, ATK +48%, CRIT +20%). 백귀야행 유닛이 행동 해소 시 적 전방 전체에 ATK 120% `true` 피해(백야제 만개화)를 입히고 아군 전방 전원 행동을 10% 당긴다(턴당 최대 3회, root당 1회)."
+      },
+      {
+        "threshold": 7,
+        "grade": "platinum",
+        "effectIds": [
+          "eff_syn_hyakkiyako_plat"
+        ],
+        "spec": "플래티넘 「백야제 대행렬」. 아군 전원 SPD +24(백귀야행은 SPD +45, ATK +60%, CRIT +25%). 백귀야행 유닛이 기본 공격/스킬 해소 시 대상에게 ATK 45%의 `true` 피해(도깨비불) 추가 부여(유닛당 턴당 1회). 백귀야행 유닛이 행동 해소 시 최전열 적에게 ATK 90% `true` 피해 및 2턴간 받는 피해 +15% 부여, 이어서 적 전방 전체에 ATK 120% `true` 피해(백야제 만개화)를 입히고 아군 전방 전원 행동을 10% 당긴다(턴당 최대 4회, root당 1회). 한 턴에 백귀야행 유닛이 3번 이상 행동하면 그 턴 끝에 적 전원에게 ATK 200% `true` 피해(대행렬)"
+      }
+    ],
+    "memberIds": [
+      "u_kaede",
+      "u_michiru",
+      "u_chise",
+      "u_tsubaki",
+      "u_tsukuyo",
+      "u_izuna",
+      "u_mimori",
+      "u_shizuko",
+      "u_niya",
+      "u_wakamo"
+    ],
+    "documented": {
+      "frontOnly": 6,
+      "rearOnly": 4,
+      "dual": 0,
+      "maxLegalCount": 8
+    }
+  },
+  {
+    "id": "syn_shanhaijing",
+    "name": "산해경",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_shanhaijing_2"
+        ],
+        "spec": "산해경 구성원의 ATK +18% 증가, 전투 시작 시 초기 에너지 +25 획득 및 필살기 가하는 피해 +20% 증가."
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_shanhaijing_4"
+        ],
+        "spec": "[하위 효과 포함] 아군 전원의 ATK +24%(산해경은 +36%), 필살기 피해량 +35% 증가. 전투 시작 시 초기 에너지 +40을 얻고, 아군 유닛이 필살기를 해소할 때마다 자신의 체력을 최대 HP 15%만큼 회복하며 에너지를 20 즉시 환급받는다(턴당 최대 2회, root당 1회)."
+      }
+    ],
+    "memberIds": [
+      "u_kokona",
+      "u_shun",
+      "u_mina",
+      "u_kisaki"
+    ],
+    "documented": {
+      "frontOnly": 2,
+      "rearOnly": 0,
+      "dual": 2,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_red_winter",
+    "name": "붉은겨울",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_red_winter_2"
+        ],
+        "spec": "붉은겨울 구성원 ATK +16%, 최대 HP +16% 증가. 전투 시작 시 적 최고 HP 1명에게 3턴간 '숙청 표적'(`st_vuln`: 받는 피해 +20%)을 부여한다."
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_red_winter_4"
+        ],
+        "spec": "[하위 효과 포함] 아군 전원 ATK +25%, 최대 HP +25% 증가. 전투 시작 및 매 2턴마다 적 최고 HP 1명에게 '숙청 표적'(받는 피해 +35%)을 부여하고, 아군 팀 SP +1 회복 및 전방 전원에게 2턴간 CRIT +20%를 배급한다."
+      }
+    ],
+    "memberIds": [
+      "u_nodoka",
+      "u_meru",
+      "u_momiji",
+      "u_marina",
+      "u_shigure",
+      "u_tomoe",
+      "u_cherino"
+    ],
+    "documented": {
+      "frontOnly": 4,
+      "rearOnly": 3,
+      "dual": 0,
+      "maxLegalCount": 7
+    }
+  },
+  {
+    "id": "syn_valkyrie",
+    "name": "발키리",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_valkyrie_2"
+        ],
+        "spec": "발키리 구성원 DEF +25%, ATK +18% 증가. 전투 시작 및 매 2턴마다 적 최고 ATK 1명을 '수배자'로 지정해 2턴간 ATK -20%(`st_atk_down`) 및 DEF -20%(`st_def_down`)를 부여한다."
+      },
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_valkyrie_3"
+        ],
+        "spec": "아군 전원 DEF +35%, ATK +28%. 2단계의 \"수배자\" 지정을 그대로 유지한다: 전투 시작 및 매 2턴마다 적 최고 ATK 1명을 수배자로 지정해 2턴간 ATK -20%(`st_atk_down`), DEF -20%(`st_def_down`). AV 200/400/600/800/1000에 적 전방 전체에 2차례 동안 ATK -25%, DEF -30%. 아군의 직접 타격이 디버프가 있는 적에게 명중하면 그 대상의 행동을 15% 지연(1회)하고, 살아 있는 발키리 전방 학생 각각 에너지 +15(팀 전역 주기당 2회, root당 1회)"
+      }
+    ],
+    "memberIds": [
+      "u_fubuki",
+      "u_kirino",
+      "u_kanna"
+    ],
+    "documented": {
+      "frontOnly": 3,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 3
+    }
+  },
+  {
+    "id": "syn_srt",
+    "name": "SRT",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_srt_2"
+        ],
+        "spec": "SRT 구성원의 ATK +20%, CRIT +15% 증가. 아군 전방과 후방에 각각 최소 1명 이상의 유닛이 배치되어 있으면 SRT 유닛의 받는 피해 15% 감소 및 초기 에너지 +20 획득."
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_srt_4"
+        ],
+        "spec": "[하위 효과 포함] 아군 전원 ATK +25%(SRT는 +40%), CRIT +22% 증가, 초기 에너지 +35. 후방 유닛이 정기/반응 지원을 수행할 때마다 전방 SRT 유닛에게 최대 HP 15% 보호막을 씌우고, 전방 SRT 유닛이 스킬/필살기 사용 시 후방 SRT 유닛이 적 전체에 ATK 110% 전술 지원 폭격을 가한다(턴당 최대 2회, root당 1회)."
+      }
+    ],
+    "memberIds": [
+      "u_moe",
+      "u_saki",
+      "u_miyako",
+      "u_miyu"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 1,
+      "dual": 2,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_arius",
+    "name": "아리우스",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_arius_2"
+        ],
+        "spec": "아리우스 구성원의 ATK +18%, CRIT_DMG +0.30 증가. 디버프가 있는 적을 공격할 때 가하는 피해 +20% 증가."
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_arius_4"
+        ],
+        "spec": "[하위 효과 포함] 아리우스 구성원의 ATK +35%, CRIT +25%, CRIT_DMG +0.55 증가(비아리우스 아군은 절반). 전투 시작 시 적 전방 전체에 3턴간 DEF -30%(`st_def_down`)를 부여하고, 아리우스 유닛이 디버프 보유 적 타격 시 피해량의 20%만큼 자신의 체력을 회복하며 에너지를 12 얻는다(유닛당 턴당 1회)."
+      }
+    ],
+    "memberIds": [
+      "u_atsuko",
+      "u_azusa",
+      "u_hiyori",
+      "u_misaki",
+      "u_saori"
+    ],
+    "documented": {
+      "frontOnly": 3,
+      "rearOnly": 2,
+      "dual": 0,
+      "maxLegalCount": 5
+    }
+  },
+  {
+    "id": "syn_highlander",
+    "name": "하이랜더",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_highlander_1"
+        ],
+        "spec": "하이랜더 구성원의 SPD +15, ATK +18% 증가. 전투 시작 시 자신의 다음 행동 시간을 20% 당긴다."
+      },
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_highlander_2"
+        ],
+        "spec": "[하위 효과 포함] 아군 전방 전원의 SPD +18, ATK +22%(노조미·히카리는 SPD +36, ATK +44%) 증가. 전투 시작 시 아군 전방 전원의 첫 행동 시간을 25% 당기고, 노조미와 히카리가 스킬 또는 필살기를 사용할 때마다 적 전방 전체에 ATK 130%의 '대륙횡단 급행열차 충격파'를 입히며 팀 SP를 1 회복한다(턴당 1회, root당 1회)."
+      }
+    ],
+    "memberIds": [
+      "u_nozomi",
+      "u_hikari"
+    ],
+    "documented": {
+      "frontOnly": 2,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_outlaw",
+    "name": "무법자 — 칠수인·헬멧단",
+    "category": "faction",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_outlaw_2"
+        ],
+        "spec": "무법자 구성원의 ATK +22%, 최대 HP +20% 증가. 기본 공격 및 스킬/필살기로 가하는 피해의 15%만큼 자신의 체력을 회복한다."
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_outlaw_4"
+        ],
+        "spec": "[하위 효과 포함] 무법자 구성원의 ATK +45%, 최대 HP +35%, CRIT_DMG +0.50 증가(타 아군은 절반 적용) 및 피해량 20% 흡혈. 무법자 유닛이 필살기를 해소하거나 적을 전투불능으로 만들 때마다 적 전방 전체에 ATK 135%의 방어 무시(`true`) 약탈 폭격을 가하고 자신의 에너지를 25 회복한다(턴당 최대 2회, root당 1회)."
+      }
+    ],
+    "memberIds": [
+      "u_rabu",
+      "u_akemi",
+      "u_akira",
+      "u_wakamo"
+    ],
+    "documented": {
+      "frontOnly": 4,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_problem_solver",
+    "name": "흥신소68",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_ps68_2"
+        ],
+        "spec": "구성원이 적을 처치하면 정산 때 의뢰비 +1G(전투당 최대 2G)"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_ps68_4"
+        ],
+        "spec": "구성원이 적을 처치하면 정산 때 의뢰비 +1G(전투당 최대 2G). 구성원이 쓰러지면 그 자리가 폭발해 적 전방 전원에게 ATK 120% 피해(무츠키의 지뢰, 구성원당 1회)"
+      }
+    ],
+    "memberIds": [
+      "u_haruka",
+      "u_kayoko",
+      "u_mutsuki",
+      "u_aru"
+    ],
+    "documented": {
+      "frontOnly": 2,
+      "rearOnly": 0,
+      "dual": 2,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_prefect",
+    "name": "선도부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_prefect_2"
+        ],
+        "spec": "전투 시작 시 적이 가진 가장 강한 버프 1개를 해제(단속)"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_prefect_4"
+        ],
+        "spec": "전투 시작 시 적이 가진 가장 강한 버프 1개를 해제(단속). 히나가 살아 있는 동안 다른 선도부원의 받는 피해 -15%. 히나가 쓰러지면 남은 선도부원 ATK +40%(전투 종료까지)"
+      }
+    ],
+    "memberIds": [
+      "u_chinatsu",
+      "u_iori",
+      "u_ako",
+      "u_hina"
+    ],
+    "documented": {
+      "frontOnly": 2,
+      "rearOnly": 2,
+      "dual": 0,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_gourmet",
+    "name": "미식연구회",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_gourmet_2"
+        ],
+        "spec": "구성원이 적을 처치하면 \"별점 0개\" 폭발: 처치한 적 주변 적에게 ATK 70% 피해(구성원당 턴당 1회)"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_gourmet_4"
+        ],
+        "spec": "구성원이 적을 처치하면 \"별점 0개\" 폭발: 처치한 적 주변 적에게 ATK 70% 피해(구성원당 턴당 1회). 아군에 급양부원이 있으면 전투 시작 시 \"납치\"한다. 미식연구회원이 공격할 때마다 납치된 급양부원이 그 학생을 ATK 40% 치유(턴당 2회)"
+      }
+    ],
+    "memberIds": [
+      "u_izumi",
+      "u_junko",
+      "u_akari",
+      "u_haruna"
+    ],
+    "documented": {
+      "frontOnly": 4,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_school_lunch",
+    "name": "급양부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_school_lunch_2"
+        ],
+        "spec": "전투 시작 시 아군 전원 최대 HP +10%(든든한 급식). 미식연구회 4단계에 \"납치\"되면 +20%"
+      }
+    ],
+    "memberIds": [
+      "u_juri",
+      "u_fuuka"
+    ],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 2,
+      "dual": 0,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_hot_spring",
+    "name": "온천개발부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_hot_spring_2"
+        ],
+        "spec": "전투 시작 시 땅을 폭파: 적 전방 전원 다음 행동 시간 15% 지연 및 2턴간 화상(`st_burn`)"
+      }
+    ],
+    "memberIds": [
+      "u_megu",
+      "u_kasumi"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_cc",
+    "name": "C&C",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_cc_2"
+        ],
+        "spec": "적을 처치한 C&C 요원은 다음 행동 시간 20% 당김(청소 완료)"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_cc_4"
+        ],
+        "spec": "적을 처치한 C&C 요원은 다음 행동 시간 20% 당김(청소 완료). HP 30% 이하인 적은 \"청소 대상\". C&C 요원이 청소 대상을 공격하면 반드시 치명타"
+      }
+    ],
+    "memberIds": [
+      "u_asuna",
+      "u_karin",
+      "u_akane",
+      "u_toki",
+      "u_neru"
+    ],
+    "documented": {
+      "frontOnly": 4,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 5
+    }
+  },
+  {
+    "id": "syn_game_dev",
+    "name": "게임개발부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_game_dev_2"
+        ],
+        "spec": "전투 시작 시 무작위 \"버그\" 1개: 아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_game_dev_4"
+        ],
+        "spec": "전투 시작 시 \"버그\" 3개(아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40) 중 2개를 적용(유즈의 디버깅). 준비 단계에서 고른 2개를 쓰고, 고르지 않았으면 앞의 2개"
+      }
+    ],
+    "memberIds": [
+      "u_aris",
+      "u_midori",
+      "u_momoi",
+      "u_yuzu",
+      "u_al1s"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 1,
+      "dual": 2,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_veritas",
+    "name": "베리타스",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_veritas_2"
+        ],
+        "spec": "적의 첫 필살기 직전에 그 적의 행동을 50% 지연시키고, 적 필살기 예정 시점을 화면에 표시"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_veritas_4"
+        ],
+        "spec": "적의 첫 필살기 직전에 그 적의 행동을 50% 지연시키고, 적 필살기 예정 시점을 화면에 표시. 전투 시작 시 적 버프 1개를 해킹해 아군 1명에게 옮긴다"
+      }
+    ],
+    "memberIds": [
+      "u_kotama",
+      "u_hare",
+      "u_maki",
+      "u_chihiro"
+    ],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 4,
+      "dual": 0,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_seminar",
+    "name": "세미나",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_seminar_2"
+        ],
+        "spec": "정산 이자 상한 +2"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_seminar_4"
+        ],
+        "spec": "정산 이자 상한 +4(2단계의 +2를 대체). 코유키가 있으면 정산 이자가 50% 확률로 2배, 50% 확률로 0"
+      }
+    ],
+    "memberIds": [
+      "u_yuuka",
+      "u_koyuki",
+      "u_noa",
+      "u_rio"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 2,
+      "dual": 1,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_engineering",
+    "name": "엔지니어부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_engineering_2"
+        ],
+        "spec": "전투 시작 시 포탑 1기 설치(구성원 평균 ATK 50%로 매 턴 적 최전열 1명 사격)"
+      },
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_engineering_3"
+        ],
+        "spec": "전투 시작 시 포탑 2기 설치(각각 구성원 평균 ATK 50%로 매 턴 적 최전열 1명 사격). 포탑이 부서지면 폭발해 주변 적에게 ATK 100% 피해"
+      }
+    ],
+    "memberIds": [
+      "u_kotori",
+      "u_hibiki",
+      "u_utaha"
+    ],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 3,
+      "dual": 0,
+      "maxLegalCount": 3
+    }
+  },
+  {
+    "id": "syn_paranormal",
+    "name": "초현상특무부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_paranormal_2"
+        ],
+        "spec": "전투 시작 시 ATK가 가장 높은 적 1명의 패시브를 2턴간 봉인"
+      }
+    ],
+    "memberIds": [
+      "u_eimi",
+      "u_himari"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_make_up",
+    "name": "보충수업부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_make_up_2"
+        ],
+        "spec": "패배할 때마다 \"보충수업\" 1중첩(구성원 ATK +8%, 최대 4). 승리하면 \"합격\"으로 중첩 수만큼 골드를 받고 초기화"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_make_up_4"
+        ],
+        "spec": "패배할 때마다 \"보충수업\" 1중첩(구성원 ATK +8%, 최대 4). 승리하면 \"합격\"으로 중첩 수의 2배만큼 골드를 받고 초기화. 구성원 최대 HP +15%"
+      }
+    ],
+    "memberIds": [
+      "u_azusa",
+      "u_hanako",
+      "u_hifumi",
+      "u_koharu"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 2,
+      "dual": 1,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_tea_party",
+    "name": "티파티",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_tea_party_2"
+        ],
+        "spec": "전투 시작 시 아군 전원 에너지 +20(티타임)"
+      },
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_tea_party_3"
+        ],
+        "spec": "전투 시작 시 아군 전원 에너지 +20(티타임). 3명 모두 출전하면 아군 전원 ATK +15%"
+      }
+    ],
+    "memberIds": [
+      "u_mika",
+      "u_nagisa",
+      "u_seia"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 2,
+      "dual": 0,
+      "maxLegalCount": 3
+    }
+  },
+  {
+    "id": "syn_justice",
+    "name": "정의실현위원회",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_justice_2"
+        ],
+        "spec": "HP 50% 이하인 적에게 주는 피해 +25%(정의 집행)"
+      },
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_justice_3"
+        ],
+        "spec": "HP 50% 이하인 적에게 주는 피해 +25%(정의 집행). 구성원이 적을 처치하면 다른 구성원 에너지 +15"
+      }
+    ],
+    "memberIds": [
+      "u_hasumi",
+      "u_mashiro",
+      "u_tsurugi"
+    ],
+    "documented": {
+      "frontOnly": 2,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 3
+    }
+  },
+  {
+    "id": "syn_vigilante",
+    "name": "자경단",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_vigilante_2"
+        ],
+        "spec": "구성원이 기절시킨 적에게 다른 구성원의 다음 공격 피해 +40%"
+      }
+    ],
+    "memberIds": [
+      "u_suzumi",
+      "u_reisa"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 1,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_remedial_knights",
+    "name": "구호기사단",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_remedial_knights_2"
+        ],
+        "spec": "구성원의 치유량 +30%"
+      },
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_remedial_knights_3"
+        ],
+        "spec": "구성원의 치유량 +30%. 아군 HP가 20% 이하로 떨어지면 구성원이 즉시 그 아군을 최대 HP 20% 치유(전투당 1회)"
+      }
+    ],
+    "memberIds": [
+      "u_hanae",
+      "u_serina",
+      "u_mine"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 2,
+      "dual": 0,
+      "maxLegalCount": 3
+    }
+  },
+  {
+    "id": "syn_sweets",
+    "name": "디저트부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_sweets_2"
+        ],
+        "spec": "승리하면 다음 전투 시작 시 아군 전원 최대 HP 10% 회복(디저트 타임)"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_sweets_4"
+        ],
+        "spec": "승리하면 다음 전투 시작 시 아군 전원 최대 HP 10% 회복(디저트 타임). 구성원 4명이 모두 살아 있으면 매 턴 아군 전원 최대 HP 3% 회복"
+      }
+    ],
+    "memberIds": [
+      "u_airi",
+      "u_yoshimi",
+      "u_natsu",
+      "u_kazusa"
+    ],
+    "documented": {
+      "frontOnly": 3,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_ninjutsu",
+    "name": "인법연구부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_ninjutsu_2"
+        ],
+        "spec": "구성원마다 전투당 첫 피격 1회를 \"분신술\"로 회피"
+      },
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_ninjutsu_3"
+        ],
+        "spec": "구성원마다 전투당 첫 피격 1회를 \"분신술\"로 회피하고, 분신술을 쓸 때마다 공격자에게 ATK 60% 반격"
+      }
+    ],
+    "memberIds": [
+      "u_michiru",
+      "u_tsukuyo",
+      "u_izuna"
+    ],
+    "documented": {
+      "frontOnly": 3,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 3
+    }
+  },
+  {
+    "id": "syn_training",
+    "name": "수행부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_training_2"
+        ],
+        "spec": "구성원의 받는 피해가 매 턴 -3%씩 누적(최대 -15%)"
+      },
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_training_3"
+        ],
+        "spec": "구성원의 받는 피해가 매 턴 -3%씩 누적(최대 -15%). 최대치에 이르면 \"득도\": 다음 피격 1회 무효"
+      }
+    ],
+    "memberIds": [
+      "u_kaede",
+      "u_tsubaki",
+      "u_mimori"
+    ],
+    "documented": {
+      "frontOnly": 2,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 3
+    }
+  },
+  {
+    "id": "syn_yinyang",
+    "name": "음양부",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_yinyang_2"
+        ],
+        "spec": "니야의 점괘가 나오면 결과 3개 중 하나를 골라 적용하고, 치세가 건 화상(`st_burn`) 지속 +1턴"
+      }
+    ],
+    "memberIds": [
+      "u_chise",
+      "u_niya"
+    ],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 2,
+      "dual": 0,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_plum_blossom",
+    "name": "매화원",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_plum_blossom_2"
+        ],
+        "spec": "아군이 필살기를 쓸 때마다 도장 1개. 3개가 모이면 팀 SP +1"
+      }
+    ],
+    "memberIds": [
+      "u_kokona",
+      "u_shun"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 1,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_genryumon",
+    "name": "현룡문",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_genryumon_2"
+        ],
+        "spec": "키사키가 공격받으면 미나가 대신 맞는다(턴당 1회). 키사키의 필살기 피해 +20%"
+      }
+    ],
+    "memberIds": [
+      "u_mina",
+      "u_kisaki"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 1,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_rw_office",
+    "name": "붉은겨울 사무국",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_rw_office_2"
+        ],
+        "spec": "3턴마다 적 1명을 \"숙청 대상\"으로 지정. 숙청 대상을 처치하면 팀 SP +1"
+      },
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_rw_office_3"
+        ],
+        "spec": "2턴마다 적 1명을 \"숙청 대상\"으로 지정. 숙청 대상의 받는 피해 +20%. 숙청 대상을 처치하면 팀 SP +1"
+      }
+    ],
+    "memberIds": [
+      "u_marina",
+      "u_tomoe",
+      "u_cherino"
+    ],
+    "documented": {
+      "frontOnly": 2,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 3
+    }
+  },
+  {
+    "id": "syn_knowledge_front",
+    "name": "지식해방전선",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_knowledge_front_2"
+        ],
+        "spec": "적이 버프를 받으면 같은 버프를 아군 1명에게 복사(턴당 1회)"
+      }
+    ],
+    "memberIds": [
+      "u_meru",
+      "u_momiji"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_class_227",
+    "name": "227호 특별반",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_class_227_2"
+        ],
+        "spec": "5턴째부터 매 턴 구성원 ATK +10%(최대 +50%, 버티기)"
+      }
+    ],
+    "memberIds": [
+      "u_nodoka",
+      "u_shigure"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_life_safety",
+    "name": "생활안전국",
+    "category": "club",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_life_safety_2"
+        ],
+        "spec": "첫 턴에는 둘 다 SPD -30(농땡이). 2턴부터 구성원 ATK +30%"
+      }
+    ],
+    "memberIds": [
+      "u_fubuki",
+      "u_kirino"
+    ],
+    "documented": {
+      "frontOnly": 2,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 2
+    }
+  },
+  {
+    "id": "syn_tank",
+    "name": "탱커",
+    "category": "role",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_tank_2"
+        ],
+        "spec": "탱커 구성원의 받는 피해 -10%"
+      },
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_tank_3"
+        ],
+        "spec": "탱커 구성원의 받는 피해 -20%. 전투 시작 시 가장 앞의 탱커가 2턴간 도발(`st_taunt`)"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_tank_4"
+        ],
+        "spec": "탱커 구성원의 받는 피해 -30%. 전투 시작 시 가장 앞의 탱커가 2턴간 도발(`st_taunt`). 탱커 구성원의 HP가 처음 50% 아래로 내려가면 최대 HP 25% 보호막"
+      }
+    ],
+    "memberIds": [
+      "u_haruka",
+      "u_kirino",
+      "u_natsu",
+      "u_tsubaki",
+      "u_tsukuyo",
+      "u_yuuka",
+      "u_atsuko",
+      "u_eimi",
+      "u_iori",
+      "u_marina",
+      "u_mina",
+      "u_toki",
+      "u_akemi",
+      "u_hoshino",
+      "u_mine",
+      "u_miyako",
+      "u_tsurugi",
+      "u_hoshino_armed"
+    ],
+    "documented": {
+      "frontOnly": 18,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_attacker",
+    "name": "어태커",
+    "category": "role",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_attacker_2"
+        ],
+        "spec": "어태커 구성원의 단일 대상 공격 피해 +15%"
+      },
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_attacker_3"
+        ],
+        "spec": "어태커 구성원의 단일 대상 공격 피해 +30%. 같은 적을 연속으로 때리면 회당 +5%(최대 5)"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_attacker_4"
+        ],
+        "spec": "어태커 구성원의 단일 대상 공격 피해 +50%. 같은 적을 연속으로 때리면 회당 +5%(최대 5). 적을 처치하면 즉시 한 번 더 행동(턴당 1회)"
+      }
+    ],
+    "memberIds": [
+      "u_asuna",
+      "u_izumi",
+      "u_serika",
+      "u_yoshimi",
+      "u_midori",
+      "u_nozomi",
+      "u_reisa",
+      "u_shiroko",
+      "u_izuna",
+      "u_kazusa",
+      "u_shigure",
+      "u_aru",
+      "u_neru",
+      "u_akira",
+      "u_mika",
+      "u_wakamo"
+    ],
+    "documented": {
+      "frontOnly": 16,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_sniper",
+    "name": "스나이퍼",
+    "category": "role",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_sniper_2"
+        ],
+        "spec": "스나이퍼 구성원 CRIT +15%"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_sniper_4"
+        ],
+        "spec": "스나이퍼 구성원 CRIT +30%. 전투 시작 시 HP가 가장 높은 적을 조준하고, 스나이퍼 구성원이 그 적에게 주는 치명 피해 +50%"
+      },
+      {
+        "threshold": 6,
+        "grade": "platinum",
+        "effectIds": [
+          "eff_syn_sniper_plat"
+        ],
+        "spec": "플래티넘 「연속 조준」. 스나이퍼 구성원 CRIT +45%. 전투 시작 시 HP가 가장 높은 적을 조준하고, 스나이퍼 구성원이 조준한 적에게 주는 치명 피해 +80%. 조준한 적이 쓰러지면 즉시 남은 적 중 HP가 가장 높은 적을 새로 조준하고 스나이퍼 구성원 전원 에너지 +30"
+      }
+    ],
+    "memberIds": [
+      "u_fubuki",
+      "u_hasumi",
+      "u_karin",
+      "u_mashiro",
+      "u_shun",
+      "u_azusa",
+      "u_hiyori",
+      "u_haruna",
+      "u_saori"
+    ],
+    "documented": {
+      "frontOnly": 6,
+      "rearOnly": 3,
+      "dual": 0,
+      "maxLegalCount": 7
+    }
+  },
+  {
+    "id": "syn_blaster",
+    "name": "블래스터",
+    "category": "role",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_blaster_2"
+        ],
+        "spec": "블래스터 구성원의 광역 공격 피해 +15%"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_blaster_4"
+        ],
+        "spec": "블래스터 구성원의 광역 공격 피해 +30%. 3명 이상 맞히면 대상들에게 2턴간 DEF -15%(`st_def_down`)"
+      },
+      {
+        "threshold": 6,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_blaster_6"
+        ],
+        "spec": "블래스터 구성원의 광역 공격 피해 +45%. 3명 이상 맞히면 대상들에게 2턴간 DEF -15%(`st_def_down`)를 걸고 팀 SP +1(SP는 턴당 1회)"
+      },
+      {
+        "threshold": 8,
+        "grade": "platinum",
+        "effectIds": [
+          "eff_syn_blaster_plat"
+        ],
+        "spec": "플래티넘 「연쇄 폭발」. 블래스터 구성원의 광역 공격 피해 +65%. 3명 이상 맞히면 대상들에게 2턴간 DEF -25%(`st_def_down`)를 걸고 팀 SP +1(SP는 턴당 1회). 블래스터의 광역 공격으로 적이 쓰러지면 그 자리에서 폭발해 같은 구역의 적 전원에게 블래스터 ATK 60% 피해. 폭발로 쓰러진 적도 다시 폭발한다(공격 1번당 최대 4연쇄)"
+      }
+    ],
+    "memberIds": [
+      "u_junko",
+      "u_kaede",
+      "u_michiru",
+      "u_rabu",
+      "u_akari",
+      "u_aris",
+      "u_chise",
+      "u_hibiki",
+      "u_maki",
+      "u_megu",
+      "u_momiji",
+      "u_momoi",
+      "u_akane",
+      "u_kasumi",
+      "u_misaki",
+      "u_moe",
+      "u_mutsuki",
+      "u_nonomi",
+      "u_yuzu",
+      "u_al1s",
+      "u_hikari",
+      "u_hina"
+    ],
+    "documented": {
+      "frontOnly": 11,
+      "rearOnly": 7,
+      "dual": 3,
+      "maxLegalCount": 10
+    }
+  },
+  {
+    "id": "syn_healer",
+    "name": "힐러",
+    "category": "role",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_healer_2"
+        ],
+        "spec": "힐러 구성원의 치유량 +20%"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_healer_4"
+        ],
+        "spec": "힐러 구성원의 치유량 +40%. 최대 HP를 넘친 치유량은 2턴짜리 보호막으로 바뀜"
+      },
+      {
+        "threshold": 6,
+        "grade": "platinum",
+        "effectIds": [
+          "eff_syn_healer_plat"
+        ],
+        "spec": "플래티넘 「응급 연쇄 치료」. 힐러 구성원의 치유량 +60%. 최대 HP를 넘친 치유량은 2턴짜리 보호막으로 바뀜. 힐러가 치유할 때마다 HP 비율이 가장 낮은 다른 아군 1명에게 그 치유량의 50%를 한 번 더 치유한다. 힐러에게 치유받은 아군은 \"회복의 축복\" 1중첩(가하는 피해 +4%, 최대 5중첩, 전투 종료까지)"
+      }
+    ],
+    "memberIds": [
+      "u_hanae",
+      "u_kokona",
+      "u_serina",
+      "u_ayane",
+      "u_chinatsu",
+      "u_fuuka",
+      "u_hanako",
+      "u_koharu",
+      "u_shizuko"
+    ],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 7,
+      "dual": 2,
+      "maxLegalCount": 8
+    }
+  },
+  {
+    "id": "syn_supporter",
+    "name": "서포터",
+    "category": "role",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_supporter_2"
+        ],
+        "spec": "서포터 구성원이 건 버프 지속 +1턴"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_supporter_4"
+        ],
+        "spec": "서포터 구성원이 건 버프 지속 +1턴. 전투 시작 시 팀 SP +1. 서포터가 버프를 걸면 대상 에너지 +10"
+      },
+      {
+        "threshold": 6,
+        "grade": "platinum",
+        "effectIds": [
+          "eff_syn_supporter_plat"
+        ],
+        "spec": "플래티넘 「총지원 태세」. 서포터 구성원이 건 버프 지속 +2턴. 전투 시작 시 팀 SP +2. 서포터가 버프를 걸면 대상 에너지 +15. 한 아군에게 서포터 버프가 3개 이상 겹치면 그 아군의 다음 필살기 피해 +60%(아군 1명당 전투당 2회)"
+      }
+    ],
+    "memberIds": [
+      "u_airi",
+      "u_juri",
+      "u_kotama",
+      "u_kotori",
+      "u_nodoka",
+      "u_chihiro",
+      "u_hifumi",
+      "u_mimori",
+      "u_saki",
+      "u_tomoe",
+      "u_utaha",
+      "u_ako",
+      "u_cherino",
+      "u_niya",
+      "u_noa",
+      "u_himari",
+      "u_kisaki",
+      "u_nagisa",
+      "u_rio"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 16,
+      "dual": 2,
+      "maxLegalCount": 9
+    }
+  },
+  {
+    "id": "syn_controller",
+    "name": "컨트롤러",
+    "category": "role",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 2,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_controller_2"
+        ],
+        "spec": "컨트롤러 구성원이 건 기절·침묵·지연 지속 +1턴(보스 제외)"
+      },
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_controller_4"
+        ],
+        "spec": "컨트롤러 구성원이 건 기절·침묵·지연 지속 +1턴(보스 제외). 제어 상태인 적이 받는 피해 +20%. 제어가 풀린 적의 다음 행동 10% 지연"
+      },
+      {
+        "threshold": 6,
+        "grade": "platinum",
+        "effectIds": [
+          "eff_syn_controller_plat"
+        ],
+        "spec": "플래티넘 「제압 전파」. 컨트롤러 구성원이 건 기절·침묵·지연 지속 +1턴(보스 제외). 제어 상태인 적이 받는 피해 +35%. 제어가 풀린 적의 다음 행동 20% 지연. 제어 상태인 적이 쓰러지면 그 제어를 남은 지속 그대로 가장 가까운 다른 적에게 옮긴다(보스에게는 지속 1턴으로 옮김)"
+      }
+    ],
+    "memberIds": [
+      "u_suzumi",
+      "u_hare",
+      "u_kayoko",
+      "u_meru",
+      "u_koyuki",
+      "u_kanna",
+      "u_miyu",
+      "u_seia"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 3,
+      "dual": 4,
+      "maxLegalCount": 8
+    }
+  },
+  {
+    "id": "syn_unique_dawn_horus",
+    "name": "「으헤~ 아저씨는 좀 쉴래」",
+    "category": "unique",
+    "countScope": "front_only",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_hoshino"
+        ],
+        "spec": "첫 2턴은 자신의 SPD -50%(낮잠). 아군이 처음 쓰러지는 순간 깨어나 \"진심 모드\": 도발(`st_taunt`) + 받는 피해 -40%(전투 종료까지)"
+      }
+    ],
+    "memberIds": [
+      "u_hoshino"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_outlaw_boss",
+    "name": "「계획대로야!」",
+    "category": "unique",
+    "countScope": "front_only",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_aru"
+        ],
+        "spec": "필살기마다 50% \"대성공\"(피해 2배, 흥신소68 구성원 2턴간 ATK +20%) 또는 50% \"대실패\"(피해 절반, 다음 필살기는 대성공 확정)"
+      }
+    ],
+    "memberIds": [
+      "u_aru"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_head_prefect",
+    "name": "「조금만 쉬고 싶어」",
+    "category": "unique",
+    "countScope": "front_only",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_hina"
+        ],
+        "spec": "연속 출전 1전마다 \"업무량\" +1(ATK +6%, 최대 5). 한 라운드 대기석에서 쉬면 업무량이 사라지는 대신 다음 전투를 에너지 100으로 시작"
+      }
+    ],
+    "memberIds": [
+      "u_hina"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_princess_stars",
+    "name": "「롤케이크」",
+    "category": "unique",
+    "countScope": "front_only",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_mika"
+        ],
+        "spec": "미카의 공격은 보호막을 먼저 통째로 부순다. 적을 처치하면 롤케이크를 먹고 최대 HP 15% 회복"
+      }
+    ],
+    "memberIds": [
+      "u_mika"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_calamity_fox",
+    "name": "「당신만 바라볼게요」",
+    "category": "unique",
+    "countScope": "front_only",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_wakamo"
+        ],
+        "spec": "전투 시작 시 아군 중 코스트가 가장 높은 학생을 \"그분\"으로 지정. 그분을 때린 적을 끝까지 쫓으며 그 적에게 주는 피해 +50%"
+      }
+    ],
+    "memberIds": [
+      "u_wakamo"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_red_mustache",
+    "name": "「수염의 위엄」",
+    "category": "unique",
+    "countScope": "front_only",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_cherino"
+        ],
+        "spec": "체리노가 3번 맞으면 수염이 떨어져 1턴간 행동 불가(창피). 그 순간 마리나가 격노해 ATK +40%(전투 종료까지)"
+      }
+    ],
+    "memberIds": [
+      "u_cherino"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_level_up",
+    "name": "「빠밤! 레벨업」",
+    "category": "unique",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_aris"
+        ],
+        "spec": "아리스가 적을 처치할 때마다 경험치 1(정예·보스는 3), 아리스가 출전한 전투에서 이기면 경험치 1. 경험치 5마다 레벨업해 런이 끝날 때까지 아리스 ATK +5% 영구 누적(레벨 6까지, +30%). 경험치는 아리스 개체가 아니라 런에 쌓여 팔거나 합성해도 남는다. 경험치 15(레벨 3)가 되고 3성 아리스를 보유하면 이름 없는 신들의 왕녀 「AL-1S」로 각성한다(9장)"
+      }
+    ],
+    "memberIds": [
+      "u_aris"
+    ],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 0,
+      "dual": 1,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_nameless_princess",
+    "name": "「이름 없는 신들의 왕녀」",
+    "category": "unique",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_al1s"
+        ],
+        "spec": "「빠밤! 레벨업」의 경험치와 레벨을 그대로 이어받아 계속 쌓는다: 적 처치 경험치 1(정예·보스는 3), 출전한 전투에서 이기면 1, 경험치 5마다 레벨업해 런이 끝날 때까지 AL-1S ATK +5% 영구 누적(레벨 10까지, +50%). 「아트라하시스의 방주」: AL-1S가 필살기를 쓸 때마다 방주 기동 1단계(전투 종료까지, 최대 3). 3단계가 된 즉시 방주 주포가 적 전원에게 ATK 600% 방어 무시(`true`) 피해를 주고 아군 전원 에너지 +40(전투당 1회). 「용사의 동료」: 게임개발부 구성원이 1명 이상 함께 출전해 있으면, AL-1S가 처음 전투불능이 될 때 HP 50%로 다시 일어나고 전투 종료까지 ATK +30%(전투당 1회)"
+      }
+    ],
+    "memberIds": [
+      "u_al1s"
+    ],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 0,
+      "dual": 1,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_invisible",
+    "name": "「저 여기 있어요…」",
+    "category": "unique",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_miyu"
+        ],
+        "spec": "다른 아군이 살아 있으면 미유는 적의 단일 대상 공격 표적이 되지 않는다. 혼자 남으면 \"발견\"되어 ATK +50%"
+      }
+    ],
+    "memberIds": [
+      "u_miyu"
+    ],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 0,
+      "dual": 1,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_bank_robber",
+    "name": "「은행 털러 가자」",
+    "category": "unique",
+    "countScope": "front_only",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_shiroko"
+        ],
+        "spec": "시로코가 출전한 전투에서 이기면 정산 때 30% 확률로 \"전리품\" +2G. 지면 없음"
+      }
+    ],
+    "memberIds": [
+      "u_shiroko"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_gold_card",
+    "name": "「골드 카드」",
+    "category": "unique",
+    "countScope": "front_only",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_nonomi"
+        ],
+        "spec": "노노미가 출전한 전투가 끝나면 다음 라운드 상점의 첫 새로고침이 무료"
+      }
+    ],
+    "memberIds": [
+      "u_nonomi"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_caspalug",
+    "name": "「카스팔루그」",
+    "category": "unique",
+    "countScope": "front_only",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_kazusa"
+        ],
+        "spec": "카즈사가 스케반(불량배)·헬멧단 소속 적(`en_sukeban_smg`, `en_sukeban_shield`, `en_helmet_thug`, `en_helmet_grenadier`)에게 주는 피해 +50%"
+      }
+    ],
+    "memberIds": [
+      "u_kazusa"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_plat_vanitas",
+    "name": "「Vanitas vanitatum」",
+    "category": "easteregg",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 5,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_plat_vanitas"
+        ],
+        "spec": "발동 조건: 아리우스 스쿼드 5명(사오리·아츠코·히요리·미사키·아즈사)을 모두 3성으로 동시 출전. 효과: 아군이 쓰러질 때마다 남은 스쿼드원 ATK +25%, 에너지 +50. 사오리가 살아 있는 동안 적은 회복과 버프를 받지 못한다"
+      }
+    ],
+    "memberIds": [
+      "u_atsuko",
+      "u_azusa",
+      "u_hiyori",
+      "u_misaki",
+      "u_saori"
+    ],
+    "documented": {
+      "frontOnly": 3,
+      "rearOnly": 2,
+      "dual": 0,
+      "maxLegalCount": 5
+    }
+  },
+  {
+    "id": "syn_plat_ending_credits",
+    "name": "「엔딩 크레딧」",
+    "category": "easteregg",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 4,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_plat_ending_credits"
+        ],
+        "spec": "발동 조건: 게임개발부 4명(모모이·미도리·유즈·아리스, 아리스 자리는 AL-1S도 인정)을 모두 3성으로 동시 출전. 효과: 아리스(또는 AL-1S)의 \"빛이여!\" 레일건이 2턴마다 자동 발사(적 전원에게 ATK 400% 피해). 전멸 직전 1회 \"컨티뉴\": 아군 전원 HP 30%로 부활"
+      }
+    ],
+    "memberIds": [
+      "u_aris",
+      "u_midori",
+      "u_momoi",
+      "u_yuzu",
+      "u_al1s"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 1,
+      "dual": 2,
+      "maxLegalCount": 4
+    }
+  },
+  {
+    "id": "syn_plat_codename",
+    "name": "「코드네임 00~05」",
+    "category": "easteregg",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 5,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_plat_codename"
+        ],
+        "spec": "발동 조건: C&C 5명(네루·아스나·카린·아카네·토키) 동시 출전 + 네루·토키 3성. 효과: 전투 시작 직후 C&C 전원이 즉시 1회 행동. 적을 처치할 때마다 C&C 전원 다음 행동 시간 15% 당김"
+      }
+    ],
+    "memberIds": [
+      "u_asuna",
+      "u_karin",
+      "u_akane",
+      "u_toki",
+      "u_neru"
+    ],
+    "documented": {
+      "frontOnly": 4,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 5
+    }
+  },
+  {
+    "id": "syn_plat_tea_party",
+    "name": "「티파티 삼두정치」",
+    "category": "easteregg",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 3,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_plat_tea_party"
+        ],
+        "spec": "발동 조건: 미카·나기사·세이아를 모두 3성으로 동시 출전. 효과: 켜진 진영·동아리 시너지가 모두 한 단계 위로 올라간다(이미 최고 단계면 그 효과 수치 +30%)"
+      }
+    ],
+    "memberIds": [
+      "u_mika",
+      "u_nagisa",
+      "u_seia"
+    ],
+    "documented": {
+      "frontOnly": 1,
+      "rearOnly": 2,
+      "dual": 0,
+      "maxLegalCount": 3
+    }
+  },
+  {
+    "id": "syn_plat_last_line",
+    "name": "「아비도스 최후의 방어선」",
+    "category": "easteregg",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 5,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_plat_last_line"
+        ],
+        "spec": "발동 조건: 대책위원회 5명(호시노·시로코·세리카·노노미·아야네)을 모두 3성으로 동시 출전. 무장 호시노는 세지 않음. 효과: 아군 전원이 각자 1번씩 HP 1로 버틴다. 승리 정산마다 +5G(빚 상환)"
+      }
+    ],
+    "memberIds": [
+      "u_serika",
+      "u_ayane",
+      "u_shiroko",
+      "u_nonomi",
+      "u_hoshino"
+    ],
+    "documented": {
+      "frontOnly": 4,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 5
+    }
+  },
+  {
+    "id": "syn_plat_school_battle",
+    "name": "「키보토스 학원 대항전」",
+    "category": "easteregg",
+    "countScope": "special",
+    "tiers": [
+      {
+        "threshold": 10,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_plat_school_battle"
+        ],
+        "spec": "발동 조건: 서로 다른 진영 10곳의 학생을 1명씩, 10명 출전(레벨 10 필요). 구성원 명단 없이 출전 편성으로 판정. 효과: 출전한 학생들의 진영 시너지가 모두 최소 단계로 켜진다"
+      }
+    ],
+    "memberIds": [],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 0
+    }
+  },
+  {
+    "id": "syn_plat_total_assault",
+    "name": "「총력전 만점」",
+    "category": "easteregg",
+    "countScope": "special",
+    "tiers": [
+      {
+        "threshold": 10,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_plat_total_assault"
+        ],
+        "spec": "발동 조건: 출전 10명 모두 3성 + 7개 역할군이 1명 이상씩. 구성원 명단 없이 출전 편성으로 판정. 효과: 모든 역할군 시너지의 2단계 효과가 함께 켜지고 아군 전원 ATK +30%"
+      }
+    ],
+    "memberIds": [],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 0,
+      "dual": 0,
+      "maxLegalCount": 0
+    }
+  }
+]
