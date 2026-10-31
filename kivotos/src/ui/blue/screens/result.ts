@@ -1,12 +1,12 @@
 // 결과: 런 체력 변화와 수입 분해(값은 모두 코어가 준다), 학생별 기여, MVP 대사.
 import type { Ctx, Screen } from '../app';
-import { portrait, shortName } from '../components';
+import { defeatArt, portrait, shortName } from '../components';
 import { cls, h } from '../dom';
 import { icon } from '../icons';
 import type { RunView, UiState } from '../model';
 
 const REASON: Record<string, string> = {
-  enemy_front_wiped: '적 전방 전멸', ally_front_wiped: '아군 전방 전멸', both_wiped: '양쪽 전방 전멸', timeout: '시간 초과 (1000 AV)',
+  enemy_front_wiped: '적 전방 전멸', ally_front_wiped: '아군 전방 전멸', both_wiped: '양쪽 전방 전멸',
 };
 
 export function resultPanel(ctx: Ctx, run: RunView, onContinue: () => void): HTMLElement {
@@ -23,7 +23,7 @@ export function resultPanel(ctx: Ctx, run: RunView, onContinue: () => void): HTM
 
   const panel = h('div', { class: cls('k-result', win ? 'is-win' : 'is-loss'), role: 'dialog', 'aria-label': '전투 결과' },
     h('div', { class: 'k-result-hero' },
-      mvp ? h('div', { class: 'k-mvp' }, portrait(ctx, mvp, 'k-mvp-art'), h('span', { class: 'k-mvp-tag' }, icon(win ? 'crown' : 'shield', 18), win ? 'MVP' : '끝까지 버틴 학생'), h('b', null, shortName(ctx.lookup.unit(mvp).name)), mvpLine ? h('p', null, `“${mvpLine}”`) : null)
+      mvp ? h('div', { class: 'k-mvp' }, win ? portrait(ctx, mvp, 'k-mvp-art') : defeatArt(ctx, mvp, 'k-mvp-art'), h('span', { class: 'k-mvp-tag' }, icon(win ? 'crown' : 'shield', 18), win ? 'MVP' : '끝까지 버틴 학생'), h('b', null, shortName(ctx.lookup.unit(mvp).name)), mvpLine ? h('p', null, `“${mvpLine}”`) : null)
         : h('div', { class: 'k-mvp is-none' }, icon(win ? 'crown' : 'warning', 64), h('p', null, win ? '모두 잘 싸웠어요' : '다음 노드를 대비해 편성을 다시 살펴봐요'))),
     h('div', { class: 'k-result-body' },
       h('header', { class: 'k-result-head' },

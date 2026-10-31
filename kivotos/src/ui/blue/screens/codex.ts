@@ -37,9 +37,9 @@ export function mountCodex(ctx: Ctx): Screen {
       h('div', { class: 'k-codex-oop-grid' }, ...pack.ooparts.filter((o) => o.rarity === r).map((o) => {
         const hidden = r === 'legendary' && !revealed.has(o.id);
         return h('article', { class: cls('k-codex-oop', `is-${r}`, hidden && 'is-hidden', o.kind === 'drawback' && 'is-drawback') },
-          h('div', { class: 'k-oop-art' }, gfx(ctx, `ooparts/${o.id}.webp`, () => h('span', { class: 'k-oop-code' }, o.code), 'k-oop-img')),
+          h('div', { class: 'k-oop-art' }, gfx(ctx, `ooparts/${o.id}.webp`, () => h('span', { class: 'k-oop-code' }, hidden ? '?' : o.name.slice(0, 1)), 'k-oop-img')),
           h('div', { class: 'k-oop-text' },
-            h('div', { class: 'k-oop-head' }, h('b', null, hidden ? '???' : o.name), h('small', null, `${o.code} · ${RARITY_LABEL[r]}`)),
+            h('div', { class: 'k-oop-head' }, h('b', null, hidden ? '???' : o.name), h('small', null, RARITY_LABEL[r])),
             hidden ? h('p', { class: 'k-muted' }, '특정 오파츠를 모으면 합쳐져 나타나요. 한 번 완성하면 조합법이 공개돼요.') : h('p', null, readable(ctx, o.benefit)),
             !hidden && o.recipe ? h('p', { class: 'k-oop-recipe-line' }, `조합 · ${o.recipe.map(oopName).join(' + ')}`) : null,
             !hidden && o.drawback ? h('p', { class: 'k-oop-drawback' }, `대가 · ${readable(ctx, o.drawback)}`) : null,
@@ -59,7 +59,7 @@ export function mountCodex(ctx: Ctx): Screen {
           const item = h('button', { class: 'k-codex-syn', onclick: () => { syn = s.id; tab = 'units'; draw(); } },
             synHex(ctx, s.id, { size: 40 }),
             h('div', null, h('b', null, s.name.replace(/^고유:\s*/, '')), h('small', null, `${s.tiers.map((t) => (t.grade === 'platinum' ? `${t.threshold} 플래티넘` : t.threshold)).join(' / ')} · ${s.memberIds.length}명`)));
-          attachTip(ctx, item, () => synergyTip(ctx, { synergyId: s.id, count: 0, nextThreshold: s.tiers[0].threshold, activeTier: null, tracked: false }, null));
+          attachTip(ctx, item, () => synergyTip(ctx, { synergyId: s.id, count: 0, nextThreshold: s.tiers[0].threshold, activeTier: null, tracked: false, stacks: null }, null));
           return item;
         })))));
 

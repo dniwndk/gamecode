@@ -14,7 +14,7 @@ const unitEffectCount = (u: (typeof pack.units)[number]) => {
   return new Set(Object.values(rest).flatMap((v) => (v === null ? [] : Array.isArray(v) ? v : [v]))).size;
 };
 
-describe('정식 콘텐츠 팩 ba-content-2.6.0', () => {
+describe('정식 콘텐츠 팩 ba-content-2.8.1', () => {
   it('정적 검증 오류 0건', () => {
     const report = validateContentPack(pack);
     expect(report.errors).toEqual([]);
@@ -32,9 +32,9 @@ describe('정식 콘텐츠 팩 ba-content-2.6.0', () => {
     expect(byPos).toEqual([53, 36, 12]);
   });
 
-  it('효과 출처: 부록 C 그대로 206 + v2.3 교체·추가 208 + 카이저 론 1 + 오파츠 55', () => {
+  it('효과 출처: 부록 C 그대로 204 + v2.3 교체·추가 210 + 카이저 론 1 + 오파츠 55', () => {
     const prefix = (p: string) => pack.effects.filter((e) => e.catalogNo.startsWith(p)).length;
-    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.')]).toEqual([206, 208, 1, 55]);
+    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.')]).toEqual([204, 210, 1, 55]);
     expect(byId(pack.effects, 'eff_aris_passive').catalogNo).toBe('C.300');
     expect(pack.effects.map((e) => e.id)).not.toContain('eff_syn_jackpot_2');
   });
@@ -130,11 +130,11 @@ describe('정식 콘텐츠 팩 ba-content-2.6.0', () => {
     }
   });
 
-  it('아리스 각성: 3성 2코 아리스가 경험치 30에 5코 AL-1S가 되고, AL-1S는 상점에 없다 (v2.3 9장)', () => {
+  it('아리스 각성: 3성 2코 아리스가 경험치 15에 5코 AL-1S가 되고, AL-1S는 상점에 없다 (v2.3 9장)', () => {
     const aris = byId(pack.units, 'u_aris');
     const al1s = byId(pack.units, 'u_al1s');
     expect([aris.cost, al1s.cost, al1s.position]).toEqual([2, 5, 'dual']);
-    expect(aris.awakening).toEqual({ intoUnitId: 'u_al1s', counterSynergyId: 'syn_unique_level_up', expRequired: 30, starRequired: 3 });
+    expect(aris.awakening).toEqual({ intoUnitId: 'u_al1s', counterSynergyId: 'syn_unique_level_up', expRequired: 15, starRequired: 3 });
     expect([al1s.awakenedFrom, al1s.shopEligible, aris.shopEligible]).toEqual(['u_aris', false, true]);
     expect(pack.units.filter((u) => u.awakening || u.awakenedFrom).map((u) => u.id).sort()).toEqual(['u_al1s', 'u_aris']);
     // 고유는 갈아 끼우고 나머지 태그는 그대로
@@ -143,7 +143,7 @@ describe('정식 콘텐츠 팩 ba-content-2.6.0', () => {
     expect([...al1s.abilityIds.frontEffects, ...al1s.abilityIds.rearEffects]).toContain('eff_al1s_aura');
     expect(byId(pack.effects, 'eff_al1s_aura').spec).toMatch(/^존재 효과 「/);
     expect(byId(pack.synergies, 'syn_unique_nameless_princess').memberIds).toEqual(['u_al1s']);
-    expect(byId(pack.effects, 'eff_syn_uni_aris').spec).toContain('경험치 30');
+    expect(byId(pack.effects, 'eff_syn_uni_aris').spec).toContain('경험치 15');
     // 게임개발부·엔딩 크레딧은 AL-1S가 있어도 4명 시너지 그대로
     for (const id of ['syn_game_dev', 'syn_plat_ending_credits']) {
       const s = byId(pack.synergies, id);
@@ -186,10 +186,21 @@ describe('정식 콘텐츠 팩 ba-content-2.6.0', () => {
     expect(r.ooparts.sources.map((s) => s.id)).toEqual(['run_start', 'elite', 'boss', 'rescue']);
   });
 
-  it('난이도 v2.3.3: 최종 보스 노드만 E.2 배율 그대로, 나머지 14개는 1.5배 (v2.3 10장)', () => {
+  it('난이도 v2.3.6: E.2 × 10장(최종 보스 빼고 1.5배) × 13장 추가 배율, 최종 보스도 오른다 (v2.3 10·13장)', () => {
     const e2 = [8500, 9500, 10000, 10000, 10000, 11500, 12500, 13500, 10500, 10000, 12000, 13000, 13500, 14000, 10000];
-    expect(pack.nodes.map((n) => n.statScaleBps)).toEqual(pack.nodes.map((n, i) => (n.id === 'node_3_5' ? e2[i] : e2[i] * 1.5)));
-    expect(pack.nodes.filter((n) => n.type === 'boss').map((n) => n.statScaleBps)).toEqual([15000, 15000, 10000]);
+    const add = [1.2, 1.2, 1.3, 1.3, 1.4, 1.4, 1.4, 1.4, 1.4, 1.5, 1.5, 1.4, 1.5, 1.25, 2.4];
+    expect(pack.nodes.map((n) => n.statScaleBps)).toEqual(pack.nodes.map((n, i) => Math.round((n.id === 'node_3_5' ? e2[i] : e2[i] * 1.5) * add[i])));
+    expect(pack.nodes.filter((n) => n.type === 'boss').map((n) => n.statScaleBps)).toEqual([21000, 22500, 24000]);
+  });
+
+  it('탱커 보강 v2.3.7: 탱커 18명, 키리노·이오리·미나·토키·츠루기 전환 (v2.3 14장)', () => {
+    const tank = byId(pack.synergies, 'syn_tank').memberIds;
+    expect(tank).toHaveLength(18);
+    for (const id of ['u_kirino', 'u_iori', 'u_mina', 'u_toki', 'u_tsurugi']) {
+      expect(tank).toContain(id);
+      expect(byId(pack.units, id).position).toBe('front_only');
+    }
+    expect(byId(pack.synergies, 'syn_controller').memberIds).toHaveLength(8);
   });
 
   it('노드: 장마다 일반3·정예1·보스1, 최종전은 비나+골리앗+성가대 (E.2)', () => {
@@ -199,7 +210,7 @@ describe('정식 콘텐츠 팩 ba-content-2.6.0', () => {
     const final = byId(pack.nodes, 'node_3_5').candidates[0];
     expect(final.front.map((s) => s.enemyId)).toEqual(['boss_binah_decagram', 'en_automaton_goliath']);
     expect(final.rear).toEqual([{ enemyId: 'en_justina_choir_rear', index: 0 }]);
-    expect(byId(pack.nodes, 'node_1_1').statScaleBps).toBe(12750); // E.2 0.85 × v2.3 10장 1.5
+    expect(byId(pack.nodes, 'node_1_1').statScaleBps).toBe(15300); // E.2 0.85 × v2.3 10장 1.5 × 13장 1.2
   });
 
   it('T76: 대사 파일마다 7개 상황 키가 있다', () => {

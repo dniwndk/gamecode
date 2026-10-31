@@ -4,6 +4,7 @@ import type { Ctx } from './app';
 import { cls, h } from './dom';
 import { icon } from './icons';
 import { fxList } from './summary';
+import { openOwnedOoparts } from './screens/ooparts';
 import type { RunView, SynergyStateView, UnitInstanceView } from './model';
 
 export const COST_COLOR = ['#9aa5b1', '#3fb37f', '#3b82f6', '#a855f7', '#f5b400'];
@@ -95,6 +96,14 @@ export function portrait(ctx: Ctx, unitId: string, className = ''): HTMLElement 
     img.addEventListener('error', fallback);
     box.append(img);
   } else fallback();
+  return box;
+}
+
+/** 패배 결과 화면용 삽화(public/defeat). 없으면 기본 초상화로 */
+export function defeatArt(ctx: Ctx, unitId: string, className = ''): HTMLElement {
+  const box = portrait(ctx, unitId, className);
+  const img = h('img', { src: ctx.art(`defeat/${unitId}.webp`), alt: '', decoding: 'async', draggable: 'false' }) as HTMLImageElement;
+  img.addEventListener('load', () => { box.replaceChildren(img); box.classList.add('is-defeat-art'); });
   return box;
 }
 
@@ -200,6 +209,11 @@ export function synergyTip(ctx: Ctx, s: SynergyStateView, run?: RunView | null):
   const scope = syn.countScope === 'front_only' ? '전방에 놓인 구성원만 셉니다' : syn.countScope === 'rear_only' ? '후방에 놓인 구성원만 셉니다' : '편성된 구성원(전방+후방)을 셉니다';
   return h('div', { class: 'k-syn-tip' },
     h('header', null, synHex(ctx, syn.id, { size: 34 }), h('div', null, h('strong', null, syn.name), h('small', null, scope))),
+    // 런 동안 쌓인 스택(값은 게임 쪽이 준다)
+    s.stacks?.length ? h('div', { class: 'k-stack-box' }, h('span', { class: 'k-stack-title' }, '지금까지 쌓인 스택'), ...s.stacks.map((l) => h('div', { class: 'k-stack-line' },
+      h('div', { class: 'k-stack-head' }, h('b', null, l.label), h('strong', null, l.value)),
+      l.progress ? h('div', { class: 'k-stack-bar' }, h('i', { style: `--p:${Math.min(100, (l.progress.current / Math.max(1, l.progress.max)) * 100)}%` })) : null,
+      l.note ? h('small', null, l.note) : null))) : null,
     h('ol', { class: 'k-tier-list' }, ...syn.tiers.map((t, idx) => h('li', { class: cls(s.activeTier === idx && 'is-active', s.activeTier !== null && idx < s.activeTier && 'is-passed', t.grade === 'platinum' && 'is-plat') },
       h('b', null, String(t.threshold)), t.grade === 'platinum' ? platTier(ctx, t.spec) : fxList(ctx, t.spec)))),
     h('div', { class: 'k-tip-members' }, ...syn.memberIds.map((id) => {
@@ -240,7 +254,7 @@ export function synergyRow(ctx: Ctx, s: SynergyStateView, run: RunView | null, o
 }
 
 // ── 상단 상태바 ─────────────────────────────────────────
-export function topBar(_ctx: Ctx, run: RunView, opts: { title: string; onBack?: () => void; extra?: HTMLElement[] } ): HTMLElement {
+export function topBar(ctx: Ctx, run: RunView, opts: { title: string; onBack?: () => void; extra?: HTMLElement[] } ): HTMLElement {
   const xpPct = run.xpToNext ? Math.min(100, (run.xp / run.xpToNext) * 100) : 100;
   const hpPct = (run.runHp / run.runHpMax) * 100;
   const bar = h('header', { class: 'k-top' },
@@ -257,6 +271,8 @@ export function topBar(_ctx: Ctx, run: RunView, opts: { title: string; onBack?: 
         h('span', { class: 'k-xp' }, h('i', { style: `--p:${xpPct}%` }), h('small', null, run.xpToNext ? `${run.xp}/${run.xpToNext}` : 'MAX'))),
       h('div', { class: cls('k-pill is-team', run.deployedCount > run.deployLimit && 'is-over'), title: '편성 인원' }, icon('users', 24), h('b', null, `${run.deployedCount}/${run.deployLimit}`)),
       run.streak.count >= 2 ? h('div', { class: cls('k-pill is-streak', run.streak.kind === 'loss' && 'is-loss') }, icon('flag', 22), h('b', null, `${run.streak.count}${run.streak.kind === 'win' ? '연승' : '연패'}`)) : null,
+      h('button', { class: 'k-pill is-oop', title: '보유 오파츠와 효과 보기', 'aria-label': `보유 오파츠 ${run.ooparts.owned.length}개 보기`, onclick: () => openOwnedOoparts(ctx, run.ooparts.owned) },
+        icon('diamond', 24), h('small', null, '오파츠'), h('b', null, String(run.ooparts.owned.length))),
       ...(opts.extra ?? [])),
   );
   return bar;

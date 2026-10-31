@@ -137,7 +137,7 @@ async function ensureFront(d: UiDriver) {
   }
 }
 
-export async function playRun(seed: string, ooparts: string[], policy: OopPolicy = 'skip', rand: () => number = Math.random, focusSyn: string | null = null): Promise<RunOutcome> {
+export async function playRun(seed: string, ooparts: string[], policy: OopPolicy = 'skip', rand: () => number = Math.random, focusSyn: string | null = null, onBattle?: (run: RunView) => void): Promise<RunOutcome> {
   focus = focusSyn;
   const d = makeSession(ooparts);
   await d.send('NEW_RUN', { seed });
@@ -166,7 +166,8 @@ export async function playRun(seed: string, ooparts: string[], policy: OopPolicy
         if (!r.ok) throw new Error(`${seed} START_BATTLE: ${r.ok === false ? (r as { message?: string }).message : ''}`);
         break;
       }
-      case 'BATTLE': case 'RESULT': case 'NEXT_NODE': await d.send('CONFIRM_RESULT'); break;
+      case 'BATTLE': onBattle?.(run); await d.send('CONFIRM_RESULT'); break;
+      case 'RESULT': case 'NEXT_NODE': await d.send('CONFIRM_RESULT'); break;
       case 'RUN_COMPLETE': case 'RUN_FAILED': {
         const h = run.nodeHistory;
         return { wins: h.filter((x) => x === 'win').length, nodes: h.filter(Boolean).length, complete: s.phase === 'RUN_COMPLETE', chapterReached: run.chapter, runHp: Math.max(0, run.runHp), owned: run.ooparts.owned, merges, level: run.level };

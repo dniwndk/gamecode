@@ -365,6 +365,15 @@ for (const c of tableRows(section(v23, '## 10. 난이도 조정'), '`node_')) {
   if (bps(c[2]) !== node.statScaleBps) fail(`10장 ${node.id} 원래 배율 ${c[2]} ≠ E.2 ${node.statScaleBps / 10000}`);
   node.statScaleBps = bps(c[3]);
 }
+// v2.3 13장: 시간 제한 폐지에 맞춘 재상향. v2.3.3 배율 칸이 10장 결과와 같고, 새 배율 = v2.3.3 × 추가 배율이어야 한다.
+for (const c of tableRows(section(v23, '## 13. 시간 제한 폐지와 난이도 재상향'), '`node_')) {
+  const node = nodes.find((n) => n.id === unticked(c[0])) ?? fail(`13장의 ${c[0]} 노드가 없음`);
+  const bps = (s) => Math.round(Number((s.match(/^×([\d.]+)$/) ?? fail(`13장 ${node.id} 배율 형식: ${s}`))[1]) * 10000);
+  if (c[1] !== node.type) fail(`13장 ${node.id} 유형 ${c[1]} ≠ ${node.type}`);
+  if (bps(c[2]) !== node.statScaleBps) fail(`13장 ${node.id} v2.3.3 배율 ${c[2]} ≠ 10장 ${node.statScaleBps / 10000}`);
+  if (Math.abs(bps(c[2]) * bps(c[3]) / 10000 - bps(c[4])) > 1) fail(`13장 ${node.id} 새 배율 ${c[4]} ≠ ${c[2]} ${c[3]}`);
+  node.statScaleBps = bps(c[4]);
+}
 
 // ───────────────────────── 오파츠 ─────────────────────────
 // docs/OOPARTS_v1.md 2~5장의 표. 표마다 칸 구성이 달라 제목으로 배치를 정한다.
@@ -510,7 +519,7 @@ const excludeMaxStarOwned = /3성을 보유한 학생은 그 3성을 팔기 전�
 if (!excludeMaxStarOwned) fail('11.1 3성 제외 규칙 문장을 찾지 못함');
 
 const rules = {
-  rulesVersion: 'ktfr-rules-2.5.0',
+  rulesVersion: 'ktfr-rules-2.6.0',
   source: 'GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.',
   run: {
     chapters: 3, battlesPerChapter: 5,
@@ -529,7 +538,9 @@ const rules = {
   defeatDamage: { chapterBase: [6, 9, 12], perSurvivingEnemyFront: 2, eliteBonus: 3, bossBonus: 6, finalBossLossEndsRun: true },
   units: { maxStar: 3, mergeCount: 3, starStatMultiplierBps: [10000, 18000, 32000], equipmentSlots: 2 },
   battle: {
-    maxAv: 1000, eventLimit: 10000, globalPulseAv: 100,
+    // v2.3 13장: 시간 제한(1000AV 패배)을 없애고 격화로 교착만 막는다.
+    eventLimit: 20000, globalPulseAv: 100,
+    escalation: { startAv: 1000, stepAv: 100, damageBpsPerStep: 2000 },
     teamSp: { start: 3, max: 5 }, energy: { start: 0, max: 100 },
   },
   rng: { algorithm: 'xorshift32', zeroSeedReplacement: 0x6d2b79f5, streams: ['setup', 'shop', 'reward', 'battle', 'initiative'] },
@@ -555,7 +566,7 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-2.6.0',
+  contentVersion: 'ba-content-2.8.2',
   rulesVersion: rules.rulesVersion,
   expectedCounts: { units: 101, synergies: 64, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 470, dialogueFiles: 101, statuses: 20, ooparts: 55 },
   sources: [
