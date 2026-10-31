@@ -542,6 +542,8 @@ const rules = {
     eventLimit: 20000, globalPulseAv: 100,
     escalation: { startAv: 1000, stepAv: 100, damageBpsPerStep: 2000 },
     teamSp: { start: 3, max: 5 }, energy: { start: 0, max: 100 },
+    // v2.4 1장: 진짜 전투 엔진의 적 능력치 보정(노드 배율 위에 HP·ATK·DEF에 한 번 더 곱한다)
+    enemyStatBps: { hp: 7500, atk: 7000, def: 9000 },
   },
   rng: { algorithm: 'xorshift32', zeroSeedReplacement: 0x6d2b79f5, streams: ['setup', 'shop', 'reward', 'battle', 'initiative'] },
   ooparts: oopartRules,
@@ -566,7 +568,7 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-2.8.2',
+  contentVersion: 'ba-content-2.9.0',
   rulesVersion: rules.rulesVersion,
   expectedCounts: { units: 101, synergies: 64, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 470, dialogueFiles: 101, statuses: 20, ooparts: 55 },
   sources: [

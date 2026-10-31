@@ -274,6 +274,8 @@ export interface RulesConfig {
     escalation: { startAv: number; stepAv: number; damageBpsPerStep: number };
     teamSp: { start: number; max: number };
     energy: { start: number; max: number };
+    /** 전투 엔진 적 능력치 보정(v2.4 1장). 노드 배율 뒤에 곱한다 */
+    enemyStatBps: { hp: number; atk: number; def: number };
   };
   rng: { algorithm: string; zeroSeedReplacement: number; streams: string[] };
   ooparts: OopartRules;

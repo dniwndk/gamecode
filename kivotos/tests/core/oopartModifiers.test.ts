@@ -34,9 +34,9 @@ describe('오파츠 보정값', () => {
     expect(oopartModifiers(['oop_prototype_zero'])).toMatchObject({ frontUltEnergy: 70, frontSkillCdBonus: 1 });
   });
 
-  it('55종 모두 작동 정도가 정해져 있고, 시너지 단계 효과를 기다리는 것은 14종', () => {
+  it('전투 엔진(v2.4) 뒤로 55종 모두 적용 중', () => {
     const levels = pack.ooparts.map((o) => oopartSupport(o.id).level);
-    expect(levels.filter((l) => l === 'pending')).toHaveLength(14);
+    expect(levels.filter((l) => l !== 'active')).toHaveLength(0);
     for (const o of pack.ooparts) {
       const s = oopartSupport(o.id);
       if (s.level !== 'active') expect(s.waiting, o.id).toBeTruthy();

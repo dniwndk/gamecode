@@ -197,34 +197,9 @@ export interface OopartSupport {
 /**
  * 지금 빌드에서 어디까지 작동하는지. 목록에 없는 오파츠는 전부 작동(active).
  * waiting은 화면에 그대로 나가는 짧은 조건 문구(사용자 지시 2026-10-31: 「조건: 최소 ~ 시너지 발동」 형식).
- * 시너지 단계 효과가 전투에 들어오면(M3) 이 조건에서 작동한다.
+ * v2.4(D-030): 전투 엔진이 시너지 단계 효과와 오파츠 전투 효과를 모두 실행하므로 대기·일부 적용 항목이 없다.
  */
-const SUPPORT: Record<string, OopartSupport> = {
-  oop_wolfsegg_steel: { level: 'partial', waiting: '조건: 최소 탱커 3 시너지 발동' },
-  oop_istanbul_rocket: { level: 'pending', waiting: '조건: 최소 어태커 3 시너지 발동' },
-  oop_quimbaya_plane: { level: 'pending', waiting: '조건: 최소 스나이퍼 2 시너지 발동' },
-  oop_golden_fleece: { level: 'partial', waiting: '조건: 최소 힐러 4 시너지 발동' },
-  oop_zero_star_review: { level: 'pending', waiting: '조건: 최소 미식연구회 2 시너지 발동' },
-  oop_tsc_first_edition: { level: 'pending', waiting: '조건: 최소 게임개발부 2 시너지 발동' },
-  oop_half_donut: { level: 'pending', waiting: '조건: 최소 생활안전국 2 시너지 발동' },
-  oop_wrong_answer_note: { level: 'pending', waiting: '조건: 최소 보충수업부 2 시너지 발동' },
-  oop_dessert_stamp: { level: 'pending', waiting: '조건: 최소 디저트부 2 시너지 발동' },
-  oop_hot_spring_map: { level: 'pending', waiting: '조건: 최소 온천개발부 2 시너지 발동' },
-  oop_tsurugi_novel: { level: 'pending', waiting: '조건: 최소 정의실현위원회 2 시너지 발동' },
-  oop_coup_order: { level: 'partial', waiting: '조건: 최소 붉은겨울 2 시너지 발동' },
-  oop_arrest_warrant: { level: 'pending', waiting: '조건: 최소 발키리 2 시너지 발동' },
-  oop_rabbit_radio: { level: 'pending', waiting: '조건: 최소 SRT 4 시너지 발동' },
-  oop_express_ticket: { level: 'pending', waiting: '조건: 최소 하이랜더 2 시너지 발동' },
-  oop_onibi_seal: { level: 'pending', waiting: '조건: 최소 백귀야행 2 시너지 발동' },
-  oop_squad_manual: { level: 'pending', waiting: '조건: 최소 아리우스 2 시너지 발동' },
-  oop_foreclosure_photo: { level: 'partial', waiting: '조건: 최소 아비도스 4 시너지 발동' },
-  oop_millennium_prize: { level: 'partial', waiting: '조건: 최소 밀레니엄 2 시너지 발동' },
-  oop_prophecy_circuit: { level: 'partial', waiting: '조건: 보스 HP 임계 패턴 발동' },
-  oop_empty_chair: { level: 'partial', waiting: '조건: 학원 대항전 달성' },
-  oop_trinity_club_charter: { level: 'partial', waiting: '조건: 늘어난 인원으로 동아리 시너지 발동' },
-  oop_eden_treaty: { level: 'partial', waiting: '조건: 동아리 시너지 발동' },
-  oop_yume_notebook: { level: 'partial', waiting: '조건: 최소 아비도스 4 시너지 발동' },
-};
+const SUPPORT: Record<string, OopartSupport> = {};
 
 export function oopartSupport(id: string): OopartSupport {
   return SUPPORT[id] ?? { level: 'active' };

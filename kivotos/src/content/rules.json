@@ -199,6 +199,11 @@
     "energy": {
       "start": 0,
       "max": 100
+    },
+    "enemyStatBps": {
+      "hp": 7500,
+      "atk": 7000,
+      "def": 9000
     }
   },
   "rng": {
