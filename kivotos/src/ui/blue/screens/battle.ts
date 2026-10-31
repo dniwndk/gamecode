@@ -2,7 +2,7 @@
 import type { Ctx, Screen } from '../app';
 import { DEBUFFS, STATUS_LABEL, enemyPortrait, portrait, shortName, stars, statusIcon, synHex } from '../components';
 import { cls, fill, h, svg } from '../dom';
-import { ChainCounter, ExChain, cutinMs, escalationHeat, floatSize, hitstopMs, impactOf, rankActiveSynergies, shakePx, type Impact, type StopKind } from '../fx/battleFx';
+import { ChainCounter, ExChain, cutinMs, escalationHeat, floatSize, hitstopMs, impactOf, isWounded, rankActiveSynergies, shakePx, type Impact, type StopKind } from '../fx/battleFx';
 import { icon } from '../icons';
 import type { BattleEventView, CombatantView, ProcCause, Ref, UiState } from '../model';
 import { oopartArt } from './ooparts';
@@ -27,6 +27,9 @@ interface Live {
   energy: number;
   statuses: string[];
   down: boolean;
+  /** 체력 절반 아래에서 부상 삽화(public/injured)로 바뀐 상태 */
+  wounded: boolean;
+  art: HTMLElement;
 }
 
 export function mountBattle(ctx: Ctx, s: UiState): Screen {
@@ -59,10 +62,20 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
       c.hasHp ? h('div', { class: 'k-cb-bars' },
         h('div', { class: 'k-hp' }, hpGhost, hpBar, shieldBar, hpText),
         h('div', { class: 'k-en' }, energyBar!)) : h('div', { class: 'k-cb-support' }, icon('rear', 14), '지원'));
-    return { view: c, el, hpBar, hpGhost, ghostP: 100, shieldBar, hpText, energyBar, statusBox, hp: c.hp, shield: c.shield, energy: c.energy, statuses: [], down: false };
+    return { view: c, el, art, wounded: false, hpBar, hpGhost, ghostP: 100, shieldBar, hpText, energyBar, statusBox, hp: c.hp, shield: c.shield, energy: c.energy, statuses: [], down: false };
   }
 
   for (const c of battle.combatants) live.set(key(c.ref), combatantEl(c));
+  // 부상 삽화(체력 절반 아래). 미리 받아 두고, 받은 학생만 바꾼다(없으면 초상화 그대로)
+  const injuredOk = new Set<string>();
+  const injuredUrl = (id: string) => ctx.art(`injured/${id}.webp`);
+  for (const c of battle.combatants) {
+    if (!c.unitId || !c.hasHp || c.ref.side !== 'ally') continue;
+    const id = c.unitId;
+    const img = new Image();
+    img.onload = () => injuredOk.add(id);
+    img.src = injuredUrl(id);
+  }
   // 필살기 컷인 그림을 미리 받아 둔다(컷인은 1.2초라 그때 받으면 늦다)
   const cutinOk = new Set<string>();
   for (const c of battle.combatants) {
@@ -124,9 +137,23 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
   }
 
   // ── 표시 갱신 ──────────────────────────────────────────
+  function setWounded(l: Live, on: boolean) {
+    const id = l.view.unitId;
+    if (!id || l.wounded === on || (on && !injuredOk.has(id))) return;
+    const img = l.art.querySelector('img');
+    if (!img) return;
+    l.wounded = on;
+    img.src = on ? injuredUrl(id) : ctx.portrait(id) ?? img.src;
+    l.el.classList.toggle('is-wounded', on);
+    if (on && !skipping) {
+      pulse(l, 'is-wound-in');
+      if (!l.down) float(l, '부상', 'wound', { dy: -60 });
+    }
+  }
   function paint(l: Live) {
     if (!l.view.hasHp) return;
     const max = l.view.maxHp;
+    setWounded(l, isWounded(l.hp, max));
     const pct = (l.hp / max) * 100;
     l.hpBar.style.setProperty('--p', `${pct}%`);
     // 잔상: 줄어들 때는 잠깐 남았다가 따라오고, 치유로 늘 때는 바로 맞춘다

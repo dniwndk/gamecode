@@ -990,6 +990,11 @@ kbd { font-family: var(--f-num); }
 .is-mobile .k-exchain { position: fixed; right: 16px; top: 120px; }
 .is-mobile .k-exchain b { font-size: 44px; }
 
+.k-cb.is-wounded .k-cb-frame { box-shadow: 0 0 0 2px #e5383b, 0 0 14px rgba(229,56,59,.45), 0 8px 18px rgba(19,36,63,.2); }
+.k-cb.is-wound-in .k-cb-frame { animation: k-wound-in .5s ease-out; }
+@keyframes k-wound-in { 0% { filter: brightness(2.2) saturate(0); transform: scale(1.04); } 40% { filter: brightness(1.2) sepia(.5) hue-rotate(-30deg) saturate(2); } 100% { filter: none; transform: none; } }
+.k-float.is-wound { color: #fff; background: #b4232a; -webkit-text-stroke: 0; font-family: var(--f-kr); font-size: 20px; padding: 2px 12px; border-radius: 6px; }
+
 /* 필살기 컷인 */
 .k-cutin { position: absolute; inset: 0; pointer-events: none; z-index: 30; display: none; }
 .k-cutin.is-on { display: block; }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ChainCounter, ExChain, cutinMs, escalationHeat, floatSize, hitstopMs, impactOf, rankActiveSynergies, shakePx } from '../../src/ui/blue/fx/battleFx';
+import { ChainCounter, ExChain, cutinMs, escalationHeat, floatSize, hitstopMs, impactOf, isWounded, rankActiveSynergies, shakePx } from '../../src/ui/blue/fx/battleFx';
 
 describe('전투 연출 강약 예산', () => {
   it('작은 피해는 가볍고, 큰 피해·치명·필살기 직후는 한 단계씩 무겁다', () => {
@@ -65,5 +65,13 @@ describe('전투 연출 강약 예산', () => {
       { synergyId: 'p', activeTier: 3, count: 8 },
     ], (id, tier) => (id === 'p' && tier === 3 ? info('p') : id === 'p' ? { grade: 'normal', tierCount: 4 } : info(id)));
     expect(ranked.map((s) => s.synergyId)).toEqual(['p', 'b', 'a']);
+  });
+
+  it('부상 삽화는 체력이 절반 아래일 때만(절반 정확히는 아직 아님)', () => {
+    expect(isWounded(1000, 1000)).toBe(false);
+    expect(isWounded(500, 1000)).toBe(false);
+    expect(isWounded(499, 1000)).toBe(true);
+    expect(isWounded(0, 1000)).toBe(true);
+    expect(isWounded(10, 0)).toBe(false);
   });
 });

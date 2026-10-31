@@ -109,3 +109,9 @@ export function rankActiveSynergies<T extends SynergyLike>(list: readonly T[], i
   };
   return list.filter((s) => s.activeTier !== null).sort((a, b) => score(b) - score(a));
 }
+
+/** 부상 삽화로 바꾸는 체력 비율(사용자 요청 2026-10-31: 절반 아래). 쓰러진 뒤에도 부상 삽화를 유지한다 */
+export const WOUNDED_RATIO = 0.5;
+export function isWounded(hp: number, maxHp: number): boolean {
+  return maxHp > 0 && hp / maxHp < WOUNDED_RATIO;
+}
