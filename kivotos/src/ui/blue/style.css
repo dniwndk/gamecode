@@ -667,11 +667,11 @@ kbd { font-family: var(--f-num); }
 .k-start-vals i { font-family: var(--f-num); font-style: italic; font-weight: 700; color: var(--blue); }
 .k-start-vals .ico { color: var(--blue); }
 .k-bosses, .k-starters { padding: 22px 24px; }
-.k-boss-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 6px; }
+.k-boss-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 6px; }
 .k-boss-card { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 18px 16px; border-radius: 12px;
   background: linear-gradient(170deg, #fff, #f3f0ff); box-shadow: inset 0 0 0 1px #e1dbff; }
 .k-boss-card strong { font-size: 20px; }
-.k-boss-card p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.k-boss-card p { margin: 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .k-boss-ch { position: absolute; left: 12px; top: 10px; font-family: var(--f-num); font-weight: 800; font-style: italic; color: #6f4ad8; font-size: 20px; }
 .k-starter-row { display: flex; gap: 18px; margin-top: 10px; }
 .k-setup-foot { display: flex; justify-content: flex-end; margin-top: auto; }
@@ -1602,7 +1602,8 @@ kbd { font-family: var(--f-num); }
 .k-brief-boss { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 16px; background: linear-gradient(100deg, rgba(255,235,238,.9), rgba(255,255,255,.75)); box-shadow: inset 0 0 0 1px rgba(239,68,102,.18); }
 .k-brief-boss b { font-size: 19px; color: #b4233f; }
 .k-brief-boss p { margin: 4px 0 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.k-brief-bosses { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.k-brief-bosses { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.k-brief-boss-mini .k-enemy-img, .k-brief-boss-mini img { max-width: 100%; }
 .k-brief-boss-mini { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px; border-radius: 14px; background: #fff; text-align: center; }
 .k-brief-boss-mini small { font-family: var(--f-num); font-weight: 800; color: var(--blue); }
 .k-brief-boss-mini b { font-size: 15px; color: var(--ink); }

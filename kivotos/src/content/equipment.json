@@ -15,7 +15,9 @@
     "chapters": [
       1,
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 어태커 전방 딜러(`u_iori`, `u_aru`, `u_mika`, `u_wakamo`) / 비추천: 순수 탱커",
     "description": "치명타 확률과 치명타 피해, 속도를 고르게 높이고 전투 시작 시 에너지를 15 부여합니다."
@@ -35,7 +37,9 @@
     "chapters": [
       1,
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 전방 탱커 및 브루저(`u_yuuka`, `u_tsubaki`, `u_hoshino`, `u_haruka`) / 비추천: 후방 지원가",
     "description": "전방 유닛의 체력과 방어력을 높이고, 전투 시작 시 최대 HP 20%의 보호막(2턴)을 부여합니다."
@@ -55,7 +59,9 @@
     "chapters": [
       1,
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 후방 지원가 전원(`u_ako`, `u_himari`, `u_serina`, `u_ayane`) / 비추천: 전방 전용 유닛",
     "description": "후방 지원가의 첫 정기 지원(`rear_action`) 시 팀 SP를 1 회복하고 전방 전원의 에너지를 10 채웁니다(전투당 1회)."
@@ -75,7 +81,9 @@
     "chapters": [
       1,
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 기본 공격·연사 중심 어태커(`u_shiroko`, `u_serika`, `u_izuna`, `u_neru`)",
     "description": "기본 공격 해소 시(`basic_resolved`) 자신의 에너지를 8 추가 회복하고 가하는 피해가 +12% 증가합니다."
@@ -95,7 +103,9 @@
     "chapters": [
       1,
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 광역 스킬/필살기 딜러(`u_nonomi`, `u_mutsuki`, `u_hina`, `u_aru`)",
     "description": "전투 스킬 및 필살기로 가하는 피해가 +20% 증가하며, 필살기 사용 시 적에게 2턴간 화상(`st_burn`)을 부여합니다."
@@ -115,7 +125,9 @@
     "chapters": [
       1,
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 치유 지원가(`u_serina`, `u_fuuka`, `u_koharu`, `u_ayane`)",
     "description": "소유자의 치유량이 +25% 증가하며, 치유 적용 시(`healed`) 대상의 디버프 1개를 50% 확률로 해제합니다."
@@ -135,7 +147,9 @@
     "chapters": [
       1,
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 후방 제어/디버프 요원(`u_hare`, `u_suzumi`, `u_kotama`, `u_rio`)",
     "description": "후방 정기 지원 시 적 전방 최전열 대상의 다음 행동 시간을 15% 밀어내고(`delay_action`) 2턴간 받는 피해를 +12% 늘립니다."
@@ -154,7 +168,9 @@
     "uniquePerUnit": true,
     "chapters": [
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 1번 슬롯 메인 탱커(`u_hoshino`, `u_tsubaki`, `u_yuuka`)",
     "description": "받는 최종 피해가 15% 감소하며, 전투 중 최초로 HP가 50% 이하가 될 때 최대 HP 30%를 즉시 회복합니다(전투당 1회)."
@@ -173,7 +189,9 @@
     "uniquePerUnit": true,
     "chapters": [
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 필살기 비중이 높은 메인 캐리(`u_aris`, `u_wakamo`, `u_hina`, `u_mika`)",
     "description": "전투 시작 시 초기 에너지 +30을 얻고, 필살기 해소 후 에너지를 20 즉시 환급받습니다(전투당 2회)."
@@ -194,7 +212,9 @@
     "chapters": [
       1,
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 고속 행동 딜러(`u_izuna`, `u_asuna`, `u_neru`, `u_wakamo`)",
     "description": "자신의 전투 스킬 해소 시 다음 행동 시간을 20% 당기고(`advance_action`) 1턴간 ATK +15%를 얻습니다."
@@ -214,7 +234,9 @@
     "chapters": [
       1,
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 후속 공격 보유 전방 딜러(`u_shiroko`, `u_iori`, `u_izuna`, `u_hina`)",
     "description": "후속 공격(`followup_attack`)으로 가하는 피해가 +35% 증가하고, 후속 공격 적중 시 자신의 HP를 최대 HP의 8%만큼 회복합니다."
@@ -234,7 +256,9 @@
     "uniquePerUnit": true,
     "chapters": [
       2,
-      3
+      3,
+      4,
+      5
     ],
     "recommendation": "추천: 대보스 결전 딜러 및 하이브리드(`u_iori`, `u_azusa`, `u_mika`, `u_rio`)",
     "description": "공격 적중 시 대상의 현재 DEF를 2턴간 20% 감소(`st_def_down`)시키고, 디버프가 있는 적에게 가하는 피해가 +18% 증가합니다."

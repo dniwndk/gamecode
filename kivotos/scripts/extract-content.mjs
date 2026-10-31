@@ -23,6 +23,9 @@ const v22 = v22Text.split('\n');
 const v23Text = readFileSync(join(DOCS, 'GDD_v2.3_amendment.md'), 'utf8');
 const v23 = v23Text.split('\n');
 const oopText = readFileSync(join(DOCS, 'OOPARTS_v1.md'), 'utf8');
+// v2.4.2: 4·5장 확장(적·노드·효과·런 규칙·노드 배율)
+const v24Text = readFileSync(join(DOCS, 'GDD_v2.4_chapters45.md'), 'utf8');
+const v24 = v24Text.split('\n');
 const oop = oopText.split('\n');
 
 function fail(msg) {
@@ -213,6 +216,26 @@ for (const l of section(v23, '## 6. 삭제된 효과')) {
   effects.splice(at, 1);
 }
 
+// v2.4 3장: 4·5장 적 효과(모두 신규)
+{
+  const lines = section(v24, '## 3. 효과 (4·5장 적, 24개)');
+  for (let i = 0; i < lines.length; i++) {
+    const h = lines[i].match(/^### (W\.\d{3}) `(eff_[a-z0-9_]+)`$/);
+    if (!h) continue;
+    const block = lines.slice(i + 1, i + 6);
+    const field = (name) => block.find((l) => l.startsWith(`- ${name}: `))?.slice(name.length + 4) ?? fail(`${h[2]}: "${name}" 줄 없음`);
+    const src = field('출처/구역').match(/^(.*) \/ `([a-z_]+)`\. 원안 행: v2\.4 신규\.$/) ?? fail(`${h[2]} 출처/구역 형식`);
+    const exec = field('실행').match(/^\*\*(.+?)\*\*\.?\s*(.*)$/) ?? fail(`${h[2]} 실행 형식`);
+    if (effects.some((e) => e.id === h[2])) fail(`${h[2]}: v2.4 신규인데 이미 있음`);
+    effects.push({
+      id: h[2], catalogNo: h[1], owner: src[1], scope: src[2],
+      execution: EXEC[exec[1]] ?? fail(`${h[2]} 실행 종류 모름: ${exec[1]}`),
+      trigger: exec[2] && !exec[2].startsWith('ActionResolver') ? exec[2].replace(/\.$/, '') : null,
+      spec: field('본문'), limits: field('제한'), sourceReference: 'GDD v2.4 3장 (신규)', implementation: 'spec_only', handlers: [],
+    });
+  }
+}
+
 // ───────────────────────── 장비 ─────────────────────────
 const STAT_KEY = { HP: 'hp', ATK: 'atk', DEF: 'def', SPD: 'spd', CRIT: 'critBps', CRIT_DMG: 'critDamageBps' };
 function parseStats(s) {
@@ -238,7 +261,8 @@ const equipment = tableRows(section(v21, '### D.1 장비 목록 (총 12종)'), '
   stats: parseStats(c[3]),
   effectIds: ids(c[4], 'eff_'),
   uniquePerUnit: unticked(c[5]) === 'true',
-  chapters: chapters(c[6]),
+  // v2.4 1.2: 3장에 나오는 장비는 4·5장에도 나온다
+  chapters: ((cs) => (cs.includes(3) ? [...cs, 4, 5] : cs))(chapters(c[6])),
   recommendation: c[7],
   description: c[8],
 }));
@@ -249,7 +273,13 @@ const OWNED_CONDITION = {
   str_rear_command_net: { positions: ['rear_only', 'dual'], anyTagOf: null, minCount: 2 },
   str_iron_frontline: { positions: ['front_only', 'dual'], anyTagOf: null, minCount: 2 },
 };
+// v2.4 1.2: 3장에 제안되는 전략은 4·5장에도 제안된다
+const extend45 = (cs) => (cs.includes(3) ? [...cs, 4, 5] : cs);
 function strategyOffer(id, cond) {
+  const o = strategyOfferV21(id, cond);
+  return { chapters: extend45(o.chapters), ownedCondition: o.ownedCondition ? { ...o.ownedCondition, chapters: extend45(o.ownedCondition.chapters) } : null };
+}
+function strategyOfferV21(id, cond) {
   if (/^1~3장 시작 시 조건 없이/.test(cond)) return { chapters: [1, 2, 3], ownedCondition: null };
   if (/^2~3장 시작 시 등장$/.test(cond)) return { chapters: [2, 3], ownedCondition: null };
   if (OWNED_CONDITION[id]) return { chapters: [2, 3], ownedCondition: { ...OWNED_CONDITION[id], chapters: [1, 2, 3] } };
@@ -296,7 +326,7 @@ for (const c of tableRows(section(v23, '### 7.1 장비 추천 문구'), '`eq_'))
 }
 
 // ───────────────────────── 적 ─────────────────────────
-const enemies = tableRows(section(v21, '### E.1 적 및 보스 마스터 정의 (총 13종: 일반·정예 10종 + 보스 3종)'), '`').map((c) => {
+const parseEnemy = (c) => {
   const id = unticked(c[0]);
   const m = c[3].match(/^HP (\d+) \/ ATK (\d+) \/ DEF (\d+) \/ SPD (\d+)$/) ?? fail(`${id} 스탯 형식: ${c[3]}`);
   return {
@@ -311,7 +341,11 @@ const enemies = tableRows(section(v21, '### E.1 적 및 보스 마스터 정의 
     role: c[6],
     counterplay: c[7],
   };
-});
+};
+const enemies = [
+  ...tableRows(section(v21, '### E.1 적 및 보스 마스터 정의 (총 13종: 일반·정예 10종 + 보스 3종)'), '`').map(parseEnemy),
+  ...tableRows(section(v24, '## 2. 적 (4·5장, 12종)'), '`').map(parseEnemy),
+];
 
 // ───────────────────────── 노드 ─────────────────────────
 const NODE_TYPE = { 일반: 'normal', 정예: 'elite', 보스: 'boss' };
@@ -373,6 +407,33 @@ for (const c of tableRows(section(v23, '## 13. 시간 제한 폐지와 난이도
   if (bps(c[2]) !== node.statScaleBps) fail(`13장 ${node.id} v2.3.3 배율 ${c[2]} ≠ 10장 ${node.statScaleBps / 10000}`);
   if (Math.abs(bps(c[2]) * bps(c[3]) / 10000 - bps(c[4])) > 1) fail(`13장 ${node.id} 새 배율 ${c[4]} ≠ ${c[2]} ${c[3]}`);
   node.statScaleBps = bps(c[4]);
+}
+
+// v2.4 4장: 4·5장 노드. 배율은 5장 표에서 채운다.
+for (const c of tableRows(section(v24, '## 4. 노드 (4·5장)'), '`node_')) {
+  const id = unticked(c[0]);
+  const [, chapter, battle] = id.match(/^node_(\d)_(\d)$/) ?? fail(`노드 ID 형식: ${id}`);
+  const threats = Object.fromEntries(c[4].split(/\s*\/\s*(?=[AB]안:)/).map((t) => { const m = t.match(/^([AB])안:\s*(.*)$/); return m ? [m[1], m[2]] : ['A', t]; }));
+  const candidates = [];
+  for (const [k, cell] of [['A', c[2]], ['B', c[3]]]) {
+    if (/^\(.*고정.*\)$/.test(cell.trim())) continue;
+    const colon = cell.indexOf(':');
+    candidates.push({ id: k, label: cell.slice(0, colon).trim(), ...parseFormation(cell.slice(colon + 1).trim(), id), threat: threats[k] ?? threats.A });
+  }
+  nodes.push({ id, chapter: Number(chapter), battle: Number(battle), type: NODE_TYPE[c[1]] ?? fail(`${id} 유형: ${c[1]}`), statScaleBps: 0, candidates });
+}
+// v2.4 5장: 25개 노드 배율(난이도 곡선). 이전 배율 칸이 지금 값과 맞아야 한다(새 노드는 —).
+{
+  const rows = tableRows(section(v24, '## 5. 노드 배율 (난이도 곡선)'), '`node_');
+  const bps = (s, id) => Math.round(Number((s.match(/^×([\d.]+)$/) ?? fail(`v2.4 5장 ${id} 배율 형식: ${s}`))[1]) * 10000);
+  for (const c of rows) {
+    const node = nodes.find((n) => n.id === unticked(c[0])) ?? fail(`v2.4 5장의 ${c[0]} 노드가 없음`);
+    if (c[1] !== node.type) fail(`v2.4 5장 ${node.id} 유형 ${c[1]} ≠ ${node.type}`);
+    if (c[2] === '—' ? node.statScaleBps !== 0 : bps(c[2], node.id) !== node.statScaleBps) fail(`v2.4 5장 ${node.id} 이전 배율 ${c[2]} ≠ ${node.statScaleBps / 10000}`);
+    node.statScaleBps = bps(c[3], node.id);
+  }
+  for (const n of nodes) if (!n.statScaleBps) fail(`${n.id} 배율이 v2.4 5장에 없음`);
+  nodes.sort((a, b) => a.chapter - b.chapter || a.battle - b.battle);
 }
 
 // ───────────────────────── 오파츠 ─────────────────────────
@@ -469,9 +530,9 @@ const OOP_SOURCE = [
 const oopAcqLines = section(oop, '### 1.2 획득 경로');
 const oopSources = tableRows(oopAcqLines, '').filter((c) => c.length === 3 && !/^-+$/.test(c[0]) && c[0] !== '시점').map((c) => {
   const id = OOP_SOURCE.find(([re]) => re.test(c[0]))?.[1] ?? fail(`오파츠 획득 시점을 모름: ${c[0]}`);
-  const all = [1, 2, 3];
-  const chapterMatch = c[0].match(/^(\d)·(\d)장/);
-  const chapters = chapterMatch ? [Number(chapterMatch[1]), Number(chapterMatch[2])] : all;
+  const all = [1, 2, 3, 4, 5];
+  const chapterMatch = c[0].match(/^(\d)~(\d)장/);
+  const chapters = chapterMatch ? Array.from({ length: Number(chapterMatch[2]) - Number(chapterMatch[1]) + 1 }, (_, k) => Number(chapterMatch[1]) + k) : all;
   const perChapter = [...c[2].matchAll(/(\d)장 (\d+)\/(\d+)\/(\d+)/g)];
   const flat = c[2].match(/^(\d+) \/ (\d+) \/ (\d+)$/);
   const oddsByChapter = {};
@@ -514,28 +575,41 @@ if (copiesByCost.length !== 5 || copiesByCost.some((n) => !(n > 0))) fail(`11.1 
 const xp11 = section(v23, '### 11.2 레벨별 XP');
 const xp11Old = xpOf(tableRows(xp11, '다음 XP (v2.2)')[0] ?? fail('11.2 v2.2 줄 없음'));
 if (JSON.stringify(xp11Old) !== JSON.stringify(xpV22)) fail('11.2의 v2.2 XP 줄이 v2.2 개정안 1.2와 다름');
-const xpToNext = xpOf(tableRows(xp11, '다음 XP (v2.3.4)')[0] ?? fail('11.2 v2.3.4 줄 없음'));
+const xpV234 = xpOf(tableRows(xp11, '다음 XP (v2.3.4)')[0] ?? fail('11.2 v2.3.4 줄 없음'));
+// v2.4 1.1: 25전투에 맞춘 레벨 XP. v2.3.4 줄이 11.2와 같아야 한다.
+const xp24 = section(v24, '### 1.1 레벨별 XP');
+if (JSON.stringify(xpOf(tableRows(xp24, '다음 XP (v2.3.4)')[0] ?? fail('v2.4 1.1 v2.3.4 줄 없음'))) !== JSON.stringify(xpV234)) fail('v2.4 1.1의 v2.3.4 XP 줄이 v2.3 11.2와 다름');
+const xpToNext = xpOf(tableRows(xp24, '다음 XP (v2.4.2)')[0] ?? fail('v2.4 1.1 v2.4.2 줄 없음'));
 const excludeMaxStarOwned = /3성을 보유한 학생은 그 3성을 팔기 전까지 상점에 나오지 않는다/.test(section(v23, '### 11.1 코스트별 장수').join('\n'));
 if (!excludeMaxStarOwned) fail('11.1 3성 제외 규칙 문장을 찾지 못함');
 
+// v2.4 1장 런 규칙 표
+const runRow = new Map(tableRows(section(v24, '## 1. 런 규칙'), '').filter((c) => c.length === 3).map((c) => [c[0], c[2]]));
+const nums = (s) => (s ?? fail('v2.4 1장 런 규칙 칸 없음')).match(/\d+/g).map(Number);
+const v24Chapters = nums(runRow.get('장 수'))[0];
+const v24RunHp = nums(runRow.get('런 체력'))[0];
+const v24Income = nums(runRow.get('장별 기본 수입'));
+const v24Defeat = nums(runRow.get('장별 패배 기본 피해'));
+if (v24Income.length !== v24Chapters || v24Defeat.length !== v24Chapters) fail('v2.4 1장 장별 값 개수가 장 수와 다름');
+
 const rules = {
-  rulesVersion: 'ktfr-rules-2.6.1',
+  rulesVersion: 'ktfr-rules-2.7.0',
   source: 'GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.',
   run: {
-    chapters: 3, battlesPerChapter: 5,
-    startRunHp: 80, startGold: 10, startLevel: 3, startXp: 0, maxLevel: 10,
+    chapters: v24Chapters, battlesPerChapter: 5,
+    startRunHp: v24RunHp, startGold: 10, startLevel: 3, startXp: 0, maxLevel: 10,
     startingUnits: { count: 3, cost: 1, minFrontCapable: 2 },
   },
   board: { frontSlots: 4, rearSlots: 6, benchSlots: 9, maxDeployed: 10 },
   shop: { slots: 5, rerollCost: 2, recommendedSlotIndex: 4, recommendedModeChanceBps: 5000, levels: odds, copiesByCost, excludeMaxStarOwned },
   xp: { buyCostGold: 4, buyAmount: 4, perBattle: 3, xpToNext },
   income: {
-    baseByChapter: [6, 7, 8], winBonus: 1,
+    baseByChapter: v24Income, winBonus: 1,
     streakBonus: [{ minStreak: 2, gold: 1 }, { minStreak: 4, gold: 2 }, { minStreak: 6, gold: 3 }],
     interest: { stepGold: 10, cap: 5 },
   },
   sell: { formula: 'cost*3^(star-1) - (star>=2 ? 1 : 0)', depreciationFromStar: 2, depreciationGold: 1 },
-  defeatDamage: { chapterBase: [6, 9, 12], perSurvivingEnemyFront: 2, eliteBonus: 3, bossBonus: 6, finalBossLossEndsRun: true },
+  defeatDamage: { chapterBase: v24Defeat, perSurvivingEnemyFront: 2, eliteBonus: 3, bossBonus: 6, finalBossLossEndsRun: true },
   units: { maxStar: 3, mergeCount: 3, starStatMultiplierBps: [10000, 18000, 32000], equipmentSlots: 2 },
   battle: {
     // v2.3 13장: 시간 제한(1000AV 패배)을 없애고 격화로 교착만 막는다.
@@ -569,14 +643,15 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-2.9.1',
+  contentVersion: 'ba-content-3.0.0',
   rulesVersion: rules.rulesVersion,
-  expectedCounts: { units: 101, synergies: 64, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 470, dialogueFiles: 101, statuses: 20, ooparts: 55 },
+  expectedCounts: { units: 101, synergies: 64, equipment: 12, strategies: 13, enemies: 25, nodes: 25, effects: 494, dialogueFiles: 101, statuses: 20, ooparts: 55 },
   sources: [
     { path: 'docs/GDD_v2.1.md', sha256: sha256(v21Text) },
     { path: 'docs/GDD_v2.2_amendment.md', sha256: sha256(v22Text) },
     { path: 'docs/GDD_v2.3_amendment.md', sha256: sha256(v23Text) },
     { path: 'docs/OOPARTS_v1.md', sha256: sha256(oopText) },
+    { path: 'docs/GDD_v2.4_chapters45.md', sha256: sha256(v24Text) },
   ],
   generatedBy: 'scripts/extract-content.mjs',
 };

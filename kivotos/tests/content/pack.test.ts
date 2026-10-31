@@ -20,9 +20,9 @@ describe('정식 콘텐츠 팩 ba-content-2.8.1', () => {
     expect(report.errors).toEqual([]);
   });
 
-  it('기대 개수: 유닛101·시너지64·장비12·전략13·적13·노드15·효과470·대사101·상태20·오파츠55', () => {
+  it('기대 개수: 유닛101·시너지64·장비12·전략13·적25·노드25·효과494·대사101·상태20·오파츠55 (v2.4.2 5장)', () => {
     expect([pack.units, pack.synergies, pack.equipment, pack.strategies, pack.enemies, pack.nodes, pack.effects, pack.dialogue, pack.statuses, pack.ooparts].map((l) => l.length))
-      .toEqual([101, 64, 12, 13, 13, 15, 470, 101, 20, 55]);
+      .toEqual([101, 64, 12, 13, 25, 25, 494, 101, 20, 55]);
   });
 
   it('코스트 분포 19/27/28/14/13, 구역 분포 전방53·후방36·겸용12 (v2.3 3장, 아리스 2코·AL-1S 5코)', () => {
@@ -32,9 +32,9 @@ describe('정식 콘텐츠 팩 ba-content-2.8.1', () => {
     expect(byPos).toEqual([53, 36, 12]);
   });
 
-  it('효과 출처: 부록 C 그대로 204 + v2.3 교체·추가 210 + 카이저 론 1 + 오파츠 55', () => {
+  it('효과 출처: 부록 C 그대로 204 + v2.3 교체·추가 210 + 카이저 론 1 + 오파츠 55 + v2.4 4·5장 적 24', () => {
     const prefix = (p: string) => pack.effects.filter((e) => e.catalogNo.startsWith(p)).length;
-    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.')]).toEqual([204, 210, 1, 55]);
+    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.'), prefix('W.')]).toEqual([204, 210, 1, 55, 24]);
     expect(byId(pack.effects, 'eff_aris_passive').catalogNo).toBe('C.300');
     expect(pack.effects.map((e) => e.id)).not.toContain('eff_syn_jackpot_2');
   });
@@ -42,7 +42,7 @@ describe('정식 콘텐츠 팩 ba-content-2.8.1', () => {
   it('M0에서는 모든 효과가 명세만 있고 실행 연산은 없다(한국어 문장을 실행하지 않는다)', () => {
     expect(pack.effects.every((e) => e.implementation === 'spec_only' && e.handlers.length === 0)).toBe(true);
     const strict = validateContentPack(pack, { requireImplemented: true });
-    expect(strict.errors.filter((e) => e.code === 'NOT_IMPLEMENTED')).toHaveLength(470);
+    expect(strict.errors.filter((e) => e.code === 'NOT_IMPLEMENTED')).toHaveLength(494);
   });
 
   it('시너지 분류: 진영12·동아리26·역할군7·고유12·이스터에그7, 흥신소68·C&C는 동아리', () => {
@@ -168,29 +168,30 @@ describe('정식 콘텐츠 팩 ba-content-2.8.1', () => {
     expect(byId(pack.strategies, 'str_kaiser_loan').offer).toEqual({ chapters: [1, 2], ownedCondition: null });
   });
 
-  it('규칙 수치: v2.2 경제 개정값', () => {
+  it('규칙 수치: v2.2 경제 개정값 + v2.4.2 5장 런(체력 100·장별 수입·패배 피해)', () => {
     const r = pack.rules;
-    expect(r.run.startRunHp).toBe(80);
-    expect(r.income.baseByChapter).toEqual([6, 7, 8]);
+    expect(r.run.chapters).toBe(5);
+    expect(r.run.startRunHp).toBe(100);
+    expect(r.income.baseByChapter).toEqual([6, 6, 7, 8, 8]);
     expect(r.xp.perBattle).toBe(3);
-    expect(r.defeatDamage).toMatchObject({ chapterBase: [6, 9, 12], perSurvivingEnemyFront: 2, eliteBonus: 3, bossBonus: 6 });
+    expect(r.defeatDamage).toMatchObject({ chapterBase: [6, 8, 10, 12, 14], perSurvivingEnemyFront: 2, eliteBonus: 3, bossBonus: 6 });
     expect(r.shop.levels.find((l) => l.level === 8)!.costOddsPct).toEqual([12, 20, 35, 27, 6]);
   });
 
-  it('상점 재고·레벨 XP v2.3.4: 코스트별 장수 30/25/18/10/9, 3성 제외, XP 4/8/14/24/36/48/60 (v2.3 11장)', () => {
+  it('상점 재고 v2.3.4·레벨 XP v2.4.2: 코스트별 장수 30/25/18/10/9, 3성 제외, XP 4/8/14/26/42/64/90 (25전투)', () => {
     const r = pack.rules;
     expect(r.shop.copiesByCost).toEqual([30, 25, 18, 10, 9]);
     expect(r.shop.excludeMaxStarOwned).toBe(true);
-    expect(Object.values(r.xp.xpToNext)).toEqual([4, 8, 14, 24, 36, 48, 60, null]);
-    expect(Object.values(r.xp.xpToNext).reduce<number>((a, b) => a + (b ?? 0), 0)).toBe(194);
+    expect(Object.values(r.xp.xpToNext)).toEqual([4, 8, 14, 26, 42, 64, 90, null]);
+    expect(Object.values(r.xp.xpToNext).reduce<number>((a, b) => a + (b ?? 0), 0)).toBe(248);
     expect(r.ooparts.sources.map((s) => s.id)).toEqual(['run_start', 'elite', 'boss', 'rescue']);
   });
 
-  it('난이도 v2.3.6: E.2 × 10장(최종 보스 빼고 1.5배) × 13장 추가 배율, 최종 보스도 오른다 (v2.3 10·13장)', () => {
-    const e2 = [8500, 9500, 10000, 10000, 10000, 11500, 12500, 13500, 10500, 10000, 12000, 13000, 13500, 14000, 10000];
-    const add = [1.2, 1.2, 1.3, 1.3, 1.4, 1.4, 1.4, 1.4, 1.4, 1.5, 1.5, 1.4, 1.5, 1.25, 2.4];
-    expect(pack.nodes.map((n) => n.statScaleBps)).toEqual(pack.nodes.map((n, i) => Math.round((n.id === 'node_3_5' ? e2[i] : e2[i] * 1.5) * add[i])));
-    expect(pack.nodes.filter((n) => n.type === 'boss').map((n) => n.statScaleBps)).toEqual([21000, 22500, 24000]);
+  it('노드 25개: 장마다 일반3·정예1·보스1, 4장 보스 호드·5장 보스 케테르 (v2.4.2)', () => {
+    expect(pack.nodes.map((n) => n.id)).toEqual([1, 2, 3, 4, 5].flatMap((c) => [1, 2, 3, 4, 5].map((b) => `node_${c}_${b}`)));
+    const boss = (ch: number) => pack.nodes.find((n) => n.chapter === ch && n.type === 'boss')!.candidates[0].front[0].enemyId;
+    expect([1, 2, 3, 4, 5].map(boss)).toEqual(['boss_kaiten_fx_mk0', 'boss_chesed_core', 'boss_binah_decagram', 'boss_hod', 'boss_keter']);
+    expect(pack.nodes.every((n) => n.statScaleBps > 0)).toBe(true);
   });
 
   it('탱커 보강 v2.3.7: 탱커 18명, 키리노·이오리·미나·토키·츠루기 전환 (v2.3 14장)', () => {
@@ -263,10 +264,10 @@ describe('정식 콘텐츠 팩 ba-content-2.8.1', () => {
       expect(parts.filter((p) => byId(pack.ooparts, p).kind === 'drawback')).toHaveLength(4);
     });
 
-    it('획득 규칙: 3연패 구조 요청, 건너뛰기 2G, 레시피 가중치 ×2, 보스는 1·2장만', () => {
+    it('획득 규칙: 3연패 구조 요청, 건너뛰기 2G, 레시피 가중치 ×2, 보스는 1~4장(v2.4.2)', () => {
       const r = pack.rules.ooparts;
       expect([r.rescueLossStreak, r.skipGold, r.recipeWeight]).toEqual([3, 2, 2]);
-      expect(r.sources.find((s) => s.id === 'boss')!.chapters).toEqual([1, 2]);
+      expect(r.sources.find((s) => s.id === 'boss')!.chapters).toEqual([1, 2, 3, 4]);
       expect(r.sources.find((s) => s.id === 'elite')!.oddsByChapter['3']).toEqual([0, 55, 45]);
     });
   });
