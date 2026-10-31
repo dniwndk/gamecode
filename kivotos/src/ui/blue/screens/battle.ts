@@ -440,7 +440,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
         if (e.amount) float(t, `${e.amount.toLocaleString()}${e.crit ? '!' : ''}`, e.true ? 'true' : e.crit ? 'crit' : 'dmg', { size: floatSize(info), impact: imp });
         // 오버킬: 남은 체력보다 훨씬 큰 한 방
         if (hpBefore > 0 && t.hp <= 0 && e.amount >= hpBefore * 1.5 && e.amount - hpBefore >= t.view.maxHp * 0.2) float(t, `OVERKILL +${Math.round(e.amount - hpBefore).toLocaleString()}`, 'overkill', { dy: 46, impact: 2 });
-        if (!skipping) ctx.sfx.play(e.crit ? 'crit' : 'hit', { power: imp });
+        if (!skipping) ctx.sfx.play(e.crit ? 'crit' : 'hit', { power: imp, foe: src?.view.ref.side === 'enemy', shielded: e.shieldAbsorbed > 0 && !e.amount });
         if (imp >= 2) jolt(shakePx(imp), src, t);
         if (e.crit && !skipping && speed < 4) ctx.fx.burst(t.el, { color: '#ff8a5a', size: imp >= 3 ? 240 : 170, ms: 550 });
         paint(t);

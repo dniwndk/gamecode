@@ -11,6 +11,10 @@ export interface SfxOpts {
   power?: number;
   /** 연쇄 단계. 높을수록 음이 올라간다 */
   step?: number;
+  /** 쏜 쪽이 적이면 true. 적 총성은 조금 낮고 탁하게 해 아군 사격과 귀로 구분한다 */
+  foe?: boolean;
+  /** 보호막이 받은 탄. 몸통 피격음 대신 금속성 「팅」 */
+  shielded?: boolean;
 }
 
 export interface Sfx {
@@ -36,7 +40,7 @@ export function createSfx(volume: () => number): Sfx {
       master = ac.createGain();
       master.gain.value = volume() / 100 * 0.7;
       master.connect(comp).connect(ac.destination);
-      noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.6, ac.sampleRate);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 1.2, ac.sampleRate);
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
@@ -60,7 +64,7 @@ export function createSfx(volume: () => number): Sfx {
     o.connect(g).connect(master!);
     o.start(t); o.stop(t + attack + dur + 0.02);
   }
-  function noise(t: number, dur: number, peak: number, filter: BiquadFilterType, f0: number, f1 = f0, q = 0.8) {
+  function noise(t: number, dur: number, peak: number, filter: BiquadFilterType, f0: number, f1 = f0, q = 0.8, attack = 0.003) {
     const a = ac!;
     const s = a.createBufferSource();
     s.buffer = noiseBuf;
@@ -69,12 +73,38 @@ export function createSfx(volume: () => number): Sfx {
     bq.frequency.setValueAtTime(f0, t);
     bq.frequency.exponentialRampToValueAtTime(Math.max(30, f1), t + dur);
     const g = a.createGain();
-    env(g, t, peak, 0.003, dur);
+    env(g, t, peak, attack, dur);
     s.connect(bq).connect(g).connect(master!);
     s.start(t, Math.random() * 0.2); s.stop(t + dur + 0.05);
   }
   const semis = (n: number) => Math.pow(2, n / 12);
   const jitter = () => 1 + (Math.random() - 0.5) * 0.08;
+
+  /**
+   * 총성 한 발. 세 겹으로 만든다: 총구의 날카로운 「탁」(고역 잡음, 1ms 공격) + 화약의 몸통(저역 잡음·저음 쿵)
+   * + 공간 울림(중역 잡음 꼬리, 한 번 더 메아리). size 0(권총)~3(저격)이 셀수록 몸통·꼬리가 굵고 길다.
+   */
+  function shot(t: number, size: number, foe: boolean, gain = 1) {
+    const k = jitter() * (foe ? 0.82 : 1);
+    const g = gain * (0.75 + size * 0.12);
+    noise(t, 0.025 + size * 0.012, 0.9 * g, 'highpass', 3800 * k, 2200 * k, 0.7, 0.001);
+    noise(t, 0.07 + size * 0.05, 0.75 * g, 'lowpass', (1700 - size * 250) * k, 260, 0.9, 0.001);
+    tone('sine', (150 - size * 18) * k, 42, t, 0.07 + size * 0.06, (0.45 + size * 0.15) * g, 0.001);
+    noise(t + 0.012, 0.16 + size * 0.14, 0.18 * g, 'bandpass', 900 * k, 380, 0.8, 0.01);
+    if (size >= 2) noise(t + 0.09 + size * 0.02, 0.22 + size * 0.1, 0.08 * g, 'bandpass', 700 * k, 300, 0.8, 0.02);
+  }
+  /** 탄이 맞는 소리. 몸에는 둔탁한 「퍽」, 보호막에는 금속성 「팅」 */
+  function impact(t: number, power: number, shielded: boolean) {
+    const k = jitter();
+    if (shielded) {
+      tone('triangle', 2300 * k, 2100 * k, t, 0.09, 0.12, 0.001);
+      tone('sine', 3500 * k, 3300 * k, t, 0.06, 0.06, 0.001);
+      noise(t, 0.03, 0.25, 'highpass', 5000, 3000, 0.7, 0.001);
+      return;
+    }
+    noise(t, 0.05 + power * 0.02, 0.35 + power * 0.12, 'bandpass', 420 * k, 160, 1.1, 0.002);
+    tone('sine', 110 * k, 50, t, 0.06 + power * 0.03, 0.25 + power * 0.1, 0.002);
+  }
 
   function play(name: SfxName, o: SfxOpts = {}) {
     const a = ensure();
@@ -88,17 +118,22 @@ export function createSfx(volume: () => number): Sfx {
     const step = o.step ?? 0;
     switch (name) {
       case 'hit': {
-        const k = jitter();
-        noise(t, 0.05 + p * 0.03, 0.35 + p * 0.15, 'bandpass', 2400 * k, 900, 1.2);
-        tone('triangle', 190 * k, 70, t, 0.06 + p * 0.05, 0.25 + p * 0.18);
-        if (p >= 2) tone('sine', 90, 38, t, 0.18 + p * 0.05, 0.55);
+        // 가벼움: 권총 한 발 · 보통: 소총 점사 두 발 · 묵직: 큰 소총 한 발 · 폭발: 산탄/대구경 한 발
+        const foe = !!o.foe;
+        if (p <= 0) shot(t, 0, foe, 0.7);
+        else if (p === 1) { shot(t, 1, foe, 0.8); shot(t + 0.06, 1, foe, 0.6); }
+        else shot(t, p, foe);
+        impact(t + 0.035 + p * 0.01, p, !!o.shielded);
         break;
       }
-      case 'crit':
-        noise(t, 0.09, 0.6, 'highpass', 3200, 1800, 0.7);
-        tone('square', 880 * jitter(), 330, t, 0.08, 0.16);
-        tone('sine', 110, 40, t, 0.25, 0.7);
+      case 'crit': {
+        // 치명: 저격총. 큰 총성 + 탄이 스치는 「피융」 + 묵직한 착탄
+        const foe = !!o.foe;
+        shot(t, 3, foe, 1.05);
+        tone('sine', 2900 * jitter(), 1500, t + 0.02, 0.14, 0.07, 0.002);
+        impact(t + 0.05, 3, !!o.shielded);
         break;
+      }
       case 'cutin':
         noise(t, 0.45, 0.35, 'bandpass', 600, 5200, 0.9);
         tone('sawtooth', 220, 880, t, 0.35, 0.08, 0.02);
