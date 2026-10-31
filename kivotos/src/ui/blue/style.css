@@ -827,8 +827,8 @@ kbd { font-family: var(--f-num); }
 .k-hp { position: relative; box-sizing: border-box; height: 20px; border: 2px solid #13243f; border-radius: 5px; background: #2a3550; overflow: hidden; }
 .k-hp-fill { position: absolute; left: 0; top: 0; bottom: 0; width: var(--p, 100%); background: linear-gradient(180deg, #6ee794, var(--hp)); transition: width .25s ease-out; }
 .k-cb.is-enemy .k-hp-fill { background: linear-gradient(180deg, #ff8f8f, #e5383b); }
-.k-shield-fill { position: absolute; top: 0; bottom: 0; left: var(--l, 0%); width: var(--p, 0%); background: linear-gradient(180deg, rgba(235,248,255,.78), rgba(170,220,255,.55)); box-shadow: inset 0 1px 0 rgba(255,255,255,.8); transition: width .2s, left .25s ease-out; }
-.k-hp-text { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; font-family: var(--f-num); font-size: 13px; line-height: 1; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.7); white-space: nowrap; }
+.k-shield-fill { position: absolute; top: 0; bottom: 0; left: var(--l, 0%); width: var(--p, 0%); background: linear-gradient(180deg, rgba(248,253,255,.95), rgba(190,230,255,.88)); box-shadow: inset 2px 0 0 #fff, inset 0 1px 0 #fff, -1px 0 4px rgba(255,255,255,.9); transition: width .2s, left .25s ease-out; }
+.k-hp-text { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; font-family: var(--f-num); font-size: 13px; line-height: 1; font-weight: 700; color: #fff; text-shadow: 0 0 2px #13243f, 0 1px 2px rgba(0,0,0,.8); white-space: nowrap; }
 .k-en { height: 6px; border-radius: 3px; background: #e1e7f0; overflow: hidden; }
 .k-en-fill { display: block; height: 100%; width: var(--p, 0%); background: var(--energy); transition: width .2s; }
 .k-en.is-full { box-shadow: 0 0 10px var(--energy); }
