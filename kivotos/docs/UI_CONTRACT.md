@@ -37,7 +37,7 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 
 | 항목 | M0 | 확정 시점 |
 |---|---|---|
-| `catalog` | 완성 (팩 ba-content-2.8.1, 오파츠 55종·AL-1S 각성·플래티넘 단계 `tiers[].grade` 포함) | — |
+| `catalog` | 완성 (팩 ba-content-2.8.2, 오파츠 55종·AL-1S 각성·플래티넘 단계 `tiers[].grade` 포함) | — |
 | 오파츠 | `catalog.pack.ooparts` 정의. `OOPART_CHOICE` 단계, `CHOOSE_OOPART`(payload `{ oopartId }`)·`SKIP_OOPART`. 실제 클라이언트는 아직 `NOT_IMPLEMENTED`, 미리보기 세션은 코어 함수로 동작(`run.ooparts.owned`·`run.ooparts.offer`, `UiState.oopartRevealed`, 연출 신호 `cues`의 `oopart`·`oopart_merge`) | M1 런 reducer가 `src/core/ooparts/ooparts.ts`를 부를 때 |
 | `GameSnapshot.run` | 항상 `null` | M1 런 reducer |
 | `GameCommandType` | 이름 목록만. 모든 명령이 `NOT_IMPLEMENTED`로 거부 | M1(준비 단계 명령), M4(런 흐름) |
@@ -60,6 +60,7 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 | 레벨업 미리보기 | 카탈로그 `rules.xp.xpToNext`로 「구매 후 Lv」 표시 | 구매 횟수별 결과 레벨·XP |
 | 연출 신호 | `UiState.cues`(첫 영입·첫 배치·합성·레벨업·금고·장비 반환) | `GameEvent`로 같은 신호 |
 | 전투 재생 | `run.lastBattle`(전투원 초기값 + 이벤트 로그, 사양서 11.2 모양). v2.3.6부터 시간 제한이 없어 결과 사유에 `timeout`이 없고, 격화 단계가 바뀔 때 `{ t: 'escalation', av, damageBps }` 이벤트가 온다(GDD v2.3 13장). 시간 막대는 격화 시작(`rules.battle.escalation.startAv`)까지의 진행으로 그린다 | M2 전투 이벤트 |
+| 발동 표시 | 전투 이벤트 `{ t: 'proc', av, cause: { kind: 'synergy' \| 'oopart', id }, label, unit?, chain? }`(선택). 시너지·오파츠가 발동한 순간 바로 앞에 끼우고, 그 뒤 피해·치유·자원 이벤트가 효과다. 화면은 발동 배너·연쇄 카운터·효과음에 쓴다. 미리보기 흉내 전투는 오파츠 15종과 「조금만 쉬고 싶어」 휴식만 보낸다 | 코어 효과 처리기가 발동할 때마다 같은 모양으로 보냄. chain은 같은 효과가 이어진 횟수(연쇄·누적). 보내지 않아도 결과는 같고 연출만 빠진다 |
 | 노드 진행 기록 | `run.nodeHistory`(15칸 승/패) | 런 상태에 포함 |
 | 패배 피해 미리보기 | `run.node.defeatDamagePreview` | 후보별 예상 피해 |
 
@@ -73,7 +74,7 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 ## 각성 화면이 지킬 것
 
 - AL-1S(`awakenedFrom`이 있는 학생)는 상점·영입 목록에 내지 않는다. 상점 후보는 `shopEligible`과 코어 `shopAllows`로 거른다.
-- 아리스 카드에는 코어 `awakeningProgress`가 준 "각성까지 x/30 · ★3 필요"을 그린다. 화면이 경험치 규칙을 직접 계산하지 않는다.
+- 아리스 카드에는 코어 `awakeningProgress`가 준 "각성까지 x/15 · ★3 필요"을 그린다. 화면이 경험치 규칙을 직접 계산하지 않는다.
 - 각성은 전투 정산 때, 또는 준비 단계에서 아리스가 3성이 된 직후 일어난다. 연출 신호는 M2에서 `GameEvent`(`UNIT_AWAKENED`: 개체, 원래·각성 학생, 성급, 자동 판매 목록)로 온다.
 - 도감에서 AL-1S는 처음 각성하기 전까지 숨기는 것을 권한다(정해지지 않음, 화면 재량).
 

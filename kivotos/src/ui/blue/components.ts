@@ -4,6 +4,7 @@ import type { Ctx } from './app';
 import { cls, h } from './dom';
 import { icon } from './icons';
 import { fxList } from './summary';
+import { openOwnedOoparts } from './screens/ooparts';
 import type { RunView, SynergyStateView, UnitInstanceView } from './model';
 
 export const COST_COLOR = ['#9aa5b1', '#3fb37f', '#3b82f6', '#a855f7', '#f5b400'];
@@ -253,7 +254,7 @@ export function synergyRow(ctx: Ctx, s: SynergyStateView, run: RunView | null, o
 }
 
 // ── 상단 상태바 ─────────────────────────────────────────
-export function topBar(_ctx: Ctx, run: RunView, opts: { title: string; onBack?: () => void; extra?: HTMLElement[] } ): HTMLElement {
+export function topBar(ctx: Ctx, run: RunView, opts: { title: string; onBack?: () => void; extra?: HTMLElement[] } ): HTMLElement {
   const xpPct = run.xpToNext ? Math.min(100, (run.xp / run.xpToNext) * 100) : 100;
   const hpPct = (run.runHp / run.runHpMax) * 100;
   const bar = h('header', { class: 'k-top' },
@@ -270,6 +271,8 @@ export function topBar(_ctx: Ctx, run: RunView, opts: { title: string; onBack?: 
         h('span', { class: 'k-xp' }, h('i', { style: `--p:${xpPct}%` }), h('small', null, run.xpToNext ? `${run.xp}/${run.xpToNext}` : 'MAX'))),
       h('div', { class: cls('k-pill is-team', run.deployedCount > run.deployLimit && 'is-over'), title: '편성 인원' }, icon('users', 24), h('b', null, `${run.deployedCount}/${run.deployLimit}`)),
       run.streak.count >= 2 ? h('div', { class: cls('k-pill is-streak', run.streak.kind === 'loss' && 'is-loss') }, icon('flag', 22), h('b', null, `${run.streak.count}${run.streak.kind === 'win' ? '연승' : '연패'}`)) : null,
+      h('button', { class: 'k-pill is-oop', title: '보유 오파츠와 효과 보기', 'aria-label': `보유 오파츠 ${run.ooparts.owned.length}개 보기`, onclick: () => openOwnedOoparts(ctx, run.ooparts.owned) },
+        icon('diamond', 24), h('small', null, '오파츠'), h('b', null, String(run.ooparts.owned.length))),
       ...(opts.extra ?? [])),
   );
   return bar;

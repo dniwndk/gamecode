@@ -145,6 +145,26 @@ describe('미리보기 런: 오파츠 효과', () => {
     expect(d.get().run!.runHp).toBe(hp - 3);
   });
 
+  it('발동 표시(proc) 이벤트: 원인 ID가 실제 오파츠·시너지이고, 카이저 PMC는 정기 포격마다 알린다', async () => {
+    // 전투가 200AV를 넘겨야 포격이 나오므로 적 배율은 원래대로 둔다
+    const catalog = { pack: contentPack, rules: contentPack.rules, validation: { errors: [], warnings: [] }, assetUrl: () => null } as unknown as ContentCatalog;
+    const d = createPreviewSession(catalog, { revision: 0, phase: 'HOME', contentVersion: 'test', rulesVersion: contentPack.rules.rulesVersion, run: null }, { ooparts: ['oop_pmc_contract'] });
+    await start(d);
+    await deployAll(d);
+    await d.send('START_BATTLE');
+    const ev = d.get().run!.lastBattle!.events;
+    expect(ev.at(-1)!.av).toBeGreaterThan(200);
+    const procs = ev.filter((e) => e.t === 'proc');
+    expect(procs.length).toBeGreaterThan(0);
+    for (const p of procs) {
+      if (p.t !== 'proc') continue;
+      const known = p.cause.kind === 'oopart' ? contentPack.ooparts.some((o) => o.id === p.cause.id) : contentPack.synergies.some((x) => x.id === p.cause.id);
+      expect(known, p.cause.id).toBe(true);
+      expect(p.label.length).toBeGreaterThan(0);
+    }
+    expect(procs.some((p) => p.t === 'proc' && p.cause.id === 'oop_pmc_contract')).toBe(true);
+  });
+
   it('오파츠 55종 하나씩 가진 채로 1장을 끝까지 진행해도 전투·정산이 깨지지 않는다', async () => {
     for (const o of contentPack.ooparts) {
       const d = withOoparts([o.id]);

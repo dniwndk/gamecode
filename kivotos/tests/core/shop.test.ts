@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { contentPack as pack } from '../../src/content';
 import { Rng } from '../../src/core/rng';
-import { costOdds, heldCopies, remainingCopies, rollShop, shopExcluded } from '../../src/core/shop/shop';
+import { costOdds, heldCopies, remainingCopies, rollShop, rollShopDetailed, shopExcluded } from '../../src/core/shop/shop';
 
 const unit = (id: string) => pack.units.find((u) => u.id === id)!;
 
@@ -94,5 +94,27 @@ describe('상점 추첨', () => {
   it('같은 시드·상태면 같은 상점(재현성)', () => {
     const input = { level: 6, owned: [{ unitId: 'u_shiroko', star: 1 }], trackedSynergyId: 'syn_abydos' };
     expect(rollShop(pack, input, new Rng(77))).toEqual(rollShop(pack, input, new Rng(77)));
+  });
+});
+
+describe('5번 칸 추천 모드 표시', () => {
+  it('rollShopDetailed는 rollShop과 같은 칸을 뽑고, 추천 표시는 5번 칸에서 추천 집합 학생일 때만', () => {
+    const syn = pack.synergies.find((s) => s.id === 'syn_game_dev')!;
+    let flagged = 0;
+    for (let seed = 1; seed <= 300; seed++) {
+      const input = { level: 6, owned: [{ unitId: 'u_serika', star: 1 }], trackedSynergyId: syn.id };
+      const a = rollShop(pack, input, Rng.forStream(`D-${seed}`, 'shop'));
+      const b = rollShopDetailed(pack, input, Rng.forStream(`D-${seed}`, 'shop'));
+      expect(b.slots).toEqual(a);
+      b.recommended.forEach((rec, k) => {
+        if (!rec) return;
+        flagged++;
+        expect(k).toBe(pack.rules.shop.recommendedSlotIndex);
+        expect(['u_serika', ...syn.memberIds]).toContain(b.slots[k]);
+      });
+    }
+    // 50% 추천 모드 × 해당 코스트에 추천 학생이 있을 때만 → 0보다 많고 전부는 아니다
+    expect(flagged).toBeGreaterThan(30);
+    expect(flagged).toBeLessThan(300);
   });
 });

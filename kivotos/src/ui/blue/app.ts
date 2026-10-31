@@ -4,6 +4,8 @@ import type { DialogueKey, EnemyDefinition, EquipmentDefinition, OopartDefinitio
 import { h } from './dom';
 import { chooseFxTier } from './fx/capabilities';
 import { createFx, NO_FX, type Fx } from './fx/engine';
+import { createSfx, type Sfx } from './fx/sfx';
+import { bgmFor, createBgm } from './fx/bgm';
 import { icon } from './icons';
 import type { UiDriver, UiState } from './model';
 import { mountBattle } from './screens/battle';
@@ -27,6 +29,10 @@ export interface Settings {
   defaultSpeed: 1 | 2 | 4;
   /** WebGL2 셰이더 연출(유체 배경·카드 광택·전환 파편) */
   fx: boolean;
+  /** 효과음 볼륨 0~100(0이면 오디오 장치를 열지 않는다) */
+  sfxVolume: number;
+  /** 배경 음악 볼륨 0~100 */
+  bgmVolume: number;
 }
 
 export interface Screen {
@@ -52,6 +58,8 @@ export interface Ctx {
   stage: HTMLElement;
   /** 셰이더 연출. 꺼져 있거나 WebGL2가 없으면 아무 일도 하지 않는다 */
   fx: Fx;
+  /** 효과음(합성음). 볼륨 0이면 아무 일도 하지 않는다 */
+  sfx: Sfx;
   /** public/ 아래 그림 주소(배포 경로 기준). 예: art('cutins/u_aru.webp') */
   art(path: string): string;
   go(route: LocalRoute): void;
@@ -79,7 +87,14 @@ export const FACTION_COLOR: Record<string, string> = {
 };
 
 const SETTINGS_KEY = 'kivotos-ui-settings';
-const DEFAULT_SETTINGS: Settings = { reduceMotion: false, noFlash: false, noShake: false, dialogue: true, defaultSpeed: 1, fx: true };
+/** 명령이 성공했을 때 낼 효과음(효과음 묶음 ID). 실패는 오류 알림음 */
+const SEND_SFX: Partial<Record<GameCommandType, string>> = {
+  BUY_UNIT: 'SHOP_BUY', SELL_UNIT: 'SHOP_SELL', REROLL_SHOP: 'SHOP_REROLL', BUY_XP: 'XP_BUY', MOVE_UNIT: 'UNIT_PLACE',
+  EQUIP_ITEM: 'EQUIP_ON', UNEQUIP_ITEM: 'EQUIP_OFF', START_BATTLE: 'SORTIE', CHOOSE_STRATEGY: 'STRATEGY_PICK',
+  SKIP_OOPART: 'OOP_SKIP', CHOOSE_EQUIPMENT: 'EQUIP_GET', CHOOSE_NODE_CANDIDATE: 'NODE_MOVE', CONFIRM_RESULT: 'UI_CONFIRM', NEW_RUN: 'UI_CONFIRM',
+};
+
+const DEFAULT_SETTINGS: Settings = { reduceMotion: false, noFlash: false, noShake: false, dialogue: true, defaultSpeed: 1, fx: true, sfxVolume: 60, bgmVolume: 50 };
 
 function loadSettings(): Settings {
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -108,6 +123,18 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
   const backdrop = h('div', { class: 'k-backdrop', 'aria-hidden': 'true' }, h('div', { class: 'k-sky' }), scene, h('div', { class: 'k-halo-bg' }), h('div', { class: 'k-grid-bg' }));
   const art = (path: string) => `${import.meta.env.BASE_URL}${path}`;
   const stage = h('div', { class: 'k-stage' });
+  // 공통 UI음: 보상 카드는 올려놓기·고르기, 나머지 버튼은 클릭. 명령 결과음은 ctx.send가 따로 낸다
+  let hoverCard: Element | null = null;
+  stage.addEventListener('click', (e) => {
+    const t = e.target as Element;
+    if (t.closest('.k-choice-card')) sfx.play('CHOICE_PICK');
+    else if (t.closest('button, [role=tab], summary')) sfx.play('UI_CLICK');
+  }, true);
+  stage.addEventListener('pointerover', (e) => {
+    const card = (e.target as Element).closest('.k-choice-card');
+    if (card && card !== hoverCard) sfx.play('CHOICE_HOVER');
+    hoverCard = card;
+  });
   const toasts = h('div', { class: 'k-toasts', role: 'status', 'aria-live': 'polite' });
   const layer = h('div', { class: 'k-layer' });
   stage.append(layer, toasts);
@@ -145,6 +172,19 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     root.classList.toggle('no-shake', settings.noShake);
   };
   applySettings();
+  const rawSfx = createSfx(() => settings.sfxVolume, art);
+  // 전투 중에는 기본 총격음만 낸다(사용자 지시 2026-10-31). 착탄·필살기·발동·연쇄·버튼음 등은 전투 화면에서 모두 끈다
+  const sfx: Sfx = {
+    play(name, o) {
+      if (driver.get().phase === 'BATTLE') {
+        if (name !== 'hit' && name !== 'crit') return;
+        o = { ...o, gunOnly: true };
+      }
+      rawSfx.play(name, o);
+    },
+    setVolume: (v) => rawSfx.setVolume(v),
+  };
+  const bgm = createBgm(art, () => settings.bgmVolume);
 
   // 셰이더 연출: 설정·연출 줄이기·WebGL2 지원에 따라 켜고 끈다. 화면 코드는 ctx.fx만 부른다.
   let fx: Fx = NO_FX;
@@ -157,7 +197,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
   const fxProxy: Fx = {
     get on() { return fx.on; },
     burst: (at, o) => fx.burst(at, o),
-    transition: (k) => fx.transition(k),
+    transition: (k) => { sfx.play(k === 'shatter' ? 'SCENE_SHATTER' : 'SCENE_SWEEP'); fx.transition(k); },
     theme: (c) => fx.theme(c),
     setEnabled: (on) => fx.setEnabled(on),
     scene: (url, o) => fx.scene(url, o),
@@ -172,6 +212,11 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     state: () => driver.get(),
     async send(type, payload) {
       const res = await driver.send(type, payload);
+      if (res.ok) {
+        const snd = SEND_SFX[type];
+        if (type === 'TOGGLE_SHOP_LOCK') sfx.play(driver.get().run?.shop.locked ? 'SHOP_LOCK:1' : 'SHOP_LOCK:2');
+        else if (snd) sfx.play(snd);
+      }
       if (!res.ok) {
         ctx.toast(res.reason === 'STALE_REVISION' ? '다른 탭에서 진행되었습니다. 최신 저장을 불러옵니다' : res.message, 'error');
         return false;
@@ -179,6 +224,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
       return true;
     },
     toast(message, kind = 'info') {
+      sfx.play(kind === 'error' ? 'UI_ERROR' : 'UI_TOAST');
       const t = h('div', { class: `k-toast is-${kind}` }, icon(kind === 'error' ? 'warning' : kind === 'gold' ? 'gold' : 'info', 22), h('span', null, message));
       toasts.append(t);
       while (toasts.children.length > 3) toasts.firstElementChild?.remove();
@@ -191,8 +237,10 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
       const box = h('div', { class: `k-modal ${opts.wide ? 'is-wide' : ''}` }, content);
       wrap.append(scrim, box);
       layer.append(wrap);
+      sfx.play('UI_OPEN');
       const close = () => {
         wrap.classList.add('is-out');
+        sfx.play('UI_CLOSE');
         document.removeEventListener('keydown', onKey, true);
         setTimeout(() => wrap.remove(), 180);
         opts.onClose?.();
@@ -223,6 +271,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
       if (!text) return;
       const bubble = h('div', { class: 'k-bubble', role: 'note' }, h('b', null, units.get(unitId)?.name.split(' ').pop() ?? ''), h('span', null, text));
       layer.append(bubble);
+      sfx.play('DIALOGUE_POP');
       const sr = stage.getBoundingClientRect();
       const s = ctx.scale();
       if (anchor && !mobile) {
@@ -238,12 +287,15 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     saveSettings() {
       applySettings();
       syncFx();
+      sfx.setVolume(settings.sfxVolume);
+      bgm.setVolume(settings.bgmVolume);
       try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* 무시 */ }
     },
     mobile: () => mobile,
     scale: () => scale,
     stage,
     fx: fxProxy,
+    sfx,
     art,
     go(r) { route = r; render(driver.get()); },
     lookup: {
@@ -315,6 +367,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     applyScene(s, key);
     root.dataset.chapter = String(s.run?.chapter ?? 1);
     root.dataset.phase = s.phase;
+    bgm.play(bgmFor(s.phase, s.phase === 'HOME' ? route : null));
     fx.theme(s.run?.chapter ?? 1);
     if (key === currentKey && current?.update) {
       current.update(s);
@@ -340,12 +393,18 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     for (const c of s.cues) {
       if (c.id <= lastMergeCue) continue;
       lastMergeCue = c.id;
+      // 진행 알림음: 합성·레벨업·각성·오파츠 획득
+      if (c.kind === 'merge') sfx.play((c.star ?? 2) >= 3 ? 'MERGE_3' : 'MERGE_2');
+      else if (c.kind === 'levelup') sfx.play('LEVEL_UP');
+      else if (c.kind === 'awaken') sfx.play('AWAKEN');
+      else if (c.kind === 'oopart' && c.oopartId) sfx.play(({ common: 'OOP_COMMON', uncommon: 'OOP_UNCOMMON', rare: 'OOP_RARE', legendary: 'OOP_LEGEND' } as Record<string, string>)[oops.get(c.oopartId)?.rarity ?? 'common'] ?? 'OOP_COMMON');
+      else if (c.kind === 'oopart_merge') sfx.play('OOP_LEGEND');
       if (c.kind !== 'oopart_merge' || !c.oopartId) continue;
       const leg = oops.get(c.oopartId);
       const parts = (c.consumed ?? []).map((id) => oops.get(id)?.name ?? id);
       const box = h('div', { class: 'k-oop-merge' },
         h('div', { class: 'k-oop-merge-art' }, oopartArt(ctx, c.oopartId, 'k-oop-merge-img')),
-        h('small', null, `${leg?.code ?? ''} · 전설 오파츠 완성`),
+        h('small', null, '전설 오파츠 완성'),
         h('h2', null, leg?.name ?? c.oopartId),
         h('p', { class: 'k-oop-merge-parts' }, `${parts.join(' + ')} → 하나로 합쳐졌어요`),
         ...oopartBody(ctx, c.oopartId),

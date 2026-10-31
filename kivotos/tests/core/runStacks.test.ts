@@ -49,3 +49,10 @@ describe('런 스택', () => {
     expect(runStackLines(s, 'syn_gehenna', false)).toBeNull();
   });
 });
+
+describe('각성 표시값', () => {
+  it('툴팁의 각성 경험치는 유닛 데이터의 필요 경험치와 같다', async () => {
+    const { AWAKEN_EXP } = await import('../../src/core/synergy/runStacks');
+    expect(AWAKEN_EXP).toBe(pack.units.find((u) => u.id === 'u_aris')!.awakening!.expRequired);
+  });
+});
