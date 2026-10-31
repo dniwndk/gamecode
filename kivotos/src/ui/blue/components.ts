@@ -7,7 +7,8 @@ import { fxList } from './summary';
 import type { RunView, SynergyStateView, UnitInstanceView } from './model';
 
 export const COST_COLOR = ['#9aa5b1', '#3fb37f', '#3b82f6', '#a855f7', '#f5b400'];
-const CATEGORY_COLOR: Record<string, string> = { club: '#14a38b', role: '#1f8fff', unique: '#f0a500', platinum: '#8a9bb4' };
+const CATEGORY_COLOR: Record<string, string> = { club: '#14a38b', role: '#1f8fff', unique: '#f0a500', easteregg: '#8a9bb4' };
+const FACTION_COLOR: Record<string, string> = { syn_abydos: '#3b82f6', syn_gehenna: '#dc2626', syn_millennium: '#0ea5e9', syn_trinity: '#e0a106', syn_hyakkiyako: '#db2777', syn_shanhaijing: '#16a34a', syn_red_winter: '#b91c1c', syn_valkyrie: '#1d4ed8', syn_srt: '#475569', syn_arius: '#7c3aed', syn_problem_solver: '#9f1239', syn_cc: '#1f2937', syn_highlander: '#0f766e', syn_outlaw: '#a16207' };
 
 export const STATUS_LABEL: Record<string, string> = {
   st_atk_down: '공격↓', st_atk_up: '공격↑', st_burn: '화상', st_charge_aris: '충전', st_crit_up: '치명↑', st_damage_reduction: '피해감소',
@@ -43,14 +44,14 @@ export function initials(name: string): string {
 export function synergyColor(ctx: Ctx, synId: string): string {
   const s = ctx.lookup.syn(synId);
   if (!s) return '#64748b';
-  const own = ({ syn_abydos: '#3b82f6', syn_gehenna: '#dc2626', syn_millennium: '#0ea5e9', syn_trinity: '#e0a106', syn_hyakkiyako: '#db2777', syn_shanhaijing: '#16a34a', syn_red_winter: '#b91c1c', syn_valkyrie: '#1d4ed8', syn_srt: '#475569', syn_arius: '#7c3aed', syn_problem_solver: '#9f1239', syn_cc: '#1f2937', syn_highlander: '#0f766e', syn_outlaw: '#a16207' } as Record<string, string>)[synId];
-  return own ?? CATEGORY_COLOR[s.category] ?? '#64748b';
+  return FACTION_COLOR[synId] ?? CATEGORY_COLOR[s.category] ?? '#64748b';
 }
 
 export function synergyGlyph(ctx: Ctx, synId: string): string {
   const s = ctx.lookup.syn(synId);
   if (!s) return '?';
   const n = s.name.replace(/^고유:\s*/, '').replace(/[「」]/g, '');
+  if (/^\d/.test(n)) return n.match(/^\d+/)![0];
   if (/^[A-Za-z]/.test(n)) return n.replace(/[^A-Za-z&]/g, '').slice(0, 3);
   return n.slice(0, 1);
 }
@@ -62,11 +63,13 @@ export function gfx(ctx: Ctx, path: string, fallback: () => Node, className = ''
   return img;
 }
 
-/** 육각 시너지 아이콘: 분류색 육각 바탕 + 흰 문양(SVG). 문양이 없으면 이름 첫 글자 */
-export function synHex(ctx: Ctx, synId: string, opts: { size?: number; dim?: boolean; tier?: number | null } = {}): HTMLElement {
-  const color = synergyColor(ctx, synId);
-  const el = h('span', { class: cls('k-hex', opts.dim && 'is-dim', opts.tier !== undefined && opts.tier !== null && `tier-${opts.tier}`), style: `--c:${color};--s:${opts.size ?? 28}px`, title: ctx.lookup.syn(synId)?.name ?? synId },
-    h('span', { class: 'k-hex-in' }, gfx(ctx, `synergy/${synId}.svg`, () => document.createTextNode(synergyGlyph(ctx, synId)), 'k-hex-glyph')));
+/**
+ * 시너지 배지: 모두 같은 남색 육각 + 굵은 흰 문양. 색으로 종류를 나누지 않고 문양 자체로 알아보게 한다.
+ * 흰 바깥 테가 초상화·밝은 패널 어디서나 윤곽을 세우고, 발동 단계만 바깥 테(동·은·금)로 보여 준다. 문양이 없으면 이름 첫 글자.
+ */
+export function synHex(ctx: Ctx, synId: string, opts: { size?: number; dim?: boolean; tier?: number | null; plat?: boolean } = {}): HTMLElement {
+  const el = h('span', { class: cls('k-hex', opts.dim && 'is-dim', opts.plat ? 'tier-plat' : opts.tier !== undefined && opts.tier !== null && `tier-${opts.tier}`), style: `--s:${opts.size ?? 28}px`, title: ctx.lookup.syn(synId)?.name ?? synId },
+    h('span', { class: 'k-hex-in' }, gfx(ctx, `synergy/${synId}.svg`, () => { const g = synergyGlyph(ctx, synId); return h('span', { class: cls('k-hex-txt', g.length > 2 && 'is-long') }, g); }, 'k-hex-glyph')));
   return el;
 }
 
@@ -132,7 +135,7 @@ export function unitCard(ctx: Ctx, o: CardOpts): HTMLElement {
   const zone = h('span', { class: `k-zone-tag is-${pos}`, title: POSITION_LABEL[pos] }, icon(pos === 'rear_only' ? 'rear' : 'front', 14), pos === 'dual' ? icon('rear', 14) : null);
   const bottom = h('div', { class: 'k-card-bottom' });
   if (o.showSynergies) {
-    bottom.append(h('div', { class: 'k-card-syns' }, ...u.synergyIds.slice(0, 4).map((s) => synHex(ctx, s, { size: o.size === 'm' ? 24 : 20 }))));
+    bottom.append(h('div', { class: 'k-card-syns' }, ...u.synergyIds.slice(0, 4).map((s) => synHex(ctx, s, { size: o.size === 'm' ? 28 : 24 }))));
   }
   bottom.append(h('div', { class: 'k-card-name' }, zone, h('span', { class: 'k-name-text' }, shortName(u.name))));
   card.append(bottom);
@@ -197,8 +200,8 @@ export function synergyTip(ctx: Ctx, s: SynergyStateView, run?: RunView | null):
   const scope = syn.countScope === 'front_only' ? '전방에 놓인 구성원만 셉니다' : syn.countScope === 'rear_only' ? '후방에 놓인 구성원만 셉니다' : '편성된 구성원(전방+후방)을 셉니다';
   return h('div', { class: 'k-syn-tip' },
     h('header', null, synHex(ctx, syn.id, { size: 34 }), h('div', null, h('strong', null, syn.name), h('small', null, scope))),
-    h('ol', { class: 'k-tier-list' }, ...syn.tiers.map((t, idx) => h('li', { class: cls(s.activeTier === idx && 'is-active', s.activeTier !== null && idx < s.activeTier && 'is-passed') },
-      h('b', null, String(t.threshold)), fxList(ctx, t.spec)))),
+    h('ol', { class: 'k-tier-list' }, ...syn.tiers.map((t, idx) => h('li', { class: cls(s.activeTier === idx && 'is-active', s.activeTier !== null && idx < s.activeTier && 'is-passed', t.grade === 'platinum' && 'is-plat') },
+      h('b', null, String(t.threshold)), t.grade === 'platinum' ? platTier(ctx, t.spec) : fxList(ctx, t.spec)))),
     h('div', { class: 'k-tip-members' }, ...syn.memberIds.map((id) => {
       const u = ctx.lookup.unit(id);
       return h('span', { class: cls('k-mini-member', deployed.has(id) ? 'is-deployed' : owned.has(id) ? 'is-owned' : null), title: u.name },
@@ -206,17 +209,24 @@ export function synergyTip(ctx: Ctx, s: SynergyStateView, run?: RunView | null):
     })));
 }
 
+/** 플래티넘 단계 본문은 「이름」으로 시작한다. 이름은 표식에 붙이고 나머지만 효과 목록으로 */
+function platTier(ctx: Ctx, spec: string): HTMLElement {
+  const m = spec.match(/^플래티넘 「(.+?)」\.\s*/);
+  return h('div', null, h('span', { class: 'k-plat-tag' }, m ? `플래티넘 · ${m[1]}` : '플래티넘'), fxList(ctx, m ? spec.slice(m[0].length) : spec));
+}
+
 export function synergyRow(ctx: Ctx, s: SynergyStateView, run: RunView | null, onPin?: (id: string | null) => void): HTMLElement {
   const syn = ctx.lookup.syn(s.synergyId)!;
   const oneShort = s.activeTier === null && s.nextThreshold !== null && s.nextThreshold - s.count === 1;
   const state = s.activeTier !== null ? 'is-active' : oneShort ? 'is-near' : 'is-off';
-  const row = h('div', { class: cls('k-syn', state, s.tracked && 'is-tracked'), tabindex: 0, role: 'listitem' },
-    synHex(ctx, s.synergyId, { size: 46, dim: s.activeTier === null, tier: s.activeTier }),
+  const platOn = s.activeTier !== null && syn.tiers[s.activeTier]?.grade === 'platinum';
+  const row = h('div', { class: cls('k-syn', state, s.tracked && 'is-tracked', platOn && 'is-plat'), tabindex: 0, role: 'listitem' },
+    synHex(ctx, s.synergyId, { size: 46, dim: s.activeTier === null, tier: s.activeTier, plat: platOn }),
     h('div', { class: 'k-syn-body' },
-      h('div', { class: 'k-syn-name' }, h('span', null, syn.name.replace(/^고유:\s*/, '')), oneShort ? h('em', null, '1명 더') : null),
+      h('div', { class: 'k-syn-name' }, h('span', null, syn.name.replace(/^고유:\s*/, '')), platOn ? h('span', { class: 'k-plat-tag' }, '플래티넘') : null),
       h('div', { class: 'k-syn-steps' },
         h('b', { class: 'k-syn-count' }, String(s.count)),
-        ...syn.tiers.map((t, idx) => h('span', { class: cls('k-step', s.activeTier !== null && idx <= s.activeTier && 'on', s.activeTier === idx && 'cur') }, String(t.threshold))))),
+        ...syn.tiers.map((t, idx) => h('span', { class: cls('k-step', s.activeTier !== null && idx <= s.activeTier && 'on', s.activeTier === idx && 'cur', t.grade === 'platinum' && 'is-plat'), title: t.grade === 'platinum' ? `${t.threshold}명 플래티넘 단계` : undefined }, String(t.threshold))))),
   );
   if (onPin) {
     row.append(h('button', {
@@ -303,7 +313,7 @@ export function openUnitDetail(ctx: Ctx, unitId: string, inst?: UnitInstanceView
 
   const eqSlots = h('div', { class: 'k-eq-slots' });
   if (inst) {
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < (inst.equipSlots ?? 2); i++) {
       const id = inst.equipment[i];
       eqSlots.append(id
         ? h('button', { class: 'k-eq-slot is-filled', title: '눌러서 해제', onclick: async () => { if (await ctx.send('UNEQUIP_ITEM', { instanceId: inst.instanceId, equipmentId: id })) { close(); } } }, eqChip(ctx, id), h('small', null, '해제'))
@@ -314,7 +324,7 @@ export function openUnitDetail(ctx: Ctx, unitId: string, inst?: UnitInstanceView
       eqSlots.append(h('div', { class: 'k-stash' }, h('small', null, '보관함 — 눌러서 장착'), ...stash.map((id, idx) => h('button', {
         class: 'k-stash-item', title: ctx.lookup.eq(id)?.description ?? '',
         onclick: async () => {
-          const full = inst.equipment.length >= 2;
+          const full = inst.equipment.length >= (inst.equipSlots ?? 2);
           if (await ctx.send('EQUIP_ITEM', { instanceId: inst.instanceId, equipmentId: id, ...(full ? { replaceIndex: 0 } : {}) })) {
             if (full) ctx.toast(`${ctx.lookup.eq(inst.equipment[0])?.name}은(는) 보관함으로 돌아갔어요`);
             close();

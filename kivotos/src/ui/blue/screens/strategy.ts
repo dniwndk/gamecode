@@ -37,7 +37,7 @@ export function mountStrategyChoice(ctx: Ctx, s: UiState): Screen {
     h('div', { class: 'k-choice-head' },
       nodeTrack(run, true),
       h('h2', null, `${run.chapter}장 작전 전략`),
-      h('p', null, offers.length ? '하나를 골라 이번 런 끝까지 가져갑니다. 다시 뽑을 수 없어요.' : '이번 장에는 제안된 전략이 없어요.'),
+      h('p', null, offers.length ? ((run.strategyPicksLeft ?? 1) > 1 ? `싯딤의 상자: 이번 장에는 ${run.strategyPicksLeft}개를 고릅니다. 하나씩 골라 주세요.` : '하나를 골라 이번 런 끝까지 가져갑니다. 다시 뽑을 수 없어요.') : '이번 장에는 제안된 전략이 없어요.'),
       run.strategies.length ? h('div', { class: 'k-owned' }, h('small', null, '보유 중'), ...run.strategies.map((sid) => h('span', { class: 'k-strat-chip' }, icon('strategy', 16), ctx.lookup.strategy(sid)?.name ?? sid))) : null),
     h('div', { class: cls('k-choice-row', `n-${offers.length}`) }, ...cards),
     h('footer', { class: 'k-choice-foot' }, confirm));

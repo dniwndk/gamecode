@@ -4,7 +4,7 @@
     "chapter": 1,
     "battle": 1,
     "type": "normal",
-    "statScaleBps": 8500,
+    "statScaleBps": 12750,
     "candidates": [
       {
         "id": "A",
@@ -45,7 +45,7 @@
     "chapter": 1,
     "battle": 2,
     "type": "normal",
-    "statScaleBps": 9500,
+    "statScaleBps": 14250,
     "candidates": [
       {
         "id": "A",
@@ -90,7 +90,7 @@
     "chapter": 1,
     "battle": 3,
     "type": "normal",
-    "statScaleBps": 10000,
+    "statScaleBps": 15000,
     "candidates": [
       {
         "id": "A",
@@ -139,7 +139,7 @@
     "chapter": 1,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 10000,
+    "statScaleBps": 15000,
     "candidates": [
       {
         "id": "A",
@@ -169,7 +169,7 @@
     "chapter": 1,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 10000,
+    "statScaleBps": 15000,
     "candidates": [
       {
         "id": "A",
@@ -194,7 +194,7 @@
     "chapter": 2,
     "battle": 1,
     "type": "normal",
-    "statScaleBps": 11500,
+    "statScaleBps": 17250,
     "candidates": [
       {
         "id": "A",
@@ -243,7 +243,7 @@
     "chapter": 2,
     "battle": 2,
     "type": "normal",
-    "statScaleBps": 12500,
+    "statScaleBps": 18750,
     "candidates": [
       {
         "id": "A",
@@ -301,7 +301,7 @@
     "chapter": 2,
     "battle": 3,
     "type": "normal",
-    "statScaleBps": 13500,
+    "statScaleBps": 20250,
     "candidates": [
       {
         "id": "A",
@@ -355,7 +355,7 @@
     "chapter": 2,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 10500,
+    "statScaleBps": 15750,
     "candidates": [
       {
         "id": "A",
@@ -389,7 +389,7 @@
     "chapter": 2,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 10000,
+    "statScaleBps": 15000,
     "candidates": [
       {
         "id": "A",
@@ -418,7 +418,7 @@
     "chapter": 3,
     "battle": 1,
     "type": "normal",
-    "statScaleBps": 12000,
+    "statScaleBps": 18000,
     "candidates": [
       {
         "id": "A",
@@ -464,7 +464,7 @@
     "chapter": 3,
     "battle": 2,
     "type": "normal",
-    "statScaleBps": 13000,
+    "statScaleBps": 19500,
     "candidates": [
       {
         "id": "A",
@@ -527,7 +527,7 @@
     "chapter": 3,
     "battle": 3,
     "type": "normal",
-    "statScaleBps": 13500,
+    "statScaleBps": 20250,
     "candidates": [
       {
         "id": "A",
@@ -590,7 +590,7 @@
     "chapter": 3,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 14000,
+    "statScaleBps": 21000,
     "candidates": [
       {
         "id": "A",

@@ -1,4 +1,4 @@
-# 키보토스 택티컬 프론트라인 — v2.3 개정안 (시너지 개편 · 코스트 밸런스 · 신규 학생 40명)
+# 키보토스 택티컬 프론트라인 — v2.3 개정안 (시너지 개편 · 코스트 밸런스 · 신규 학생 40명 · AL-1S 각성)
 
 > **이 문서는 v2.2 개정안 위에 덮어 쓰는 개정안이다.** 충돌 시 해석 순서는 **v2.3 개정안 → v2.2 개정안 → v2.1 본문 → v2.1 부록** 이다.
 > 3장의 유닛 표와 4장의 시너지 표는 v2.1 부록 A·B와 v2.2 5·6장을 **통째로 대체**한다. 5장의 효과는 같은 ID의 v2.1 부록 C 항목을 대체하거나 새로 추가하고, 6장의 효과는 카탈로그에서 뺀다.
@@ -6,20 +6,27 @@
 
 ## 0. 바뀐 것 한눈에
 
-- **시너지 63종으로 재편.** 학원 진영 12종은 효과를 그대로 두고 구성원만 다시 센다. 역할·장갑·고유·경제(한탕) 시너지는 폐기하고 동아리 26종, 역할군 7종, 고유 11종, 플래티넘 7종을 새로 둔다.
+- **시너지 63종으로 재편.** 학원 진영 12종은 효과를 그대로 두고 구성원만 다시 센다. 역할·장갑·고유·경제(한탕) 시너지는 폐기하고 동아리 26종, 역할군 7종, 고유 11종, 이스터에그 7종(v2.3.5 전 이름은 플래티넘)을 새로 둔다.
 - **흥신소68·C&C는 진영에서 동아리로 옮긴다.** ID(`syn_problem_solver`, `syn_cc`)는 유지하고 효과를 교체한다.
 - **학생 100명.** 원작 동아리 구성원 40명을 추가한다(3장, 8장 근거).
 - **코스트별 기준선(2장)을 정하고 기존 60명을 맞춘다.** 1코는 단순하게(성장형 예외), 5코는 출전만으로 덱이 강해지는 「존재 효과」를 갖는다.
 - **고유 시너지는 추천 11종만 넣는다.** 예비안(하루카·세리나·키리노·유우카·네루)은 이번 팩에 없다.
-- **플래티넘 2종(학원 대항전·총력전 만점)은 구성원 명단이 없다.** 집계 범위 `special`: 출전 편성 전체로 판정하며, 구성원 수 기반 도달 가능성 검사에서 빠진다.
+- **플래티넘 단계·이스터에그 시너지(v2.3.5, 12장).** 구성원이 많은 시너지 9종(게헨나·밀레니엄·트리니티·백귀야행·블래스터·힐러·서포터·컨트롤러·스나이퍼)에 6명 이상에서 켜지는 **플래티넘 단계**를 더한다. 극악 조건이던 기존 플래티넘 7종은 분류를 **이스터에그**로 바꾼다. 위력 순서는 일반 단계 < 플래티넘 단계 < 이스터에그.
+- **이스터에그 2종(학원 대항전·총력전 만점)은 구성원 명단이 없다.** 집계 범위 `special`: 출전 편성 전체로 판정하며, 구성원 수 기반 도달 가능성 검사에서 빠진다.
 - 전략 「철벽의 전선」의 보유 조건 태그를 `syn_tank`로 바꾼다(7장).
+- **상점 재고·레벨 XP(v2.3.4, 11장).** 상점을 무한 재고에서 롤토체스식 코스트별 장수 제한으로 바꾸고, 3성을 보유한 학생은 그 3성을 팔기 전까지 상점에 나오지 않는다. 레벨업에 필요한 XP를 약 40% 늘린다.
+- **난이도 상향(v2.3.3, 10장).** 최종 보스 노드를 뺀 14개 노드(일반·정예·1·2장 보스)의 적 능력치 배율(HP·ATK)을 1.5배로 올린다.
+- **아리스를 2코로 내리고 「AL-1S」 각성을 넣는다(v2.3.2, 9장).** 고유 시너지 「빠밤! 레벨업」 경험치가 30이고 아리스가 3성이면 이름 없는 신들의 왕녀 「AL-1S」(5코, 상점 없음)로 바뀐다. AL-1S는 효과 6개와 고유 시너지 「이름 없는 신들의 왕녀」를 가진다. 학생 101명, 시너지 64종.
 
 ## 1. 판정 원칙
 
-- 유닛 태그 = 진영(1~2) + 동아리(0~1) + 역할군(1) + 고유(0~1) + 플래티넘(0~n).
-- 동아리·역할군·고유·플래티넘의 집계 범위는 별도 표기가 없으면 `deployed_all`(전방+후방 출전). 고유는 주인 구역을 따른다.
-- 플래티넘의 "3성" 조건은 단계 수와 별개로 효과 문장의 발동 조건에서 판정한다(구성원이 다 모여도 성급이 모자라면 꺼짐).
+- 유닛 태그 = 진영(1~2) + 동아리(0~1) + 역할군(1) + 고유(0~1) + 이스터에그(0~n).
+- 각성 학생(9장)은 원래 학생과 **같은 사람으로 센다.** 둘은 한 편성에 함께 있을 수 없으므로, 구성원 수·F/R/D·최대 합법은 원래 학생 한 명으로 센다. 「아리스」를 요구하는 조건은 AL-1S도 채운다.
+- 동아리·역할군·고유·이스터에그의 집계 범위는 별도 표기가 없으면 `deployed_all`(전방+후방 출전). 고유는 주인 구역을 따른다.
+- 이스터에그의 "3성" 조건은 단계 수와 별개로 효과 문장의 발동 조건에서 판정한다(구성원이 다 모여도 성급이 모자라면 꺼짐).
+- **플래티넘은 분류가 아니라 단계 등급이다(v2.3.5).** 4장 단계 칸에 `8(플래티넘): eff_…`처럼 적은 단계가 플래티넘 단계다. 다른 단계와 똑같이 구성원 수로 켜지고, 켜지면 그 시너지의 최고 단계로 등록된다(12장).
 - 원작과 같은 이름인 동아리(대책위원회, RABBIT 소대, CCC 등)는 진영과 구성원이 같아 따로 두지 않는다.
+- 시너지는 도달한 최고 단계 하나만 등록한다(v2.1 6장). 그래서 상위 단계 본문은 하위 단계에서 이어지는 효과를 **모두 문장으로 다시 적는다**. 「[하위 효과 포함]」 같은 참조 표기는 쓰지 않는다(v2.3.1에서 33개 단계를 이렇게 풀어 씀).
 
 ## 2. 코스트별 기준선 (1성 기준)
 
@@ -33,7 +40,7 @@
 
 CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 
-## 3. 유닛 마스터 v2.3 (100명)
+## 3. 유닛 마스터 v2.3 (101명)
 
 | ID | 이름 | 코스트 | 구역 | HP/ATK/DEF/SPD/CRIT/CRIT_DMG | 태그 | 기본 공격 | 전투 스킬 | 필살기 | 전방 패시브 | 후방 정기 지원 | 후방 반응 지원 | 역할 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -57,6 +64,7 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_suzumi` | 모리즈키 스즈미 | 1 | dual | 1100/90/55/104/0.1/0.5 | syn_trinity, syn_vigilante, syn_controller | `eff_common_basic_atk` | `eff_suzumi_skill` | `eff_suzumi_ult` | — | `eff_suzumi_rear_reg` | — | 맨 앞 적 기절 / 빠른 적 공격력 약화 |
 | `u_yoshimi` | 이바라기 요시미 | 1 | front_only | 1000/110/40/108/0.15/0.5 | syn_trinity, syn_sweets, syn_attacker | `eff_common_basic_atk` | `eff_yoshimi_skill` | `eff_yoshimi_ult` | — | — | — | 단 걸 먹고 버티는 단일 딜러 |
 | `u_akari` | 와니부치 아카리 | 2 | front_only | 1200/138/46/104/0.15/0.5 | syn_gehenna, syn_gourmet, syn_blaster | `eff_common_basic_atk` | `eff_akari_skill` | `eff_akari_ult` | — | — | — | 전방 광역 폭파 / 처치 에너지 환급 |
+| `u_aris` | 텐도 아리스 | 2 | dual | 1200/138/45/92/0.15/0.5 | syn_millennium, syn_game_dev, syn_blaster, syn_unique_level_up, syn_plat_ending_credits | `eff_common_basic_atk` | `eff_aris_skill` | `eff_aris_ult` | `eff_aris_passive` | `eff_aris_rear_reg` | — | 성장형 광역 레일건 / 3성·경험치 30에 AL-1S로 각성 |
 | `u_ayane` | 오쿠소라 아야네 | 2 | rear_only | 980/108/45/104/0.05/0.5 | syn_abydos, syn_healer, syn_plat_last_line | — | — | — | — | `eff_ayane_rear_reg` | `eff_ayane_rear_react` | 3인 치유 + 치유 반응 보호막 |
 | `u_chinatsu` | 히노미야 치나츠 | 2 | rear_only | 950/118/42/108/0.05/0.5 | syn_gehenna, syn_prefect, syn_healer | — | — | — | — | `eff_chinatsu_rear_reg` | `eff_chinatsu_rear_react` | 단일 치유 + 디버프 해제 / 기절·침묵 응급 해제 |
 | `u_chise` | 와라쿠 치세 | 2 | rear_only | 960/132/40/104/0.12/0.5 | syn_hyakkiyako, syn_yinyang, syn_blaster | — | — | — | — | `eff_chise_rear_reg` | — | 부적 화염 광역 화상 |
@@ -112,7 +120,6 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_yuzu` | 하나오카 유즈 | 3 | rear_only | 1050/160/40/100/0.2/0.5 | syn_millennium, syn_game_dev, syn_blaster, syn_plat_ending_credits | — | — | — | — | `eff_yuzu_rear_reg` | `eff_yuzu_rear_react` | 사물함 속 유탄 난사 / 개전 은신 |
 | `u_akemi` | 쿠리하마 아케미 | 4 | front_only | 2300/175/98/100/0.2/0.5 | syn_outlaw, syn_tank | `eff_common_basic_atk` | `eff_akemi_skill` | `eff_akemi_ult` | `eff_akemi_passive` | — | — | 초괴력 중화기 딜탱 / 제어 저항 및 광역 분쇄 |
 | `u_ako` | 아마우 아코 | 4 | rear_only | 1250/145/55/112/0.15/0.5 | syn_gehenna, syn_prefect, syn_supporter | — | — | — | — | `eff_ako_rear_reg` | `eff_ako_rear_react` | 최고 공격력 아군 치명타 극대화 / 전방 치유 보조 |
-| `u_aris` | 텐도 아리스 | 4 | dual | 1520/210/58/90/0.24/0.5 | syn_millennium, syn_game_dev, syn_blaster, syn_unique_level_up, syn_plat_ending_credits | `eff_common_basic_atk` | `eff_aris_skill` | `eff_aris_ult` | `eff_aris_passive` | `eff_aris_rear_reg` | — | 에너지 충전형 초거대 광역 레일건 / 후방 포격 |
 | `u_aru` | 리쿠하치마 아루 | 4 | front_only | 1480/198/52/105/0.26/0.5 | syn_gehenna, syn_problem_solver, syn_attacker, syn_unique_outlaw_boss | `eff_common_basic_atk` | `eff_aru_skill` | `eff_aru_ult` | `eff_aru_passive` | — | — | 단일+광역 폭발 메인 캐리 / 처치 에너지 환급 |
 | `u_cherino` | 렌카와 체리노 | 4 | front_only | 1500/178/58/112/0.22/0.5 | syn_red_winter, syn_rw_office, syn_supporter, syn_unique_red_mustache | `eff_common_basic_atk` | `eff_cherino_skill` | `eff_cherino_ult` | `eff_cherino_passive` | — | — | 팀 SP·에너지 공급 사령관 / 숙청 표적 집점사 |
 | `u_haruna` | 쿠로다테 하루나 | 4 | front_only | 1600/205/60/104/0.3/0.5 | syn_gehenna, syn_gourmet, syn_sniper | `eff_common_basic_atk` | `eff_haruna_skill` | `eff_haruna_ult` | `eff_haruna_passive` | — | — | 고HP 적 처형 저격수 / 처치 시 폭발 연쇄 |
@@ -126,6 +133,7 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_noa` | 우시오 노아 | 4 | rear_only | 1300/160/55/112/0.12/0.5 | syn_millennium, syn_seminar, syn_supporter | — | — | — | — | `eff_noa_rear_reg` | `eff_noa_rear_react` | 전방 공격력 대폭 버프 / 같은 적 반복 타격 강화 |
 | `u_tsurugi` | 켄자키 츠루기 | 4 | front_only | 1650/195/62/112/0.25/0.5 | syn_trinity, syn_justice, syn_attacker | `eff_common_basic_atk` | `eff_tsurugi_skill` | `eff_tsurugi_ult` | `eff_tsurugi_passive` | — | — | 광폭한 산탄 결전 딜러 / 맞을수록 강해짐 |
 | `u_akira` | 키요스미 아키라 | 5 | front_only | 2000/232/66/124/0.3/0.5 | syn_outlaw, syn_attacker | `eff_common_basic_atk` | `eff_akira_skill` | `eff_akira_ult` | `eff_akira_passive`, `eff_akira_aura` | — | — | 적 버프 강탈·무력화 / 존재 효과: 개전 버프 강탈 |
+| `u_al1s` | AL-1S | 5 | dual | 2050/240/66/104/0.25/0.5 | syn_millennium, syn_game_dev, syn_blaster, syn_unique_nameless_princess, syn_plat_ending_credits | `eff_common_basic_atk` | `eff_al1s_skill` | `eff_al1s_ult` | `eff_al1s_passive`, `eff_al1s_aura` | `eff_al1s_rear_reg` | `eff_al1s_rear_react`, `eff_al1s_aura` | 각성 전용(상점 없음) 광역 방어 무시 캐리 / 존재 효과: 적 전원 받는 피해 증가 |
 | `u_hikari` | 타치바나 히카리 | 5 | front_only | 1800/220/72/122/0.26/0.5 | syn_highlander, syn_blaster | `eff_common_basic_atk` | `eff_hikari_skill` | `eff_hikari_ult` | `eff_hikari_passive` | — | — | 전방 버프 증폭기 / 초특급 열차포 광역 타격 |
 | `u_himari` | 아케보시 히마리 | 5 | rear_only | 1300/165/60/118/0.15/0.5 | syn_millennium, syn_paranormal, syn_supporter | — | — | — | — | `eff_himari_rear_reg` | `eff_himari_rear_react` | 최고 공격력 아군 초증폭 + 팀 SP·에너지 공급 |
 | `u_hina` | 소라사키 히나 | 5 | front_only | 2100/235/78/114/0.28/0.5 | syn_gehenna, syn_prefect, syn_blaster, syn_unique_head_prefect | `eff_common_basic_atk` | `eff_hina_skill` | `eff_hina_ult` | `eff_hina_passive`, `eff_hina_aura` | — | — | 광역 절대 화력 캐리 / 존재 효과: 적 전방 방어력 약화 |
@@ -138,17 +146,17 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_seia` | 유리조노 세이아 | 5 | rear_only | 1400/185/65/116/0.15/0.5 | syn_trinity, syn_tea_party, syn_controller, syn_plat_tea_party | — | — | — | — | `eff_seia_rear_reg` | `eff_seia_aura` | 예지 침묵 / 적 필살기 대비 |
 | `u_wakamo` | 코사카 와카모 | 5 | front_only | 2000/248/62/115/0.28/0.5 | syn_hyakkiyako, syn_outlaw, syn_attacker, syn_unique_calamity_fox | `eff_common_basic_atk` | `eff_wakamo_skill` | `eff_wakamo_ult` | `eff_wakamo_passive`, `eff_wakamo_aura` | — | — | 단일 결전 폭발 딜러 / 존재 효과: 적 전원 속도 저하 |
 
-## 4. 시너지 v2.3 (63종)
+## 4. 시너지 v2.3 (64종)
 
-F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 v2.1 6장 용량 식(전방 4·후방 6·출전 10)으로 센 값이다.
+F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 v2.1 6장 용량 식(전방 4·후방 6·출전 10)으로 센 값이다. 각성 학생 AL-1S는 아리스와 같은 사람이라 따로 세지 않는다(1장). 그래서 구성원 칸에 `al1s`가 있어도 F/R/D는 그대로다.
 
 | ID | 이름 | 분류 | 집계 범위 | 단계 | F/R/D | 최대 합법 | 구성원 |
 |---|---|---|---|---|---|---|---|
 | `syn_abydos` | 아비도스 | faction | `deployed_all` | 2: eff_syn_abydos_2; 4: eff_syn_abydos_4; 5: eff_syn_abydos_6 | 5/1/0 | 5 | serika, shiroko, ayane, nonomi, hoshino, hoshino_armed |
-| `syn_gehenna` | 게헨나 | faction | `deployed_all` | 2: eff_syn_gehenna_2; 4: eff_syn_gehenna_4; 6: eff_syn_gehenna_6 | 9/5/2 | 10 | haruka, junko, fuuka, kayoko, iori, mutsuki, aru, ako, hina, chinatsu, haruna, izumi, akari, juri, kasumi, megu |
-| `syn_millennium` | 밀레니엄 | faction | `deployed_all` | 2: eff_syn_millennium_2; 4: eff_syn_millennium_4; 6: eff_syn_millennium_6 | 7/12/3 | 10 | kotama, asuna, yuuka, momoi, hare, karin, toki, neru, aris, himari, rio, akane, midori, yuzu, chihiro, maki, noa, koyuki, utaha, hibiki, kotori, eimi |
-| `syn_trinity` | 트리니티 | faction | `deployed_all` | 2: eff_syn_trinity_2; 4: eff_syn_trinity_4; 6: eff_syn_trinity_6 | 9/8/2 | 10 | suzumi, serina, hasumi, azusa, koharu, mika, hifumi, hanako, nagisa, seia, tsurugi, mashiro, mine, hanae, reisa, kazusa, yoshimi, airi, natsu |
-| `syn_hyakkiyako` | 백귀야행 | faction | `deployed_all` | 2: eff_syn_hyakkiyako_2; 4: eff_syn_hyakkiyako_4; 5: eff_syn_hyakkiyako_6 | 6/4/0 | 8 | michiru, tsubaki, izuna, shizuko, wakamo, tsukuyo, mimori, kaede, niya, chise |
+| `syn_gehenna` | 게헨나 | faction | `deployed_all` | 2: eff_syn_gehenna_2; 4: eff_syn_gehenna_4; 6: eff_syn_gehenna_6; 8(플래티넘): eff_syn_gehenna_plat | 9/5/2 | 10 | haruka, junko, fuuka, kayoko, iori, mutsuki, aru, ako, hina, chinatsu, haruna, izumi, akari, juri, kasumi, megu |
+| `syn_millennium` | 밀레니엄 | faction | `deployed_all` | 2: eff_syn_millennium_2; 4: eff_syn_millennium_4; 6: eff_syn_millennium_6; 8(플래티넘): eff_syn_millennium_plat | 7/12/3 | 10 | kotama, asuna, yuuka, momoi, hare, karin, toki, neru, aris, al1s, himari, rio, akane, midori, yuzu, chihiro, maki, noa, koyuki, utaha, hibiki, kotori, eimi |
+| `syn_trinity` | 트리니티 | faction | `deployed_all` | 2: eff_syn_trinity_2; 4: eff_syn_trinity_4; 6: eff_syn_trinity_6; 8(플래티넘): eff_syn_trinity_plat | 9/8/2 | 10 | suzumi, serina, hasumi, azusa, koharu, mika, hifumi, hanako, nagisa, seia, tsurugi, mashiro, mine, hanae, reisa, kazusa, yoshimi, airi, natsu |
+| `syn_hyakkiyako` | 백귀야행 | faction | `deployed_all` | 2: eff_syn_hyakkiyako_2; 4: eff_syn_hyakkiyako_4; 5: eff_syn_hyakkiyako_6; 7(플래티넘): eff_syn_hyakkiyako_plat | 6/4/0 | 8 | michiru, tsubaki, izuna, shizuko, wakamo, tsukuyo, mimori, kaede, niya, chise |
 | `syn_shanhaijing` | 산해경 | faction | `deployed_all` | 2: eff_syn_shanhaijing_2; 4: eff_syn_shanhaijing_4 | 2/0/2 | 4 | kokona, shun, mina, kisaki |
 | `syn_red_winter` | 붉은겨울 | faction | `deployed_all` | 2: eff_syn_red_winter_2; 4: eff_syn_red_winter_4 | 4/3/0 | 7 | nodoka, momiji, marina, cherino, tomoe, meru, shigure |
 | `syn_valkyrie` | 발키리 | faction | `deployed_all` | 2: eff_syn_valkyrie_2; 3: eff_syn_valkyrie_3 | 3/0/0 | 3 | fubuki, kirino, kanna |
@@ -162,7 +170,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | `syn_school_lunch` | 급양부 | club | `deployed_all` | 2: eff_syn_school_lunch_2 | 0/2/0 | 2 | fuuka, juri |
 | `syn_hot_spring` | 온천개발부 | club | `deployed_all` | 2: eff_syn_hot_spring_2 | 1/1/0 | 2 | kasumi, megu |
 | `syn_cc` | C&C | club | `deployed_all` | 2: eff_syn_cc_2; 4: eff_syn_cc_4 | 4/1/0 | 5 | asuna, karin, toki, neru, akane |
-| `syn_game_dev` | 게임개발부 | club | `deployed_all` | 2: eff_syn_game_dev_2; 4: eff_syn_game_dev_4 | 1/1/2 | 4 | momoi, aris, midori, yuzu |
+| `syn_game_dev` | 게임개발부 | club | `deployed_all` | 2: eff_syn_game_dev_2; 4: eff_syn_game_dev_4 | 1/1/2 | 4 | momoi, aris, al1s, midori, yuzu |
 | `syn_veritas` | 베리타스 | club | `deployed_all` | 2: eff_syn_veritas_2; 4: eff_syn_veritas_4 | 0/4/0 | 4 | kotama, hare, chihiro, maki |
 | `syn_seminar` | 세미나 | club | `deployed_all` | 2: eff_syn_seminar_2; 4: eff_syn_seminar_4 | 1/2/1 | 4 | yuuka, rio, noa, koyuki |
 | `syn_engineering` | 엔지니어부 | club | `deployed_all` | 2: eff_syn_engineering_2; 3: eff_syn_engineering_3 | 0/3/0 | 3 | utaha, hibiki, kotori |
@@ -184,11 +192,11 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | `syn_life_safety` | 생활안전국 | club | `deployed_all` | 2: eff_syn_life_safety_2 | 2/0/0 | 2 | fubuki, kirino |
 | `syn_tank` | 탱커 | role | `deployed_all` | 2: eff_syn_tank_2; 3: eff_syn_tank_3; 4: eff_syn_tank_4 | 13/0/0 | 4 | haruka, yuuka, tsubaki, marina, atsuko, hoshino, miyako, akemi, hoshino_armed, eimi, mine, natsu, tsukuyo |
 | `syn_attacker` | 어태커 | role | `deployed_all` | 2: eff_syn_attacker_2; 3: eff_syn_attacker_3; 4: eff_syn_attacker_4 | 18/0/0 | 4 | serika, asuna, shiroko, nozomi, iori, izuna, aru, neru, mika, wakamo, akira, izumi, midori, tsurugi, reisa, kazusa, yoshimi, shigure |
-| `syn_sniper` | 스나이퍼 | role | `deployed_all` | 2: eff_syn_sniper_2; 4: eff_syn_sniper_4 | 6/3/0 | 7 | fubuki, hasumi, karin, shun, azusa, hiyori, saori, haruna, mashiro |
-| `syn_blaster` | 블래스터 | role | `deployed_all` | 2: eff_syn_blaster_2; 4: eff_syn_blaster_4; 6: eff_syn_blaster_6 | 12/7/3 | 10 | junko, michiru, rabu, momoi, momiji, nonomi, mutsuki, toki, moe, aris, hina, hikari, akari, kasumi, megu, akane, yuzu, maki, hibiki, kaede, chise, misaki |
-| `syn_healer` | 힐러 | role | `deployed_all` | 2: eff_syn_healer_2; 4: eff_syn_healer_4 | 0/7/2 | 8 | serina, kokona, fuuka, ayane, koharu, shizuko, chinatsu, hanako, hanae |
-| `syn_supporter` | 서포터 | role | `deployed_all` | 2: eff_syn_supporter_2; 4: eff_syn_supporter_4 | 1/16/2 | 9 | kotama, nodoka, saki, ako, cherino, himari, rio, kisaki, juri, chihiro, noa, utaha, kotori, hifumi, nagisa, airi, mimori, niya, tomoe |
-| `syn_controller` | 컨트롤러 | role | `deployed_all` | 2: eff_syn_controller_2; 4: eff_syn_controller_4 | 3/3/4 | 10 | suzumi, hare, kayoko, kirino, mina, miyu, kanna, koyuki, seia, meru |
+| `syn_sniper` | 스나이퍼 | role | `deployed_all` | 2: eff_syn_sniper_2; 4: eff_syn_sniper_4; 6(플래티넘): eff_syn_sniper_plat | 6/3/0 | 7 | fubuki, hasumi, karin, shun, azusa, hiyori, saori, haruna, mashiro |
+| `syn_blaster` | 블래스터 | role | `deployed_all` | 2: eff_syn_blaster_2; 4: eff_syn_blaster_4; 6: eff_syn_blaster_6; 8(플래티넘): eff_syn_blaster_plat | 12/7/3 | 10 | junko, michiru, rabu, momoi, momiji, nonomi, mutsuki, toki, moe, aris, al1s, hina, hikari, akari, kasumi, megu, akane, yuzu, maki, hibiki, kaede, chise, misaki |
+| `syn_healer` | 힐러 | role | `deployed_all` | 2: eff_syn_healer_2; 4: eff_syn_healer_4; 6(플래티넘): eff_syn_healer_plat | 0/7/2 | 8 | serina, kokona, fuuka, ayane, koharu, shizuko, chinatsu, hanako, hanae |
+| `syn_supporter` | 서포터 | role | `deployed_all` | 2: eff_syn_supporter_2; 4: eff_syn_supporter_4; 6(플래티넘): eff_syn_supporter_plat | 1/16/2 | 9 | kotama, nodoka, saki, ako, cherino, himari, rio, kisaki, juri, chihiro, noa, utaha, kotori, hifumi, nagisa, airi, mimori, niya, tomoe |
+| `syn_controller` | 컨트롤러 | role | `deployed_all` | 2: eff_syn_controller_2; 4: eff_syn_controller_4; 6(플래티넘): eff_syn_controller_plat | 3/3/4 | 10 | suzumi, hare, kayoko, kirino, mina, miyu, kanna, koyuki, seia, meru |
 | `syn_unique_dawn_horus` | 「으헤~ 아저씨는 좀 쉴래」 | unique | `front_only` | 1: eff_syn_uni_hoshino | 1/0/0 | 1 | hoshino |
 | `syn_unique_outlaw_boss` | 「계획대로야!」 | unique | `front_only` | 1: eff_syn_uni_aru | 1/0/0 | 1 | aru |
 | `syn_unique_head_prefect` | 「조금만 쉬고 싶어」 | unique | `front_only` | 1: eff_syn_uni_hina | 1/0/0 | 1 | hina |
@@ -196,17 +204,18 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | `syn_unique_calamity_fox` | 「당신만 바라볼게요」 | unique | `front_only` | 1: eff_syn_uni_wakamo | 1/0/0 | 1 | wakamo |
 | `syn_unique_red_mustache` | 「수염의 위엄」 | unique | `front_only` | 1: eff_syn_uni_cherino | 1/0/0 | 1 | cherino |
 | `syn_unique_level_up` | 「빠밤! 레벨업」 | unique | `deployed_all` | 1: eff_syn_uni_aris | 0/0/1 | 1 | aris |
+| `syn_unique_nameless_princess` | 「이름 없는 신들의 왕녀」 | unique | `deployed_all` | 1: eff_syn_uni_al1s | 0/0/1 | 1 | al1s |
 | `syn_unique_invisible` | 「저 여기 있어요…」 | unique | `deployed_all` | 1: eff_syn_uni_miyu | 0/0/1 | 1 | miyu |
 | `syn_unique_bank_robber` | 「은행 털러 가자」 | unique | `front_only` | 1: eff_syn_uni_shiroko | 1/0/0 | 1 | shiroko |
 | `syn_unique_gold_card` | 「골드 카드」 | unique | `front_only` | 1: eff_syn_uni_nonomi | 1/0/0 | 1 | nonomi |
 | `syn_unique_caspalug` | 「카스팔루그」 | unique | `front_only` | 1: eff_syn_uni_kazusa | 1/0/0 | 1 | kazusa |
-| `syn_plat_vanitas` | 「Vanitas vanitatum」 | platinum | `deployed_all` | 5: eff_syn_plat_vanitas | 3/2/0 | 5 | azusa, atsuko, hiyori, saori, misaki |
-| `syn_plat_ending_credits` | 「엔딩 크레딧」 | platinum | `deployed_all` | 4: eff_syn_plat_ending_credits | 1/1/2 | 4 | momoi, aris, midori, yuzu |
-| `syn_plat_codename` | 「코드네임 00~05」 | platinum | `deployed_all` | 5: eff_syn_plat_codename | 4/1/0 | 5 | asuna, karin, toki, neru, akane |
-| `syn_plat_tea_party` | 「티파티 삼두정치」 | platinum | `deployed_all` | 3: eff_syn_plat_tea_party | 1/2/0 | 3 | mika, nagisa, seia |
-| `syn_plat_last_line` | 「아비도스 최후의 방어선」 | platinum | `deployed_all` | 5: eff_syn_plat_last_line | 4/1/0 | 5 | serika, shiroko, ayane, nonomi, hoshino |
-| `syn_plat_school_battle` | 「키보토스 학원 대항전」 | platinum | `special` | 10: eff_syn_plat_school_battle | 0/0/0 | 0 | — |
-| `syn_plat_total_assault` | 「총력전 만점」 | platinum | `special` | 10: eff_syn_plat_total_assault | 0/0/0 | 0 | — |
+| `syn_plat_vanitas` | 「Vanitas vanitatum」 | easteregg | `deployed_all` | 5: eff_syn_plat_vanitas | 3/2/0 | 5 | azusa, atsuko, hiyori, saori, misaki |
+| `syn_plat_ending_credits` | 「엔딩 크레딧」 | easteregg | `deployed_all` | 4: eff_syn_plat_ending_credits | 1/1/2 | 4 | momoi, aris, al1s, midori, yuzu |
+| `syn_plat_codename` | 「코드네임 00~05」 | easteregg | `deployed_all` | 5: eff_syn_plat_codename | 4/1/0 | 5 | asuna, karin, toki, neru, akane |
+| `syn_plat_tea_party` | 「티파티 삼두정치」 | easteregg | `deployed_all` | 3: eff_syn_plat_tea_party | 1/2/0 | 3 | mika, nagisa, seia |
+| `syn_plat_last_line` | 「아비도스 최후의 방어선」 | easteregg | `deployed_all` | 5: eff_syn_plat_last_line | 4/1/0 | 5 | serika, shiroko, ayane, nonomi, hoshino |
+| `syn_plat_school_battle` | 「키보토스 학원 대항전」 | easteregg | `special` | 10: eff_syn_plat_school_battle | 0/0/0 | 0 | — |
+| `syn_plat_total_assault` | 「총력전 만점」 | easteregg | `special` | 10: eff_syn_plat_total_assault | 0/0/0 | 0 | — |
 
 ### 4.1 동아리 원작 설정
 
@@ -874,7 +883,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.106 `eff_syn_ps68_4`
 - 출처/구역: 시너지 syn_problem_solver (2단계) / `deployed_all`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 구성원이 쓰러지면 그 자리가 폭발해 적 전방 전원에게 ATK 120% 피해(무츠키의 지뢰, 구성원당 1회)
+- 본문: 구성원이 적을 처치하면 정산 때 의뢰비 +1G(전투당 최대 2G). 구성원이 쓰러지면 그 자리가 폭발해 적 전방 전원에게 ATK 120% 피해(무츠키의 지뢰, 구성원당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.107 `eff_syn_prefect_2`
@@ -886,7 +895,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.108 `eff_syn_prefect_4`
 - 출처/구역: 시너지 syn_prefect (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 히나가 살아 있는 동안 다른 선도부원의 받는 피해 -15%. 히나가 쓰러지면 남은 선도부원 ATK +40%(전투 종료까지)
+- 본문: 전투 시작 시 적이 가진 가장 강한 버프 1개를 해제(단속). 히나가 살아 있는 동안 다른 선도부원의 받는 피해 -15%. 히나가 쓰러지면 남은 선도부원 ATK +40%(전투 종료까지)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.109 `eff_syn_gourmet_2`
@@ -898,7 +907,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.110 `eff_syn_gourmet_4`
 - 출처/구역: 시너지 syn_gourmet (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 아군에 급양부원이 있으면 전투 시작 시 "납치"한다. 미식연구회원이 공격할 때마다 납치된 급양부원이 그 학생을 ATK 40% 치유(턴당 2회)
+- 본문: 구성원이 적을 처치하면 "별점 0개" 폭발: 처치한 적 주변 적에게 ATK 70% 피해(구성원당 턴당 1회). 아군에 급양부원이 있으면 전투 시작 시 "납치"한다. 미식연구회원이 공격할 때마다 납치된 급양부원이 그 학생을 ATK 40% 치유(턴당 2회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.111 `eff_syn_school_lunch_2`
@@ -922,7 +931,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.114 `eff_syn_cc_4`
 - 출처/구역: 시너지 syn_cc (2단계) / `deployed_all`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] HP 30% 이하인 적은 "청소 대상". C&C 요원이 청소 대상을 공격하면 반드시 치명타
+- 본문: 적을 처치한 C&C 요원은 다음 행동 시간 20% 당김(청소 완료). HP 30% 이하인 적은 "청소 대상". C&C 요원이 청소 대상을 공격하면 반드시 치명타
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.115 `eff_syn_game_dev_2`
@@ -934,7 +943,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.116 `eff_syn_game_dev_4`
 - 출처/구역: 시너지 syn_game_dev (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 버그 3개 중 2개를 골라 적용(유즈의 디버깅)
+- 본문: 전투 시작 시 "버그" 3개(아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40) 중 2개를 적용(유즈의 디버깅). 준비 단계에서 고른 2개를 쓰고, 고르지 않았으면 앞의 2개
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.117 `eff_syn_veritas_2`
@@ -946,7 +955,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.118 `eff_syn_veritas_4`
 - 출처/구역: 시너지 syn_veritas (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 전투 시작 시 적 버프 1개를 해킹해 아군 1명에게 옮긴다
+- 본문: 적의 첫 필살기 직전에 그 적의 행동을 50% 지연시키고, 적 필살기 예정 시점을 화면에 표시. 전투 시작 시 적 버프 1개를 해킹해 아군 1명에게 옮긴다
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.119 `eff_syn_seminar_2`
@@ -958,7 +967,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.120 `eff_syn_seminar_4`
 - 출처/구역: 시너지 syn_seminar (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 이자 상한 +4. 코유키가 있으면 정산 이자가 50% 확률로 2배, 50% 확률로 0
+- 본문: 정산 이자 상한 +4(2단계의 +2를 대체). 코유키가 있으면 정산 이자가 50% 확률로 2배, 50% 확률로 0
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.121 `eff_syn_engineering_2`
@@ -970,7 +979,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.122 `eff_syn_engineering_3`
 - 출처/구역: 시너지 syn_engineering (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 포탑 2기. 포탑이 부서지면 폭발해 주변 적에게 ATK 100% 피해
+- 본문: 전투 시작 시 포탑 2기 설치(각각 구성원 평균 ATK 50%로 매 턴 적 최전열 1명 사격). 포탑이 부서지면 폭발해 주변 적에게 ATK 100% 피해
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.123 `eff_syn_paranormal_2`
@@ -988,7 +997,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.125 `eff_syn_make_up_4`
 - 출처/구역: 시너지 syn_make_up (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 합격 골드 2배, 구성원 최대 HP +15%
+- 본문: 패배할 때마다 "보충수업" 1중첩(구성원 ATK +8%, 최대 4). 승리하면 "합격"으로 중첩 수의 2배만큼 골드를 받고 초기화. 구성원 최대 HP +15%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.126 `eff_syn_tea_party_2`
@@ -1000,7 +1009,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.127 `eff_syn_tea_party_3`
 - 출처/구역: 시너지 syn_tea_party (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 3명 모두 출전하면 아군 전원 ATK +15%
+- 본문: 전투 시작 시 아군 전원 에너지 +20(티타임). 3명 모두 출전하면 아군 전원 ATK +15%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.128 `eff_syn_justice_2`
@@ -1012,7 +1021,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.129 `eff_syn_justice_3`
 - 출처/구역: 시너지 syn_justice (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 구성원이 적을 처치하면 다른 구성원 에너지 +15
+- 본문: HP 50% 이하인 적에게 주는 피해 +25%(정의 집행). 구성원이 적을 처치하면 다른 구성원 에너지 +15
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.130 `eff_syn_vigilante_2`
@@ -1030,7 +1039,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.132 `eff_syn_remedial_knights_3`
 - 출처/구역: 시너지 syn_remedial_knights (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 아군 HP가 20% 이하로 떨어지면 구성원이 즉시 그 아군을 최대 HP 20% 치유(전투당 1회)
+- 본문: 구성원의 치유량 +30%. 아군 HP가 20% 이하로 떨어지면 구성원이 즉시 그 아군을 최대 HP 20% 치유(전투당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.133 `eff_syn_sweets_2`
@@ -1042,7 +1051,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.134 `eff_syn_sweets_4`
 - 출처/구역: 시너지 syn_sweets (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 구성원 4명이 모두 살아 있으면 매 턴 아군 전원 최대 HP 3% 회복
+- 본문: 승리하면 다음 전투 시작 시 아군 전원 최대 HP 10% 회복(디저트 타임). 구성원 4명이 모두 살아 있으면 매 턴 아군 전원 최대 HP 3% 회복
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.135 `eff_syn_ninjutsu_2`
@@ -1054,7 +1063,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.136 `eff_syn_ninjutsu_3`
 - 출처/구역: 시너지 syn_ninjutsu (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 분신술을 쓸 때마다 공격자에게 ATK 60% 반격
+- 본문: 구성원마다 전투당 첫 피격 1회를 "분신술"로 회피하고, 분신술을 쓸 때마다 공격자에게 ATK 60% 반격
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.137 `eff_syn_training_2`
@@ -1066,7 +1075,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.138 `eff_syn_training_3`
 - 출처/구역: 시너지 syn_training (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 최대치에 이르면 "득도": 다음 피격 1회 무효
+- 본문: 구성원의 받는 피해가 매 턴 -3%씩 누적(최대 -15%). 최대치에 이르면 "득도": 다음 피격 1회 무효
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.139 `eff_syn_yinyang_2`
@@ -1096,7 +1105,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.143 `eff_syn_rw_office_3`
 - 출처/구역: 시너지 syn_rw_office (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 숙청 주기가 2턴으로 줄고, 숙청 대상의 받는 피해 +20%
+- 본문: 2턴마다 적 1명을 "숙청 대상"으로 지정. 숙청 대상의 받는 피해 +20%. 숙청 대상을 처치하면 팀 SP +1
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.144 `eff_syn_knowledge_front_2`
@@ -1126,13 +1135,13 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.148 `eff_syn_tank_3`
 - 출처/구역: 시너지 syn_tank (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 받는 피해 -20%, 전투 시작 시 가장 앞의 탱커가 2턴간 도발(`st_taunt`)
+- 본문: 탱커 구성원의 받는 피해 -20%. 전투 시작 시 가장 앞의 탱커가 2턴간 도발(`st_taunt`)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.149 `eff_syn_tank_4`
 - 출처/구역: 시너지 syn_tank (3단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 받는 피해 -30%. HP가 처음 50% 아래로 내려가면 최대 HP 25% 보호막
+- 본문: 탱커 구성원의 받는 피해 -30%. 전투 시작 시 가장 앞의 탱커가 2턴간 도발(`st_taunt`). 탱커 구성원의 HP가 처음 50% 아래로 내려가면 최대 HP 25% 보호막
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.150 `eff_syn_attacker_2`
@@ -1144,13 +1153,13 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.151 `eff_syn_attacker_3`
 - 출처/구역: 시너지 syn_attacker (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 단일 대상 공격 피해 +30%. 같은 적을 연속으로 때리면 회당 +5%(최대 5)
+- 본문: 어태커 구성원의 단일 대상 공격 피해 +30%. 같은 적을 연속으로 때리면 회당 +5%(최대 5)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.152 `eff_syn_attacker_4`
 - 출처/구역: 시너지 syn_attacker (3단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 단일 대상 공격 피해 +50%. 적을 처치하면 즉시 한 번 더 행동(턴당 1회)
+- 본문: 어태커 구성원의 단일 대상 공격 피해 +50%. 같은 적을 연속으로 때리면 회당 +5%(최대 5). 적을 처치하면 즉시 한 번 더 행동(턴당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.153 `eff_syn_sniper_2`
@@ -1162,7 +1171,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.154 `eff_syn_sniper_4`
 - 출처/구역: 시너지 syn_sniper (2단계) / `deployed_all`. 원안 행: v2.3 조정.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] CRIT +30%. 전투 시작 시 HP가 가장 높은 적을 조준하고, 그 적에게 치명 피해 +50%
+- 본문: 스나이퍼 구성원 CRIT +30%. 전투 시작 시 HP가 가장 높은 적을 조준하고, 스나이퍼 구성원이 그 적에게 주는 치명 피해 +50%
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.155 `eff_syn_blaster_2`
@@ -1174,13 +1183,13 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.156 `eff_syn_blaster_4`
 - 출처/구역: 시너지 syn_blaster (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 광역 공격 피해 +30%. 3명 이상 맞히면 대상들에게 2턴간 DEF -15%(`st_def_down`)
+- 본문: 블래스터 구성원의 광역 공격 피해 +30%. 3명 이상 맞히면 대상들에게 2턴간 DEF -15%(`st_def_down`)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.157 `eff_syn_blaster_6`
 - 출처/구역: 시너지 syn_blaster (3단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 광역 공격 피해 +45%. 3명 이상 맞히면 팀 SP +1(턴당 1회)
+- 본문: 블래스터 구성원의 광역 공격 피해 +45%. 3명 이상 맞히면 대상들에게 2턴간 DEF -15%(`st_def_down`)를 걸고 팀 SP +1(SP는 턴당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.158 `eff_syn_healer_2`
@@ -1192,7 +1201,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.159 `eff_syn_healer_4`
 - 출처/구역: 시너지 syn_healer (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 치유량 +40%. 최대 HP를 넘친 치유량은 2턴짜리 보호막으로 바뀜
+- 본문: 힐러 구성원의 치유량 +40%. 최대 HP를 넘친 치유량은 2턴짜리 보호막으로 바뀜
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.160 `eff_syn_supporter_2`
@@ -1204,7 +1213,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.161 `eff_syn_supporter_4`
 - 출처/구역: 시너지 syn_supporter (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 전투 시작 시 팀 SP +1. 서포터가 버프를 걸면 대상 에너지 +10
+- 본문: 서포터 구성원이 건 버프 지속 +1턴. 전투 시작 시 팀 SP +1. 서포터가 버프를 걸면 대상 에너지 +10
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.162 `eff_syn_controller_2`
@@ -1216,7 +1225,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.163 `eff_syn_controller_4`
 - 출처/구역: 시너지 syn_controller (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: [하위 효과 포함] 제어 상태인 적이 받는 피해 +20%. 제어가 풀린 적의 다음 행동 10% 지연
+- 본문: 컨트롤러 구성원이 건 기절·침묵·지연 지속 +1턴(보스 제외). 제어 상태인 적이 받는 피해 +20%. 제어가 풀린 적의 다음 행동 10% 지연
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.164 `eff_syn_uni_hoshino`
@@ -1258,7 +1267,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.170 `eff_syn_uni_aris`
 - 출처/구역: 시너지 syn_unique_level_up (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: 적을 처치할 때마다 경험치 1. 5마다 레벨업해 런이 끝날 때까지 아리스 ATK +5% 영구 누적(최대 +30%)
+- 본문: 아리스가 적을 처치할 때마다 경험치 1(정예·보스는 3), 아리스가 출전한 전투에서 이기면 경험치 1. 경험치 5마다 레벨업해 런이 끝날 때까지 아리스 ATK +5% 영구 누적(레벨 6까지, +30%). 경험치는 아리스 개체가 아니라 런에 쌓여 팔거나 합성해도 남는다. 경험치 30(레벨 6)이 되고 3성 아리스를 보유하면 이름 없는 신들의 왕녀 「AL-1S」로 각성한다(9장)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.171 `eff_syn_uni_miyu`
@@ -1294,7 +1303,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.176 `eff_syn_plat_ending_credits`
 - 출처/구역: 시너지 syn_plat_ending_credits (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: 발동 조건: 게임개발부 4명(모모이·미도리·유즈·아리스)을 모두 3성으로 동시 출전. 효과: 아리스의 "빛이여!" 레일건이 2턴마다 자동 발사(적 전원에게 ATK 400% 피해). 전멸 직전 1회 "컨티뉴": 아군 전원 HP 30%로 부활
+- 본문: 발동 조건: 게임개발부 4명(모모이·미도리·유즈·아리스, 아리스 자리는 AL-1S도 인정)을 모두 3성으로 동시 출전. 효과: 아리스(또는 AL-1S)의 "빛이여!" 레일건이 2턴마다 자동 발사(적 전원에게 ATK 400% 피해). 전멸 직전 1회 "컨티뉴": 아군 전원 HP 30%로 부활
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.177 `eff_syn_plat_codename`
@@ -1325,6 +1334,174 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 - 출처/구역: 시너지 syn_plat_total_assault (1단계) / `special`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
 - 본문: 발동 조건: 출전 10명 모두 3성 + 7개 역할군이 1명 이상씩. 구성원 명단 없이 출전 편성으로 판정. 효과: 모든 역할군 시너지의 2단계 효과가 함께 켜지고 아군 전원 ATK +30%
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+v2.3.1 문구 정리(2026-10-30): 아래 V.182~V.189는 v2.1 부록 C의 같은 ID를 띄어쓰기·문장만 고쳐 대체한다. 수치·조건은 그대로다. 예외로 `eff_syn_valkyrie_3`은 2단계 "수배자" 지정을 3단계에도 명시적으로 남긴다(v2.1 6장 "최고 단계 하나만 등록" 규칙 때문에 3단계에서 수배자가 사라지던 문제).
+
+### V.182 `eff_saori_skill`
+- 출처/구역: u_saori 전투 스킬 / `front`. 원안 행: v2.3 조정.
+- 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 적대 전방의 도발 우선 최전방 1명에게 ATK 185% `normal` 피해. 그 뒤 자신에게 `st_next_crit` 1회 충전: 다음 직접 타격 묶음의 치명타를 확정하고 소비한다. 쓰지 않으면 다음 자기 차례 종료까지 유지
+- 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
+
+### V.183 `eff_syn_valkyrie_3`
+- 출처/구역: 시너지 syn_valkyrie (3단계) / `deployed_all`. 원안 행: v2.3 조정.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 아군 전원 DEF +35%, ATK +28%. 2단계의 "수배자" 지정을 그대로 유지한다: 전투 시작 및 매 2턴마다 적 최고 ATK 1명을 수배자로 지정해 2턴간 ATK -20%(`st_atk_down`), DEF -20%(`st_def_down`). AV 200/400/600/800/1000에 적 전방 전체에 2차례 동안 ATK -25%, DEF -30%. 아군의 직접 타격이 디버프가 있는 적에게 명중하면 그 대상의 행동을 15% 지연(1회)하고, 살아 있는 발키리 전방 학생 각각 에너지 +15(팀 전역 주기당 2회, root당 1회)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.184 `eff_eq_goggles`
+- 출처/구역: 장비 eq_abydos_goggles / `front`. 원안 행: v2.3 조정.
+- 실행: **장비 컨테이너: 고정 스탯 1회 + 고유 handler**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 소유자가 가하는 피해 +12%(상시). 소유자의 `basic_resolved`마다 에너지 +8. 피해 증가는 공격마다 누적하지 않는다
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.185 `eff_eq_headband`
+- 출처/구역: 장비 eq_cc_maid_headband / `front`. 원안 행: v2.3 조정.
+- 실행: **장비 컨테이너: 고정 스탯 1회 + 고유 handler**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 소유자의 후속(FOLLOWUP) 타격 피해 +35%(상시). 소유자가 양의 피해를 준 `followup_resolved`에서 자기 최대 HP 8% 치유(장비 인스턴스별 개인 차례당 1회, root당 1회). 후속 그룹의 여러 대상은 한 번으로 센다
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.186 `eff_eq_armband`
+- 출처/구역: 장비 eq_prefect_armband / `both`. 원안 행: v2.3 조정.
+- 실행: **장비 컨테이너: 고정 스탯 1회 + 고유 handler**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 디버프가 있는 적에게 주는 피해 +18%. 소유자가 직접 타격한 뒤 살아 있는 적 전방 대상에게 2차례 동안 DEF -20%. 감소율은 원래 DEF 기준 가산이며, 현재 DEF에 반복 복리로 깎지 않는다
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.187 `eff_en_choir_rear_buff`
+- 출처/구역: 적/보스 en_justina_choir_rear / `rear`. 원안 행: v2.3 조정.
+- 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 후방 정기 차례: 자기 진영의 살아 있는 전방 전체에 2차례 동안 ATK +20%, 각자 최대 HP 10% 치유
+- 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
+
+### V.188 `eff_boss_kaiten_aura`
+- 출처/구역: 적/보스 boss_kaiten_fx_mk0 / `front`. 원안 행: v2.3 조정.
+- 실행: **패시브/반응 컨테이너**. turn_start.
+- 본문: 자기 차례 시작에 이전 태세를 지운다. 홀수 차례에는 ATK +25%, 짝수 차례에는 DEF +40%와 최대 HP 12% 보호막. 능력치 태세는 다음 자기 차례 시작까지, 보호막은 2차례 유지. 패시브로 처리하므로 기본 자원 지급 없음
+- 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
+
+### V.189 `eff_boss_binah_sandstorm`
+- 출처/구역: 적/보스 boss_binah_decagram / `front`. 원안 행: v2.3 조정.
+- 실행: **패시브/반응 컨테이너**. damage_received.
+- 본문: 비나가 살아 있는 채로 HP 60% 이하에 처음 도달하면 상대 전방 전체에 ATK 160% `normal` 피해(치명 불가)와 2차례 SPD -15. 전투당 1회. 한 번의 타격으로 0 HP가 되면 발동하지 않는다
+- 제한: 전투당 1회; handler/root당 1회; 생존 조건 필수.
+
+v2.3.2 아리스 각성(2026-10-30): 아래 V.190~V.199는 아리스를 2코 기준선(2장)에 맞춰 내리고(조정 3개, 전방 충전 패시브 `eff_aris_passive`는 그대로), 각성 학생 AL-1S의 효과 6개와 고유 시너지 효과를 새로 둔다. 각성 규칙은 9장.
+
+### V.190 `eff_aris_skill`
+- 출처/구역: u_aris 전투 스킬 / `front`. 원안 행: v2.3 조정.
+- 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 전방 배치 시 적 최전열 1명에게 ATK 140% 피해 및 자신의 에너지 +20 추가 회복
+- 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
+
+### V.191 `eff_aris_ult`
+- 출처/구역: u_aris 필살기 / `front`. 원안 행: v2.3 조정.
+- 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 「빛이여!」 전방 배치 시 적 전방 전원에게 ATK 160/185/225% 광역 레일건 피해
+- 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
+
+### V.192 `eff_aris_rear_reg`
+- 출처/구역: u_aris 후방 정기 지원 / `rear`. 원안 행: v2.3 조정.
+- 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 후방 자신의 정기 차례에 적 전방 전체에 ATK 80% normal 피해. 전방 충전은 eff_aris_passive로 분리한다.
+- 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
+
+### V.193 `eff_al1s_skill`
+- 출처/구역: u_al1s 전투 스킬 / `front`. 원안 행: v2.3 신규.
+- 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 「신명 문자 해독」 적 전방 전원에게 ATK 170% 피해, 맞은 적 2턴간 SPD -15. 자신의 에너지 +25
+- 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
+
+### V.194 `eff_al1s_ult`
+- 출처/구역: u_al1s 필살기 / `front`. 원안 행: v2.3 신규.
+- 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 「빛이여, 이름 없는 신들의 이름으로」 적 전원에게 ATK 300/360/440% 방어 무시(`true`) 피해. 이 공격으로 처치한 적 1명마다 자신의 에너지 +15(최대 +45)
+- 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
+
+### V.195 `eff_al1s_passive`
+- 출처/구역: u_al1s 전방 패시브 / `front`. 원안 행: v2.3 신규.
+- 실행: **패시브/반응 컨테이너**. 자기 turn_start.
+- 본문: 전방 자기 turn_start마다 st_charge_aris 1중첩, 최대 3. 중첩당 가하는 피해 +12%, 전투 종료까지. 3중첩이 된 차례에 자신의 에너지 +30(전투당 1회)
+- 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
+
+### V.196 `eff_al1s_aura`
+- 출처/구역: u_al1s 전방 패시브·후방 반응 지원 / `both`. 원안 행: v2.3 신규.
+- 실행: **패시브/반응 컨테이너**. battle_start.
+- 본문: 존재 효과 「무명의 왕녀」: AL-1S가 출전해 있는 동안(전방·후방 모두) 적 전원이 받는 피해 +8%, 아군 게임개발부 구성원 SPD +10
+- 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
+
+### V.197 `eff_al1s_rear_reg`
+- 출처/구역: u_al1s 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
+- 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 후방 자신의 정기 차례에 적 전방 전체에 ATK 140% 방어 무시(`true`) 피해. 그 뒤 아군 전방 중 에너지가 가장 높은 1명에게 에너지 +15
+- 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
+
+### V.198 `eff_al1s_rear_react`
+- 출처/구역: u_al1s 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
+- 실행: **패시브/반응 컨테이너**. unit_defeated.
+- 본문: 「Key의 개입」 아군 전방이 전투불능이 될 때(`unit_defeated`) 적 전원에게 ATK 180% 피해(전투당 2회)
+- 제한: 전투당 2회; 개인 차례당1회, handler/root당 1회.
+
+### V.199 `eff_syn_uni_al1s`
+- 출처/구역: 시너지 syn_unique_nameless_princess (1단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 「빠밤! 레벨업」의 경험치와 레벨을 그대로 이어받아 계속 쌓는다: 적 처치 경험치 1(정예·보스는 3), 출전한 전투에서 이기면 1, 경험치 5마다 레벨업해 런이 끝날 때까지 AL-1S ATK +5% 영구 누적(레벨 10까지, +50%). 「아트라하시스의 방주」: AL-1S가 필살기를 쓸 때마다 방주 기동 1단계(전투 종료까지, 최대 3). 3단계가 된 즉시 방주 주포가 적 전원에게 ATK 600% 방어 무시(`true`) 피해를 주고 아군 전원 에너지 +40(전투당 1회). 「용사의 동료」: 게임개발부 구성원이 1명 이상 함께 출전해 있으면, AL-1S가 처음 전투불능이 될 때 HP 50%로 다시 일어나고 전투 종료까지 ATK +30%(전투당 1회)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+v2.3.5 플래티넘 단계(2026-10-31): 아래 V.200~V.208은 구성원이 많은 시너지 9종에 더한 플래티넘 단계다(12장). 1장 규칙대로 하위 단계에서 이어지는 효과를 모두 문장으로 다시 적고, 그 위에 시너지 고유 동작의 연쇄·누적 한 가지를 더한다.
+
+### V.200 `eff_syn_gehenna_plat`
+- 출처/구역: 시너지 syn_gehenna (4단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「만마전 총폭격」. 게헨나 구성원 ATK +60%, CRIT_DMG +0.75 증가(게헨나가 아닌 아군은 절반). 게헨나 전방 유닛이 스킬/필살기로 피해를 입힐 때 대상에게 ATK 70% 추가 폭발 피해(유닛당 턴당 1회). 게헨나 유닛이 스킬/필살기로 피해를 입힐 때 적 전방 전체에 ATK 110% 광역 폭격 및 자신의 에너지 +15 회복(턴당 최대 3회, root당 1회). 광역 폭격이 3번 터질 때마다 적 전원에게 ATK 180% "총폭격"을 하고, 총폭격 피해는 이번 전투에서 터질 때마다 +20%씩 누적된다
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.201 `eff_syn_millennium_plat`
+- 출처/구역: 시너지 syn_millennium (4단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「밀레니엄 프라이스」. 전투 시작 및 매 2턴 시작마다 아군 전방 전원에게 2턴간 최대 HP 40% 보호막 및 에너지 +25 부여. 밀레니엄 구성원 ATK +55%. 보호막 보유 전방 아군의 가하는 피해 +45% 및 CRIT +20% 증가. 아군 보호막이 피해로 깨지면 깨진 보호막 양의 60%를 그 공격자에게 방어 무시(`true`) 피해로 되돌린다(유닛당 턴당 1회)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.202 `eff_syn_trinity_plat`
+- 출처/구역: 시너지 syn_trinity (4단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「삼위일체의 종」. 트리니티 구성원 최대 HP +60%, ATK +60%, 받는 치유량 +65%. 아군 전방이 받는 치유량 +20%. 아군 전방이 치유받을 때 디버프 1개 해제 및 2턴간 가하는 피해 +40%, CRIT +25% 획득. 매 턴 첫 치유 시 팀 SP +1 및 전방 전원 에너지 +15 회복(턴당 1회). 최대 HP를 넘친 치유량은 "종소리"로 쌓이고, 아군 전원 최대 HP 합계의 25%에 이르면 적 전원에게 쌓인 양의 150% 피해를 준 뒤 다시 0부터 쌓는다
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.203 `eff_syn_hyakkiyako_plat`
+- 출처/구역: 시너지 syn_hyakkiyako (4단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「백야제 대행렬」. 아군 전원 SPD +24(백귀야행은 SPD +45, ATK +60%, CRIT +25%). 백귀야행 유닛이 기본 공격/스킬 해소 시 대상에게 ATK 45%의 `true` 피해(도깨비불) 추가 부여(유닛당 턴당 1회). 백귀야행 유닛이 행동 해소 시 최전열 적에게 ATK 90% `true` 피해 및 2턴간 받는 피해 +15% 부여, 이어서 적 전방 전체에 ATK 120% `true` 피해(백야제 만개화)를 입히고 아군 전방 전원 행동을 10% 당긴다(턴당 최대 4회, root당 1회). 한 턴에 백귀야행 유닛이 3번 이상 행동하면 그 턴 끝에 적 전원에게 ATK 200% `true` 피해(대행렬)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.204 `eff_syn_blaster_plat`
+- 출처/구역: 시너지 syn_blaster (3단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「연쇄 폭발」. 블래스터 구성원의 광역 공격 피해 +65%. 3명 이상 맞히면 대상들에게 2턴간 DEF -25%(`st_def_down`)를 걸고 팀 SP +1(SP는 턴당 1회). 블래스터의 광역 공격으로 적이 쓰러지면 그 자리에서 폭발해 같은 구역의 적 전원에게 블래스터 ATK 60% 피해. 폭발로 쓰러진 적도 다시 폭발한다(공격 1번당 최대 4연쇄)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.205 `eff_syn_healer_plat`
+- 출처/구역: 시너지 syn_healer (3단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「응급 연쇄 치료」. 힐러 구성원의 치유량 +60%. 최대 HP를 넘친 치유량은 2턴짜리 보호막으로 바뀜. 힐러가 치유할 때마다 HP 비율이 가장 낮은 다른 아군 1명에게 그 치유량의 50%를 한 번 더 치유한다. 힐러에게 치유받은 아군은 "회복의 축복" 1중첩(가하는 피해 +4%, 최대 5중첩, 전투 종료까지)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.206 `eff_syn_supporter_plat`
+- 출처/구역: 시너지 syn_supporter (3단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「총지원 태세」. 서포터 구성원이 건 버프 지속 +2턴. 전투 시작 시 팀 SP +2. 서포터가 버프를 걸면 대상 에너지 +15. 한 아군에게 서포터 버프가 3개 이상 겹치면 그 아군의 다음 필살기 피해 +60%(아군 1명당 전투당 2회)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.207 `eff_syn_controller_plat`
+- 출처/구역: 시너지 syn_controller (3단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「제압 전파」. 컨트롤러 구성원이 건 기절·침묵·지연 지속 +1턴(보스 제외). 제어 상태인 적이 받는 피해 +35%. 제어가 풀린 적의 다음 행동 20% 지연. 제어 상태인 적이 쓰러지면 그 제어를 남은 지속 그대로 가장 가까운 다른 적에게 옮긴다(보스에게는 지속 1턴으로 옮김)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.208 `eff_syn_sniper_plat`
+- 출처/구역: 시너지 syn_sniper (3단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 플래티넘 「연속 조준」. 스나이퍼 구성원 CRIT +45%. 전투 시작 시 HP가 가장 높은 적을 조준하고, 스나이퍼 구성원이 조준한 적에게 주는 치명 피해 +80%. 조준한 적이 쓰러지면 즉시 남은 적 중 HP가 가장 높은 적을 새로 조준하고 스나이퍼 구성원 전원 에너지 +30
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ## 6. 삭제된 효과
@@ -1381,7 +1558,18 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 |---|---|---|
 | `str_iron_frontline` | 보유 조건 태그 | `syn_tank` |
 | `str_mystic_resonance` | 약점 | `true` 피해를 가진 유닛(`u_iori`, `u_wakamo`)이나 시너지(`syn_hyakkiyako`)가 없으면 효율이 낮음. |
+| `str_rapid_fire_drill` | 약점 | 단발 필살기 위주의 느린 어태커에게는 효율이 낮음. |
+| `str_iron_frontline` | 제안 문장 | 전방 탱커(`syn_tank`) 유닛 2명 이상 보유 시 또는 2~3장 시작 시 등장 |
 | `str_overclock_core` | 약점 | 스킬 사용 빈도가 급증하므로 팀 SP 공급 수단(`u_himari`, `u_nagisa`, `syn_supporter`, 평타 요원)이 뒷받침되어야 함. |
+
+### 7.1 장비 추천 문구
+
+v2.3에서 폐기된 시너지 이름(스트라이커·어설트)이 남아 있던 추천 문구를 역할군 이름으로 바꾼다.
+
+| 장비 | v2.3 추천 |
+|---|---|
+| `eq_tactical_watch` | 추천: 어태커 전방 딜러(`u_iori`, `u_aru`, `u_mika`, `u_wakamo`) / 비추천: 순수 탱커 |
+| `eq_abydos_goggles` | 추천: 기본 공격·연사 중심 어태커(`u_shiroko`, `u_serika`, `u_izuna`, `u_neru`) |
 
 ## 8. 신규 학생 원작 근거
 
@@ -1427,3 +1615,119 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | `u_meru` | 히메키 메루 | 붉은겨울 · 지식해방전선 | 지식해방전선 부원 → 단일 침묵 |
 | `u_shigure` | 마요이 시구레 | 붉은겨울 · 227호 특별반 | 혹한 정류장에서 버티는 227호 특별반 → 장기전 딜러 |
 | `u_misaki` | 이마시노 미사키 | 아리우스 · 아리우스 스쿼드 | 아리우스 스쿼드 로켓 사수 → 후방 광역, 아군이 쓰러지면 보복 |
+| `u_al1s` | AL-1S | 밀레니엄 · 게임개발부 | 아리스의 본래 정체, "이름 없는 신들의 왕녀" AL-1S → 각성 전용 5코, 「아트라하시스의 방주」 |
+
+## 9. 각성
+
+일정 조건을 채운 학생이 런 도중 다른 학생으로 바뀐다. 표는 `scripts/extract-content.mjs`가 읽어 유닛의 `awakening`(원래 학생)·`awakenedFrom`(각성 학생)에 넣는다. 각성 학생은 상점에 나오지 않는다.
+
+| 원래 학생 | 각성 학생 | 경험치를 세는 고유 시너지 | 필요 경험치 | 필요 성급 |
+|---|---|---|---|---|
+| `u_aris` | `u_al1s` | `syn_unique_level_up` | 30 | 3 |
+
+- **경험치.** 「빠밤! 레벨업」(V.170)이 런 단위로 센다. 처치 1(정예·보스 3), 출전한 전투 승리 1. 아리스를 팔거나 합성해도 남고, 다시 사면 이어진다. 출전하지 않은 전투에서는 쌓이지 않는다.
+- **조건.** 경험치 30 이상, 그리고 3성 아리스를 보유(출전·대기). 둘 중 하나만 채우면 기다린다. 경험치가 먼저 차면 아리스를 3성으로 합성하는 순간을, 3성이 먼저면 경험치를 기다린다.
+- **시점.** 두 조건이 함께 채워진 때: 전투 정산 때, 또는 준비 단계에서 합성으로 3성이 된 즉시. 전투 도중에는 바뀌지 않는다. 이긴 전투든 진 전투든 같다.
+- **대상.** 3성 아리스 1명(여럿이면 출전 중인 쪽, 그다음 먼저 얻은 쪽). 그 자리와 장비를 그대로 두고 3성 AL-1S가 된다.
+- **나머지 아리스.** 각성하지 않은 아리스는 판매 규칙대로 자동 판매한다. 각성 뒤에는 상점에 아리스가 나오지 않는다.
+- **AL-1S.** 팔 수 없고 합성 대상도 아니다(같은 학생이 둘이 될 수 없음). 경험치와 레벨은 「이름 없는 신들의 왕녀」(V.199)가 이어받아 레벨 10(+50%)까지 계속 오른다. 「엔딩 크레딧」 등 아리스를 요구하는 조건은 AL-1S도 채운다.
+- **표시.** 아리스 카드에 "Lv.n · 각성까지 x/30 · ★3 필요"을 보여 주고, 각성할 때 전용 연출(이름 없는 신들의 왕녀)을 띄운다.
+- **기대 시점.** 아리스를 전방 딜러로 꾸준히 쓰면 전투당 경험치 2~4 → 2장 중반~후반에 경험치가 찬다. 2코 3성(9장)도 그 무렵 맞추는 것이 목표다. 후방에만 두거나 3성을 못 맞추면 3장, 또는 끝내 각성하지 못한다.
+
+## 10. 난이도 조정
+
+v2.3.3(2026-10-30 사용자 요청): 최종 보스를 뺀 일반·정예 노드와 1·2장 보스 노드를 지금보다 1.5배 어렵게 한다. v2.1 E.2의 노드 배율(`statScaleBps`, 적 HP·ATK에만 곱함, A16)을 ×1.5 한 값으로 대체한다. DEF·SPD는 배율을 받지 않는 기존 규칙 그대로다. 최종 보스 노드(`node_3_5`)만 호위 적까지 배율 ×1을 유지한다(배율이 노드 단위라 보스와 호위를 따로 올릴 수 없음). `scripts/extract-content.mjs`가 이 표로 E.2 배율을 덮어쓰며, "원래 배율" 칸이 E.2와 다르면 멈춘다.
+
+| 노드 | 유형 | 원래 배율 (E.2) | 새 배율 |
+|---|---|---|---|
+| `node_1_1` | normal | ×0.85 | ×1.275 |
+| `node_1_2` | normal | ×0.95 | ×1.425 |
+| `node_1_3` | normal | ×1 | ×1.5 |
+| `node_1_4` | elite | ×1 | ×1.5 |
+| `node_1_5` | boss | ×1 | ×1.5 |
+| `node_2_1` | normal | ×1.15 | ×1.725 |
+| `node_2_2` | normal | ×1.25 | ×1.875 |
+| `node_2_3` | normal | ×1.35 | ×2.025 |
+| `node_2_4` | elite | ×1.05 | ×1.575 |
+| `node_2_5` | boss | ×1 | ×1.5 |
+| `node_3_1` | normal | ×1.2 | ×1.8 |
+| `node_3_2` | normal | ×1.3 | ×1.95 |
+| `node_3_3` | normal | ×1.35 | ×2.025 |
+| `node_3_4` | elite | ×1.4 | ×2.1 |
+| `node_3_5` | boss | ×1 | ×1 |
+
+- 체감: HP와 ATK가 함께 1.5배라, 같은 편성으로 적을 쓰러뜨리는 시간과 받는 피해가 모두 1.5배가 된다.
+- 적 1명당 패배 피해·보상·노드 구성은 바꾸지 않는다. 밸런스 확인은 M6 시드 배치 시뮬레이션에서 한다.
+
+## 11. 상점 재고·레벨 XP
+
+v2.3.4(2026-10-30 사용자 요청): 고코스트 학생이 저코스트보다 적게 나오도록 학생마다 장수를 정해 둔다. 규칙은 롤토체스(TFT) 공유 챔피언 풀을 1인용으로 옮긴 것이다. v2.1 5.2의 "상점은 개인 무한 재고" 문장을 이 장이 대체하고, 나머지 5.2 규칙(코스트 추첨, 5번 칸 추천 모드, 노드 진입 무료 갱신, 잠금)은 그대로 둔다.
+
+### 11.1 코스트별 장수
+
+| 코스트 | 학생 1명당 장수 |
+|---|---:|
+| 1 | 30 |
+| 2 | 25 |
+| 3 | 18 |
+| 4 | 10 |
+| 5 | 9 |
+
+- **남은 장수.** 학생마다 `장수 − 소유 장수 − 지금 상점에 나온 칸 수`. 소유 장수는 대기석과 편성의 그 학생을 1성 환산으로 센다(1성 1장, 2성 3장, 3성 9장). 시작 학생도 소유에 들어간다.
+- **돌아오는 장.** 학생을 팔면 1성 환산 장수가 그대로 돌아온다. 상점을 갱신하면 사지 않은 칸도 돌아온다. 잠근 상점의 칸은 계속 빠져 있다.
+- **칸 추첨.** 코스트는 5.1 확률표대로 뽑고, 그 코스트 안에서는 남은 장수에 비례해 뽑는다(TFT와 같음). 뽑힌 장은 같은 상점의 다음 칸 추첨에서 이미 빠져 있다. 5번 칸 추천 모드도 추천 집합 안에서 남은 장수 비례로 뽑는다.
+- **바닥난 코스트.** 뽑힌 코스트의 남은 장수 합이 0이면, 남은 장수가 있는 코스트끼리 확률표 값을 비례 재분배해 다시 뽑는다. 모든 코스트가 0이면 그 칸은 빈칸이다.
+- **3성 제외.** 3성을 보유한 학생은 그 3성을 팔기 전까지 상점에 나오지 않는다(추천 칸 포함). 대기석의 3성도 보유로 친다.
+- **각성.** 각성 학생은 원래대로 상점에 없고, 각성을 마친 원래 학생도 나오지 않는다(9장).
+- 1인용이라 다른 플레이어가 장을 가져가지 않는다. 그래서 장수 제한은 주로 4·5코 학생을 여러 장 모을 때 체감된다(5코 3성은 9장 전부가 필요).
+
+### 11.2 레벨별 XP
+
+v2.2 1.2의 "다음 XP" 줄을 대체한다. XP 구매(4G에 4 XP)와 전투당 XP 3은 그대로다.
+
+| 레벨 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 다음 XP (v2.2) | 2 | 6 | 10 | 18 | 26 | 34 | 42 | — |
+| 다음 XP (v2.3.4) | **4** | **8** | **14** | **24** | **36** | **48** | **60** | — |
+
+- 누적 XP: 레벨 6은 18 → 26, 레벨 8은 62 → 86, 레벨 10은 138 → 194(약 1.4배).
+- 레벨이 곧 편성 인원이라, 같은 골드로 쓸 수 있는 학생 수와 4·5코 확률이 모두 늦게 오른다.
+- `scripts/extract-content.mjs`가 이 표로 XP를 덮어쓰며, v2.2 줄이 v2.2 개정안과 다르면 멈춘다.
+
+## 12. 플래티넘 단계와 이스터에그 시너지
+
+v2.3.5(2026-10-31 사용자 요청): "소속 인원이 많은 시너지는 6 이상의 고등급 시너지를 만들고 플래티넘 시너지로 만들어. 난이도 극악의 기존 플래티넘 시너지는 이스터에그 시너지로 바꿔. 플래티넘 시너지는 강력하지만, 이스터에그 시너지만큼 강하지 않아."
+
+### 12.1 플래티넘 단계를 받는 시너지
+
+대상은 구성원 9명 이상이면서 합법 편성으로 6명 이상 출전할 수 있는 시너지다. 요구 인원은 지금 최고 단계 + 2명(최소 6명)이다.
+
+| 시너지 | 구성원 | 최대 합법 | 기존 단계 | 플래티넘 단계 |
+|---|---:|---:|---|---|
+| 게헨나 | 16 | 10 | 2/4/6 | **8명** 「만마전 총폭격」 |
+| 밀레니엄 | 22 | 10 | 2/4/6 | **8명** 「밀레니엄 프라이스」 |
+| 트리니티 | 19 | 10 | 2/4/6 | **8명** 「삼위일체의 종」 |
+| 백귀야행 | 10 | 8 | 2/4/5 | **7명** 「백야제 대행렬」 |
+| 블래스터 | 22 | 10 | 2/4/6 | **8명** 「연쇄 폭발」 |
+| 힐러 | 9 | 8 | 2/4 | **6명** 「응급 연쇄 치료」 |
+| 서포터 | 19 | 9 | 2/4 | **6명** 「총지원 태세」 |
+| 컨트롤러 | 10 | 10 | 2/4 | **6명** 「제압 전파」 |
+| 스나이퍼 | 9 | 7 | 2/4 | **6명** 「연속 조준」 |
+
+- 구성원 수는 AL-1S를 아리스와 같은 사람으로 센 값이다.
+- **탱커(13명)·어태커(18명)는 빠진다.** 둘 다 전원 전방 전용이라 전방 4칸을 넘을 수 없어 6명에 닿지 않는다.
+- 붉은겨울(7명)·아비도스(6명)·동아리는 인원이 적어 대상이 아니다.
+- 오파츠 집계 보정(R04 트리니티 동아리 +1, L02 에덴 조약의 트리니티·아리우스 동시 집계)도 플래티넘 단계에 그대로 쓴다. 예를 들어 에덴 조약이 있으면 트리니티 6명 + 아리우스 2명으로 트리니티 8명이 된다.
+
+### 12.2 이스터에그 시너지
+
+기존 플래티넘 7종(「Vanitas vanitatum」, 「엔딩 크레딧」, 「코드네임 00~05」, 「티파티 삼두정치」, 「아비도스 최후의 방어선」, 「키보토스 학원 대항전」, 「총력전 만점」)은 분류만 `platinum`에서 `easteregg`로 바꾼다. ID(`syn_plat_*`)·조건·효과·아이콘은 그대로다. 저장 데이터와 오파츠 문장이 이 ID를 가리키고 있어서 ID는 바꾸지 않는다.
+
+- 「티파티 삼두정치」의 "켜진 진영 시너지가 한 단계 위로"는 플래티넘 단계까지 올린다. 게헨나 6명에 티파티가 켜지면 게헨나 플래티넘 단계가 켜진다.
+- 오파츠 R04 「트리니티 동아리 연합 인가증」의 "플래티넘 제외"는 "이스터에그 제외"로 읽는다.
+
+### 12.3 위력 순서
+
+- **일반 단계 < 플래티넘 단계.** 플래티넘 단계는 바로 아래 단계의 수치를 약 1.3~1.5배로 올리고, 시너지 고유 동작에 연쇄·누적 하나(총폭격 누적, 보호막 반사, 종소리, 대행렬, 연쇄 폭발, 연쇄 치료, 버프 중첩 필살기, 제어 전파, 연속 조준)를 더한다.
+- **플래티넘 단계 < 이스터에그.** 플래티넘은 숫자와 연쇄로 세지만 규칙을 깨지 않는다. 부활, 전원 HP 1 버티기, 다른 시너지 단계 올리기, 자동 레일건, 전투 시작 즉시 행동처럼 규칙을 깨는 효과는 이스터에그에만 둔다.
+- 수치는 제안값이다. 진짜 전투 엔진(M2·M3)이 들어오면 같은 덱으로 플래티넘과 이스터에그를 비교해, 플래티넘이 이스터에그를 넘으면 플래티넘을 내린다.

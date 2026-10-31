@@ -17,7 +17,7 @@
       2,
       3
     ],
-    "recommendation": "추천: 스트라이커/어설트 전방 딜러(`u_iori`, `u_aru`, `u_mika`, `u_wakamo`) / 비추천: 순수 탱커",
+    "recommendation": "추천: 어태커 전방 딜러(`u_iori`, `u_aru`, `u_mika`, `u_wakamo`) / 비추천: 순수 탱커",
     "description": "치명타 확률과 치명타 피해, 속도를 고르게 높이고 전투 시작 시 에너지를 15 부여합니다."
   },
   {
@@ -77,7 +77,7 @@
       2,
       3
     ],
-    "recommendation": "추천: 기본 공격/연사 중심 어설트(`u_shiroko`, `u_serika`, `u_izuna`, `u_neru`)",
+    "recommendation": "추천: 기본 공격·연사 중심 어태커(`u_shiroko`, `u_serika`, `u_izuna`, `u_neru`)",
     "description": "기본 공격 해소 시(`basic_resolved`) 자신의 에너지를 8 추가 회복하고 가하는 피해가 +12% 증가합니다."
   },
   {

@@ -1,4 +1,4 @@
-// 정식 콘텐츠 팩(ba-content-2.2.0). JSON은 scripts/extract-content.mjs가 기획서에서 만든다 — 손으로 고치지 않는다.
+// 정식 콘텐츠 팩(ba-content-2.4.0). JSON은 scripts/extract-content.mjs가 기획서에서 만든다 — 손으로 고치지 않는다.
 import type {
   AssetEntry,
   ContentPack,
@@ -7,6 +7,7 @@ import type {
   EnemyDefinition,
   EquipmentDefinition,
   NodeDefinition,
+  OopartDefinition,
   PackManifest,
   RulesConfig,
   StatusDefinition,
@@ -21,6 +22,7 @@ import synergies from './synergies.json';
 import effects from './effects.json';
 import equipment from './equipment.json';
 import strategies from './strategies.json';
+import ooparts from './ooparts.json';
 import enemies from './enemies.json';
 import nodes from './nodes.json';
 import statuses from './statuses.json';
@@ -36,6 +38,7 @@ export const contentPack: ContentPack = {
   effects: effects as EffectDefinition[],
   equipment: equipment as EquipmentDefinition[],
   strategies: strategies as StrategyDefinition[],
+  ooparts: ooparts as OopartDefinition[],
   enemies: enemies as EnemyDefinition[],
   nodes: nodes as NodeDefinition[],
   statuses: statuses as StatusDefinition[],

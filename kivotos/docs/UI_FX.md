@@ -53,7 +53,7 @@ HTML-in-Canvas는 Chrome 실험 기능이라(플래그 또는 Origin Trial 토�
 ### 배경 일러스트·컷신(NAI)
 
 - `public/keyart/`: 메인 배경 `bg_home`, 장 배경 `bg_ch1~3`, 컷신 `cut_sortie`(런 설정)·`cut_victory`(장 클리어)·`cut_defeat`(런 실패)·`cut_clear`(런 클리어). 1920×1088 WebP.
-- `public/cutins/<unitId>.webp`: 학생별 필살기 컷인 1536×640. 전투 시작 때 아군 것만 미리 받고, 없으면 초상화 컷인으로 대신한다.
+- `public/cutins/<unitId>.webp`: 학생별 필살기 컷인 1536×640(101명 모두, v2.3 신규 41명은 2026-10-30 추가). 전투 시작 때 아군 것만 미리 받고, 없으면 초상화 컷인으로 대신한다.
 - 셰이더가 켜지면 배경 캔버스가 이 그림을 텍스처로 받아 유체로 굴절시키고 커서 시차를 준다(`fx.scene()`). 꺼지면 `.k-scene` CSS 배경으로 같은 그림을 깐다. 화면마다 흰 막(wash) 세기를 달리해 글자 가독성을 지킨다(`app.ts` `applyScene`).
 - 원본 PNG·생성 스크립트·시드는 프로젝트 파일 `keyart/`(`generate_keyart.py`, `generate_cutins.py`, `manifest*.json`).
 

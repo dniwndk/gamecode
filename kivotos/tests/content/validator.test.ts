@@ -44,8 +44,20 @@ describe('validateContentPack가 잡아야 하는 결함', () => {
   it('최고 단계를 합법 편성으로 채울 수 없으면 실패', () => {
     const pack = clone();
     const valkyrie = pack.synergies.find((s) => s.id === 'syn_valkyrie')!;
-    valkyrie.tiers.push({ threshold: 4, effectIds: ['eff_syn_valkyrie_3'], spec: '' });
+    valkyrie.tiers.push({ threshold: 4, grade: 'normal', effectIds: ['eff_syn_valkyrie_3'], spec: '' });
     expect(codes(pack)).toContain('SYNERGY_UNREACHABLE');
+  });
+
+  it('플래티넘 단계는 진영·역할군의 마지막 단계이고 6명 이상', () => {
+    const pack = clone();
+    const club = pack.synergies.find((s) => s.id === 'syn_gourmet')!;
+    club.tiers.at(-1)!.grade = 'platinum';
+    const healer = pack.synergies.find((s) => s.id === 'syn_healer')!;
+    healer.tiers[0].grade = 'platinum';
+    const msgs = validateContentPack(pack).errors.filter((e) => e.code === 'SYNERGY_TIERS').map((e) => e.message);
+    expect(msgs.some((m) => m.includes('진영·역할군에만'))).toBe(true);
+    expect(msgs.some((m) => m.includes('마지막 단계'))).toBe(true);
+    expect(msgs.some((m) => m.includes('< 6'))).toBe(true);
   });
 
   it('ID 중복과 형식 오류', () => {

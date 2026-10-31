@@ -180,6 +180,15 @@
     "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
   },
   {
+    "id": "portrait_u_aris",
+    "unitId": "u_aris",
+    "kind": "portrait",
+    "path": "portraits/u_aris.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
     "id": "portrait_u_ayane",
     "unitId": "u_ayane",
     "kind": "portrait",
@@ -675,15 +684,6 @@
     "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
   },
   {
-    "id": "portrait_u_aris",
-    "unitId": "u_aris",
-    "kind": "portrait",
-    "path": "portraits/u_aris.webp",
-    "present": true,
-    "fallback": "initials_faction_color",
-    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
-  },
-  {
     "id": "portrait_u_aru",
     "unitId": "u_aru",
     "kind": "portrait",
@@ -796,6 +796,15 @@
     "unitId": "u_akira",
     "kind": "portrait",
     "path": "portraits/u_akira.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
+    "id": "portrait_u_al1s",
+    "unitId": "u_al1s",
+    "kind": "portrait",
+    "path": "portraits/u_al1s.webp",
     "present": true,
     "fallback": "initials_faction_color",
     "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"

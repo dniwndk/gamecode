@@ -6,6 +6,7 @@ import {
 import { cls, h } from '../dom';
 import { icon } from '../icons';
 import { fxList } from '../summary';
+import { oopartChip } from './ooparts';
 import type { RunView, UiState, UnitInstanceView, Zone } from '../model';
 
 type Loc = { zone: Zone; index: number };
@@ -220,13 +221,14 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
         const chip = h('span', { class: 'k-strat-chip', tabindex: 0 }, icon('strategy', 16), st?.name ?? id);
         if (st) attachTip(ctx, chip, () => h('div', { class: 'k-strat-tip' }, h('strong', null, st.name), strategyEffects(ctx, st.effectIds)));
         return chip;
-      })) : null);
+      })) : null,
+      run.ooparts.owned.length ? h('div', { class: 'k-strats k-oop-owned' }, h('small', null, `보유 오파츠 ${run.ooparts.owned.length}`), ...run.ooparts.owned.map((id) => oopartChip(ctx, id))) : null);
   }
 
   function benchRow(): HTMLElement {
     const sel = ctx.ui.selected ? find(ctx.ui.selected) : null;
     return h('div', { class: 'k-bench' },
-      h('div', { class: 'k-bench-label' }, icon('bench', 22), h('b', null, '대기석'), h('small', null, `${run.board.bench.filter(Boolean).length}/9`)),
+      h('div', { class: 'k-bench-label' }, icon('bench', 22), h('b', null, '대기석'), h('small', null, `${run.board.bench.filter(Boolean).length}/${run.board.bench.length}`)),
       h('div', { class: 'k-bench-slots' }, ...run.board.bench.map((inst, i) => slot('bench', i, inst))),
       h('div', { class: cls('k-sell', sel && 'is-armed'), 'data-drop': 'sell', role: 'button', tabindex: sel ? 0 : -1,
         onclick: () => { if (sel) void sell(sel.inst); },

@@ -22,13 +22,16 @@ export interface BoardCapacity {
  */
 export function synergyComposition(
   synergy: Pick<SynergyDefinition, 'memberIds' | 'countScope'>,
-  unitsById: ReadonlyMap<string, Pick<UnitDefinition, 'position'>>,
+  unitsById: ReadonlyMap<string, Pick<UnitDefinition, 'position' | 'awakenedFrom'>>,
   board: BoardCapacity,
 ): SynergyComposition {
   let frontOnly = 0;
   let rearOnly = 0;
   let dual = 0;
   for (const id of synergy.memberIds) {
+    // 각성 학생은 원래 학생과 한 편성에 함께 설 수 없으므로 같은 사람으로 센다(v2.3 1장).
+    const from = unitsById.get(id)?.awakenedFrom;
+    if (from && synergy.memberIds.includes(from)) continue;
     const position = unitsById.get(id)?.position;
     if (position === 'front_only') frontOnly++;
     else if (position === 'rear_only') rearOnly++;
