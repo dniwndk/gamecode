@@ -5,7 +5,7 @@ import { h } from '../dom';
 import { icon } from '../icons';
 import type { UiState } from '../model';
 
-const CHAPTER_NAME = ['', '아비도스 사막 시가지', '밀레니엄 폐허', '성소의 하늘'];
+const CHAPTER_NAME = ['', '아비도스 사막 시가지', '밀레니엄 폐허', '성소의 하늘', '단절된 네트워크', '방주의 심장'];
 
 export function mountNextNode(ctx: Ctx, s: UiState): Screen {
   const run = s.run!;

@@ -113,8 +113,16 @@ describe('5번 칸 추천 모드 표시', () => {
         expect(['u_serika', ...syn.memberIds]).toContain(b.slots[k]);
       });
     }
-    // 50% 추천 모드 × 해당 코스트에 추천 학생이 있을 때만 → 0보다 많고 전부는 아니다
     expect(flagged).toBeGreaterThan(30);
     expect(flagged).toBeLessThan(300);
+  });
+  it('추천 확률은 뽑힌 코스트와 상관없이 정확히 50%(v2.4.4)', () => {
+    // 게임개발부는 1코가 없어 예전 방식(코스트 먼저)에서는 레벨 6 적중이 33% 안팎이었다
+    const rng = Rng.forStream('HALF', 'shop');
+    const n = 20000;
+    let hit = 0;
+    for (let i = 0; i < n; i++) if (rollShopDetailed(pack, { level: 6, owned: [], trackedSynergyId: 'syn_game_dev' }, rng).recommended[4]) hit++;
+    expect(hit / n).toBeGreaterThan(0.48);
+    expect(hit / n).toBeLessThan(0.52);
   });
 });

@@ -278,10 +278,11 @@ export function topBar(ctx: Ctx, run: RunView, opts: { title: string; onBack?: (
   return bar;
 }
 
-/** 15칸 노드 진행 줄(장마다 일반3·정예1·보스1) */
+/** 노드 진행 줄(장마다 일반3·정예1·보스1, 장 수는 런 기록 길이에서) */
 export function nodeTrack(run: RunView, compact = false): HTMLElement {
   const el = h('div', { class: cls('k-track', compact && 'is-compact'), 'aria-label': `${run.chapter}장 ${run.battle}전투` });
-  for (let c = 1; c <= 3; c++) {
+  const chapters = Math.max(1, Math.ceil(run.nodeHistory.length / 5));
+  for (let c = 1; c <= chapters; c++) {
     const ch = h('div', { class: cls('k-track-ch', c === run.chapter && 'is-cur') }, h('span', { class: 'k-track-label' }, `${c}장`));
     for (let b = 1; b <= 5; b++) {
       const idx = (c - 1) * 5 + b - 1;

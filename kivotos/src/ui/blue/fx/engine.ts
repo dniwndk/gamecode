@@ -34,7 +34,7 @@ interface Env {
   noFlash(): boolean;
 }
 
-const SKY: Record<number, [string, string]> = { 1: ['#c3e6ff', '#128cff'], 2: ['#b2ecf2', '#0ea5b7'], 3: ['#d4d7ff', '#5b6cff'] };
+const SKY: Record<number, [string, string]> = { 1: ['#c3e6ff', '#128cff'], 2: ['#b2ecf2', '#0ea5b7'], 3: ['#d4d7ff', '#5b6cff'], 4: ['#b9d4f5', '#1f6fd6'], 5: ['#f2d9c4', '#d98a2b'] };
 const MAX_CARDS = 64;
 const MAX_BURSTS = 12;
 /** 광택·기울기를 받는 카드들 */
