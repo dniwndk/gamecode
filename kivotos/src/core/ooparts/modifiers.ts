@@ -158,14 +158,15 @@ const APPLY: Record<string, Apply> = {
   oop_millennium_prize: (m) => { m.millenniumEquipSlotBonus = 1; m.millenniumEquipStatBps = 5000; },
   oop_trinity_club_charter: (m) => { m.trinityClubBonus = 1; },
   oop_prophecy_circuit: (m) => { m.eliteBossDamageBps += 2000; },
-  oop_schale_annex_key: (m) => { m.shopSlots = Math.max(m.shopSlots ?? 0, 6); m.freeRerollPerPrep = Math.max(m.freeRerollPerPrep, 1); },
+  // v2.3.7(2026-10-31 사용자 요청): 상점 6칸을 없애고 준비 단계마다 무료 새로고침 4회
+  oop_schale_annex_key: (m) => { m.freeRerollPerPrep = Math.max(m.freeRerollPerPrep, 4); },
   oop_empty_chair: (m) => { m.deployLimitBonus += 1; },
   oop_afterglow_of_color: (m) => { m.atkBps += 2000; m.healShieldReceivedBps -= 5000; m.runHpLossPerBattle += 3; },
   oop_gematria_contract: (m) => { m.settlementGold += 4; },
   oop_prototype_zero: (m) => { m.frontUltEnergy = 70; m.frontSkillCdBonus = 1; },
   // ── 전설: ★는 재료 효과를 다시 켜고, 대가는 없앤다(1.3 「정화」) ──
   oop_shittim_chest: (m) => {
-    m.shopSlots = 6; m.freeRerollPerPrep = 1; m.recommendedChanceBps = 8000; m.strategyChoices = 4; m.strategyPicks = 2;
+    m.shopSlots = 6; m.freeRerollPerPrep = 4; m.recommendedChanceBps = 8000; m.strategyChoices = 4; m.strategyPicks = 2;
     m.aronaSlot = true; m.aronaMergeXp = 2; m.pranaLock = true;
   },
   oop_eden_treaty: (m) => { m.trinityClubBonus = 1; m.edenFactions = true; },

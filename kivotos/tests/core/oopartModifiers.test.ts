@@ -28,7 +28,7 @@ describe('오파츠 보정값', () => {
 
   it('전설은 재료 효과를 이어받고 대가를 없앤다', () => {
     expect(oopartModifiers(['oop_prototype_infinity'])).toMatchObject({ frontUltEnergy: 70, frontSkillCdBonus: 0, exhaustion: false, frontSpd: 15, spStartBonus: 1, spRefillUses: 2, spMax: 6, spOnUltimate: true });
-    expect(oopartModifiers(['oop_shittim_chest'])).toMatchObject({ shopSlots: 6, freeRerollPerPrep: 1, recommendedChanceBps: 8000, strategyChoices: 4, strategyPicks: 2, aronaSlot: true, pranaLock: true });
+    expect(oopartModifiers(['oop_shittim_chest'])).toMatchObject({ shopSlots: 6, freeRerollPerPrep: 4, recommendedChanceBps: 8000, strategyChoices: 4, strategyPicks: 2, aronaSlot: true, pranaLock: true });
     expect(oopartModifiers(['oop_yume_notebook'])).toMatchObject({ rerollCost: 1, interestCapDelta: 0, defeatDamageReduction: 5, lastStandHp: 30, abydosLastStand: 3 });
     expect(oopartModifiers(['oop_nameless_relic'])).toMatchObject({ atkBps: 2000, healShieldReceivedBps: 0, runHpLossPerBattle: 0, firstFallHealBps: 1500, mysticRevives: 2 });
     expect(oopartModifiers(['oop_prototype_zero'])).toMatchObject({ frontUltEnergy: 70, frontSkillCdBonus: 1 });
@@ -45,7 +45,8 @@ describe('오파츠 보정값', () => {
 });
 
 describe('상점 오파츠', () => {
-  it('샬레 별관 열쇠: 상점 6칸', () => {
+  it('샬레 별관 열쇠: 상점 칸은 그대로, 준비 단계마다 무료 새로고침 4회 (v2.3.7)', () => {
+    expect(oopartModifiers(['oop_schale_annex_key'])).toMatchObject({ shopSlots: null, freeRerollPerPrep: 4 });
     expect(rollShop(pack, { level: 5, owned: [], trackedSynergyId: null, slots: 6 }, new Rng(5))).toHaveLength(6);
   });
 

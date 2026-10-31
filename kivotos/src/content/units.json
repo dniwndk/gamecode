@@ -1005,17 +1005,17 @@
     "synergyIds": [
       "syn_valkyrie",
       "syn_life_safety",
-      "syn_controller"
+      "syn_tank"
     ],
     "baseStats": {
-      "hp": 1680,
-      "atk": 95,
-      "def": 82,
+      "hp": 1750,
+      "atk": 90,
+      "def": 88,
       "spd": 100,
       "critBps": 1000,
       "critDamageBps": 5000
     },
-    "role": "전방 교란 브루저 / 적 공격력 약화",
+    "role": "도발하는 교란 탱커 / 적 공격력 약화",
     "abilityIds": {
       "basic": "eff_common_basic_atk",
       "skill": "eff_kirino_skill",
@@ -1804,17 +1804,17 @@
     "synergyIds": [
       "syn_gehenna",
       "syn_prefect",
-      "syn_attacker"
+      "syn_tank"
     ],
     "baseStats": {
-      "hp": 1280,
-      "atk": 172,
-      "def": 55,
-      "spd": 106,
-      "critBps": 2400,
+      "hp": 1900,
+      "atk": 140,
+      "def": 72,
+      "spd": 104,
+      "critBps": 2000,
       "critDamageBps": 5000
     },
-    "role": "고화력 단일·연쇄 딜러 / 방어 관통 추격",
+    "role": "선도부 돌격 탱커 / 방어 관통 추격",
     "abilityIds": {
       "basic": "eff_common_basic_atk",
       "skill": "eff_iori_skill",
@@ -2071,17 +2071,17 @@
     "synergyIds": [
       "syn_shanhaijing",
       "syn_genryumon",
-      "syn_controller"
+      "syn_tank"
     ],
     "baseStats": {
-      "hp": 1340,
-      "atk": 156,
-      "def": 56,
-      "spd": 114,
-      "critBps": 2000,
+      "hp": 1900,
+      "atk": 138,
+      "def": 74,
+      "spd": 110,
+      "critBps": 1800,
       "critDamageBps": 5000
     },
-    "role": "다중 디버프 연사 딜러 / 적 능력치 대폭 약화",
+    "role": "현룡문 경호 탱커 / 적 능력치 약화",
     "abilityIds": {
       "basic": "eff_common_basic_atk",
       "skill": "eff_mina_skill",
@@ -2339,18 +2339,18 @@
     "synergyIds": [
       "syn_millennium",
       "syn_cc",
-      "syn_blaster",
+      "syn_tank",
       "syn_plat_codename"
     ],
     "baseStats": {
-      "hp": 1460,
-      "atk": 166,
-      "def": 68,
+      "hp": 1900,
+      "atk": 150,
+      "def": 78,
       "spd": 106,
-      "critBps": 2200,
+      "critBps": 2000,
       "critDamageBps": 5000
     },
-    "role": "아비 에슈흐 관통 포격 / 방어 무시 딜탱",
+    "role": "아비 에슈흐 장갑 탱커 / 관통 포격",
     "abilityIds": {
       "basic": "eff_common_basic_atk",
       "skill": "eff_toki_skill",
@@ -2920,17 +2920,17 @@
     "synergyIds": [
       "syn_trinity",
       "syn_justice",
-      "syn_attacker"
+      "syn_tank"
     ],
     "baseStats": {
-      "hp": 1650,
-      "atk": 195,
-      "def": 62,
-      "spd": 112,
-      "critBps": 2500,
+      "hp": 2300,
+      "atk": 175,
+      "def": 80,
+      "spd": 110,
+      "critBps": 2200,
       "critDamageBps": 5000
     },
-    "role": "광폭한 산탄 결전 딜러 / 맞을수록 강해짐",
+    "role": "광폭한 산탄 결전 탱커 / 맞을수록 강해짐",
     "abilityIds": {
       "basic": "eff_common_basic_atk",
       "skill": "eff_tsurugi_skill",

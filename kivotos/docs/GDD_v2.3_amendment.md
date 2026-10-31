@@ -15,6 +15,7 @@
 - **이스터에그 2종(학원 대항전·총력전 만점)은 구성원 명단이 없다.** 집계 범위 `special`: 출전 편성 전체로 판정하며, 구성원 수 기반 도달 가능성 검사에서 빠진다.
 - 전략 「철벽의 전선」의 보유 조건 태그를 `syn_tank`로 바꾼다(7장).
 - **상점 재고·레벨 XP(v2.3.4, 11장).** 상점을 무한 재고에서 롤토체스식 코스트별 장수 제한으로 바꾸고, 3성을 보유한 학생은 그 3성을 팔기 전까지 상점에 나오지 않는다. 레벨업에 필요한 XP를 약 40% 늘린다.
+- **탱커 보강(v2.3.7, 14장).** 키리노·이오리·미나·토키·츠루기를 탱커로 옮긴다(탱커 13 → 18명). 시너지 중심 조합 38개 중 탱커가 자연스럽게 들어가는 조합이 23개 → 29개(61% → 76%), 구성원에 탱커가 있는 시너지가 17개 → 24개(45% → 63%).
 - **시간 제한 폐지·난이도 재상향(v2.3.6, 13장).** 1000AV를 넘기면 패배하던 시간 제한을 없앤다. 전투는 한쪽 전방이 전멸할 때까지 이어지고, 1000AV부터는 양쪽 피해가 100AV마다 +20%씩 함께 커지는 「격화」로 교착만 막는다. 시간 초과가 사라져 쉬워진 만큼 15개 노드 전부(최종 보스 포함)의 적 HP·ATK 배율을 다시 올린다.
 - **난이도 상향(v2.3.3, 10장).** 최종 보스 노드를 뺀 14개 노드(일반·정예·1·2장 보스)의 적 능력치 배율(HP·ATK)을 1.5배로 올린다.
 - **아리스를 2코로 내리고 「AL-1S」 각성을 넣는다(v2.3.2, 9장).** 고유 시너지 「빠밤! 레벨업」 경험치가 30이고 아리스가 3성이면 이름 없는 신들의 왕녀 「AL-1S」(5코, 상점 없음)로 바뀐다. AL-1S는 효과 6개와 고유 시너지 「이름 없는 신들의 왕녀」를 가진다. 학생 101명, 시너지 64종.
@@ -75,7 +76,7 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_hibiki` | 네코츠카 히비키 | 2 | rear_only | 950/134/40/102/0.12/0.5 | syn_millennium, syn_engineering, syn_blaster | — | — | — | — | `eff_hibiki_rear_reg` | — | 후방까지 닿는 박격포 |
 | `u_karin` | 카쿠다테 카린 | 2 | rear_only | 1000/152/45/102/0.22/0.5 | syn_millennium, syn_cc, syn_sniper, syn_plat_codename | — | — | — | — | `eff_karin_rear_reg` | `eff_karin_rear_react` | 후방 대물 저격 딜러 / 고방어 적 추가 타격 |
 | `u_kayoko` | 오니카타 카요코 | 2 | dual | 1240/128/58/108/0.16/0.5 | syn_gehenna, syn_problem_solver, syn_controller | `eff_common_basic_atk` | `eff_kayoko_skill` | `eff_kayoko_ult` | — | `eff_kayoko_rear_reg` | — | 전후방 광역 제어 |
-| `u_kirino` | 나카츠카사 키리노 | 2 | front_only | 1680/95/82/100/0.1/0.5 | syn_valkyrie, syn_life_safety, syn_controller | `eff_common_basic_atk` | `eff_kirino_skill` | `eff_kirino_ult` | `eff_kirino_passive` | — | — | 전방 교란 브루저 / 적 공격력 약화 |
+| `u_kirino` | 나카츠카사 키리노 | 2 | front_only | 1750/90/88/100/0.1/0.5 | syn_valkyrie, syn_life_safety, syn_tank | `eff_common_basic_atk` | `eff_kirino_skill` | `eff_kirino_ult` | `eff_kirino_passive` | — | — | 도발하는 교란 탱커 / 적 공격력 약화 |
 | `u_maki` | 코누리 마키 | 2 | rear_only | 950/130/40/106/0.12/0.5 | syn_millennium, syn_veritas, syn_blaster | — | — | — | — | `eff_maki_rear_reg` | — | 그래피티 광역 둔화 |
 | `u_mashiro` | 시즈야마 마시로 | 2 | rear_only | 980/150/42/102/0.22/0.5 | syn_trinity, syn_justice, syn_sniper | — | — | — | — | `eff_mashiro_rear_reg` | — | 정의의 저격 / 아군을 쓰러뜨린 적 응징 |
 | `u_megu` | 시모쿠라 메구 | 2 | front_only | 1220/136/48/106/0.15/0.5 | syn_gehenna, syn_hot_spring, syn_blaster | `eff_common_basic_atk` | `eff_megu_skill` | `eff_megu_ult` | — | — | — | 화염방사 광역 화상 / 화상 연장 |
@@ -99,7 +100,7 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_hanako` | 우라와 하나코 | 3 | rear_only | 1150/135/52/106/0.08/0.5 | syn_trinity, syn_make_up, syn_healer | — | — | — | — | `eff_hanako_rear_reg` | — | 전방 전체 치유 / 세 번째마다 두 배 |
 | `u_hifumi` | 아지타니 히후미 | 3 | rear_only | 1120/140/50/106/0.1/0.5 | syn_trinity, syn_make_up, syn_supporter | — | — | — | — | `eff_hifumi_rear_reg` | — | 페로로 인형 미끼 + 전방 공격력 버프 |
 | `u_hiyori` | 츠치나가 히요리 | 3 | rear_only | 1080/148/45/104/0.18/0.5 | syn_arius, syn_sniper, syn_plat_vanitas | — | — | — | — | `eff_hiyori_rear_reg` | `eff_hiyori_rear_react` | 후방 방어력 대폭 파괴 포격수 |
-| `u_iori` | 시로미 이오리 | 3 | front_only | 1280/172/55/106/0.24/0.5 | syn_gehenna, syn_prefect, syn_attacker | `eff_common_basic_atk` | `eff_iori_skill` | `eff_iori_ult` | `eff_iori_passive` | — | — | 고화력 단일·연쇄 딜러 / 방어 관통 추격 |
+| `u_iori` | 시로미 이오리 | 3 | front_only | 1900/140/72/104/0.2/0.5 | syn_gehenna, syn_prefect, syn_tank | `eff_common_basic_atk` | `eff_iori_skill` | `eff_iori_ult` | `eff_iori_passive` | — | — | 선도부 돌격 탱커 / 방어 관통 추격 |
 | `u_izuna` | 쿠다 이즈나 | 3 | front_only | 1260/158/46/124/0.22/0.5 | syn_hyakkiyako, syn_ninjutsu, syn_attacker | `eff_common_basic_atk` | `eff_izuna_skill` | `eff_izuna_ult` | `eff_izuna_passive` | — | — | 초고속 연타 닌자 / 수리검 후속 공격 |
 | `u_kasumi` | 키누가와 카스미 | 3 | rear_only | 1100/158/44/104/0.18/0.5 | syn_gehenna, syn_hot_spring, syn_blaster | — | — | — | — | `eff_kasumi_rear_reg` | `eff_kasumi_rear_react` | 후방 굴착 폭파 / 처치마다 폭파 강화 |
 | `u_kazusa` | 쿄야마 카즈사 | 3 | front_only | 1350/168/52/114/0.22/0.5 | syn_trinity, syn_sweets, syn_attacker, syn_unique_caspalug | `eff_common_basic_atk` | `eff_kazusa_skill` | `eff_kazusa_ult` | — | — | — | 전직 불량배 "캬스파리그" 단일 딜러 |
@@ -107,7 +108,7 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_koyuki` | 쿠로사키 코유키 | 3 | dual | 1350/150/56/110/0.15/0.5 | syn_millennium, syn_seminar, syn_controller | `eff_common_basic_atk` | `eff_koyuki_skill` | `eff_koyuki_ult` | — | `eff_koyuki_rear_reg` | — | 동전 던지기 도박 제어 / 후방 지연 |
 | `u_marina` | 이케쿠라 마리나 | 3 | front_only | 1880/135/82/106/0.14/0.5 | syn_red_winter, syn_rw_office, syn_tank | `eff_common_basic_atk` | `eff_marina_skill` | `eff_marina_ult` | `eff_marina_passive` | — | — | 불굴의 선봉 브루저 / 광역 진형 돌파 |
 | `u_mimori` | 미즈하 미모리 | 3 | rear_only | 1100/138/50/106/0.08/0.5 | syn_hyakkiyako, syn_training, syn_supporter | — | — | — | — | `eff_mimori_rear_reg` | — | 수행으로 다진 디버프 저항 + 에너지 지원 |
-| `u_mina` | 코노에 미나 | 3 | front_only | 1340/156/56/114/0.2/0.5 | syn_shanhaijing, syn_genryumon, syn_controller | `eff_common_basic_atk` | `eff_mina_skill` | `eff_mina_ult` | `eff_mina_passive` | — | — | 다중 디버프 연사 딜러 / 적 능력치 대폭 약화 |
+| `u_mina` | 코노에 미나 | 3 | front_only | 1900/138/74/110/0.18/0.5 | syn_shanhaijing, syn_genryumon, syn_tank | `eff_common_basic_atk` | `eff_mina_skill` | `eff_mina_ult` | `eff_mina_passive` | — | — | 현룡문 경호 탱커 / 적 능력치 약화 |
 | `u_misaki` | 이마시노 미사키 | 3 | rear_only | 1100/158/44/104/0.18/0.5 | syn_arius, syn_blaster, syn_plat_vanitas | — | — | — | — | `eff_misaki_rear_reg` | `eff_misaki_rear_react` | 후방 로켓 광역 / 아군이 쓰러지면 보복 |
 | `u_moe` | 카제쿠라 모에 | 3 | rear_only | 1100/160/42/105/0.2/0.5 | syn_srt, syn_blaster | — | — | — | — | `eff_moe_rear_reg` | `eff_moe_rear_react` | 후방 무차별 융단 폭격 |
 | `u_mutsuki` | 아사기 무츠키 | 3 | dual | 1220/168/44/109/0.2/0.5 | syn_gehenna, syn_problem_solver, syn_blaster | `eff_common_basic_atk` | `eff_mutsuki_skill` | `eff_mutsuki_ult` | — | `eff_mutsuki_rear_reg` | `eff_mutsuki_rear_react` | 광역 폭발 딜러 / 후방 지뢰 기폭 |
@@ -115,7 +116,7 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_saki` | 소라이 사키 | 3 | dual | 1380/152/62/108/0.18/0.5 | syn_srt, syn_supporter | `eff_common_basic_atk` | `eff_saki_skill` | `eff_saki_ult` | — | `eff_saki_rear_reg` | `eff_saki_rear_react` | 전후방 교범 지휘관 / 기절 및 공격력 버프 |
 | `u_shigure` | 마요이 시구레 | 3 | front_only | 1350/165/54/112/0.2/0.5 | syn_red_winter, syn_class_227, syn_attacker | `eff_common_basic_atk` | `eff_shigure_skill` | `eff_shigure_ult` | — | — | — | 버틸수록 강해지는 장기전 딜러 |
 | `u_shizuko` | 카와와 시즈코 | 3 | rear_only | 1150/125/55/106/0.1/0.5 | syn_hyakkiyako, syn_healer | — | — | — | — | `eff_shizuko_rear_reg` | `eff_shizuko_rear_react` | 후방 전체 보호막 / 치명타 버프 |
-| `u_toki` | 아스마 토키 | 3 | front_only | 1460/166/68/106/0.22/0.5 | syn_millennium, syn_cc, syn_blaster, syn_plat_codename | `eff_common_basic_atk` | `eff_toki_skill` | `eff_toki_ult` | `eff_toki_passive` | — | — | 아비 에슈흐 관통 포격 / 방어 무시 딜탱 |
+| `u_toki` | 아스마 토키 | 3 | front_only | 1900/150/78/106/0.2/0.5 | syn_millennium, syn_cc, syn_tank, syn_plat_codename | `eff_common_basic_atk` | `eff_toki_skill` | `eff_toki_ult` | `eff_toki_passive` | — | — | 아비 에슈흐 장갑 탱커 / 관통 포격 |
 | `u_tomoe` | 사시로 토모에 | 3 | rear_only | 1100/140/50/106/0.1/0.5 | syn_red_winter, syn_rw_office, syn_supporter | — | — | — | — | `eff_tomoe_rear_reg` | `eff_tomoe_rear_react` | 서기장 보좌 에너지 지원 / SP 최대일 때 공격력 버프 |
 | `u_utaha` | 시라이시 우타하 | 3 | rear_only | 1150/138/52/104/0.1/0.5 | syn_millennium, syn_engineering, syn_supporter | — | — | — | — | `eff_utaha_rear_reg` | — | 긴급 수리 보호막 / 피해 감소 |
 | `u_yuzu` | 하나오카 유즈 | 3 | rear_only | 1050/160/40/100/0.2/0.5 | syn_millennium, syn_game_dev, syn_blaster, syn_plat_ending_credits | — | — | — | — | `eff_yuzu_rear_reg` | `eff_yuzu_rear_react` | 사물함 속 유탄 난사 / 개전 은신 |
@@ -132,7 +133,7 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_neru` | 미카모 네루 | 4 | front_only | 1650/188/68/126/0.25/0.5 | syn_millennium, syn_cc, syn_attacker, syn_plat_codename | `eff_common_basic_atk` | `eff_neru_skill` | `eff_neru_ult` | `eff_neru_passive` | — | — | 초고속 단일 폭딜 브루저 / 피격 반격 사격 |
 | `u_niya` | 텐지 니야 | 4 | rear_only | 1300/158/55/110/0.12/0.5 | syn_hyakkiyako, syn_yinyang, syn_supporter | — | — | — | — | `eff_niya_rear_reg` | `eff_niya_rear_react` | 무작위 점괘 지원 / 주기적 SP 공급 |
 | `u_noa` | 우시오 노아 | 4 | rear_only | 1300/160/55/112/0.12/0.5 | syn_millennium, syn_seminar, syn_supporter | — | — | — | — | `eff_noa_rear_reg` | `eff_noa_rear_react` | 전방 공격력 대폭 버프 / 같은 적 반복 타격 강화 |
-| `u_tsurugi` | 켄자키 츠루기 | 4 | front_only | 1650/195/62/112/0.25/0.5 | syn_trinity, syn_justice, syn_attacker | `eff_common_basic_atk` | `eff_tsurugi_skill` | `eff_tsurugi_ult` | `eff_tsurugi_passive` | — | — | 광폭한 산탄 결전 딜러 / 맞을수록 강해짐 |
+| `u_tsurugi` | 켄자키 츠루기 | 4 | front_only | 2300/175/80/110/0.22/0.5 | syn_trinity, syn_justice, syn_tank | `eff_common_basic_atk` | `eff_tsurugi_skill` | `eff_tsurugi_ult` | `eff_tsurugi_passive` | — | — | 광폭한 산탄 결전 탱커 / 맞을수록 강해짐 |
 | `u_akira` | 키요스미 아키라 | 5 | front_only | 2000/232/66/124/0.3/0.5 | syn_outlaw, syn_attacker | `eff_common_basic_atk` | `eff_akira_skill` | `eff_akira_ult` | `eff_akira_passive`, `eff_akira_aura` | — | — | 적 버프 강탈·무력화 / 존재 효과: 개전 버프 강탈 |
 | `u_al1s` | AL-1S | 5 | dual | 2050/240/66/104/0.25/0.5 | syn_millennium, syn_game_dev, syn_blaster, syn_unique_nameless_princess, syn_plat_ending_credits | `eff_common_basic_atk` | `eff_al1s_skill` | `eff_al1s_ult` | `eff_al1s_passive`, `eff_al1s_aura` | `eff_al1s_rear_reg` | `eff_al1s_rear_react`, `eff_al1s_aura` | 각성 전용(상점 없음) 광역 방어 무시 캐리 / 존재 효과: 적 전원 받는 피해 증가 |
 | `u_hikari` | 타치바나 히카리 | 5 | front_only | 1800/220/72/122/0.26/0.5 | syn_highlander, syn_blaster | `eff_common_basic_atk` | `eff_hikari_skill` | `eff_hikari_ult` | `eff_hikari_passive` | — | — | 전방 버프 증폭기 / 초특급 열차포 광역 타격 |
@@ -191,13 +192,13 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | `syn_knowledge_front` | 지식해방전선 | club | `deployed_all` | 2: eff_syn_knowledge_front_2 | 1/1/0 | 2 | momiji, meru |
 | `syn_class_227` | 227호 특별반 | club | `deployed_all` | 2: eff_syn_class_227_2 | 1/1/0 | 2 | nodoka, shigure |
 | `syn_life_safety` | 생활안전국 | club | `deployed_all` | 2: eff_syn_life_safety_2 | 2/0/0 | 2 | fubuki, kirino |
-| `syn_tank` | 탱커 | role | `deployed_all` | 2: eff_syn_tank_2; 3: eff_syn_tank_3; 4: eff_syn_tank_4 | 13/0/0 | 4 | haruka, yuuka, tsubaki, marina, atsuko, hoshino, miyako, akemi, hoshino_armed, eimi, mine, natsu, tsukuyo |
-| `syn_attacker` | 어태커 | role | `deployed_all` | 2: eff_syn_attacker_2; 3: eff_syn_attacker_3; 4: eff_syn_attacker_4 | 18/0/0 | 4 | serika, asuna, shiroko, nozomi, iori, izuna, aru, neru, mika, wakamo, akira, izumi, midori, tsurugi, reisa, kazusa, yoshimi, shigure |
+| `syn_tank` | 탱커 | role | `deployed_all` | 2: eff_syn_tank_2; 3: eff_syn_tank_3; 4: eff_syn_tank_4 | 18/0/0 | 4 | haruka, yuuka, tsubaki, marina, atsuko, hoshino, miyako, akemi, hoshino_armed, eimi, mine, natsu, tsukuyo, kirino, iori, mina, toki, tsurugi |
+| `syn_attacker` | 어태커 | role | `deployed_all` | 2: eff_syn_attacker_2; 3: eff_syn_attacker_3; 4: eff_syn_attacker_4 | 16/0/0 | 4 | serika, asuna, shiroko, nozomi, izuna, aru, neru, mika, wakamo, akira, izumi, midori, reisa, kazusa, yoshimi, shigure |
 | `syn_sniper` | 스나이퍼 | role | `deployed_all` | 2: eff_syn_sniper_2; 4: eff_syn_sniper_4; 6(플래티넘): eff_syn_sniper_plat | 6/3/0 | 7 | fubuki, hasumi, karin, shun, azusa, hiyori, saori, haruna, mashiro |
-| `syn_blaster` | 블래스터 | role | `deployed_all` | 2: eff_syn_blaster_2; 4: eff_syn_blaster_4; 6: eff_syn_blaster_6; 8(플래티넘): eff_syn_blaster_plat | 12/7/3 | 10 | junko, michiru, rabu, momoi, momiji, nonomi, mutsuki, toki, moe, aris, al1s, hina, hikari, akari, kasumi, megu, akane, yuzu, maki, hibiki, kaede, chise, misaki |
+| `syn_blaster` | 블래스터 | role | `deployed_all` | 2: eff_syn_blaster_2; 4: eff_syn_blaster_4; 6: eff_syn_blaster_6; 8(플래티넘): eff_syn_blaster_plat | 11/7/3 | 10 | junko, michiru, rabu, momoi, momiji, nonomi, mutsuki, moe, aris, al1s, hina, hikari, akari, kasumi, megu, akane, yuzu, maki, hibiki, kaede, chise, misaki |
 | `syn_healer` | 힐러 | role | `deployed_all` | 2: eff_syn_healer_2; 4: eff_syn_healer_4; 6(플래티넘): eff_syn_healer_plat | 0/7/2 | 8 | serina, kokona, fuuka, ayane, koharu, shizuko, chinatsu, hanako, hanae |
 | `syn_supporter` | 서포터 | role | `deployed_all` | 2: eff_syn_supporter_2; 4: eff_syn_supporter_4; 6(플래티넘): eff_syn_supporter_plat | 1/16/2 | 9 | kotama, nodoka, saki, ako, cherino, himari, rio, kisaki, juri, chihiro, noa, utaha, kotori, hifumi, nagisa, airi, mimori, niya, tomoe |
-| `syn_controller` | 컨트롤러 | role | `deployed_all` | 2: eff_syn_controller_2; 4: eff_syn_controller_4; 6(플래티넘): eff_syn_controller_plat | 3/3/4 | 10 | suzumi, hare, kayoko, kirino, mina, miyu, kanna, koyuki, seia, meru |
+| `syn_controller` | 컨트롤러 | role | `deployed_all` | 2: eff_syn_controller_2; 4: eff_syn_controller_4; 6(플래티넘): eff_syn_controller_plat | 1/3/4 | 8 | suzumi, hare, kayoko, miyu, kanna, koyuki, seia, meru |
 | `syn_unique_dawn_horus` | 「으헤~ 아저씨는 좀 쉴래」 | unique | `front_only` | 1: eff_syn_uni_hoshino | 1/0/0 | 1 | hoshino |
 | `syn_unique_outlaw_boss` | 「계획대로야!」 | unique | `front_only` | 1: eff_syn_uni_aru | 1/0/0 | 1 | aru |
 | `syn_unique_head_prefect` | 「조금만 쉬고 싶어」 | unique | `front_only` | 1: eff_syn_uni_hina | 1/0/0 | 1 | hina |
@@ -362,7 +363,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.019 `eff_kirino_skill`
 - 출처/구역: u_kirino 전투 스킬 / `front`. 원안 행: v2.3 조정.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
-- 본문: 적 최전열 2명에게 ATK 115% 피해 및 2턴간 ATK -20%(`st_atk_down`) 부여
+- 본문: 적 최전열 2명에게 ATK 115% 피해 및 2턴간 ATK -20%(`st_atk_down`) 부여. 이어서 자신이 1턴간 도발(`st_taunt`)하고 2턴간 DEF +20%(`st_def_up`)(v2.3.7 탱커 전환)
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
 ### V.020 `eff_kirino_ult`
@@ -686,7 +687,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.073 `eff_tsurugi_skill`
 - 출처/구역: u_tsurugi 전투 스킬 / `front`. 원안 행: v2.3 신규.
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
-- 본문: 적 최전열 1명에게 ATK 100% 피해 2회
+- 본문: 적 최전열 1명에게 ATK 100% 피해 2회. 이어서 자신이 1턴간 도발(`st_taunt`)(v2.3.7 탱커 전환: 맞을수록 강해지는 패시브와 맞물림)
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
 
 ### V.074 `eff_tsurugi_ult`
@@ -1505,6 +1506,20 @@ v2.3.5 플래티넘 단계(2026-10-31): 아래 V.200~V.208은 구성원이 많�
 - 본문: 플래티넘 「연속 조준」. 스나이퍼 구성원 CRIT +45%. 전투 시작 시 HP가 가장 높은 적을 조준하고, 스나이퍼 구성원이 조준한 적에게 주는 치명 피해 +80%. 조준한 적이 쓰러지면 즉시 남은 적 중 HP가 가장 높은 적을 새로 조준하고 스나이퍼 구성원 전원 에너지 +30
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
+v2.3.7 탱커 전환(2026-10-31, 14장): 아래 V.209~V.210은 탱커로 옮긴 학생의 전투 스킬을 대체한다. 키리노(V.019)·츠루기(V.073)는 위 항목 본문을 고쳤고, 토키는 원래 스킬이 자기 보호막이라 그대로 둔다.
+
+### V.209 `eff_mina_skill`
+- 출처/구역: u_mina 전투 스킬 / `front`. 원안 행: v2.3 조정.
+- 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 적 최전열 2명에게 ATK 120% 피해 및 2턴간 ATK -20%(`st_atk_down`), DEF -20%(`st_def_down`) 동시 부여. 이어서 자신에게 2턴간 최대 HP 18% 보호막
+- 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
+
+### V.210 `eff_iori_skill`
+- 출처/구역: u_iori 전투 스킬 / `front`. 원안 행: v2.3 조정.
+- 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 자신이 1턴간 도발(`st_taunt`)하고 2턴간 최대 HP 20% 보호막을 얻은 뒤 적 최전열 1명에게 ATK 140% `normal` 피해
+- 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
+
 ## 6. 삭제된 효과
 
 폐기한 역할·장갑·고유 시너지의 단계 효과와, 밸런스 조정으로 학생에게서 뗀 효과 43개다. 카탈로그에서 뺀다. v2.2 3장의 한탕(`syn_jackpot`)과 그 효과 3개는 이 판부터 읽지 않는다.
@@ -1709,14 +1724,15 @@ v2.3.5(2026-10-31 사용자 요청): "소속 인원이 많은 시너지는 6 이
 | 밀레니엄 | 22 | 10 | 2/4/6 | **8명** 「밀레니엄 프라이스」 |
 | 트리니티 | 19 | 10 | 2/4/6 | **8명** 「삼위일체의 종」 |
 | 백귀야행 | 10 | 8 | 2/4/5 | **7명** 「백야제 대행렬」 |
-| 블래스터 | 22 | 10 | 2/4/6 | **8명** 「연쇄 폭발」 |
+| 블래스터 | 21 | 10 | 2/4/6 | **8명** 「연쇄 폭발」 |
 | 힐러 | 9 | 8 | 2/4 | **6명** 「응급 연쇄 치료」 |
 | 서포터 | 19 | 9 | 2/4 | **6명** 「총지원 태세」 |
-| 컨트롤러 | 10 | 10 | 2/4 | **6명** 「제압 전파」 |
+| 컨트롤러 | 8 | 8 | 2/4 | **6명** 「제압 전파」 |
 | 스나이퍼 | 9 | 7 | 2/4 | **6명** 「연속 조준」 |
 
 - 구성원 수는 AL-1S를 아리스와 같은 사람으로 센 값이다.
-- **탱커(13명)·어태커(18명)는 빠진다.** 둘 다 전원 전방 전용이라 전방 4칸을 넘을 수 없어 6명에 닿지 않는다.
+- v2.3.7(14장)에서 키리노·미나가 탱커로 옮겨 컨트롤러는 8명이 됐지만, 합법 출전 8명으로 6명 플래티넘에 닿으므로 플래티넘 단계를 그대로 둔다.
+- **탱커(18명)·어태커(16명)는 빠진다.** 둘 다 전원 전방 전용이라 전방 4칸을 넘을 수 없어 6명에 닿지 않는다.
 - 붉은겨울(7명)·아비도스(6명)·동아리는 인원이 적어 대상이 아니다.
 - 오파츠 집계 보정(R04 트리니티 동아리 +1, L02 에덴 조약의 트리니티·아리우스 동시 집계)도 플래티넘 단계에 그대로 쓴다. 예를 들어 에덴 조약이 있으면 트리니티 6명 + 아리우스 2명으로 트리니티 8명이 된다.
 
@@ -1794,3 +1810,41 @@ v2.1 4.3의 "1000AV 초과 시 패배"와 "행동시점 1000AV인 행동도 처�
 - 노드 승률은 그 노드까지 살아남은 판만 센다. 1장 보스·2장 보스·3장 정예는 v2.3.5에서 시간 초과로 지던 판이 많아, 배율을 올려도 승률이 오히려 오른다. 대신 정예·일반 노드가 더 아파져 런 전체는 어려워진다.
 - 격화 이후까지 가는 전투는 1장 보스 이후로 흔하다(노드 평균 870~1,840AV, 최종 보스 최대 약 3,900AV). 흉내 엔진의 행동 수 안전장치(4,000회)에 닿은 전투는 없다.
 - 수치는 흉내 전투 기준이다. 진짜 전투 엔진(M2·M3)이 들어오면 같은 스크립트로 다시 재고 조정한다.
+
+## 14. 탱커 보강
+
+v2.3.7(2026-10-31 사용자 요청): "전체적으로 탱커가 모자란 느낌이야. 시너지를 중심으로 조합을 짜보고 최소 모든 조합에 절반 이상은 자연스럽게 탱커가 들어갈 수 있게 해줘."
+
+### 14.1 조합 측정
+
+학원 진영 12개 + 동아리 26개, 모두 38개 시너지마다 조합을 하나씩 짠다. 그 시너지를 도달 가능한 최고 단계까지 모은 뒤(코스트 높은 순), 켜지는 시너지 단계가 가장 많이 늘어나는 학생을 하나씩 더해 레벨 8 편성(8명, 전방 4·후방 6 규칙)을 채운다. 탱커를 일부러 고르지 않는다. `python3 scripts/balance/comp-tanks.py`.
+
+| 판본 | 탱커 수 | 탱커가 들어간 조합 | 구성원에 탱커가 있는 시너지 |
+|---|---:|---:|---:|
+| v2.3.6 | 13 | 23 / 38 (61%) | 17 / 38 (45%) |
+| **v2.3.7** | **18** | **29 / 38 (76%)** | **24 / 38 (63%)** |
+
+- v2.3.6의 61%는 체리노·마리나(붉은겨울 사무국)나 호시노처럼 다른 시너지를 채우려다 우연히 들어간 탱커가 많았다. 시너지 자체에 탱커가 있는 비율은 절반에 못 미쳤다. 특히 게헨나 본진(1코 하루카뿐), 발키리, 선도부, C&C, 정의실현위원회, 현룡문·산해경, 생활안전국 조합은 탱커 없이 짜였다.
+- v2.3.7 뒤에도 탱커가 없는 조합: 하이랜더, 미식연구회, 온천개발부, 게임개발부, 엔지니어부, 티파티, 자경단, 매화원, 227호 특별반. 대부분 2~3명짜리 동아리이거나 딜러·후방 지원 컨셉이 분명한 곳이라 억지로 넣지 않았다.
+
+### 14.2 탱커로 옮긴 학생
+
+원작 설정상 최전선에서 버티는 역할이 자연스러운 전방 학생만 골랐다. 역할군 태그를 `syn_tank`로 바꾸고, 2장 기준선의 탱커 HP에 맞춰 HP·DEF를 올리고 ATK를 내렸다. 소속 진영·동아리·이스터에그 태그는 그대로다.
+
+| 학생 | 코스트 | 이전 역할군 | 능력치 (HP/ATK/DEF/SPD/CRIT) | 탱커 동작 | 채운 조합 |
+|---|---:|---|---|---|---|
+| 키리노 | 2 | 컨트롤러 | 1680/95/82/100/0.1 → **1750/90/88**/100/0.1 | 스킬 뒤 1턴 도발 + DEF +20% (V.019) | 발키리, 생활안전국 |
+| 이오리 | 3 | 어태커 | 1280/172/55/106/0.24 → **1900/140/72**/104/0.2 | 스킬: 도발 + HP 20% 보호막 후 140% 사격 (V.210) | 게헨나, 선도부 |
+| 미나 | 3 | 컨트롤러 | 1340/156/56/114/0.2 → **1900/138/74/110/0.18** | 스킬: 디버프 120% 후 HP 18% 보호막 (V.209) | 산해경, 현룡문 |
+| 토키 | 3 | 블래스터 | 1460/166/68/106/0.22 → **1900/150/78**/106/0.2 | 원래 스킬이 자기 보호막(아비 에슈흐) | C&C, 밀레니엄 |
+| 츠루기 | 4 | 어태커 | 1650/195/62/112/0.25 → **2300/175/80/110/0.22** | 스킬 뒤 1턴 도발 + 맞을수록 ATK (V.073) | 정의실현위원회, 트리니티 |
+
+- 역할군 인원: 탱커 13 → 18, 어태커 18 → 16, 컨트롤러 10 → 8, 블래스터 22 → 21. 탱커는 여전히 전원 전방 전용이라 단계는 2/3/4 그대로다.
+- 컨트롤러는 8명이 되어 12장의 플래티넘 대상 기준(9명 이상)보다 적지만, 합법 출전 8명으로 6명 플래티넘에 닿으므로 플래티넘 단계를 그대로 둔다.
+- 필살기·패시브는 바꾸지 않았다. 딜러였던 학생이라 탱커 중에서는 ATK가 높은 편(딜탱)이다.
+- 봇 600판 재측정(오파츠 없음): 15전 중 승리 7.85 → 8.1, 완주 4% → 5%. 전방이 덜 무너져 조금 쉬워졌다.
+
+### 14.3 오파츠 「샬레 별관 열쇠」
+
+같은 요청에서 R06 「샬레 별관 열쇠」의 상점 칸 5 → 6을 없애고, 준비 단계마다 새로고침 4회 무료로 바꿨다(원본 docs/OOPARTS_v1.md). 전설 L01 「싯딤의 상자」의 ★ 계승도 "새로고침 4회 무료"가 되고, 아로나 추천 칸은 L01 자체 효과로 6번째 칸을 더해서 둔다.
+

@@ -102,11 +102,10 @@ describe('미리보기 런: 오파츠 효과', () => {
     const run = d.get().run!;
     expect(run.board.bench).toHaveLength(10);
     expect(run.deployLimit).toBe(run.level + 1);
-    expect(run.shop.slots).toHaveLength(6);
-    // 샬레 별관 열쇠: 준비 단계마다 첫 새로고침 무료, 그다음은 블랙마켓 카드 1G
-    expect(run.shop.rerollCost).toBe(0);
+    expect(run.shop.slots).toHaveLength(5);
+    // 샬레 별관 열쇠: 준비 단계마다 새로고침 4회 무료, 그다음은 블랙마켓 카드 1G
     const gold = run.gold;
-    await d.send('REROLL_SHOP');
+    for (let k = 0; k < 4; k++) { expect(d.get().run!.shop.rerollCost).toBe(0); await d.send('REROLL_SHOP'); }
     expect(d.get().run!.gold).toBe(gold);
     expect(d.get().run!.shop.rerollCost).toBe(1);
   });

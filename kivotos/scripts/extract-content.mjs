@@ -566,7 +566,7 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-2.7.0',
+  contentVersion: 'ba-content-2.8.0',
   rulesVersion: rules.rulesVersion,
   expectedCounts: { units: 101, synergies: 64, equipment: 12, strategies: 13, enemies: 13, nodes: 15, effects: 470, dialogueFiles: 101, statuses: 20, ooparts: 55 },
   sources: [

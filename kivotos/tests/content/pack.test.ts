@@ -14,7 +14,7 @@ const unitEffectCount = (u: (typeof pack.units)[number]) => {
   return new Set(Object.values(rest).flatMap((v) => (v === null ? [] : Array.isArray(v) ? v : [v]))).size;
 };
 
-describe('정식 콘텐츠 팩 ba-content-2.7.0', () => {
+describe('정식 콘텐츠 팩 ba-content-2.8.0', () => {
   it('정적 검증 오류 0건', () => {
     const report = validateContentPack(pack);
     expect(report.errors).toEqual([]);
@@ -32,9 +32,9 @@ describe('정식 콘텐츠 팩 ba-content-2.7.0', () => {
     expect(byPos).toEqual([53, 36, 12]);
   });
 
-  it('효과 출처: 부록 C 그대로 206 + v2.3 교체·추가 208 + 카이저 론 1 + 오파츠 55', () => {
+  it('효과 출처: 부록 C 그대로 204 + v2.3 교체·추가 210 + 카이저 론 1 + 오파츠 55', () => {
     const prefix = (p: string) => pack.effects.filter((e) => e.catalogNo.startsWith(p)).length;
-    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.')]).toEqual([206, 208, 1, 55]);
+    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.')]).toEqual([204, 210, 1, 55]);
     expect(byId(pack.effects, 'eff_aris_passive').catalogNo).toBe('C.300');
     expect(pack.effects.map((e) => e.id)).not.toContain('eff_syn_jackpot_2');
   });
@@ -191,6 +191,16 @@ describe('정식 콘텐츠 팩 ba-content-2.7.0', () => {
     const add = [1.2, 1.2, 1.3, 1.3, 1.4, 1.4, 1.4, 1.4, 1.4, 1.5, 1.5, 1.4, 1.5, 1.25, 2.4];
     expect(pack.nodes.map((n) => n.statScaleBps)).toEqual(pack.nodes.map((n, i) => Math.round((n.id === 'node_3_5' ? e2[i] : e2[i] * 1.5) * add[i])));
     expect(pack.nodes.filter((n) => n.type === 'boss').map((n) => n.statScaleBps)).toEqual([21000, 22500, 24000]);
+  });
+
+  it('탱커 보강 v2.3.7: 탱커 18명, 키리노·이오리·미나·토키·츠루기 전환 (v2.3 14장)', () => {
+    const tank = byId(pack.synergies, 'syn_tank').memberIds;
+    expect(tank).toHaveLength(18);
+    for (const id of ['u_kirino', 'u_iori', 'u_mina', 'u_toki', 'u_tsurugi']) {
+      expect(tank).toContain(id);
+      expect(byId(pack.units, id).position).toBe('front_only');
+    }
+    expect(byId(pack.synergies, 'syn_controller').memberIds).toHaveLength(8);
   });
 
   it('노드: 장마다 일반3·정예1·보스1, 최종전은 비나+골리앗+성가대 (E.2)', () => {

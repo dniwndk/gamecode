@@ -1422,21 +1422,26 @@
     ],
     "memberIds": [
       "u_haruka",
+      "u_kirino",
       "u_natsu",
       "u_tsubaki",
       "u_tsukuyo",
       "u_yuuka",
       "u_atsuko",
       "u_eimi",
+      "u_iori",
       "u_marina",
+      "u_mina",
+      "u_toki",
       "u_akemi",
       "u_hoshino",
       "u_mine",
       "u_miyako",
+      "u_tsurugi",
       "u_hoshino_armed"
     ],
     "documented": {
-      "frontOnly": 13,
+      "frontOnly": 18,
       "rearOnly": 0,
       "dual": 0,
       "maxLegalCount": 4
@@ -1482,19 +1487,17 @@
       "u_nozomi",
       "u_reisa",
       "u_shiroko",
-      "u_iori",
       "u_izuna",
       "u_kazusa",
       "u_shigure",
       "u_aru",
       "u_neru",
-      "u_tsurugi",
       "u_akira",
       "u_mika",
       "u_wakamo"
     ],
     "documented": {
-      "frontOnly": 18,
+      "frontOnly": 16,
       "rearOnly": 0,
       "dual": 0,
       "maxLegalCount": 4
@@ -1607,14 +1610,13 @@
       "u_moe",
       "u_mutsuki",
       "u_nonomi",
-      "u_toki",
       "u_yuzu",
       "u_al1s",
       "u_hikari",
       "u_hina"
     ],
     "documented": {
-      "frontOnly": 12,
+      "frontOnly": 11,
       "rearOnly": 7,
       "dual": 3,
       "maxLegalCount": 10
@@ -1763,19 +1765,17 @@
       "u_suzumi",
       "u_hare",
       "u_kayoko",
-      "u_kirino",
       "u_meru",
       "u_koyuki",
-      "u_mina",
       "u_kanna",
       "u_miyu",
       "u_seia"
     ],
     "documented": {
-      "frontOnly": 3,
+      "frontOnly": 1,
       "rearOnly": 3,
       "dual": 4,
-      "maxLegalCount": 10
+      "maxLegalCount": 8
     }
   },
   {
