@@ -13,3 +13,4 @@ export {
   acquireOopart, emptyOopartProfile, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, rollOopartOffer,
   type OopartMerge, type OopartProfile, type OopartRunState, type RecipeBadge,
 } from '../core/ooparts/ooparts';
+export { simulateBattle, battleTiers, type BattleAllyInput, type BattleInput, type BattleOutput } from '../core/battle';

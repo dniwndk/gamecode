@@ -24,9 +24,11 @@ export interface RunStacks {
   dessertPending: boolean;
   /** 「골드 카드」: 다음 준비 단계 첫 새로고침 무료 */
   goldCardReroll: boolean;
+  /** 세리카 「아르바이트 수당」: 세리카가 출전해 이긴 전투 수(ATK +2%씩, 최대 +30%). 예전 저장에는 없다 */
+  serikaWins?: number;
 }
 
-export const emptyRunStacks = (): RunStacks => ({ levelUpExp: 0, makeUp: 0, workload: 0, rested: false, dessertPending: false, goldCardReroll: false });
+export const emptyRunStacks = (): RunStacks => ({ levelUpExp: 0, makeUp: 0, workload: 0, rested: false, dessertPending: false, goldCardReroll: false, serikaWins: 0 });
 
 /** AL-1S 각성 필요 경험치(v2.3 9장 표, v2.3.9에서 30 → 15). 툴팁 표시용. 판정은 유닛 awakening.expRequired */
 export const AWAKEN_EXP = 15;
@@ -84,6 +86,9 @@ export function settleRunStacks(pack: ContentPack, prev: RunStacks, b: BattleSta
   const hina = owner(pack, HEAD_PREFECT_SYN);
   if (hina && b.deployedUnitIds.includes(hina)) { next.workload = Math.min(WORKLOAD.max, prev.workload + 1); next.rested = false; }
   else if (hina && b.ownedUnitIds.includes(hina)) { next.workload = 0; next.rested = true; }
+
+  // 세리카 「아르바이트 수당」: 출전해서 이긴 전투마다 +1(15번에서 +30%로 멈춤)
+  if (b.outcome === 'win' && b.deployedUnitIds.includes('u_serika')) next.serikaWins = Math.min(15, (prev.serikaWins ?? 0) + 1);
 
   // 골드 카드: 노노미가 출전한 전투가 끝나면 다음 준비 단계 첫 새로고침 무료
   if (on(GOLD_CARD_SYN)) next.goldCardReroll = true;

@@ -1,17 +1,17 @@
-// 미리보기 세션 — 코어 런(M1)과 전투(M2)가 나오기 전에 화면을 실제로 눌러 볼 수 있게 하는 목(mock).
+// 미리보기 세션 — 코어 런 reducer(M1)가 나오기 전에 화면을 실제로 눌러 볼 수 있게 하는 목(mock).
 //
-// ⚠ 이 파일의 수치·판정은 진짜 게임 규칙이 아니다(전투·수입 흉내). 단, 상점 추첨과 오파츠 보상·조합은
-//   app/runRules.ts로 코어 규칙 함수를 그대로 부른다(v2.3 11장, OOPARTS_v1 1장). 사양서 11.2의 "가정" 모양을 그럴듯하게 채우는
-//   흉내일 뿐이며, 화면 컴포넌트는 이 파일을 import하지 않는다(adapter.ts만 쓴다).
-//   코어가 GameSnapshot.run을 내기 시작하면 adapter.ts가 자동으로 실제 클라이언트를 쓰고, 이 폴더는 지운다.
+// 상점 추첨·오파츠 보상·조합·런 스택 정산은 app/runRules.ts로 코어 규칙 함수를 그대로 부르고(v2.3 11장, OOPARTS_v1 1장),
+// 전투는 v2.4부터 코어 전투 엔진(core/battle, simulateBattle)이 효과 470개를 실제로 실행한 결과를 재생한다(D-030).
+// 런 진행(노드 순서·체력·수입 흐름)만 이 파일의 흉내다. 화면 컴포넌트는 이 파일을 import하지 않는다(adapter.ts만 쓴다).
+// 코어가 GameSnapshot.run을 내기 시작하면 adapter.ts가 자동으로 실제 클라이언트를 쓰고, 이 폴더는 지운다.
 import type { CommandResult, ContentCatalog, GameCommandType, GameSnapshot, RunPhase } from '../../../app/gameClient';
-import type { BaseStats, EnemyDefinition, NodeDefinition, OopartSourceId, UnitDefinition } from '../../../core/types/content';
+import type { BaseStats, NodeDefinition, OopartSourceId, UnitDefinition } from '../../../core/types/content';
 import {
-  acquireOopart, costOdds, emptyOopartProfile, emptyRunStacks, escalationDamageBps, resolveAwakenings, runStackLines, settleRunStacks, stackBattleBonuses, HEAD_PREFECT_SYN, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
-  rollShopDetailed, synergyCondition, type OopartModifiers, type RunStacks, type OopartProfile, type OopartRunState,
+  acquireOopart, costOdds, emptyOopartProfile, emptyRunStacks, resolveAwakenings, runStackLines, settleRunStacks, stackBattleBonuses, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
+  rollShopDetailed, simulateBattle, synergyCondition, type BattleAllyInput, type OopartModifiers, type RunStacks, type OopartProfile, type OopartRunState,
 } from '../../../app/runRules';
 import type {
-  BattleEventView, BattleView, CombatantView, Cue, Ref, ResultView, RunView, ShopSlotView, SynergyStateView, UiDriver, UiState,
+  BattleEventView, BattleView, Cue, ResultView, RunView, ShopSlotView, SynergyStateView, UiDriver, UiState,
   UnitInstanceView, Zone,
 } from '../model';
 
@@ -453,367 +453,41 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     }
   }
 
-  // ── 전투 흉내 ────────────────────────────────────────────
+  // ── 전투: 코어 전투 엔진(GDD v2.1 7~11장, 효과 470개) ────────
   function simulate(r: RunState): { battle: BattleView; result: ResultView; stacks: RunStacks } {
     const n = node(r);
     const cand = n.candidates.find((c) => c.id === r.chosen) ?? n.candidates[0];
-    const scale = n.statScaleBps / 10000;
-    // 오파츠 보정(코어 oopartModifiers). 전투 흉내 안에서 같은 순간에 끼워 넣는다.
     const om = mods(r);
-    type Live = CombatantView & {
-      atk: number; def: number; spd: number; crit: number; critDmg: number; next: number; cd: number; role: string; stunned: boolean; taunt: boolean; delayed: boolean;
-      syn: string[]; dmgTakenBps: number; controlled: boolean; skillUsed: boolean; secretary: boolean; revived: boolean; reflects: number;
-    };
-    const live: Live[] = [];
-    const mk = (ref: Ref, name: string, s: BaseStats, extra: Partial<Live>): Live => ({
-      ref, name, star: 1, maxHp: s.hp, hp: s.hp, shield: 0, energy: 0, boss: false, hasHp: true,
-      atk: s.atk, def: s.def, spd: s.spd, crit: s.critBps, critDmg: s.critDamageBps, next: 10000 / s.spd, cd: 0, role: '', stunned: false, taunt: false, delayed: false,
-      syn: [], dmgTakenBps: 0, controlled: false, skillUsed: false, secretary: false, revived: false, reflects: 0, ...extra,
-    });
-    // 출전 학생 능력치 + 오파츠(ATK·3성 HP·진영 단독·후방 CRIT·전방 SPD·치명 피해)
-    const factionsOf = (unitId: string) => unitById.get(unitId)!.synergyIds.filter((s) => synById.get(s)?.category === 'faction');
-    const factionCount = new Map<string, number>();
-    for (const id of new Set(deployedInsts(r).map((i) => i.unitId))) for (const f of factionsOf(id)) factionCount.set(f, (factionCount.get(f) ?? 0) + 1);
-    // 런 스택(레벨업·보충수업·업무량)의 ATK 보정과 에너지 100 시작
     const activeTiers = activeTierMap(r);
     const stackBonus = stackBattleBonuses(pack, r.stacks, activeTiers);
-    const levelUpKills: { eliteOrBoss: boolean }[] = [];
-    const hpBps = Math.min(om.threeStarHpCapBps, om.threeStarHpBps * deployedInsts(r).filter((i) => i.star === 3).length);
-    const allyStats = (i: Inst, zone: 'front' | 'rear'): BaseStats => {
-      const s = stats(i, r);
-      const fac = factionsOf(i.unitId);
-      const lone = om.loneFactionAtkBps > 0 && fac.length > 0 && fac.every((f) => factionCount.get(f) === 1);
-      s.atk = Math.round(s.atk * (1 + (om.atkBps + (lone ? om.loneFactionAtkBps : 0) + (stackBonus.atkBpsByUnit[i.unitId] ?? 0)) / 10000));
-      if (lone) s.spd += om.loneFactionSpd;
-      if (zone === 'front') s.spd += om.frontSpd;
-      s.critDamageBps += om.critDamageBps;
-      s.hp = Math.round(s.hp * (1 + hpBps / 10000));
-      return s;
-    };
-    r.front.forEach((i, index) => { if (i) { const u = unitById.get(i.unitId)!; live.push(mk({ side: 'ally', zone: 'front', index }, u.name, allyStats(i, 'front'), { unitId: u.id, star: i.star, role: u.role, syn: u.synergyIds })); } });
-    r.rear.forEach((i, index) => { if (i) { const u = unitById.get(i.unitId)!; live.push(mk({ side: 'ally', zone: 'rear', index }, u.name, allyStats(i, 'rear'), { unitId: u.id, star: i.star, role: u.role, syn: u.synergyIds, hasHp: false, next: 100 + index * 15 })); } });
-    const addEnemy = (slot: { enemyId: string; index: number }, zone: 'front' | 'rear') => {
-      const e = enemyById.get(slot.enemyId) as EnemyDefinition;
-      const s = { ...e.baseStats, hp: Math.round(e.baseStats.hp * scale * 0.5), atk: Math.round(e.baseStats.atk * scale * 0.7), def: Math.round(e.baseStats.def * 0.5) };
-      live.push(mk({ side: 'enemy', zone, index: slot.index }, e.name, s, { enemyId: e.id, boss: e.boss, role: e.role }));
-    };
-    cand.front.forEach((s) => addEnemy(s, 'front'));
-    for (const l of live) if (l.unitId && stackBonus.fullEnergy.includes(l.unitId)) l.energy = 100;
-    const fullEnergyAtStart = live.filter((l) => l.unitId && stackBonus.fullEnergy.includes(l.unitId));
-    cand.rear.forEach((s) => addEnemy(s, 'rear'));
+    const allies: BattleAllyInput[] = [];
+    r.front.forEach((i, slot) => { if (i) allies.push({ instanceId: i.instanceId, unitId: i.unitId, star: i.star, zone: 'front', slot, equipment: [...i.equipment] }); });
+    r.rear.forEach((i, slot) => { if (i) allies.push({ instanceId: i.instanceId, unitId: i.unitId, star: i.star, zone: 'rear', slot, equipment: [...i.equipment] }); });
+    const played = r.history.filter((x) => x !== null);
+    const out = simulateBattle(pack, {
+      seed: `${r.seed}|battle|${r.chapter}-${r.battle}`,
+      nodeType: n.type,
+      statScaleBps: n.statScaleBps,
+      allies,
+      enemies: [
+        ...cand.front.map((s) => ({ enemyId: s.enemyId, zone: 'front' as const, slot: s.index })),
+        ...cand.rear.map((s) => ({ enemyId: s.enemyId, zone: 'rear' as const, slot: s.index })),
+      ],
+      activeTiers,
+      strategies: [...r.strategies],
+      ooparts: [...r.oop.owned],
+      runAtkBpsByUnit: stackBonus.atkBpsByUnit,
+      fullEnergyUnitIds: stackBonus.fullEnergy,
+      dessert: r.stacks.dessertPending,
+      dessertHalf: played[played.length - 1] === 'loss',
+      serikaWins: r.stacks.serikaWins ?? 0,
+    });
+    const outcome = out.outcome;
+    const reason = out.reason;
 
-    const events: BattleEventView[] = [];
-    // 연출용 발동 표시(결과·난수와 무관). 같은 보정을 주는 오파츠가 여럿이면 보유한 쪽 이름으로 보인다.
-    const ownedOop = new Set(r.oop.owned);
-    const oopOf = (...ids: string[]) => ids.find((id) => ownedOop.has(id)) ?? ids[0];
-    const proc = (av: number, kind: 'synergy' | 'oopart', id: string, label: string, unit?: Live, chain?: number) => {
-      events.push({ t: 'proc', av, cause: { kind, id }, label, unit: unit?.ref, ...(chain ? { chain } : {}) });
-    };
-    // 쿠데타 명령서(U02): 전투 시작 서기장(체리노 우선, 없으면 무작위 전방 붉은겨울)
-    let coupLeft = 3;
-    let coupBonus = 0;
-    const makeSecretary = (l: Live, av: number) => {
-      proc(av, 'oopart', 'oop_coup_order', av === 0 ? '서기장 임명' : '쿠데타! 새 서기장', l);
-      l.secretary = true; l.atk = Math.round(l.atk * (1.4 + coupBonus)); l.dmgTakenBps = -2000;
-      events.push({ t: 'status', av, target: l.ref, statusId: 'st_atk_up', op: 'add' }, { t: 'status', av, target: l.ref, statusId: 'st_damage_reduction', op: 'add' });
-    };
-    if (om.coupOrder) {
-      const rw = live.filter((l) => l.ref.side === 'ally' && l.hasHp && l.syn.includes('syn_red_winter'));
-      const pickRw = rw.find((l) => l.unitId === 'u_cherino') ?? rw[Math.floor(rand() * rw.length)];
-      if (pickRw) makeSecretary(pickRw, 0);
-    }
-    const snapshot: CombatantView[] = live.map((l) => ({ ref: l.ref, unitId: l.unitId, enemyId: l.enemyId, name: l.name, star: l.star, maxHp: l.maxHp, hp: l.hp, shield: 0, energy: 0, boss: l.boss, hasHp: l.hasHp }));
-    for (const l of fullEnergyAtStart) {
-      proc(0, 'synergy', HEAD_PREFECT_SYN, '푹 쉬었다 · 에너지 100', l);
-      events.push({ t: 'resource', av: 0, side: 'ally', energy: { unit: l.ref, value: 100 } });
-    }
-
-    const spMax = { ally: om.spMax ?? rules.battle.teamSp.max, enemy: rules.battle.teamSp.max };
-    // 고대 전지(C07)·L05: 전투 시작 팀 SP +1
-    const sp = { ally: Math.min(spMax.ally, rules.battle.teamSp.start + om.spStartBonus), enemy: rules.battle.teamSp.start };
-    const contrib = new Map<string, { damage: number; healing: number; shield: number; rearSupport: number }>();
-    const c = (l: Live) => { const k = l.unitId!; if (!contrib.has(k)) contrib.set(k, { damage: 0, healing: 0, shield: 0, rearSupport: 0 }); return contrib.get(k)!; };
-    const alive = (side: 'ally' | 'enemy', zone?: 'front' | 'rear') => live.filter((l) => l.ref.side === side && l.hasHp && l.hp > 0 && (!zone || l.ref.zone === zone));
-    const foe = (s: 'ally' | 'enemy') => (s === 'ally' ? 'enemy' : 'ally');
-    const frontTarget = (side: 'ally' | 'enemy') => {
-      const pool = alive(side, 'front');
-      const t = pool.filter((l) => l.taunt);
-      return (t.length ? t : pool).sort((a, b) => a.ref.index - b.ref.index)[0];
-    };
-    const lowest = (side: 'ally' | 'enemy') => alive(side, 'front').sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
-    /** 아군이 받는 치유·보호막 배율(R08 −50%) */
-    const healMul = Math.max(0, 1 + om.healShieldReceivedBps / 10000);
-    const healerTier2 = (synergyCounts(r).get('syn_healer') ?? 0) >= (synById.get('syn_healer')?.tiers[0]?.threshold ?? 2);
-
-    // 행동 분류(흉내). 학생은 역할군 시너지로 먼저 나누고 역할 문구는 보조로만 본다. 문구만 보면 "방어력 파괴"·"방어 무시"
-    // 딜러(히나·아즈사·AL-1S)가 도발 탱커로, "방어력 대폭 파괴 포격수"(히요리)가 보호막 지원가로 잘못 분류됐다. 적은 문구로 나눈다.
-    const isRole = (l: Live, role: string) => l.syn.includes(`syn_${role}`);
-    const frontSkillKind = (l: Live): 'guard' | 'control' | 'hit' => {
-      if (!l.unitId) return /탱커|방어|도발|방패/.test(l.role) ? 'guard' : /제어|기절|CC|교란/.test(l.role) ? 'control' : 'hit';
-      if (isRole(l, 'tank')) return 'guard';
-      if (isRole(l, 'controller') || (isRole(l, 'supporter') && /기절|제어/.test(l.role))) return 'control';
-      return 'hit';
-    };
-    const rearKind = (l: Live): 'heal' | 'shield' | 'buff' | 'attack' => {
-      const heals = /치유|힐|회복/.test(l.role);
-      const shields = /보호막/.test(l.role);
-      if (isRole(l, 'healer')) return shields && !heals ? 'shield' : 'heal';
-      if (isRole(l, 'supporter')) return heals ? 'heal' : shields ? 'shield' : 'buff';
-      return 'attack';
-    };
-
-    let spRefills = 0;
-    let firstFall = false;
-    let revives = 0;
-    let abydosUses = 0;
-    let notoriety = 0;
-
-    function heal(av: number, src: Live, t: Live, raw: number) {
-      const amt = Math.min(t.maxHp - t.hp, Math.round(raw * healMul));
-      t.hp += amt;
-      events.push({ t: 'heal', av, source: src.ref, target: t.ref, amount: amt });
-      if (src.unitId) c(src).healing += amt;
-      return Math.round(raw * healMul) - amt;
-    }
-
-    /** 쓰러짐 처리: 부활(L03) → 첫 쓰러짐 회복(C10) → 아비도스 최후(R01·L04) → 쿠데타(U02) / 적이면 악명(U06) */
-    function onFall(av: number, tgt: Live, by: Live | null) {
-      if (tgt.ref.side === 'ally') {
-        if (revives < om.mysticRevives && tgt.star === 3 && !tgt.revived) {
-          proc(av, 'oopart', 'oop_nameless_relic', '신비 부활!', tgt);
-          revives++; tgt.revived = true; tgt.hp = Math.round(tgt.maxHp * 0.4); tgt.atk = Math.round(tgt.atk * 1.25);
-          events.push({ t: 'heal', av, source: tgt.ref, target: tgt.ref, amount: tgt.hp }, { t: 'status', av, target: tgt.ref, statusId: 'st_atk_up', op: 'add' });
-          return;
-        }
-        events.push({ t: 'defeated', av, target: tgt.ref, by: by?.ref });
-        if (!firstFall) {
-          firstFall = true;
-          if (om.firstFallHealBps && alive('ally', 'front').length) {
-            proc(av, 'oopart', oopOf('oop_mandragora', 'oop_nameless_relic'), '첫 쓰러짐 · 전방 회복');
-            for (const f of alive('ally', 'front')) heal(av, tgt, f, f.maxHp * om.firstFallHealBps / 10000);
-          }
-        }
-        if (abydosUses < om.abydosLastStand && tgt.syn.includes('syn_abydos')) {
-          const rest = alive('ally', 'front').filter((l) => l.syn.includes('syn_abydos'));
-          if (rest.length) { abydosUses++; proc(av, 'oopart', oopOf('oop_foreclosure_photo', 'oop_yume_notebook'), '최후의 저항 · 에너지 충전!', tgt, abydosUses); for (const l of rest) { l.energy = 100; events.push({ t: 'resource', av, side: 'ally', energy: { unit: l.ref, value: 100 } }); } }
-        }
-        if (om.coupOrder && tgt.secretary && coupLeft > 0) {
-          const heir = alive('ally', 'front').filter((l) => l.syn.includes('syn_red_winter')).sort((a, b) => b.atk - a.atk)[0];
-          if (heir) { coupLeft--; coupBonus += 0.2; makeSecretary(heir, av); }
-        }
-      } else {
-        events.push({ t: 'defeated', av, target: tgt.ref, by: by?.ref });
-        // 빠밤! 레벨업·이름 없는 신들의 왕녀: 아리스·AL-1S의 처치 경험치(정예·보스 3)
-        if (by?.unitId === 'u_aris' || by?.unitId === 'u_al1s') levelUpKills.push({ eliteOrBoss: tgt.boss || n.type === 'elite' });
-        if (by && by.ref.side === 'ally' && om.jailbreak && by.syn.includes('syn_outlaw') && notoriety < 6) {
-          notoriety++;
-          proc(av, 'oopart', 'oop_jailbreak_kit', notoriety === 6 ? '대탈옥! 전방 일제 사격' : `악명 ${notoriety}`, by, notoriety);
-          for (const l of live) if (l.ref.side === 'ally' && l.syn.includes('syn_outlaw')) l.atk = Math.round(l.atk * (1 + 0.08 * notoriety) / (1 + 0.08 * (notoriety - 1)));
-          if (notoriety === 6) for (const t of alive('enemy', 'front')) hit(av, by, t, 1.35, undefined, { trueDmg: true });
-        }
-      }
-    }
-
-    function hit(av: number, src: Live, tgt: Live, mult: number, origin?: Ref, opt: { critBonus?: number; trueDmg?: boolean } = {}) {
-      if (tgt.hp <= 0) return;
-      const isCrit = rand() * 10000 < src.crit + (opt.critBonus ?? 0);
-      let m = mult;
-      if (src.ref.side === 'ally') {
-        if (!isCrit && om.nonCritDamageBps) m *= 1 + om.nonCritDamageBps / 10000;
-        if (om.eliteBossDamageBps && (tgt.boss || n.type === 'elite')) m *= 1 + om.eliteBossDamageBps / 10000;
-      }
-      m *= 1 + (tgt.dmgTakenBps + (tgt.controlled ? 2000 : 0)) / 10000;
-      // 격화(13장): 시간 제한 대신 1000AV부터 양쪽 피해가 함께 커진다
-      m *= 1 + escalationDamageBps(av, rules.battle) / 10000;
-      const defMul = opt.trueDmg ? 1 : 100 / (100 + tgt.def);
-      let amount = Math.max(1, Math.round(src.atk * m * defMul * (0.92 + rand() * 0.16) * (isCrit ? 1 + src.critDmg / 10000 : 1)));
-      const absorbed = Math.min(tgt.shield, amount);
-      tgt.shield -= absorbed;
-      amount -= absorbed;
-      tgt.hp = Math.max(0, tgt.hp - amount);
-      events.push({ t: 'damage', av, source: src.ref, origin, target: tgt.ref, amount, crit: isCrit, shieldAbsorbed: absorbed, true: opt.trueDmg });
-      if (src.unitId) { c(src).damage += amount + absorbed; if (origin) c(src).rearSupport += amount; }
-      tgt.energy = Math.min(100, tgt.energy + 8);
-      // 볼프세크 철편(C12): 도발 중인 아군이 받은 피해의 15%를 공격자에게(턴당 3회)
-      if (om.wolfseggReflectBps && tgt.ref.side === 'ally' && tgt.taunt && tgt.reflects < 3 && src.hasHp && src.hp > 0) {
-        tgt.reflects++;
-        proc(av, 'oopart', 'oop_wolfsegg_steel', '피해 반사', tgt);
-        const back = Math.round((amount + absorbed) * om.wolfseggReflectBps / 10000);
-        if (back > 0) {
-          src.hp = Math.max(0, src.hp - back);
-          events.push({ t: 'damage', av, source: tgt.ref, target: src.ref, amount: back, crit: false, shieldAbsorbed: 0, true: true });
-          if (tgt.unitId) c(tgt).damage += back;
-          if (src.hp <= 0) onFall(av, src, tgt);
-        }
-      }
-      if (tgt.hp <= 0) onFall(av, tgt, src);
-    }
-
-    /** 카이저 PMC 계약서(U09): 200AV마다 적 전방 1명에게 아군 최고 ATK 150%, 같은 순간 아군 전방 1명에게 그 40% */
-    function pmc(av: number) {
-      const shooter = live.filter((l) => l.ref.side === 'ally' && (l.hasHp ? l.hp > 0 : true)).sort((a, b) => b.atk - a.atk)[0];
-      const foes = alive('enemy', 'front');
-      if (!shooter || !foes.length) return;
-      proc(av, 'oopart', 'oop_pmc_contract', '정기 포격', shooter.hasHp ? shooter : undefined);
-      hit(av, shooter, foes[Math.floor(rand() * foes.length)], 1, shooter.hasHp ? undefined : shooter.ref);
-      const mine = alive('ally', 'front');
-      if (!mine.length || !om.pmcFriendlyFireBps) return;
-      const t = mine[Math.floor(rand() * mine.length)];
-      let amount = Math.round(shooter.atk * om.pmcFriendlyFireBps / 10000);
-      const absorbed = Math.min(t.shield, amount);
-      t.shield -= absorbed; amount -= absorbed; t.hp = Math.max(0, t.hp - amount);
-      events.push({ t: 'damage', av, source: shooter.ref, target: t.ref, amount, crit: false, shieldAbsorbed: absorbed });
-      if (t.hp <= 0) onFall(av, t, null);
-    }
-
-    let av = 0;
-    let outcome: 'win' | 'loss' = 'loss';
-    let reason: ResultView['reason'] = 'both_wiped';
-    let nextPmc = 200;
-    let escBps = 0;
-    let exhausted = false;
-    let spUltPulse = -1;
-    let censerPulse = -1;
-    let censerChain = 0;
-    const censerUsed = new Set<Live>();
-    // 시간 제한 없음(13장). 격화로 반드시 끝나지만, 흉내 엔진의 안전장치로 행동 수 상한을 둔다(넘으면 패배 처리).
-    for (let guard = 0; guard < 4000; guard++) {
-      if (!alive('enemy', 'front').length) { outcome = 'win'; reason = 'enemy_front_wiped'; break; }
-      if (!alive('ally', 'front').length) { outcome = 'loss'; reason = 'ally_front_wiped'; break; }
-      const actors = live.filter((l) => (l.hasHp ? l.hp > 0 : alive('ally', 'front').length > 0));
-      actors.sort((a, b) => a.next - b.next);
-      const a = actors[0];
-      av = Math.round(a.next);
-      while (om.pmcBarrage && nextPmc <= av && alive('enemy', 'front').length) { pmc(nextPmc); nextPmc += 200; }
-      if (!alive('enemy', 'front').length || !alive('ally', 'front').length) continue;
-      const esc = escalationDamageBps(av, rules.battle);
-      if (esc !== escBps) { escBps = esc; events.push({ t: 'escalation', av, damageBps: esc }); }
-      // 엔지니어부 불법 에너지 드링크(U11): 600AV부터 전방 탈진
-      if (om.exhaustion && !exhausted && av >= 600) {
-        exhausted = true;
-        for (const l of alive('ally', 'front')) { l.spd = Math.max(10, l.spd - 30); events.push({ t: 'status', av, target: l.ref, statusId: 'st_spd_down', op: 'add' }); }
-      }
-      a.next += 10000 / a.spd;
-      a.reflects = 0;
-      events.push({ t: 'timeline', av, upcoming: actors.slice(1, 9).map((x) => x.ref) });
-      if (a.stunned || a.delayed) {
-        const sid = a.stunned ? 'st_stun' : 'st_delayed';
-        a.stunned = false; a.delayed = false;
-        events.push({ t: 'status', av, target: a.ref, statusId: sid, op: 'remove' });
-        continue;
-      }
-      a.controlled = false;
-      const side = a.ref.side;
-      const enemySide = foe(side);
-      if (!a.hasHp) {
-        // 후방 정기 지원(님루드 렌즈 C08: 아군 후방 지원량 +10%)
-        a.next = av + 160;
-        const rs = side === 'ally' ? 1 + om.rearSupportBps / 10000 : 1;
-        const front = alive('ally', 'front');
-        events.push({ t: 'action', av, actor: a.ref, kind: 'rear', targets: front.map((f) => f.ref) });
-        const rk = rearKind(a);
-        if (rk === 'heal') {
-          const t = lowest('ally');
-          if (t) {
-            const before = t.hp;
-            const over = heal(av, a, t, a.atk * 2.2 * rs);
-            c(a).rearSupport += t.hp - before;
-            // 황금 양모(C16): 힐러 2단계가 켜져 있으면 넘친 치유의 25%를 보호막으로
-            if (om.goldenFleece && healerTier2 && over > 0) { proc(av, 'oopart', 'oop_golden_fleece', '넘친 치유 → 보호막', t); const sh = Math.round(over * 0.25); t.shield += sh; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: sh }); c(a).shield += sh; }
-          }
-        } else if (rk === 'shield') {
-          for (const t of front) { const amt = Math.round(a.atk * 1.4 * rs * healMul); t.shield += amt; events.push({ t: 'shield', av, source: a.ref, target: t.ref, amount: amt }); c(a).shield += amt; c(a).rearSupport += amt; }
-        } else if (rk === 'buff') {
-          for (const t of front) { events.push({ t: 'status', av, target: t.ref, statusId: 'st_atk_up', op: 'add' }); t.atk = Math.round(t.atk * (1 + 0.08 * rs)); }
-          c(a).rearSupport += 120;
-        } else {
-          const t = frontTarget(enemySide);
-          if (t) hit(av, a, t, 1.1 * rs, a.ref);
-        }
-        continue;
-      }
-      const target = frontTarget(enemySide);
-      if (!target) continue;
-      const allyFront = side === 'ally' && a.ref.zone === 'front';
-      const ultNeed = allyFront && om.frontUltEnergy ? om.frontUltEnergy : 100;
-      if (a.energy >= ultNeed) {
-        a.energy = 0;
-        events.push({ t: 'action', av, actor: a.ref, kind: 'ultimate', targets: [target.ref] });
-        events.push({ t: 'resource', av, side, energy: { unit: a.ref, value: 0 } });
-        const pulse = Math.floor(av / rules.battle.globalPulseAv);
-        let mult = 1;
-        // 용의 향로(U01): 같은 전역 주기 안에서 이어진 산해경 필살기
-        if (side === 'ally' && om.dragonCenser && a.syn.includes('syn_shanhaijing')) {
-          if (pulse !== censerPulse) { censerPulse = pulse; censerChain = 0; censerUsed.clear(); }
-          censerChain++; censerUsed.add(a);
-          if (censerChain >= 2) proc(av, 'oopart', 'oop_dragon_censer', `향로 연쇄 · 피해 +${15 * (censerChain - 1)}%`, a, censerChain);
-          mult = 1 + 0.15 * (censerChain - 1);
-        }
-        const aoe = /광역|폭발|포격/.test(a.role);
-        if (aoe) {
-          const ts = alive(enemySide, 'front');
-          // 디스코 콜간테(C15): 블래스터 광역이 3명 이상을 맞히면 CRIT +20%
-          const critBonus = side === 'ally' && om.discoCritBps && a.syn.includes('syn_blaster') && ts.length >= 3 ? om.discoCritBps : 0;
-          if (critBonus) proc(av, 'oopart', 'oop_disco_colgante', '광역 치명 +20%', a);
-          for (const t of ts) hit(av, a, t, 1.5 * mult, undefined, { critBonus });
-        } else hit(av, a, lowest(enemySide) ?? target, 2.6 * mult);
-        if (side === 'ally' && om.dragonCenser && a.syn.includes('syn_shanhaijing')) {
-          const next = alive('ally', 'front').filter((l) => l !== a && l.syn.includes('syn_shanhaijing') && !censerUsed.has(l)).sort((x, y) => y.energy - x.energy)[0];
-          if (next) { next.energy = Math.min(100, next.energy + 35); events.push({ t: 'resource', av, side, energy: { unit: next.ref, value: next.energy } }); }
-        }
-        // 프로토타입 인피니티(L05): 필살기가 해소되면 팀 SP +1(전역 주기당 1회)
-        if (side === 'ally' && om.spOnUltimate && pulse !== spUltPulse) { spUltPulse = pulse; proc(av, 'oopart', 'oop_prototype_infinity', '필살기 해소 · SP +1', a); sp.ally = Math.min(spMax.ally, sp.ally + 1); events.push({ t: 'resource', av, side, sp: sp.ally }); }
-      } else if (sp[side] >= 1 && a.cd <= 0) {
-        sp[side]--;
-        // 아틀란티스 메달(C17): 서포터의 첫 스킬은 쿨다운 −1
-        a.cd = (side === 'ally' && om.atlantisMedal && a.syn.includes('syn_supporter') && !a.skillUsed ? 1 : 2) + (allyFront ? om.frontSkillCdBonus : 0);
-        if (side === 'ally' && om.atlantisMedal && a.syn.includes('syn_supporter') && !a.skillUsed) proc(av, 'oopart', 'oop_atlantis_medal', '첫 스킬 쿨다운 −1', a);
-        // 금지 시제품 No.0(R10): 전방 전투 스킬 쿨다운 +1턴
-        a.skillUsed = true;
-        // 바그다드 전지(C07)·L05: 팀 SP가 0이 되면 +2
-        if (side === 'ally' && sp.ally === 0 && spRefills < om.spRefillUses) { spRefills++; proc(av, 'oopart', oopOf('oop_baghdad_battery', 'oop_prototype_infinity'), 'SP 바닥 · +2 충전', a); sp.ally = Math.min(spMax.ally, 2); }
-        events.push({ t: 'action', av, actor: a.ref, kind: 'skill', targets: [target.ref] });
-        events.push({ t: 'resource', av, side, sp: sp[side] });
-        const fk = frontSkillKind(a);
-        if (fk === 'guard') {
-          const amt = Math.round(a.maxHp * 0.18 * (side === 'ally' ? healMul : 1));
-          a.shield += amt; a.taunt = true;
-          events.push({ t: 'shield', av, source: a.ref, target: a.ref, amount: amt });
-          events.push({ t: 'status', av, target: a.ref, statusId: 'st_taunt', op: 'add' });
-          if (a.unitId) c(a).shield += amt;
-        } else if (fk === 'control' || rand() < 0.22) {
-          hit(av, a, target, 1.3);
-          if (target.hp > 0) {
-            if (target.boss) {
-              target.delayed = true;
-              events.push({ t: 'status', av, target: target.ref, statusId: 'st_delayed', op: 'add', replacedFrom: 'st_stun' });
-              // 위니퍼소키 돌(C18): 컨트롤러의 기절이 보스에 막히면 행동 15% 지연 + 1턴 받는 피해 +20%
-              if (side === 'ally' && om.winnipesaukee && a.syn.includes('syn_controller')) {
-                proc(av, 'oopart', 'oop_winnipesaukee_stone', '보스 행동 지연', target);
-                target.next += 0.15 * (10000 / target.spd); target.controlled = true;
-                events.push({ t: 'status', av, target: target.ref, statusId: 'st_vuln', op: 'add' });
-              }
-            } else { target.stunned = true; events.push({ t: 'status', av, target: target.ref, statusId: 'st_stun', op: 'add' }); }
-          }
-        } else hit(av, a, target, 1.6);
-        a.energy = Math.min(100, a.energy + 30);
-      } else {
-        a.cd--;
-        events.push({ t: 'action', av, actor: a.ref, kind: 'basic', targets: [target.ref] });
-        hit(av, a, target, 1);
-        sp[side] = Math.min(spMax[side], sp[side] + 1);
-        a.energy = Math.min(100, a.energy + 25 + (side === 'ally' ? om.basicEnergyBonus : 0));
-        events.push({ t: 'resource', av, side, sp: sp[side] });
-      }
-      events.push({ t: 'resource', av, side, energy: { unit: a.ref, value: a.energy } });
-    }
-    events.push({ t: 'end', av, outcome, reason });
-
-    // 정산(흉내)
+    // 정산
     const before = r.runHp;
-    const survivors = alive('enemy', 'front').length;
-    const dmg = outcome === 'loss' ? defeatDamage(r, survivors) : { total: 0, parts: [] as { label: string; value: number }[] };
-
+    const dmg = outcome === 'loss' && !out.aborted ? defeatDamage(r, out.survivingEnemyFront) : { total: 0, parts: [] as { label: string; value: number }[] };
     // 오파츠: 패배 피해 감소(최소 1), 전투마다 런 체력 감소(R08)
     if (outcome === 'loss' && om.defeatDamageReduction > 0) {
       const cut = Math.min(om.defeatDamageReduction, dmg.total - 1);
@@ -827,20 +501,28 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     if (sb) income.push({ label: `${streakNext}${outcome === 'win' ? '연승' : '연패'}`, value: sb.gold });
     income.push({ label: capBonus(r) ? `이자 (세미나 상한 +${capBonus(r)})` : '이자', value: interest(r) });
     if (om.settlementGold) income.push({ label: '오파츠 · 게마트리아의 계약', value: om.settlementGold });
-    // 런 스택 정산(코어 settleRunStacks): 보충수업 합격 골드 등
+    income.push(...out.settlementGold);
+    // 빠밤! 레벨업·이름 없는 신들의 왕녀: 아리스·AL-1S의 처치 경험치(정예·보스 3)
+    const levelUpKills = out.kills.filter((k) => k.unitId === 'u_aris' || k.unitId === 'u_al1s').map((k) => ({ eliteOrBoss: k.eliteOrBoss }));
     const stackSettle = settleRunStacks(pack, r.stacks, {
       outcome, deployedUnitIds: deployedInsts(r).map((i) => i.unitId), ownedUnitIds: all(r).map((i) => i.unitId), activeTiers, levelUpKills,
     });
     income.push(...stackSettle.income);
-    const contributions = [...contrib].map(([unitId, v]) => ({ unitId, ...v }));
+    // 보충수업 오답노트(C22): 「합격」 골드와 같은 양의 XP
+    const passXp = r.oop.owned.includes('oop_wrong_answer_note') ? stackSettle.income.filter((x) => x.label.startsWith('보충수업부 · 합격')).reduce((a, x) => a + x.value, 0) : 0;
+    const contributions = out.contributions;
     const score = (x: typeof contributions[number]) => x.damage + x.healing * 1.2 + x.shield + x.rearSupport * 0.5;
     const mvp = outcome === 'win' ? [...contributions].sort((a2, b2) => score(b2) - score(a2))[0]?.unitId ?? null : null;
     const result: ResultView = {
       outcome, reason,
       runHp: { before, after: Math.max(0, before - dmg.total), breakdown: dmg.parts },
-      income, xpGained: rules.xp.perBattle + om.battleXpBonus, contributions, mvpUnitId: mvp,
+      income, xpGained: rules.xp.perBattle + om.battleXpBonus + passXp, contributions, mvpUnitId: mvp,
     };
-    return { stacks: stackSettle.next, battle: { battleId: `${n.id}-${revision}`, nodeLabel: `${r.chapter}-${r.battle} ${cand.label}`, combatants: snapshot, startSp: { ally: Math.min(om.spMax ?? rules.battle.teamSp.max, rules.battle.teamSp.start + om.spStartBonus), enemy: rules.battle.teamSp.start }, events }, result };
+    const battle: BattleView = {
+      battleId: `${n.id}-${revision}`, nodeLabel: `${r.chapter}-${r.battle} ${cand.label}`,
+      combatants: out.combatants, startSp: out.startSp, events: out.events as BattleEventView[],
+    };
+    return { stacks: stackSettle.next, battle, result };
   }
 
   function advanceNode(r: RunState) {
