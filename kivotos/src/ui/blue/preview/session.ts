@@ -241,7 +241,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     const fresh = rollShopCore(pack, {
       level: r.level, owned: all(r).map((i) => ({ unitId: i.unitId, star: i.star })), trackedSynergyId: r.tracked, awakenedFromIds: r.awakenedFrom,
       slots: m.shopSlots ?? undefined, recommendedChanceBps: m.recommendedChanceBps ?? undefined,
-      topCostFirstSlot: m.levelUpTopCostSlot && r.levelUpPending, aronaLastSlot: m.aronaSlot,
+      topCostFirstSlot: m.levelUpTopCostSlot && r.levelUpPending,
     }, r.shopRng);
     // 프라나 보조(L01): 잠근 상점은 남은 칸을 두고 빈칸만 새로 채운다
     r.shop = keepOffered ? fresh.map((id, k) => r.shop[k] ?? id) : fresh;
@@ -955,8 +955,8 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         else { r.bench.push(inst); merge(r); r.bench = r.bench.slice(0, benchSize(r)); }
         if (!r.recruited.has(unitId)) { r.recruited.add(unitId); cue({ kind: 'recruit', unitId }); }
         merge(r);
-        // 아로나 추천 칸(L01, 마지막 칸)으로 합성이 완성되면 XP
-        if (merging && mods(r).aronaSlot && idx === r.shop.length - 1) { r.xp += mods(r).aronaMergeXp; levelUp(r); }
+        // 아로나 추천(L01): 합성이 완성될 때마다 XP
+        if (merging && mods(r).aronaMergeXp) { r.xp += mods(r).aronaMergeXp; levelUp(r); }
         return ok();
       }
       case 'SELL_UNIT': {

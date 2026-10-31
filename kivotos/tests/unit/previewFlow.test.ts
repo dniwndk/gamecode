@@ -120,6 +120,9 @@ describe('미리보기 런: 오파츠 효과', () => {
     expect(d.get().run!.offers!.strategies).toHaveLength(3);
     await d.send('CHOOSE_STRATEGY', { strategyId: d.get().run!.offers!.strategies![0] });
     expect(d.get().run!.strategies).toHaveLength(2);
+    // v2.3.8: 상점은 언제나 5칸(아로나 추천 6번째 칸 없음)
+    if (d.get().phase === 'OOPART_CHOICE') await d.send('SKIP_OOPART');
+    expect(d.get().run!.shop.slots).toHaveLength(5);
   });
 
   it('게마트리아의 계약: 정산 +4G가 수입 내역에 들어간다', async () => {

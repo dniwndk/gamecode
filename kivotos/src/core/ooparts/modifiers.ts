@@ -29,9 +29,7 @@ export interface OopartModifiers {
   rerollCost: number | null;
   /** 레벨업 직후 첫 갱신의 1번 칸을 그 레벨 최고 코스트로(C03) */
   levelUpTopCostSlot: boolean;
-  /** 마지막 칸을 "다음 성급까지 남은 복사본이 가장 적은 보유 학생"으로(L01 아로나 추천) */
-  aronaSlot: boolean;
-  /** 아로나 칸으로 합성이 완성되면 XP(L01) */
+  /** 합성이 완성될 때마다 XP(L01 아로나 추천, v2.3.8) */
   aronaMergeXp: number;
   /** 잠가도 노드 진입 무료 갱신이 빈칸만 채운다(L01 프라나) */
   pranaLock: boolean;
@@ -114,7 +112,7 @@ export interface OopartModifiers {
 
 const base = (): OopartModifiers => ({
   interestGoldBonus: 0, interestCapDelta: 0, settlementGold: 0, battleXpBonus: 0, defeatDamageReduction: 0, runHpLossPerBattle: 0, lastStandHp: 0, mergeGold: [0, 0],
-  shopSlots: null, freeRerollPerPrep: 0, recommendedChanceBps: null, rerollCost: null, levelUpTopCostSlot: false, aronaSlot: false, aronaMergeXp: 0, pranaLock: false,
+  shopSlots: null, freeRerollPerPrep: 0, recommendedChanceBps: null, rerollCost: null, levelUpTopCostSlot: false, aronaMergeXp: 0, pranaLock: false,
   benchSlotsBonus: 0, noBenchSellDepreciation: false, deployLimitBonus: 0, millenniumEquipSlotBonus: 0, millenniumEquipStatBps: 0,
   strategyChoices: null, strategyPicks: 1, pandemonium: false, trinityClubBonus: 0, edenFactions: false,
   atkBps: 0, critDamageBps: 0, nonCritDamageBps: 0, rearSupportBps: 0, basicEnergyBonus: 0, spStartBonus: 0, spRefillUses: 0, spMax: null, spOnUltimate: false,
@@ -166,8 +164,9 @@ const APPLY: Record<string, Apply> = {
   oop_prototype_zero: (m) => { m.frontUltEnergy = 70; m.frontSkillCdBonus = 1; },
   // ── 전설: ★는 재료 효과를 다시 켜고, 대가는 없앤다(1.3 「정화」) ──
   oop_shittim_chest: (m) => {
-    m.shopSlots = 6; m.freeRerollPerPrep = 4; m.recommendedChanceBps = 8000; m.strategyChoices = 4; m.strategyPicks = 2;
-    m.aronaSlot = true; m.aronaMergeXp = 2; m.pranaLock = true;
+    // v2.3.8(2026-10-31 사용자 요청): 상점 6번째 칸(아로나 추천 칸)을 없애고, 합성할 때마다 XP +2로
+    m.freeRerollPerPrep = 4; m.recommendedChanceBps = 8000; m.strategyChoices = 4; m.strategyPicks = 2;
+    m.aronaMergeXp = 2; m.pranaLock = true;
   },
   oop_eden_treaty: (m) => { m.trinityClubBonus = 1; m.edenFactions = true; },
   oop_nameless_relic: (m) => {

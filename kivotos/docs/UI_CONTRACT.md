@@ -37,7 +37,7 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 
 | 항목 | M0 | 확정 시점 |
 |---|---|---|
-| `catalog` | 완성 (팩 ba-content-2.8.0, 오파츠 55종·AL-1S 각성·플래티넘 단계 `tiers[].grade` 포함) | — |
+| `catalog` | 완성 (팩 ba-content-2.8.1, 오파츠 55종·AL-1S 각성·플래티넘 단계 `tiers[].grade` 포함) | — |
 | 오파츠 | `catalog.pack.ooparts` 정의. `OOPART_CHOICE` 단계, `CHOOSE_OOPART`(payload `{ oopartId }`)·`SKIP_OOPART`. 실제 클라이언트는 아직 `NOT_IMPLEMENTED`, 미리보기 세션은 코어 함수로 동작(`run.ooparts.owned`·`run.ooparts.offer`, `UiState.oopartRevealed`, 연출 신호 `cues`의 `oopart`·`oopart_merge`) | M1 런 reducer가 `src/core/ooparts/ooparts.ts`를 부를 때 |
 | `GameSnapshot.run` | 항상 `null` | M1 런 reducer |
 | `GameCommandType` | 이름 목록만. 모든 명령이 `NOT_IMPLEMENTED`로 거부 | M1(준비 단계 명령), M4(런 흐름) |

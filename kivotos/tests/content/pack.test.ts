@@ -14,7 +14,7 @@ const unitEffectCount = (u: (typeof pack.units)[number]) => {
   return new Set(Object.values(rest).flatMap((v) => (v === null ? [] : Array.isArray(v) ? v : [v]))).size;
 };
 
-describe('정식 콘텐츠 팩 ba-content-2.8.0', () => {
+describe('정식 콘텐츠 팩 ba-content-2.8.1', () => {
   it('정적 검증 오류 0건', () => {
     const report = validateContentPack(pack);
     expect(report.errors).toEqual([]);
