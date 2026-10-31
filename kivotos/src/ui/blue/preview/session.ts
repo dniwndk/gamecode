@@ -432,7 +432,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   /** 각성 경험치는 「빠밤! 레벨업」 런 스택 하나로 센다(각성 표의 원래 학생 모두에게) */
   const awakeningExp = (r: RunState) => Object.fromEntries(pack.units.filter((u) => u.awakening).map((u) => [u.id, r.stacks.levelUpExp]));
 
-  /** 각성(코어 resolveAwakenings, 9장): 경험치 30 + 3성 아리스 → 그 자리에서 3성 AL-1S, 남은 아리스는 자동 판매 */
+  /** 각성(코어 resolveAwakenings, 9장): 경험치 15 + 3성 아리스 → 그 자리에서 3성 AL-1S, 남은 아리스는 자동 판매 */
   function awaken(r: RunState) {
     const deployedIds = new Set(deployedInsts(r).map((i) => i.instanceId));
     const owned = all(r).map((i) => ({ instanceId: i.instanceId, unitId: i.unitId, star: i.star, deployed: deployedIds.has(i.instanceId), acquiredOrder: Number(i.instanceId.slice(1)) }));
