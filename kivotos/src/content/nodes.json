@@ -139,7 +139,7 @@
     "chapter": 1,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 19500,
+    "statScaleBps": 18000,
     "candidates": [
       {
         "id": "A",
@@ -169,7 +169,7 @@
     "chapter": 1,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 21000,
+    "statScaleBps": 15000,
     "candidates": [
       {
         "id": "A",
@@ -243,7 +243,7 @@
     "chapter": 2,
     "battle": 2,
     "type": "normal",
-    "statScaleBps": 26250,
+    "statScaleBps": 23000,
     "candidates": [
       {
         "id": "A",
@@ -301,7 +301,7 @@
     "chapter": 2,
     "battle": 3,
     "type": "normal",
-    "statScaleBps": 28350,
+    "statScaleBps": 30000,
     "candidates": [
       {
         "id": "A",
@@ -389,7 +389,7 @@
     "chapter": 2,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 22500,
+    "statScaleBps": 27000,
     "candidates": [
       {
         "id": "A",
@@ -628,7 +628,7 @@
     "chapter": 3,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 24000,
+    "statScaleBps": 16000,
     "candidates": [
       {
         "id": "A",
@@ -650,6 +650,462 @@
           }
         ],
         "threat": "비나의 DEF 160 중장갑, 단일 열선 방깎 레이저, HP 60% 모래폭풍, 정화의 폭풍 전체 미사일"
+      }
+    ]
+  },
+  {
+    "id": "node_4_1",
+    "chapter": 4,
+    "battle": 1,
+    "type": "normal",
+    "statScaleBps": 80000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "해킹 편대",
+        "front": [
+          {
+            "enemyId": "en_cracker_drone",
+            "index": 0
+          },
+          {
+            "enemyId": "en_cracker_drone",
+            "index": 1
+          },
+          {
+            "enemyId": "en_cracker_drone",
+            "index": 2
+          }
+        ],
+        "rear": [],
+        "threat": "에너지 탈취 연사"
+      },
+      {
+        "id": "B",
+        "label": "홀로 교란",
+        "front": [
+          {
+            "enemyId": "en_holo_decoy",
+            "index": 0
+          },
+          {
+            "enemyId": "en_holo_decoy",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_jammer_tower_rear",
+            "index": 0
+          }
+        ],
+        "threat": "첫 피격 무효 + SP 탈취"
+      }
+    ]
+  },
+  {
+    "id": "node_4_2",
+    "chapter": 4,
+    "battle": 2,
+    "type": "normal",
+    "statScaleBps": 85000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "경비 거점",
+        "front": [
+          {
+            "enemyId": "en_amas_guard",
+            "index": 0
+          },
+          {
+            "enemyId": "en_cracker_drone",
+            "index": 1
+          },
+          {
+            "enemyId": "en_cracker_drone",
+            "index": 2
+          }
+        ],
+        "rear": [],
+        "threat": "도발 탱커 뒤의 해킹 드론"
+      },
+      {
+        "id": "B",
+        "label": "거울 미로",
+        "front": [
+          {
+            "enemyId": "en_holo_decoy",
+            "index": 0
+          },
+          {
+            "enemyId": "en_holo_decoy",
+            "index": 1
+          },
+          {
+            "enemyId": "en_holo_decoy",
+            "index": 2
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_jammer_tower_rear",
+            "index": 0
+          }
+        ],
+        "threat": "무효 3겹 + SP 탈취"
+      }
+    ]
+  },
+  {
+    "id": "node_4_3",
+    "chapter": 4,
+    "battle": 3,
+    "type": "normal",
+    "statScaleBps": 90000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "이중 봉쇄",
+        "front": [
+          {
+            "enemyId": "en_amas_guard",
+            "index": 0
+          },
+          {
+            "enemyId": "en_amas_guard",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_jammer_tower_rear",
+            "index": 0
+          },
+          {
+            "enemyId": "en_jammer_tower_rear",
+            "index": 1
+          }
+        ],
+        "threat": "단단한 전방 + SP 이중 탈취"
+      },
+      {
+        "id": "B",
+        "label": "혼성 침투",
+        "front": [
+          {
+            "enemyId": "en_cracker_drone",
+            "index": 0
+          },
+          {
+            "enemyId": "en_cracker_drone",
+            "index": 1
+          },
+          {
+            "enemyId": "en_holo_decoy",
+            "index": 2
+          },
+          {
+            "enemyId": "en_holo_decoy",
+            "index": 3
+          }
+        ],
+        "rear": [],
+        "threat": "4인 물량"
+      }
+    ]
+  },
+  {
+    "id": "node_4_4",
+    "chapter": 4,
+    "battle": 4,
+    "type": "elite",
+    "statScaleBps": 65000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "관리자 권한",
+        "front": [
+          {
+            "enemyId": "en_avatar_admin",
+            "index": 0
+          },
+          {
+            "enemyId": "en_amas_guard",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_jammer_tower_rear",
+            "index": 0
+          }
+        ],
+        "threat": "버프 해제와 도발 탱커, SP 탈취"
+      }
+    ]
+  },
+  {
+    "id": "node_4_5",
+    "chapter": 4,
+    "battle": 5,
+    "type": "boss",
+    "statScaleBps": 55000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "4장 보스 편성",
+        "front": [
+          {
+            "enemyId": "boss_hod",
+            "index": 0
+          },
+          {
+            "enemyId": "en_cracker_drone",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_jammer_tower_rear",
+            "index": 0
+          }
+        ],
+        "threat": "호드의 에너지·SP 봉쇄와 HP 50% 미러 노드"
+      }
+    ]
+  },
+  {
+    "id": "node_5_1",
+    "chapter": 5,
+    "battle": 1,
+    "type": "normal",
+    "statScaleBps": 100000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "근위대",
+        "front": [
+          {
+            "enemyId": "en_nameless_guard",
+            "index": 0
+          },
+          {
+            "enemyId": "en_nameless_guard",
+            "index": 1
+          },
+          {
+            "enemyId": "en_nameless_guard",
+            "index": 2
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_ark_battery_rear",
+            "index": 0
+          }
+        ],
+        "threat": "누적 강화 + 주기 포격"
+      },
+      {
+        "id": "B",
+        "label": "감염 행렬",
+        "front": [
+          {
+            "enemyId": "en_color_mimesis",
+            "index": 0
+          },
+          {
+            "enemyId": "en_color_mimesis",
+            "index": 1
+          },
+          {
+            "enemyId": "en_color_mimesis",
+            "index": 2
+          }
+        ],
+        "rear": [],
+        "threat": "부활 3기"
+      }
+    ]
+  },
+  {
+    "id": "node_5_2",
+    "chapter": 5,
+    "battle": 2,
+    "type": "normal",
+    "statScaleBps": 105000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "수문 앞",
+        "front": [
+          {
+            "enemyId": "en_gatekeeper",
+            "index": 0
+          },
+          {
+            "enemyId": "en_nameless_guard",
+            "index": 1
+          },
+          {
+            "enemyId": "en_nameless_guard",
+            "index": 2
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_ark_battery_rear",
+            "index": 0
+          }
+        ],
+        "threat": "후방 봉쇄 + 근위병"
+      },
+      {
+        "id": "B",
+        "label": "포대 엄호",
+        "front": [
+          {
+            "enemyId": "en_color_mimesis",
+            "index": 0
+          },
+          {
+            "enemyId": "en_color_mimesis",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_ark_battery_rear",
+            "index": 0
+          },
+          {
+            "enemyId": "en_ark_battery_rear",
+            "index": 1
+          }
+        ],
+        "threat": "포격 2배"
+      }
+    ]
+  },
+  {
+    "id": "node_5_3",
+    "chapter": 5,
+    "battle": 3,
+    "type": "normal",
+    "statScaleBps": 110000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "성벽",
+        "front": [
+          {
+            "enemyId": "en_gatekeeper",
+            "index": 0
+          },
+          {
+            "enemyId": "en_gatekeeper",
+            "index": 1
+          },
+          {
+            "enemyId": "en_color_mimesis",
+            "index": 2
+          },
+          {
+            "enemyId": "en_color_mimesis",
+            "index": 3
+          }
+        ],
+        "rear": [],
+        "threat": "고방어 + 부활"
+      },
+      {
+        "id": "B",
+        "label": "정예 근위대",
+        "front": [
+          {
+            "enemyId": "en_nameless_guard",
+            "index": 0
+          },
+          {
+            "enemyId": "en_nameless_guard",
+            "index": 1
+          },
+          {
+            "enemyId": "en_nameless_guard",
+            "index": 2
+          },
+          {
+            "enemyId": "en_nameless_guard",
+            "index": 3
+          }
+        ],
+        "rear": [],
+        "threat": "4인 누적 강화"
+      }
+    ]
+  },
+  {
+    "id": "node_5_4",
+    "chapter": 5,
+    "battle": 4,
+    "type": "elite",
+    "statScaleBps": 75000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "게마트리아의 의식",
+        "front": [
+          {
+            "enemyId": "en_hieronymus",
+            "index": 0
+          },
+          {
+            "enemyId": "en_color_mimesis",
+            "index": 1
+          },
+          {
+            "enemyId": "en_color_mimesis",
+            "index": 2
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_ark_battery_rear",
+            "index": 0
+          }
+        ],
+        "threat": "치유 봉쇄와 적 회복, 부활"
+      }
+    ]
+  },
+  {
+    "id": "node_5_5",
+    "chapter": 5,
+    "battle": 5,
+    "type": "boss",
+    "statScaleBps": 60000,
+    "candidates": [
+      {
+        "id": "A",
+        "label": "최종 보스 편성",
+        "front": [
+          {
+            "enemyId": "boss_keter",
+            "index": 0
+          },
+          {
+            "enemyId": "en_gatekeeper",
+            "index": 1
+          }
+        ],
+        "rear": [
+          {
+            "enemyId": "en_ark_battery_rear",
+            "index": 0
+          }
+        ],
+        "threat": "케테르 3단계(분체 전개·무명의 선고)와 후방 봉쇄"
       }
     ]
   }

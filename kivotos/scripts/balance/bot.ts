@@ -68,14 +68,14 @@ async function arrange(d: UiDriver) {
 }
 
 function levelTarget(run: RunView) {
-  const n = (run.chapter - 1) * 5 + run.battle; // 1..15
-  return Math.min(10, 3 + Math.floor(n / 2));
+  const n = (run.chapter - 1) * 5 + run.battle; // 1..25 (v2.4.2: 레벨 6부터 XP가 늘어 레벨 10은 4~5장 목표)
+  return Math.min(10, n <= 6 ? 3 + Math.floor(n / 2) : 6 + Math.floor((n - 6) / 4.5));
 }
 
 async function shop(d: UiDriver) {
   for (let guard = 0; guard < 60; guard++) {
     const run = d.get().run!;
-    const reserve = run.chapter === 1 ? 10 : run.chapter === 2 ? 20 : 0;
+    const reserve = [10, 20, 20, 10, 0][run.chapter - 1] ?? 0;
     const owned = new Map<string, number>();
     for (const x of insts(run)) owned.set(x.inst.unitId, (owned.get(x.inst.unitId) ?? 0) + 3 ** (x.inst.star - 1));
     const benchFree = run.board.bench.filter((x) => !x).length;
@@ -100,7 +100,7 @@ async function shop(d: UiDriver) {
     }
     // 5) 새로고침(여유 골드)
     if (run.gold - run.shop.rerollCost >= reserve + 4 && run.chapter >= 2) { if ((await d.send('REROLL_SHOP')).ok) continue; }
-    if (run.chapter === 3 && run.gold >= run.shop.rerollCost && (run.battle >= 3)) { if ((await d.send('REROLL_SHOP')).ok) continue; }
+    if (run.chapter >= 4 && run.gold >= run.shop.rerollCost && (run.chapter === 5 || run.battle >= 3)) { if ((await d.send('REROLL_SHOP')).ok) continue; }
     return;
   }
 }

@@ -95,7 +95,7 @@ function briefing(ctx: Ctx, s: UiState, aide: HTMLElement, resume: (() => void) 
 
   if (!run) {
     // 저장 런이 없거나 요약만 있을 때: 장별 보스 예고 + 시작 버튼
-    const bosses = [1, 2, 3].map((ch) => bossOf(ctx, ch));
+    const bosses = Array.from({ length: ctx.driver.catalog.rules.run.chapters }, (_, k) => bossOf(ctx, k + 1));
     return h('aside', { class: 'k-brief' }, head,
       s.savedRun ? sec('현재 위치', 'flag', h('p', { class: 'k-brief-big' }, `${s.savedRun.chapter}장 ${s.savedRun.battle}전투`, h('small', null, ` · 런 체력 ${s.savedRun.runHp}/${s.savedRun.runHpMax}`))) : null,
       sec('장별 보스', 'skull', h('div', { class: 'k-brief-bosses' }, ...bosses.map((id, i) => id ? h('div', { class: 'k-brief-boss-mini' }, enemyPortrait(ctx, id), h('small', null, `${i + 1}장`), h('b', null, ctx.lookup.enemy(id)!.name.replace(/\s*\(.*\)$/, '').split(': ').pop() ?? '')) : null))),

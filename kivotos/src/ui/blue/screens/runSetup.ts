@@ -29,9 +29,9 @@ export function mountRunSetup(ctx: Ctx, s: UiState): Screen {
           h('div', { class: 'k-seed-row' }, seedInput, apply),
           h('div', { class: 'k-seed-row' }, copy, random),
           h('div', { class: 'k-start-vals' },
-            h('span', null, icon('heart', 20), h('b', null, '80'), '런 체력'),
-            h('span', null, icon('gold', 20), h('b', null, '10'), '골드'),
-            h('span', null, h('i', null, 'Lv'), h('b', null, '3'), '레벨'))),
+            h('span', null, icon('heart', 20), h('b', null, String(ctx.driver.catalog.rules.run.startRunHp)), '런 체력'),
+            h('span', null, icon('gold', 20), h('b', null, String(ctx.driver.catalog.rules.run.startGold)), '골드'),
+            h('span', null, h('i', null, 'Lv'), h('b', null, String(ctx.driver.catalog.rules.run.startLevel)), '레벨'))),
         h('section', { class: 'k-panel k-bosses' },
           h('h3', null, icon('skull', 22), '장별 보스'),
           h('div', { class: 'k-boss-row' }, ...bosses.map((id, i) => {

@@ -54,8 +54,9 @@ describe('보상 제안', () => {
     }
   });
 
-  it('3장 보스는 오파츠를 주지 않는다(1·2장만)', () => {
-    expect(rollOopartOffer(pack, state(), 'boss', 3, new Rng(7))).toEqual([]);
+  it('5장(최종) 보스는 오파츠를 주지 않는다(1~4장만, v2.4.2)', () => {
+    expect(rollOopartOffer(pack, state(), 'boss', 5, new Rng(7))).toEqual([]);
+    expect(rollOopartOffer(pack, state(), 'boss', 4, new Rng(7))).toHaveLength(3);
   });
 
   it('희귀가 바닥나면 아래 등급으로 내려간다', () => {

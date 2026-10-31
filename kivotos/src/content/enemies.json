@@ -275,5 +275,266 @@
     "ai": "1) 기본 공격 대신 최전열 아군에게 열선 레이저(ATK 190% + DEF -20%) 발사. 2) HP 60% 최초 도달 시 '대사막의 모래폭풍'(전방 전체 ATK 160% 피해 + SPD -15, 전투당 1회 확정) 발동. 3) 에너지 100 도달 시 '정화의 폭풍 미사일'(전방 전체 ATK 235% 피해) 발사.",
     "role": "3장 최종 보스 (초고방어 장갑 파쇄 + 단일/광역 복합 생존력 최종 시험)",
     "counterplay": "대응 A(방어 파쇄 + 결전 스트라이커): 아즈사·리오·시로코로 DEF 160을 깎고 미카·와카모·이오리·아루(아코+히마리 지원)로 장갑을 뚫어 단기 격파 / 대응 B(철벽 요새 + 지속 누적): 호시노·유우카·츠바키·코하루·시즈코·밀레니엄 6단계 보호막으로 미사일 폭격을 모두 흡수하며 어설트/중장갑 중첩 딜로 격파"
+  },
+  {
+    "id": "en_cracker_drone",
+    "name": "해킹 드론 「크래커」",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 3200,
+      "atk": 200,
+      "def": 70,
+      "spd": 120,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_cracker_hack"
+    ],
+    "ai": "쿨다운 0이면 최전열 아군에게 130% 해킹 사격 + 에너지 −15",
+    "role": "4장 일반 전방 (자원 탈취)",
+    "counterplay": "체력이 낮다. 광역기로 먼저 지운다"
+  },
+  {
+    "id": "en_holo_decoy",
+    "name": "홀로 디코이",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 2400,
+      "atk": 160,
+      "def": 40,
+      "spd": 115,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_decoy_burst",
+      "eff_en_decoy_mirage"
+    ],
+    "ai": "전방 2인에게 120% 산탄, 첫 직접 피격은 무효",
+    "role": "4장 일반 전방 (교란)",
+    "counterplay": "연타·후속 공격으로 첫 피격 무효를 벗긴다"
+  },
+  {
+    "id": "en_amas_guard",
+    "name": "AMAS 경비 로봇",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 5200,
+      "atk": 170,
+      "def": 130,
+      "spd": 94,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_amas_lockdown",
+      "eff_en_amas_aura"
+    ],
+    "ai": "쿨다운마다 아군 전원 도발 + DEF 증가, 살아 있는 동안 동료 받는 피해 −15%",
+    "role": "4장 탱커",
+    "counterplay": "DEF 감소·고정 피해로 먼저 부순다"
+  },
+  {
+    "id": "en_jammer_tower_rear",
+    "name": "전파 방해탑 (후방)",
+    "zone": "rear",
+    "boss": false,
+    "baseStats": {
+      "hp": 2400,
+      "atk": 190,
+      "def": 60,
+      "spd": 104,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_en_jammer_rear"
+    ],
+    "ai": "후방 차례마다 최전열 120% 사격 + 아군 팀 SP −1",
+    "role": "4장 후방 (SP 탈취)",
+    "counterplay": "밀레니엄 시너지가 켜져 있으면 SP 탈취가 2번에 1번만 일어난다"
+  },
+  {
+    "id": "en_avatar_admin",
+    "name": "시스템 관리자 「아바타」",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 7800,
+      "atk": 235,
+      "def": 110,
+      "spd": 108,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_avatar_purge",
+      "eff_en_avatar_ult"
+    ],
+    "ai": "아군 전방 버프 1개씩 해제 + 전체 90%, 자기 보호막. 필살기 단일 220%",
+    "role": "4장 정예 (버프 해제)",
+    "counterplay": "버프보다 보호막·치유로 버틴다"
+  },
+  {
+    "id": "boss_hod",
+    "name": "데카그라마톤의 예언자: 호드 (4장 보스)",
+    "zone": "front",
+    "boss": true,
+    "baseStats": {
+      "hp": 26000,
+      "atk": 285,
+      "def": 140,
+      "spd": 110,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_boss_hod_jam",
+      "eff_boss_hod_silence",
+      "eff_boss_hod_ult",
+      "eff_boss_hod_mirror"
+    ],
+    "ai": "기본 공격이 신호 교란(전방 2인, 에너지 −10). 스킬은 에너지 최고 아군 침묵. 필살기는 전체 + 팀 SP 0. HP 50%에 거울 노드",
+    "role": "4장 보스 (자원 봉쇄)",
+    "counterplay": "서포터·후방 지원으로 SP·에너지를 다시 채운다"
+  },
+  {
+    "id": "en_nameless_guard",
+    "name": "무명의 사제 근위병",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 4200,
+      "atk": 235,
+      "def": 90,
+      "spd": 108,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_nameless_strike",
+      "eff_en_nameless_zeal"
+    ],
+    "ai": "쿨다운마다 단일 145%. 자기 차례가 끝날 때마다 ATK +8%(최대 5중첩)",
+    "role": "5장 일반 전방 (누적 강화)",
+    "counterplay": "오래 끌면 세진다. 빨리 끊는다"
+  },
+  {
+    "id": "en_ark_battery_rear",
+    "name": "방주 방어 포대 (후방)",
+    "zone": "rear",
+    "boss": false,
+    "baseStats": {
+      "hp": 3000,
+      "atk": 250,
+      "def": 70,
+      "spd": 100,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_en_ark_battery_rear",
+      "eff_en_ark_barrage"
+    ],
+    "ai": "후방 차례마다 단일 130%, 300AV마다 아군 전방 전체 90% 포격",
+    "role": "5장 후방 (주기 광역)",
+    "counterplay": "보호막·치유로 포격 주기를 버틴다"
+  },
+  {
+    "id": "en_color_mimesis",
+    "name": "색채 감염 미메시스",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 3800,
+      "atk": 225,
+      "def": 80,
+      "spd": 112,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_color_smite",
+      "eff_en_color_revive"
+    ],
+    "ai": "전방 2인 140%. 처음 쓰러질 때 HP 40%로 되살아난다",
+    "role": "5장 일반 전방 (부활)",
+    "counterplay": "처치를 두 번 해야 한다. 광역 연쇄가 유리"
+  },
+  {
+    "id": "en_gatekeeper",
+    "name": "광자 수문장 「게이트키퍼」",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 6500,
+      "atk": 195,
+      "def": 150,
+      "spd": 90,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_gate_seal"
+    ],
+    "ai": "쿨다운마다 아군 전원 도발 + 아군 후방 1명의 다음 차례를 크게 늦춘다",
+    "role": "5장 탱커 (후방 봉쇄)",
+    "counterplay": "방어 무시·고정 피해"
+  },
+  {
+    "id": "en_hieronymus",
+    "name": "게마트리아 예로니무스",
+    "zone": "front",
+    "boss": false,
+    "baseStats": {
+      "hp": 12000,
+      "atk": 270,
+      "def": 120,
+      "spd": 104,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_en_hiero_rite",
+      "eff_en_hiero_ult"
+    ],
+    "ai": "동료 중 HP 비율이 가장 낮은 적 25% 치유 + 아군 전방 받는 치유 −50%. 필살기 전체 170%",
+    "role": "5장 정예 (치유 봉쇄)",
+    "counterplay": "침묵·기절로 의식을 끊는다"
+  },
+  {
+    "id": "boss_keter",
+    "name": "데카그라마톤의 의지: 케테르 (5장 최종 보스)",
+    "zone": "front",
+    "boss": true,
+    "baseStats": {
+      "hp": 48000,
+      "atk": 315,
+      "def": 165,
+      "spd": 110,
+      "critBps": 0,
+      "critDamageBps": 5000
+    },
+    "effectIds": [
+      "eff_common_basic_atk",
+      "eff_boss_keter_gate",
+      "eff_boss_keter_ult",
+      "eff_boss_keter_phase"
+    ],
+    "ai": "스킬은 전체 120% + 무작위 아군 에너지 0. 필살기 전체 220%. HP 66%·33%에 단계 전환",
+    "role": "5장 최종 보스 (3단계)",
+    "counterplay": "AL-1S가 출전하면 2단계 보호막이 절반"
   }
 ]

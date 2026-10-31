@@ -15,7 +15,7 @@ const started = (i: BattleInput): Battle => { const c = createBattle(pack, i); c
 const find = (c: Battle, key: string): U => c.units.find((u) => u.key === key)!;
 
 describe('효과 handler', () => {
-  it('오파츠를 뺀 효과 415개가 모두 엔진에 등록돼 있다', () => {
+  it('오파츠를 뺀 효과 439개가 모두 엔진에 등록돼 있다', () => {
     const impl = implementedEffectIds();
     const missing = pack.effects.filter((e) => e.execution !== 'oopart_container' && !impl.has(e.id.replace(/^eff_/, '')));
     expect(missing.map((e) => e.id)).toEqual([]);
@@ -152,6 +152,28 @@ describe('시너지·오파츠', () => {
     expect(c.sp.ally).toBe(2);
     c.gainSp('ally', -2);
     expect(c.sp.ally).toBe(0);
+  });
+});
+
+describe('4·5장 적(v2.4.2)', () => {
+  const team = [ally('u_hoshino', 0, 'front', 3), ally('u_shiroko', 1, 'front', 3), ally('u_serika', 2, 'front', 3), ally('u_aris', 0, 'rear', 3), ally('u_ayane', 1, 'rear', 3), ally('u_nonomi', 2, 'rear', 3)];
+  const nodes = pack.nodes.filter((n) => /^node_[45]_/.test(n.id));
+  it('4·5장 노드 10개 · 후보 편성마다 예외 없이 끝나고 결정적', () => {
+    expect(nodes).toHaveLength(10);
+    for (const node of nodes) for (const cand of node.candidates) {
+      const i = input(team, [...cand.front.map((f) => enemy(f.enemyId, f.index)), ...cand.rear.map((f) => enemy(f.enemyId, f.index, 'rear'))], { seed: node.id, nodeType: node.type, statScaleBps: node.statScaleBps });
+      const out = simulateBattle(pack, i);
+      expect(out.aborted, node.id).toBe(false);
+      expect(out.events.at(-1)!.t).toBe('end');
+      expect(JSON.stringify(simulateBattle(pack, i))).toBe(JSON.stringify(out));
+    }
+  });
+  it('호드·케테르 보스는 체력이 줄면 단계 패턴을 쓴다', () => {
+    for (const boss of ['boss_hod', 'boss_keter']) {
+      const out = simulateBattle(pack, input(team, [enemy(boss)], { seed: boss, nodeType: 'boss', statScaleBps: 10000 }));
+      expect(out.aborted).toBe(false);
+      expect(out.firedEffects.some((id) => id.startsWith(boss)), boss).toBe(true);
+    }
   });
 });
 
