@@ -105,13 +105,18 @@ export function rollShopDetailed(pack: ContentPack, input: ShopRollInput, rng: R
     const tierLeft = byCost.map((ids) => ids.reduce((a, id) => a + remaining.get(id)!, 0));
     const weights = odds.map((p, c) => (tierLeft[c] > 0 ? p : 0));
     if (!weights.some((w) => w > 0)) { out.push(null); continue; }
-    // C03: 1번 칸은 그 레벨에서 나올 수 있는(확률 > 0, 남은 장수 > 0) 최고 코스트
-    const cost = slot === 0 && input.topCostFirstSlot ? weights.reduce((hi, w, c) => (w > 0 ? c : hi), 0) : rng.weightedIndex(weights);
-    let pool = byCost[cost];
+    // v2.4.4: 5번 칸은 추천 모드를 먼저 정하고, 추천 모드면 추천 후보가 남아 있는 코스트 안에서만 코스트를 뽑는다.
+    // 그래서 추천 후보가 한 명이라도 나올 수 있으면 추천 확률이 정확히 recommendedModeChanceBps다(전에는 뽑힌 코스트에 후보가 없으면 일반 칸).
+    const recPoolOf = (c: number) => byCost[c].filter((id) => recommended.has(id) && remaining.get(id)! > 0);
+    let recWeights: number[] | null = null;
     if (slot === recommendedSlotIndex && rng.chance(recommendedModeChanceBps)) {
-      const recPool = pool.filter((id) => recommended.has(id) && remaining.get(id)! > 0);
-      if (recPool.length) { pool = recPool; rec[slot] = true; }
+      const w = weights.map((p, c) => (p > 0 && recPoolOf(c).length ? p : 0));
+      if (w.some((x) => x > 0)) recWeights = w;
     }
+    // C03: 1번 칸은 그 레벨에서 나올 수 있는(확률 > 0, 남은 장수 > 0) 최고 코스트
+    const cost = slot === 0 && input.topCostFirstSlot ? weights.reduce((hi, w, c) => (w > 0 ? c : hi), 0) : rng.weightedIndex(recWeights ?? weights);
+    let pool = byCost[cost];
+    if (recWeights) { pool = recPoolOf(cost); rec[slot] = true; }
     const id = pool[rng.weightedIndex(pool.map((x) => remaining.get(x)!))];
     remaining.set(id, remaining.get(id)! - 1);
     out.push(id);

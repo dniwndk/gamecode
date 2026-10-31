@@ -66,6 +66,8 @@ kbd { font-family: var(--f-num); }
 .k-root[data-chapter="1"] .k-sky { --sky-top: #c3e6ff; }
 .k-root[data-chapter="2"] .k-sky { --sky-top: #b2ecf2; }
 .k-root[data-chapter="3"] .k-sky { --sky-top: #d4d7ff; }
+.k-root[data-chapter="4"] .k-sky { --sky-top: #b9d4f5; }
+.k-root[data-chapter="5"] .k-sky { --sky-top: #f2d9c4; }
 .k-halo-bg { position: absolute; width: 1100px; height: 1100px; right: -260px; top: -380px; border-radius: 50%;
   border: 2px solid rgba(255,255,255,.75); box-shadow: 0 0 0 26px rgba(255,255,255,.18), 0 0 0 64px rgba(255,255,255,.12), inset 0 0 0 120px rgba(255,255,255,.08);
   animation: k-spin 120s linear infinite; }
@@ -1669,3 +1671,17 @@ kbd { font-family: var(--f-num); }
 .k-stack-bar { height: 8px; border-radius: 4px; background: #d9e6f5; overflow: hidden; }
 .k-stack-bar i { display: block; height: 100%; width: var(--p, 0%); background: linear-gradient(90deg, var(--blue), var(--cyan)); }
 .k-stack-line small { font-size: 13px; color: var(--ink-2); }
+
+/* v2.4.4: 5장 25칸. 좁은 자리(모바일·브리핑)에서는 지금 장만 크게, 나머지 장은 작은 점으로 */
+.is-mobile .k-track { overflow-x: visible; justify-content: center; gap: 4px; }
+.is-mobile .k-track-ch { padding: 3px 3px; gap: 2px; }
+.is-mobile .k-track-ch:not(.is-cur) .k-node, .k-brief-progress .k-track-ch:not(.is-cur) .k-node { width: 9px; height: 9px; }
+.is-mobile .k-track-ch:not(.is-cur) .k-node svg, .k-brief-progress .k-track-ch:not(.is-cur) .k-node svg { display: none; }
+.is-mobile .k-track-ch:not(.is-cur) .k-track-label { display: none; }
+.k-brief-progress .k-track-ch:not(.is-cur) { padding: 5px 3px; gap: 3px; }
+.k-top .k-track { gap: 6px; min-width: 0; }
+.k-top .k-track-ch:not(.is-cur) { padding: 6px 4px; gap: 4px; }
+.k-top .k-track-ch:not(.is-cur) .k-track-label { display: none; }
+.k-top .k-track-ch:not(.is-cur) .k-node { width: 11px; height: 11px; }
+.k-top .k-track-ch:not(.is-cur) .k-node svg { display: none; }
+.k-top .k-track-label { white-space: nowrap; }
