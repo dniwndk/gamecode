@@ -28,6 +28,9 @@ export interface RunStacks {
 
 export const emptyRunStacks = (): RunStacks => ({ levelUpExp: 0, makeUp: 0, workload: 0, rested: false, dessertPending: false, goldCardReroll: false });
 
+/** AL-1S 각성 필요 경험치(v2.3 9장 표, v2.3.9에서 30 → 15). 툴팁 표시용. 판정은 유닛 awakening.expRequired */
+export const AWAKEN_EXP = 15;
+
 export const LEVEL_UP = { expPerLevel: 5, maxLevel: 6, awakenedMaxLevel: 10, atkBpsPerLevel: 500, killExp: 1, eliteBossKillExp: 3, winExp: 1 } as const;
 export const MAKE_UP = { max: 4, atkBpsPerStack: 800, goldPerStack: [1, 2] } as const;
 export const WORKLOAD = { max: 5, atkBpsPerStack: 600 } as const;
@@ -116,7 +119,7 @@ export function runStackLines(s: RunStacks, synergyId: string, awakened: boolean
         { label: '레벨', value: `Lv.${lv} / ${max} · ATK +${(lv * LEVEL_UP.atkBpsPerLevel) / 100}%`, progress: { current: lv, max }, note: null },
         { label: '경험치', value: String(s.levelUpExp), progress: null, note: toNext === null ? '최고 레벨' : `다음 레벨까지 ${toNext}` },
       ];
-      if (!princess) lines.push({ label: '각성', value: `${Math.min(s.levelUpExp, 30)} / 30`, progress: { current: Math.min(s.levelUpExp, 30), max: 30 }, note: '경험치 30 + 3성 아리스면 AL-1S' });
+      if (!princess) lines.push({ label: '각성', value: `${Math.min(s.levelUpExp, AWAKEN_EXP)} / ${AWAKEN_EXP}`, progress: { current: Math.min(s.levelUpExp, AWAKEN_EXP), max: AWAKEN_EXP }, note: `경험치 ${AWAKEN_EXP} + 3성 아리스면 AL-1S` });
       return lines;
     }
     case MAKE_UP_SYN:
