@@ -23,6 +23,8 @@ export interface SynergyStateView {
   nextThreshold: number | null;
   activeTier: number | null; // tiers 배열의 index
   tracked: boolean;
+  /** 런 동안 쌓이는 스택(아리스 경험치·보충수업 등). 없으면 null. 툴팁에 그대로 보여 준다 */
+  stacks: { label: string; value: string; progress: { current: number; max: number } | null; note: string | null }[] | null;
 }
 
 export interface ShopSlotView {
@@ -42,7 +44,7 @@ export interface NodeCandidateView {
 
 export interface ResultView {
   outcome: 'win' | 'loss';
-  reason: 'enemy_front_wiped' | 'ally_front_wiped' | 'both_wiped' | 'timeout';
+  reason: 'enemy_front_wiped' | 'ally_front_wiped' | 'both_wiped';
   runHp: { before: number; after: number; breakdown: { label: string; value: number }[] };
   income: { label: string; value: number }[];
   xpGained: number;
@@ -60,8 +62,18 @@ export type BattleEventView =
   | { t: 'status'; av: number; target: Ref; statusId: string; op: 'add' | 'remove'; replacedFrom?: string }
   | { t: 'resource'; av: number; side: Side; sp?: number; energy?: { unit: Ref; value: number } }
   | { t: 'timeline'; av: number; upcoming: Ref[] }
+  /** 격화 단계가 바뀐 순간. damageBps는 지금 양쪽 모든 피해에 더해지는 비율(시간 제한 대신, GDD v2.3 13장) */
+  | { t: 'escalation'; av: number; damageBps: number }
   | { t: 'defeated'; av: number; target: Ref; by?: Ref }
+  /**
+   * 연출용 표시 이벤트(선택). 시너지·오파츠가 발동한 순간을 알린다. 바로 뒤에 오는 피해·치유·자원 이벤트가 그 효과다.
+   * 결과에는 영향이 없고, 코어가 보내지 않으면 화면은 발동 배너·연쇄 카운터만 생략한다.
+   * chain: 같은 효과가 이어진 횟수(용의 향로 연쇄 2, 악명 3 …). 없으면 화면이 한 행동 안의 발동 수로 센다.
+   */
+  | { t: 'proc'; av: number; cause: ProcCause; label: string; unit?: Ref; chain?: number }
   | { t: 'end'; av: number; outcome: 'win' | 'loss'; reason: ResultView['reason'] };
+
+export interface ProcCause { kind: 'synergy' | 'oopart'; id: string }
 
 export interface CombatantView {
   ref: Ref;
@@ -150,7 +162,7 @@ export interface UiState {
 
 export interface Cue {
   id: number;
-  kind: 'recruit' | 'deploy' | 'merge' | 'levelup' | 'equip_returned' | 'oopart' | 'oopart_merge';
+  kind: 'recruit' | 'deploy' | 'merge' | 'levelup' | 'equip_returned' | 'oopart' | 'oopart_merge' | 'awaken';
   unitId?: string;
   /** oopart: 얻은 오파츠, oopart_merge: 완성된 전설 */
   oopartId?: string;

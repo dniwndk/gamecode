@@ -349,6 +349,7 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
         if (c.star === 3) ctx.speak(c.unitId, 'star3', card, 2500);
       }
       if (c.kind === 'levelup') ctx.fx.burst(el.querySelector('.k-lv-big'), { color: '#45d3ff', size: 260 });
+      if (c.kind === 'awaken' && c.unitId) ctx.toast(`각성! 이름 없는 신들의 왕녀 「${ctx.lookup.unit(c.unitId).name}」`);
       if (c.kind === 'levelup') ctx.toast(`레벨 ${c.amount}! 이제 ${c.amount}명까지 편성할 수 있어요`);
       if (c.kind === 'equip_returned' && c.unitId) ctx.toast(`${ctx.lookup.unit(c.unitId).name}의 맞지 않는 장비가 보관함으로 돌아갔어요`);
     }
