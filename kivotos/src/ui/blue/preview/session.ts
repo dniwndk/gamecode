@@ -65,9 +65,12 @@ interface RunState {
   rewardRng: Rng;
 }
 
-const PROFILE_KEY = 'kivotos-oopart-profile';
+// v2: 전투 엔진 배포(D-030) 때 이전 기록(레시피 공개)을 비웠다. 옛 키는 읽지 않고 지운다.
+const PROFILE_KEY = 'kivotos-oopart-profile-v2';
+const OLD_PROFILE_KEYS = ['kivotos-oopart-profile'];
 function loadProfile(): OopartProfile {
   try {
+    for (const k of OLD_PROFILE_KEYS) localStorage.removeItem(k);
     const v = JSON.parse(localStorage.getItem(PROFILE_KEY) ?? 'null') as OopartProfile | null;
     return v && Array.isArray(v.revealedRecipes) ? { revealedRecipes: v.revealedRecipes.filter((x) => typeof x === 'string') } : emptyOopartProfile();
   } catch { return emptyOopartProfile(); }
@@ -101,37 +104,13 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
 
   let phase: RunPhase = 'HOME';
   let revision = base.revision;
-  let run: RunState | null = demoRun();
+  // 배포본은 진행 기록 없이 시작한다(2026-10-31 사용자 지시: 견본 진행 「이어하기」 제거)
+  let run: RunState | null = null;
   let cueId = 0;
   let cues: Cue[] = [];
   let profile = loadProfile();
   const supportMap = Object.fromEntries(pack.ooparts.map((o) => [o.id, oopartSupport(o.id)]));
   const listeners = new Set<(s: UiState) => void>();
-
-  // ── 데모 런: 사양서 11.2 권장 목 상태(2장 3전투, 골드 34, 레벨 6, 한탕 4, 금고 45G, 합성 예고 1칸, 적 후보 A/B)
-  function demoRun(): RunState {
-    const bench: (Inst | null)[] = Array(9).fill(null);
-    bench[0] = newInst('u_serika');
-    bench[1] = newInst('u_serika');
-    bench[2] = newInst('u_kotama');
-    bench[3] = newInst('u_haruka');
-    const r: RunState = {
-      seed: 'KIVO-7Q2M-SCHALE', chapter: 2, battle: 3, runHp: 62, gold: 34, level: 6, xp: 12,
-      streak: { kind: 'win', count: 3 }, strategies: ['str_schale_supply', 'str_sandstorm_endurance'],
-      front: [newInst('u_hoshino', 1, ['eq_heavy_ballistic_plate']), newInst('u_shiroko', 2, ['eq_abydos_goggles']), newInst('u_yuuka', 2), newInst('u_nonomi')],
-      rear: [null, newInst('u_ayane'), null, newInst('u_serina'), null, null],
-      bench, stash: ['eq_tactical_watch', 'eq_trinity_rosary'],
-      shop: ['u_serika', 'u_aru', 'u_iori', 'u_mutsuki', 'u_akira'], shopRec: [false, false, false, false, true], locked: false, tracked: 'syn_seminar', chosen: 'A',
-      history: ['win', 'win', 'loss', 'win', 'win', 'win', 'win', null, null, null, null, null, null, null, null],
-      offers: {}, recruited: new Set(), deployed: new Set(),
-      oop: { owned: ['oop_nebra_disk', 'oop_voynich', 'oop_nimrud_lens'], rescueUsed: false }, oopOffer: null, oopStartDone: true,
-      runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false, freeRerollsUsed: 0,
-      stacks: emptyRunStacks(), awakenedFrom: new Set(),
-      shopRng: Rng.forStream('KIVO-7Q2M-SCHALE', 'shop'), rewardRng: Rng.forStream('KIVO-7Q2M-SCHALE', 'reward'),
-    };
-    for (const i of [...r.front, ...r.rear, ...r.bench]) if (i) { r.recruited.add(i.unitId); r.deployed.add(i.unitId); }
-    return r;
-  }
 
   // ── 파생 값 ─────────────────────────────────────────────
   const node = (r: RunState): NodeDefinition => pack.nodes.find((n) => n.chapter === r.chapter && n.battle === r.battle) ?? pack.nodes[0];
