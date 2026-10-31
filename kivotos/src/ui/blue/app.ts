@@ -5,6 +5,7 @@ import { h } from './dom';
 import { chooseFxTier } from './fx/capabilities';
 import { createFx, NO_FX, type Fx } from './fx/engine';
 import { createSfx, type Sfx } from './fx/sfx';
+import { bgmFor, createBgm } from './fx/bgm';
 import { icon } from './icons';
 import type { UiDriver, UiState } from './model';
 import { mountBattle } from './screens/battle';
@@ -30,6 +31,8 @@ export interface Settings {
   fx: boolean;
   /** 효과음 볼륨 0~100(0이면 오디오 장치를 열지 않는다) */
   sfxVolume: number;
+  /** 배경 음악 볼륨 0~100 */
+  bgmVolume: number;
 }
 
 export interface Screen {
@@ -84,7 +87,7 @@ export const FACTION_COLOR: Record<string, string> = {
 };
 
 const SETTINGS_KEY = 'kivotos-ui-settings';
-const DEFAULT_SETTINGS: Settings = { reduceMotion: false, noFlash: false, noShake: false, dialogue: true, defaultSpeed: 1, fx: true, sfxVolume: 60 };
+const DEFAULT_SETTINGS: Settings = { reduceMotion: false, noFlash: false, noShake: false, dialogue: true, defaultSpeed: 1, fx: true, sfxVolume: 60, bgmVolume: 50 };
 
 function loadSettings(): Settings {
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -151,6 +154,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
   };
   applySettings();
   const sfx = createSfx(() => settings.sfxVolume);
+  const bgm = createBgm(art, () => settings.bgmVolume);
 
   // 셰이더 연출: 설정·연출 줄이기·WebGL2 지원에 따라 켜고 끈다. 화면 코드는 ctx.fx만 부른다.
   let fx: Fx = NO_FX;
@@ -245,6 +249,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
       applySettings();
       syncFx();
       sfx.setVolume(settings.sfxVolume);
+      bgm.setVolume(settings.bgmVolume);
       try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* 무시 */ }
     },
     mobile: () => mobile,
@@ -323,6 +328,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     applyScene(s, key);
     root.dataset.chapter = String(s.run?.chapter ?? 1);
     root.dataset.phase = s.phase;
+    bgm.play(bgmFor(s.phase, s.phase === 'HOME' ? route : null));
     fx.theme(s.run?.chapter ?? 1);
     if (key === currentKey && current?.update) {
       current.update(s);

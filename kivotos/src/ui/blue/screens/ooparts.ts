@@ -103,3 +103,23 @@ export function oopartChip(ctx: Ctx, id: string): HTMLElement {
     ...oopartBody(ctx, id)));
   return chip;
 }
+
+/** 보유 오파츠 전체 목록(상단 바 「오파츠」 버튼). 그림·이름·등급·효과·대가·적용 상태를 한 번에 본다 */
+export function openOwnedOoparts(ctx: Ctx, ids: readonly string[]): void {
+  let close: () => void = () => {};
+  const order = { legendary: 0, rare: 1, uncommon: 2, common: 3 } as Record<string, number>;
+  const sorted = [...ids].sort((a, b) => (order[ctx.lookup.oopart(a)?.rarity ?? 'common'] ?? 9) - (order[ctx.lookup.oopart(b)?.rarity ?? 'common'] ?? 9));
+  const rows = sorted.map((id) => {
+    const o = ctx.lookup.oopart(id);
+    const [label, color] = OOPART_RARITY[o?.rarity ?? 'common'];
+    return h('article', { class: cls('k-oop-row', o?.kind === 'drawback' && 'is-drawback'), style: `--rc:${color}` },
+      h('div', { class: 'k-oop-row-art' }, oopartArt(ctx, id, 'k-oop-row-img')),
+      h('div', { class: 'k-oop-row-body' },
+        h('div', { class: 'k-oop-row-head' }, h('strong', null, o?.name ?? id), h('small', null, o ? `${o.code} · ${label}` : '')),
+        ...oopartBody(ctx, id)));
+  });
+  const panel = h('div', { class: 'k-dialog k-oop-list' },
+    h('header', { class: 'k-dialog-head' }, h('h2', null, `보유 오파츠 ${ids.length}`), h('button', { class: 'k-x', 'aria-label': '닫기', onclick: () => close() }, icon('close', 26))),
+    ids.length ? h('div', { class: 'k-oop-rows' }, ...rows) : h('p', { class: 'k-muted k-oop-empty' }, '아직 가진 오파츠가 없어요. 런 시작·정예·보스 승리 때 얻을 수 있어요.'));
+  close = ctx.modal(panel, { wide: true, label: '보유 오파츠' });
+}

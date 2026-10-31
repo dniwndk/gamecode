@@ -722,6 +722,26 @@ kbd { font-family: var(--f-num); }
 .k-strats.k-oop-owned > small { width: auto; margin-right: 4px; }
 .k-strats.k-oop-owned .k-oop-chip { width: 38px; height: 38px; }
 .k-strats.k-oop-owned .k-oop-chip-img { width: 32px; height: 32px; }
+.k-pill.is-oop { cursor: pointer; font: inherit; color: inherit; }
+.k-pill.is-oop .ico { color: #9b5de5; }
+.k-pill.is-oop:hover { background: rgba(155,93,229,.1); }
+.k-oop-list { width: min(980px, 92vw); }
+.k-oop-rows { display: grid; gap: 12px; max-height: 64vh; overflow-y: auto; padding: 18px 28px 24px; }
+.k-oop-row { --rc: #8a9bb3; display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: start; padding: 14px 18px; border-radius: 14px; background: #fff; border: 1px solid var(--line); box-shadow: inset 4px 0 0 var(--rc); }
+.k-oop-row.is-drawback { border-color: rgba(226,72,59,.35); }
+.k-oop-row-art { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 12px; background: color-mix(in srgb, var(--rc) 12%, #f4f7fb); }
+.k-oop-row-img { width: 84px; height: 84px; object-fit: contain; }
+.k-oop-row-body { display: grid; gap: 6px; min-width: 0; }
+.k-oop-row-head { display: flex; align-items: baseline; gap: 10px; }
+.k-oop-row-head strong { font-size: 22px; }
+.k-oop-row-head small { color: var(--rc); font-weight: 700; font-size: 15px; }
+.k-oop-row-body p { margin: 0; font-size: 17px; line-height: 1.5; }
+.k-oop-row-body .k-oop-flavor { color: var(--ink-3); font-style: italic; font-size: 15px; }
+.k-oop-empty { padding: 28px; }
+.is-mobile .k-oop-row { grid-template-columns: 64px 1fr; gap: 12px; padding: 10px 12px; }
+.is-mobile .k-oop-row-art { width: 64px; height: 64px; }
+.is-mobile .k-oop-row-img { width: 56px; height: 56px; }
+.is-mobile .k-pill.is-oop small { display: none; }
 .k-oop-chip { --rc: #8a9bb3; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; cursor: help;
   background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rc) 28%, #fff), color-mix(in srgb, var(--rc) 12%, #eef3fa)); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--rc) 55%, transparent); }
 .k-oop-chip.is-drawback { box-shadow: inset 0 0 0 2px #e2483b; }

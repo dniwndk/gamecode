@@ -5,7 +5,7 @@ import { cls, fill, h, svg } from '../dom';
 import { ChainCounter, ExChain, cutinMs, escalationHeat, floatSize, hitstopMs, impactOf, isWounded, rankActiveSynergies, shakePx, type Impact, type StopKind } from '../fx/battleFx';
 import { icon } from '../icons';
 import type { BattleEventView, CombatantView, ProcCause, Ref, UiState } from '../model';
-import { oopartArt } from './ooparts';
+import { oopartArt, openOwnedOoparts } from './ooparts';
 import { resultPanel } from './result';
 
 const key = (r: Ref) => `${r.side}-${r.zone}-${r.index}`;
@@ -119,7 +119,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
     h('header', { class: 'k-battle-top' },
       h('div', { class: 'k-battle-title' }, h('span', { class: `k-node-badge is-${run.nodeType}` }, icon(run.nodeType === 'boss' ? 'skull' : run.nodeType === 'elite' ? 'diamond' : 'sword', 16), run.nodeType === 'boss' ? '보스' : run.nodeType === 'elite' ? '정예' : '전투'), h('strong', null, battle.nodeLabel)),
       avBox,
-      h('div', { class: 'k-battle-ctrls' }, h('div', { class: 'k-speeds', role: 'group', 'aria-label': '배속' }, ...speedBtns), pauseBtn, skipBtn)),
+      h('div', { class: 'k-battle-ctrls' }, h('button', { class: 'k-ctrl is-oop', title: '보유 오파츠와 효과 보기', onclick: () => openOwnedOoparts(ctx, run.ooparts.owned) }, icon('diamond', 20), `오파츠 ${run.ooparts.owned.length}`), h('div', { class: 'k-speeds', role: 'group', 'aria-label': '배속' }, ...speedBtns), pauseBtn, skipBtn)),
     timeline,
     field,
     h('footer', { class: 'k-battle-foot' }, h('div', { class: 'k-sp-wrap' }, h('small', null, '팀 SP'), spBox), logBox),
