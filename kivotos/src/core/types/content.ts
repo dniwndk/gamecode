@@ -276,7 +276,7 @@ export interface RulesConfig {
     eventLimit: number;
     globalPulseAv: number;
     /** 시간 제한 없음(v2.3.6). 오래 끄는 전투는 양쪽 피해가 함께 커진다(13장). */
-    escalation: { startAv: number; stepAv: number; damageBpsPerStep: number };
+    escalation: { startAv: number; stepAv: number; allyDamageBpsPerStep: number; enemyDamageBpsPerStep: number };
     teamSp: { start: number; max: number };
     energy: { start: number; max: number };
     /** 전투 엔진 적 능력치 보정(v2.4 1장). 노드 배율 뒤에 곱한다 */

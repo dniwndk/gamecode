@@ -82,7 +82,7 @@ function millennium(tier: 2 | 4 | 6 | 8): SynFx {
   return (c, k) => {
     const SYN = 'syn_millennium';
     // v2.4.5: 사용자 요청으로 모든 수치 절반
-    const t = { 2: { sh: 0.075, atk: 700, dmg: 0, crit: 0, en: 0 }, 4: { sh: 0.11, atk: 1250, dmg: 1000, crit: 0, en: 0 }, 6: { sh: 0.16, atk: 2000, dmg: 1750, crit: 750, en: 10 }, 8: { sh: 0.2, atk: 2750, dmg: 2250, crit: 1000, en: 12 } }[tier];
+    const t = { 2: { sh: 0.056, atk: 700, dmg: 0, crit: 0, en: 0 }, 4: { sh: 0.083, atk: 1250, dmg: 1000, crit: 0, en: 0 }, 6: { sh: 0.12, atk: 2000, dmg: 1750, crit: 750, en: 10 }, 8: { sh: 0.15, atk: 2750, dmg: 2250, crit: 1000, en: 12 } }[tier];
     stats(c, SYN, 'millennium', { atkPct: t.atk }, 0, k);
     const src = () => mem(c, SYN)[0] ?? allyFront(c)[0];
     const wave = (label: string) => {
@@ -274,7 +274,7 @@ function srt(tier: 2 | 4): SynFx {
       const front = mem(c, SYN).filter((x) => x.zone === 'front' && x.alive);
       if (!front.length) return;
       c.proc('synergy', SYN, '전술 엄호', by);
-      for (const f of front) c.shield(by, f, f.maxHp * 0.15, 2, 'syn_srt_4');
+      for (const f of front) c.shield(by, f, f.maxHp * 0.113, 2, 'syn_srt_4');
     };
     c.on('rear_action_resolved', (e) => { if (e.src?.side === 'ally') cover(e.src); });
     c.on('reaction_resolved', (e) => { if (e.src?.side === 'ally') cover(e.src); });
@@ -718,7 +718,7 @@ function tank(tier: 2 | 3 | 4): SynFx {
       const u = e.tgt;
       if (!isMem(u, SYN) || !u!.alive || c.hpRatio(u!) >= 0.5 || !c.battleOnce(u!, 'tank_shield')) return;
       c.proc('synergy', SYN, '최후의 방벽', u);
-      c.shield(u!, u, u!.maxHp * 0.25 * k, 2, 'syn_tank_4');
+      c.shield(u!, u, u!.maxHp * 0.188 * k, 2, 'syn_tank_4');
     });
   };
 }
@@ -781,7 +781,7 @@ function healer(tier: 2 | 4 | 6): SynFx {
     const fleece = c.has('oop_golden_fleece');
     if (tier >= 4 || fleece) c.overheal.push((src, tgt, over) => {
       if (!isMem(src, SYN) || tgt.side !== 'ally') return;
-      const rate = tier >= 4 ? (fleece ? 1.5 : 1) : 0.25;
+      const rate = tier >= 4 ? (fleece ? 1.5 : 1) * 0.75 : 0.25; // v2.4.12: 보호막 75%
       if (fleece) c.proc('oopart', 'oop_golden_fleece', '넘친 치유 → 보호막', tgt);
       c.shield(src, tgt, over * rate, tier >= 4 ? 2 : 1, `syn_healer_${tier === 6 ? 'plat' : 4}`);
     });

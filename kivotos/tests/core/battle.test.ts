@@ -53,15 +53,18 @@ describe('피해 공식(8.2)', () => {
     expect(y.hp).toBe(hp);
     expect(c.shieldOf(y)).toBeLessThan(y.maxHp);
   });
-  it('격화: 1000AV부터 100AV마다 피해 +20%', () => {
+  it('격화: 1000AV부터 100AV마다 아군 피해 +15%, 적 피해 +30%(v2.4.12)', () => {
     const c = started(input([ally('u_serika')], [enemy('en_sukeban_shield')]));
     const s = find(c, 'u_serika'); const e = find(c, 'en_sukeban_shield');
     s.b.critBps = 0;
     const base = c.hit(s, e, 1, 'basic')[0].dmg;
     c.av = 1050;
     const esc = c.hit(s, e, 1, 'basic')[0].dmg;
-    expect(esc).toBe(Math.floor(c.atk(s) * (100 / (100 + c.def(e))) * 1.2));
+    expect(esc).toBe(Math.floor(c.atk(s) * (100 / (100 + c.def(e))) * 1.15));
     expect(esc).toBeGreaterThan(base);
+    e.b.critBps = 0;
+    const foeEsc = c.hit(e, s, 1, 'basic')[0].dmg;
+    expect(foeEsc).toBe(Math.floor(c.atk(e) * (100 / (100 + c.def(s))) * 1.3));
   });
 });
 

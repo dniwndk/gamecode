@@ -604,7 +604,7 @@ const v24Defeat = nums(runRow.get('장별 패배 기본 피해'));
 if (v24Income.length !== v24Chapters || v24Defeat.length !== v24Chapters) fail('v2.4 1장 장별 값 개수가 장 수와 다름');
 
 const rules = {
-  rulesVersion: 'ktfr-rules-2.7.9',
+  rulesVersion: 'ktfr-rules-2.8.0',
   source: 'GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.',
   run: {
     chapters: v24Chapters, battlesPerChapter: 5,
@@ -626,11 +626,11 @@ const rules = {
   battle: {
     // v2.3 13장: 시간 제한(1000AV 패배)을 없애고 격화로 교착만 막는다.
     eventLimit: 20000, globalPulseAv: 100,
-    escalation: { startAv: 1000, stepAv: 100, damageBpsPerStep: 2000 },
+    escalation: { startAv: 1000, stepAv: 100, allyDamageBpsPerStep: 1500, enemyDamageBpsPerStep: 3000 },
     teamSp: { start: 3, max: 5 }, energy: { start: 0, max: 100 },
     // v2.4 1장: 진짜 전투 엔진의 적 능력치 보정(노드 배율 위에 HP·ATK·DEF에 한 번 더 곱한다).
     // v2.4.1(2026-10-31 사용자 "지금보다 2배는 어렵게"): 7500/7000/9000 → 보정 없음. 봇 평균 승리 9.77 → 5.04(절반)
-    enemyStatBps: { hp: 10000, atk: 10000, def: 10000 },
+    enemyStatBps: { hp: 7000, atk: 12000, def: 10000 },
   },
   rng: { algorithm: 'xorshift32', zeroSeedReplacement: 0x6d2b79f5, streams: ['setup', 'shop', 'reward', 'battle', 'initiative'] },
   ooparts: oopartRules,
@@ -655,7 +655,7 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-3.2.4',
+  contentVersion: 'ba-content-3.3.0',
   rulesVersion: rules.rulesVersion,
   expectedCounts: { units: 103, synergies: 66, equipment: 12, strategies: 13, enemies: 25, nodes: 25, effects: 505, dialogueFiles: 103, statuses: 20, ooparts: 55 },
   sources: [

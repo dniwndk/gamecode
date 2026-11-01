@@ -29,6 +29,7 @@ export type GameCommandType =
   | 'BUY_UNIT'
   | 'SELL_UNIT'
   | 'MOVE_UNIT'
+  | 'SORT_BENCH'
   | 'REROLL_SHOP'
   | 'TOGGLE_SHOP_LOCK'
   | 'BUY_XP'

@@ -1,1 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><g fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(2.4 2.4) scale(.9)"><path d="M24 7V41M9 15 39 33M9 33 39 15M18 10 24 16 30 10M18 38 24 32 30 38"/><circle cx="24" cy="24" r="5"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <polygon points="24,6 28.5,17 40,17 31,24 34.5,35 24,28 13.5,35 17,24 8,17 19.5,17" fill="#fff"/>
+  <path d="M24 35v7M11 39l4-4M37 39l-4-4" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+</svg>
