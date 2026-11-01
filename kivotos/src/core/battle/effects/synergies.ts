@@ -79,7 +79,8 @@ function gehenna(tier: 2 | 4 | 6 | 8): SynFx {
 function millennium(tier: 2 | 4 | 6 | 8): SynFx {
   return (c, k) => {
     const SYN = 'syn_millennium';
-    const t = { 2: { sh: 0.15, atk: 1400, dmg: 0, crit: 0, en: 0 }, 4: { sh: 0.22, atk: 2500, dmg: 2000, crit: 0, en: 0 }, 6: { sh: 0.32, atk: 4000, dmg: 3500, crit: 1500, en: 20 }, 8: { sh: 0.4, atk: 5500, dmg: 4500, crit: 2000, en: 25 } }[tier];
+    // v2.4.5: 사용자 요청으로 모든 수치 절반
+    const t = { 2: { sh: 0.075, atk: 700, dmg: 0, crit: 0, en: 0 }, 4: { sh: 0.11, atk: 1250, dmg: 1000, crit: 0, en: 0 }, 6: { sh: 0.16, atk: 2000, dmg: 1750, crit: 750, en: 10 }, 8: { sh: 0.2, atk: 2750, dmg: 2250, crit: 1000, en: 12 } }[tier];
     stats(c, SYN, 'millennium', { atkPct: t.atk }, 0, k);
     const src = () => mem(c, SYN)[0] ?? allyFront(c)[0];
     const wave = (label: string) => {
@@ -93,7 +94,7 @@ function millennium(tier: 2 | 4 | 6 | 8): SynFx {
     if (tier === 8) c.on('shield_broken', (e) => {
       if (!e.tgt || e.tgt.side !== 'ally' || !e.src || e.src.side === 'ally' || !e.src.alive || !c.once(e.tgt, 'millennium_reflect')) return;
       c.proc('synergy', SYN, '프라이스 반격', e.tgt);
-      c.rawDamage(e.tgt, e.src, Math.floor(e.amount! * 0.6), { true: true, kind: 'synergy', fx: 'syn_millennium_plat', silent: true });
+      c.rawDamage(e.tgt, e.src, Math.floor(e.amount! * 0.3), { true: true, kind: 'synergy', fx: 'syn_millennium_plat', silent: true });
     });
   };
 }
