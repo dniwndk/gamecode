@@ -81,10 +81,11 @@ export function synFrame(ctx: Ctx, synId: string, opts: { dim?: boolean; tier?: 
  * 시너지 배지: 등급 테두리(그림) 안에 흰 문양. 색으로 종류를 나누지 않고 문양 자체로 알아보게 한다.
  * 테두리만 발동 단계에 따라 바뀐다. 문양 파일이 없으면 이름 첫 글자.
  */
-export function synHex(ctx: Ctx, synId: string, opts: { size?: number; dim?: boolean; tier?: number | null; plat?: boolean } = {}): HTMLElement {
+export function synHex(ctx: Ctx, synId: string, opts: { size?: number; dim?: boolean; tier?: number | null; plat?: boolean; bare?: boolean } = {}): HTMLElement {
   const frame = synFrame(ctx, synId, opts);
-  const el = h('span', { class: cls('k-hex', `fr-${frame}`, opts.dim && 'is-dim', frame === 'prismatic' && opts.tier !== undefined && opts.tier !== null && 'tier-plat', opts.tier !== undefined && opts.tier !== null && `tier-${opts.tier}`),
-    style: `--s:${opts.size ?? 28}px;background-image:url("${ctx.art(`gfx/synergy-frames/${frame}.webp`)}")`, title: ctx.lookup.syn(synId)?.name ?? synId },
+  // bare: 학생 카드 위처럼 그림 위에 얹을 때는 테두리 없이 검은 육각 + 흰 문양만
+  const el = h('span', { class: cls('k-hex', opts.bare ? 'is-bare' : `fr-${frame}`, opts.dim && 'is-dim', frame === 'prismatic' && opts.tier !== undefined && opts.tier !== null && 'tier-plat', opts.tier !== undefined && opts.tier !== null && `tier-${opts.tier}`),
+    style: opts.bare ? `--s:${opts.size ?? 28}px` : `--s:${opts.size ?? 28}px;background-image:url("${ctx.art(`gfx/synergy-frames/${frame}.webp`)}")`, title: ctx.lookup.syn(synId)?.name ?? synId },
     h('span', { class: 'k-hex-in' }, gfx(ctx, `synergy/${synId}.svg`, () => { const g = synergyGlyph(ctx, synId); return h('span', { class: cls('k-hex-txt', g.length > 2 && 'is-long') }, g); }, 'k-hex-glyph')));
   return el;
 }
@@ -159,7 +160,7 @@ export function unitCard(ctx: Ctx, o: CardOpts): HTMLElement {
   const zone = h('span', { class: `k-zone-tag is-${pos}`, title: POSITION_LABEL[pos] }, icon(pos === 'rear_only' ? 'rear' : 'front', 14), pos === 'dual' ? icon('rear', 14) : null);
   const bottom = h('div', { class: 'k-card-bottom' });
   if (o.showSynergies) {
-    bottom.append(h('div', { class: 'k-card-syns' }, ...u.synergyIds.slice(0, 4).map((s) => synHex(ctx, s, { size: o.size === 'm' ? 28 : 24 }))));
+    bottom.append(h('div', { class: 'k-card-syns' }, ...u.synergyIds.slice(0, 4).map((s) => synHex(ctx, s, { size: o.size === 'm' ? 28 : 24, bare: true }))));
   }
   bottom.append(h('div', { class: 'k-card-name' }, zone, h('span', { class: 'k-name-text' }, shortName(u.name))));
   card.append(bottom);
