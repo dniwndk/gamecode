@@ -178,12 +178,17 @@ describe('4·5장 적(v2.4.2)', () => {
   });
 });
 
-describe('케이(v2.4.7)', () => {
-  it('후방 해킹·존재 효과·필살기 대응이 작동하고, 게임개발부는 3명부터 켜진다', () => {
-    const out = simulateBattle(pack, input([ally('u_aris', 0, 'front', 2), ally('u_midori', 1, 'front', 2), ally('u_key', 0, 'rear', 2)], [enemy('en_pmc_heavy'), enemy('en_pmc_heavy', 1)], { activeTiers: { syn_game_dev: 0 } }));
+describe('케이·무장 아리스(v2.4.8)', () => {
+  it('케이 후방 해킹·존재 효과와 「왕녀의 열쇠」 추가 해킹이 작동하고, 게임개발부는 2/4단계', () => {
+    const out = simulateBattle(pack, input([ally('u_aris', 0, 'front', 2), ally('u_midori', 1, 'front', 2), ally('u_key', 0, 'rear', 2)], [enemy('en_pmc_heavy'), enemy('en_pmc_heavy', 1)], { activeTiers: { syn_game_dev: 0, syn_unique_key: 0 } }));
     expect(out.aborted).toBe(false);
     expect(out.firedEffects).toEqual(expect.arrayContaining(['key_aura', 'key_rear_reg']));
-    expect(byIdTier()).toEqual([3, 5]);
+    expect(byIdTier()).toEqual([2, 4]);
+  });
+  it('무장 아리스: 스킬·필살기·존재 효과와 오버차지가 작동한다', () => {
+    const out = simulateBattle(pack, input([ally('u_aris_armed', 0, 'front', 3), ally('u_midori', 1, 'front', 2), ally('u_key', 0, 'rear', 2)], [enemy('en_pmc_heavy'), enemy('en_pmc_heavy', 1), enemy('en_pmc_heavy', 2)], { activeTiers: { syn_unique_armed_hero: 0, syn_unique_key: 0, syn_game_dev: 0 } }));
+    expect(out.aborted).toBe(false);
+    expect(out.firedEffects).toEqual(expect.arrayContaining(['aris_armed_aura', 'aris_armed_skill']));
   });
 });
 

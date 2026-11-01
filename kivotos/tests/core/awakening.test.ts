@@ -34,8 +34,16 @@ describe('각성 판정', () => {
     expect(resolveAwakenings(pack, owned, { u_aris: 15 })).toEqual([]);
   });
 
+  it('케이를 보유(출전·대기)하면 AL-1S 대신 무장 아리스(v2.4.8), 이미 무장 아리스가 있으면 각성 없음', () => {
+    const key = (deployed: boolean): OwnedUnitRef => ({ instanceId: 'k', unitId: 'u_key', star: 1, deployed, acquiredOrder: 9 });
+    for (const d of [true, false]) expect(resolveAwakenings(pack, [aris('a', 3, true, 0), key(d)], { u_aris: 15 })[0].intoUnitId).toBe('u_aris_armed');
+    const owned = [aris('a', 3, false, 0), { instanceId: 'x', unitId: 'u_aris_armed', star: 3, deployed: true, acquiredOrder: 1 }];
+    expect(resolveAwakenings(pack, owned, { u_aris: 15 })).toEqual([]);
+  });
+
   it('상점: AL-1S는 늘 없고, 각성 뒤에는 아리스도 없다', () => {
     expect(shopAllows(unit('u_al1s'), new Set())).toBe(false);
+    expect(shopAllows(unit('u_aris_armed'), new Set())).toBe(false);
     expect(shopAllows(unit('u_aris'), new Set())).toBe(true);
     expect(shopAllows(unit('u_aris'), new Set(['u_aris']))).toBe(false);
   });

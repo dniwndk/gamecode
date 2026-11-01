@@ -482,7 +482,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     if (om.settlementGold) income.push({ label: '오파츠 · 게마트리아의 계약', value: om.settlementGold });
     income.push(...out.settlementGold);
     // 빠밤! 레벨업·이름 없는 신들의 왕녀: 아리스·AL-1S의 처치 경험치(정예·보스 3)
-    const levelUpKills = out.kills.filter((k) => k.unitId === 'u_aris' || k.unitId === 'u_al1s').map((k) => ({ eliteOrBoss: k.eliteOrBoss }));
+    const levelUpKills = out.kills.filter((k) => k.unitId === 'u_aris' || k.unitId === 'u_al1s' || k.unitId === 'u_aris_armed').map((k) => ({ eliteOrBoss: k.eliteOrBoss }));
     const stackSettle = settleRunStacks(pack, r.stacks, {
       outcome, deployedUnitIds: deployedInsts(r).map((i) => i.unitId), ownedUnitIds: all(r).map((i) => i.unitId), activeTiers, levelUpKills,
     });

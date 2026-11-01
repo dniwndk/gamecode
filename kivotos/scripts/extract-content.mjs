@@ -53,9 +53,9 @@ function section(lines, heading) {
 const tableRows = (lines, firstCellPrefix) => lines.filter((l) => l.startsWith(`| ${firstCellPrefix}`)).map(cells);
 
 // ───────────────────────── 유닛 ─────────────────────────
-// v2.3 3장 표가 v2.1 부록 A + v2.2 5장을 통째로 대체한다(101명).
+// v2.3 3장 표가 v2.1 부록 A + v2.2 5장을 통째로 대체한다(103명).
 const SLOT_COLUMNS = ['basic', 'skill', 'ultimate', 'frontEffects', 'rearAction', 'rearEffects'];
-const units = tableRows(section(v23, '## 3. 유닛 마스터 v2.3 (101명)'), '`u_').map((c) => {
+const units = tableRows(section(v23, '## 3. 유닛 마스터 v2.3 (103명)'), '`u_').map((c) => {
   const id = unticked(c[0]);
   const [hp, atk, def, spd, crit, critDmg] = c[4].split('/').map((x) => Number(x.trim()));
   if ([hp, atk, def, spd, crit, critDmg].some((n) => !Number.isFinite(n))) fail(`${id} 스탯을 읽지 못함: ${c[4]}`);
@@ -85,7 +85,18 @@ const units = tableRows(section(v23, '## 3. 유닛 마스터 v2.3 (101명)'), '`
 for (const c of tableRows(section(v23, '## 9. 각성'), '`u_')) {
   const from = units.find((u) => u.id === unticked(c[0])) ?? fail(`9장 원래 학생 ${c[0]} 없음`);
   const into = units.find((u) => u.id === unticked(c[1])) ?? fail(`9장 각성 학생 ${c[1]} 없음`);
-  from.awakening = { intoUnitId: into.id, counterSynergyId: unticked(c[2]), expRequired: Number(c[3]), starRequired: Number(c[4]) };
+  // v2.4.8: 동반 조건(예 `u_key` 보유)이 있는 줄은 기본 각성의 분기로 붙인다
+  const withUnit = c[5] && c[5] !== '—' ? (c[5].match(/`(u_[a-z0-9_]+)`/) ?? fail(`9장 동반 조건을 읽지 못함: ${c[5]}`))[1] : null;
+  if (withUnit) {
+    if (!units.some((u) => u.id === withUnit)) fail(`9장 동반 학생 ${withUnit} 없음`);
+    if (!from.awakening) fail(`9장 ${from.id}의 동반 조건 줄이 기본 줄보다 먼저 나옴`);
+    const a = from.awakening;
+    if (a.counterSynergyId !== unticked(c[2]) || a.expRequired !== Number(c[3]) || a.starRequired !== Number(c[4])) fail(`9장 ${into.id} 분기의 경험치·성급 조건이 기본 줄과 다름`);
+    a.alternates.push({ intoUnitId: into.id, withUnitId: withUnit });
+  } else {
+    if (from.awakening) fail(`9장 ${from.id}의 기본 각성 줄이 둘`);
+    from.awakening = { intoUnitId: into.id, counterSynergyId: unticked(c[2]), expRequired: Number(c[3]), starRequired: Number(c[4]), alternates: [] };
+  }
   into.awakenedFrom = from.id;
   into.shopEligible = false;
 }
@@ -116,7 +127,7 @@ function parseTierCell(s) {
     return { threshold: Number(m[1]), grade: m[2] ? 'platinum' : 'normal', effectIds: [m[3]] };
   });
 }
-const synergies = tableRows(section(v23, '## 4. 시너지 v2.3 (64종)'), '`syn_').map((c) => {
+const synergies = tableRows(section(v23, '## 4. 시너지 v2.3 (66종)'), '`syn_').map((c) => {
   const id = unticked(c[0]);
   const tiers = parseTierCell(c[4]).map((t) => ({
     ...t,
@@ -593,7 +604,7 @@ const v24Defeat = nums(runRow.get('장별 패배 기본 피해'));
 if (v24Income.length !== v24Chapters || v24Defeat.length !== v24Chapters) fail('v2.4 1장 장별 값 개수가 장 수와 다름');
 
 const rules = {
-  rulesVersion: 'ktfr-rules-2.7.4',
+  rulesVersion: 'ktfr-rules-2.7.5',
   source: 'GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.',
   run: {
     chapters: v24Chapters, battlesPerChapter: 5,
@@ -643,9 +654,9 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-3.1.0',
+  contentVersion: 'ba-content-3.2.0',
   rulesVersion: rules.rulesVersion,
-  expectedCounts: { units: 102, synergies: 64, equipment: 12, strategies: 13, enemies: 25, nodes: 25, effects: 497, dialogueFiles: 102, statuses: 20, ooparts: 55 },
+  expectedCounts: { units: 103, synergies: 66, equipment: 12, strategies: 13, enemies: 25, nodes: 25, effects: 505, dialogueFiles: 103, statuses: 20, ooparts: 55 },
   sources: [
     { path: 'docs/GDD_v2.1.md', sha256: sha256(v21Text) },
     { path: 'docs/GDD_v2.2_amendment.md', sha256: sha256(v22Text) },

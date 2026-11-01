@@ -171,9 +171,9 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
   for (const u of pack.units) {
     const path = `units.${u.id}.awakening`;
     const a = u.awakening;
-    if (a) {
-      const into = unitsById.get(a.intoUnitId);
-      if (!into) err('AWAKENING', path, `없는 각성 학생 ${a.intoUnitId}`);
+    if (a) for (const intoId of [a.intoUnitId, ...a.alternates.map((x) => x.intoUnitId)]) {
+      const into = unitsById.get(intoId);
+      if (!into) err('AWAKENING', path, `없는 각성 학생 ${intoId}`);
       else {
         if (into.awakenedFrom !== u.id) err('AWAKENING', path, `${into.id}의 awakenedFrom이 ${u.id}가 아님`);
         if (into.shopEligible) err('AWAKENING', path, `각성 학생 ${into.id}가 상점에 나옴`);
@@ -183,6 +183,9 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
         const lost = u.synergyIds.filter((s) => synergiesById.get(s)?.category !== 'unique' && !into.synergyIds.includes(s));
         if (lost.length) err('AWAKENING', path, `각성하면 시너지 자리를 잃음: ${lost.join(', ')}`);
       }
+    }
+    if (a) {
+      for (const alt of a.alternates) if (!unitsById.has(alt.withUnitId)) err('AWAKENING', path, `없는 동반 학생 ${alt.withUnitId}`);
       const counter = synergiesById.get(a.counterSynergyId);
       if (!counter || counter.category !== 'unique' || !u.synergyIds.includes(a.counterSynergyId)) err('AWAKENING', path, `경험치 시너지 ${a.counterSynergyId}는 원래 학생의 고유 시너지여야 함`);
       if (!Number.isInteger(a.expRequired) || a.expRequired < 1) err('AWAKENING', path, `필요 경험치 ${a.expRequired}`);
@@ -190,7 +193,8 @@ export function validateContentPack(pack: ContentPack, options: ValidationOption
     }
     if (u.awakenedFrom) {
       const from = unitsById.get(u.awakenedFrom);
-      if (!from || from.awakening?.intoUnitId !== u.id) err('AWAKENING', `units.${u.id}.awakenedFrom`, `${u.awakenedFrom}의 각성 대상이 ${u.id}가 아님`);
+      const forms = from?.awakening ? [from.awakening.intoUnitId, ...from.awakening.alternates.map((x) => x.intoUnitId)] : [];
+      if (!forms.includes(u.id)) err('AWAKENING', `units.${u.id}.awakenedFrom`, `${u.awakenedFrom}의 각성 대상이 ${u.id}가 아님`);
     }
   }
 

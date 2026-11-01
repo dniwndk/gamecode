@@ -810,6 +810,15 @@
     "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
   },
   {
+    "id": "portrait_u_aris_armed",
+    "unitId": "u_aris_armed",
+    "kind": "portrait",
+    "path": "portraits/u_aris_armed.webp",
+    "present": true,
+    "fallback": "initials_faction_color",
+    "origin": "NovelAI Diffusion V5 Full 생성본(프로젝트 portraits/manifest.json의 시드·프롬프트), 512px 폭 WebP로 변환"
+  },
+  {
     "id": "portrait_u_hikari",
     "unitId": "u_hikari",
     "kind": "portrait",
