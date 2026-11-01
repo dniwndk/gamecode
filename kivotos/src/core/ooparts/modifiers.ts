@@ -126,7 +126,7 @@ type Apply = (m: OopartModifiers) => void;
 
 const APPLY: Record<string, Apply> = {
   oop_nebra_disk: (m) => { m.interestGoldBonus += 6; },
-  oop_roman_dodecahedron: (m) => { m.recommendedChanceBps = Math.max(m.recommendedChanceBps ?? 0, 8000); },
+  oop_roman_dodecahedron: (m) => { m.recommendedChanceBps = Math.max(m.recommendedChanceBps ?? 0, 6000); },
   oop_antikythera: (m) => { m.levelUpTopCostSlot = true; },
   oop_phaistos_disc: (m) => { m.battleXpBonus += 1; },
   oop_haniwa: (m) => { m.benchSlotsBonus += 1; m.noBenchSellDepreciation = true; },

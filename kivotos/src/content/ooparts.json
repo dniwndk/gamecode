@@ -24,7 +24,7 @@
     "effectIds": [
       "eff_oop_roman_dodecahedron"
     ],
-    "benefit": "상점 5번째(추천) 칸의 추천 모드 확률 50% → 80%",
+    "benefit": "상점 5번째(추천) 칸의 추천 모드 확률 30% → 60%",
     "drawback": null,
     "recipe": null,
     "flavor": "쓰임새를 아무도 모르는 십이면체. 굴리면 원하는 면이 잘 나온다"
