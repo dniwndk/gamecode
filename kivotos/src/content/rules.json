@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "ktfr-rules-2.8.3",
+  "rulesVersion": "ktfr-rules-2.8.4",
   "source": "GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.",
   "run": {
     "chapters": 5,

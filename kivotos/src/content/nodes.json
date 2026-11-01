@@ -850,7 +850,7 @@
     "chapter": 4,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 63500,
+    "statScaleBps": 54000,
     "candidates": [
       {
         "id": "A",
@@ -1084,7 +1084,7 @@
     "chapter": 5,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 41500,
+    "statScaleBps": 30000,
     "candidates": [
       {
         "id": "A",
