@@ -64,12 +64,27 @@ export function gfx(ctx: Ctx, path: string, fallback: () => Node, className = ''
   return img;
 }
 
+/** 시너지 배지 테두리(사용자 제공 에셋, public/gfx/synergy-frames/). 미발동은 회색, 발동 단계는 동·은·금, 플래티넘·이스터에그는 프리즘. 고유는 금 */
+export type SynFrame = 'inactive' | 'bronze' | 'silver' | 'gold' | 'prismatic';
+export function synFrame(ctx: Ctx, synId: string, opts: { dim?: boolean; tier?: number | null; plat?: boolean } = {}): SynFrame {
+  if (opts.dim) return 'inactive';
+  const syn = ctx.lookup.syn(synId);
+  const tiers = syn?.tiers ?? [];
+  // 단계를 모르면(도감·학생 카드) 그 시너지의 최고 단계 테두리로 보여 준다
+  const i = opts.tier ?? Math.max(0, tiers.length - 1);
+  if (opts.plat || tiers[i]?.grade === 'platinum' || syn?.category === 'easteregg') return 'prismatic';
+  if (syn?.category === 'unique') return 'gold';
+  return (['bronze', 'silver', 'gold'] as const)[Math.min(i, 2)];
+}
+
 /**
- * 시너지 배지: 모두 같은 남색 육각 + 굵은 흰 문양. 색으로 종류를 나누지 않고 문양 자체로 알아보게 한다.
- * 흰 바깥 테가 초상화·밝은 패널 어디서나 윤곽을 세우고, 발동 단계만 바깥 테(동·은·금)로 보여 준다. 문양이 없으면 이름 첫 글자.
+ * 시너지 배지: 등급 테두리(그림) 안에 흰 문양. 색으로 종류를 나누지 않고 문양 자체로 알아보게 한다.
+ * 테두리만 발동 단계에 따라 바뀐다. 문양 파일이 없으면 이름 첫 글자.
  */
 export function synHex(ctx: Ctx, synId: string, opts: { size?: number; dim?: boolean; tier?: number | null; plat?: boolean } = {}): HTMLElement {
-  const el = h('span', { class: cls('k-hex', opts.dim && 'is-dim', opts.plat ? 'tier-plat' : opts.tier !== undefined && opts.tier !== null && `tier-${opts.tier}`), style: `--s:${opts.size ?? 28}px`, title: ctx.lookup.syn(synId)?.name ?? synId },
+  const frame = synFrame(ctx, synId, opts);
+  const el = h('span', { class: cls('k-hex', `fr-${frame}`, opts.dim && 'is-dim', frame === 'prismatic' && opts.tier !== undefined && opts.tier !== null && 'tier-plat', opts.tier !== undefined && opts.tier !== null && `tier-${opts.tier}`),
+    style: `--s:${opts.size ?? 28}px;background-image:url("${ctx.art(`gfx/synergy-frames/${frame}.webp`)}")`, title: ctx.lookup.syn(synId)?.name ?? synId },
     h('span', { class: 'k-hex-in' }, gfx(ctx, `synergy/${synId}.svg`, () => { const g = synergyGlyph(ctx, synId); return h('span', { class: cls('k-hex-txt', g.length > 2 && 'is-long') }, g); }, 'k-hex-glyph')));
   return el;
 }
