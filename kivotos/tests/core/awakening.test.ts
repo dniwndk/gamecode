@@ -1,7 +1,8 @@
 // 아리스 → AL-1S 각성(docs/GDD_v2.3_amendment.md 9장): 경험치 15 + 3성 아리스(v2.3.9)
 import { describe, expect, it } from 'vitest';
 import { contentPack as pack } from '../../src/content';
-import { awakeningProgress, resolveAwakenings, shopAllows, type OwnedUnitRef } from '../../src/core/awakening/awakening';
+import { awakeningProgress, blockedCompanions, resolveAwakenings, shopAllows, type OwnedUnitRef } from '../../src/core/awakening/awakening';
+import { shopExcluded } from '../../src/core/shop/shop';
 
 const aris = (instanceId: string, star: number, deployed: boolean, acquiredOrder: number): OwnedUnitRef => ({ instanceId, unitId: 'u_aris', star, deployed, acquiredOrder });
 const unit = (id: string) => pack.units.find((u) => u.id === id)!;
@@ -39,6 +40,13 @@ describe('각성 판정', () => {
     for (const d of [true, false]) expect(resolveAwakenings(pack, [aris('a', 3, true, 0), key(d)], { u_aris: 15 })[0].intoUnitId).toBe('u_aris_armed');
     const owned = [aris('a', 3, false, 0), { instanceId: 'x', unitId: 'u_aris_armed', star: 3, deployed: true, acquiredOrder: 1 }];
     expect(resolveAwakenings(pack, owned, { u_aris: 15 })).toEqual([]);
+  });
+
+  it('AL-1S로 먼저 각성했으면 그 판에는 케이가 상점에 나오지 않는다(v2.4.10)', () => {
+    expect(blockedCompanions(pack, ['u_al1s'])).toEqual(['u_key']);
+    expect(blockedCompanions(pack, ['u_aris_armed', 'u_key'])).toEqual([]);
+    expect(shopExcluded(pack, [{ unitId: 'u_al1s', star: 3 }], new Set(['u_aris'])).has('u_key')).toBe(true);
+    expect(shopExcluded(pack, [{ unitId: 'u_aris', star: 2 }]).has('u_key')).toBe(false);
   });
 
   it('상점: AL-1S는 늘 없고, 각성 뒤에는 아리스도 없다', () => {

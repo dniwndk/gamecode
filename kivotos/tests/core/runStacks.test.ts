@@ -18,6 +18,10 @@ describe('런 스택', () => {
     const s = { ...emptyRunStacks(), levelUpExp: 42 };
     expect(stackBattleBonuses(pack, s, { syn_unique_level_up: 0 }).atkBpsByUnit.u_aris).toBe(3000);
     expect(stackBattleBonuses(pack, s, { syn_unique_nameless_princess: 0 }).atkBpsByUnit.u_al1s).toBe(4000);
+    // v2.4.10: 무장 아리스는 레벨 상한 없음, AL-1S는 10에서 멈춤
+    const big = { ...s, levelUpExp: 100 };
+    expect(stackBattleBonuses(pack, big, { syn_unique_armed_hero: 0 }).atkBpsByUnit.u_aris_armed).toBe(20 * 500);
+    expect(stackBattleBonuses(pack, big, { syn_unique_nameless_princess: 0 }).atkBpsByUnit.u_al1s).toBe(10 * 500);
     expect(runStackLines(s, 'syn_unique_level_up', false)![0].value).toBe('Lv.6 / 6 · ATK +30%');
     expect(runStackLines({ ...s, levelUpExp: 12 }, 'syn_unique_level_up', false)![1].note).toBe('다음 레벨까지 3');
   });

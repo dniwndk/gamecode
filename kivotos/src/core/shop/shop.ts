@@ -3,7 +3,7 @@
 // 순수 함수: 입력을 고치지 않는다. 난수는 호출자가 넘긴 shop 스트림만 쓴다.
 import type { ContentPack, UnitDefinition } from '../types/content';
 import type { Rng } from '../rng';
-import { shopAllows } from '../awakening/awakening';
+import { blockedCompanions, shopAllows } from '../awakening/awakening';
 
 /** 대기석·편성에 있는 학생 한 명 */
 export interface OwnedCopy {
@@ -26,6 +26,8 @@ export function shopExcluded(pack: ContentPack, owned: readonly OwnedCopy[], awa
   const out = new Set<string>();
   if (pack.rules.shop.excludeMaxStarOwned) for (const o of owned) if (o.star >= pack.rules.units.maxStar) out.add(o.unitId);
   for (const u of pack.units) if (!shopAllows(u, awakenedFromIds)) out.add(u.id);
+  // v2.4.10: 기본 형태(AL-1S)로 이미 각성했으면 분기 동반 학생(케이)은 그 판에 다시 나오지 않는다
+  for (const id of blockedCompanions(pack, owned.map((o) => o.unitId))) out.add(id);
   return out;
 }
 
