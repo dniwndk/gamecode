@@ -1,16 +1,16 @@
 {
   "packId": "ba-kivotos",
-  "contentVersion": "ba-content-3.0.3",
-  "rulesVersion": "ktfr-rules-2.7.3",
+  "contentVersion": "ba-content-3.1.0",
+  "rulesVersion": "ktfr-rules-2.7.4",
   "expectedCounts": {
-    "units": 101,
+    "units": 102,
     "synergies": 64,
     "equipment": 12,
     "strategies": 13,
     "enemies": 25,
     "nodes": 25,
-    "effects": 494,
-    "dialogueFiles": 101,
+    "effects": 497,
+    "dialogueFiles": 102,
     "statuses": 20,
     "ooparts": 55
   },
@@ -25,11 +25,11 @@
     },
     {
       "path": "docs/GDD_v2.3_amendment.md",
-      "sha256": "0653459ff40380e533ea02e51845b06fe0a91a82879dd46813836dd6dc601603"
+      "sha256": "ecbde14eb90012e9ecf57ed0bb2c38cddcef7e384727b87026c250c087d1e05e"
     },
     {
       "path": "docs/OOPARTS_v1.md",
-      "sha256": "74ce224c7b1b082c76bd0bd2d92c92478037f61c3a580bf895e31711de106926"
+      "sha256": "2a4a3445eeb30be19da05849318cb1d50f0347caad6b230b3caa67fb4ea977c6"
     },
     {
       "path": "docs/GDD_v2.4_chapters45.md",

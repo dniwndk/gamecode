@@ -3368,6 +3368,41 @@
     "awakenedFrom": null
   },
   {
+    "id": "u_key",
+    "name": "케이",
+    "cost": 5,
+    "position": "rear_only",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_game_dev",
+      "syn_controller"
+    ],
+    "baseStats": {
+      "hp": 1350,
+      "atk": 180,
+      "def": 62,
+      "spd": 120,
+      "critBps": 1500,
+      "critDamageBps": 5000
+    },
+    "role": "후방 해킹 제어 / 존재 효과: 적 전원 속도 저하·게임개발부 에너지",
+    "abilityIds": {
+      "basic": null,
+      "skill": null,
+      "ultimate": null,
+      "frontEffects": [],
+      "rearAction": "eff_key_rear_reg",
+      "rearEffects": [
+        "eff_key_rear_react",
+        "eff_key_aura"
+      ]
+    },
+    "portraitAssetId": "portrait_u_key",
+    "shopEligible": true,
+    "awakening": null,
+    "awakenedFrom": null
+  },
+  {
     "id": "u_wakamo",
     "name": "코사카 와카모",
     "cost": 5,

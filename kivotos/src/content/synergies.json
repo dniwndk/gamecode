@@ -171,11 +171,12 @@
       "u_noa",
       "u_al1s",
       "u_himari",
-      "u_rio"
+      "u_rio",
+      "u_key"
     ],
     "documented": {
       "frontOnly": 7,
-      "rearOnly": 12,
+      "rearOnly": 13,
       "dual": 3,
       "maxLegalCount": 10
     }
@@ -762,20 +763,20 @@
     "countScope": "deployed_all",
     "tiers": [
       {
-        "threshold": 2,
+        "threshold": 3,
         "grade": "normal",
         "effectIds": [
           "eff_syn_game_dev_2"
         ],
-        "spec": "전투 시작 시 무작위 \"버그\" 1개: 아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40"
+        "spec": "(3명, v2.4.7에서 2명 → 3명) 전투 시작 시 무작위 \"버그\" 1개: 아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40"
       },
       {
-        "threshold": 4,
+        "threshold": 5,
         "grade": "normal",
         "effectIds": [
           "eff_syn_game_dev_4"
         ],
-        "spec": "전투 시작 시 \"버그\" 3개(아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40) 중 2개를 적용(유즈의 디버깅). 준비 단계에서 고른 2개를 쓰고, 고르지 않았으면 앞의 2개"
+        "spec": "(5명, v2.4.7에서 4명 → 5명. 케이가 있어야 닿는다) 전투 시작 시 \"버그\" 3개(아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40) 중 2개를 적용(유즈의 디버깅). 준비 단계에서 고른 2개를 쓰고, 고르지 않았으면 앞의 2개"
       }
     ],
     "memberIds": [
@@ -783,13 +784,14 @@
       "u_midori",
       "u_momoi",
       "u_yuzu",
-      "u_al1s"
+      "u_al1s",
+      "u_key"
     ],
     "documented": {
       "frontOnly": 1,
-      "rearOnly": 1,
+      "rearOnly": 2,
       "dual": 2,
-      "maxLegalCount": 4
+      "maxLegalCount": 5
     }
   },
   {
@@ -1769,13 +1771,14 @@
       "u_koyuki",
       "u_kanna",
       "u_miyu",
-      "u_seia"
+      "u_seia",
+      "u_key"
     ],
     "documented": {
       "frontOnly": 1,
-      "rearOnly": 3,
+      "rearOnly": 4,
       "dual": 4,
-      "maxLegalCount": 8
+      "maxLegalCount": 9
     }
   },
   {

@@ -261,6 +261,12 @@ export const actives: Record<string, Active> = {
   al1s_rear_reg: A((c, u) => { c.hit(u, c.foes(u), 1.4, R, { true: true }); const t = c.sortBy(c.mates(u), (x) => x.energy)[0]; if (t) c.gainEnergy(t, 15); }),
   hikari_skill: A((c, u) => { for (const t of c.mates(u)) { dmgUp(c, u, t, { dmgUp: 2800 }, 'hikari_skill'); critUp(c, u, t, 0, 'hikari_skill', 2, 3500); } c.hit(u, c.pick(u), 1.55, S); }),
   hikari_ult: A((c, u) => { c.hit(u, c.foes(u), c.v(u, [2.4, 2.8, 3.45]), X); for (const t of c.mates(u)) c.advance(t, 0.25); }),
+  key_rear_reg: A((c, u) => {
+    const t = c.highestAtk(c.foes(u));
+    if (t) { c.hit(u, t, c.v(u, [1.6, 1.9, 2.4]), R, { true: true }); if (t.alive) silence(c, u, t, 'key_rear_reg'); }
+    const e = c.sortBy(c.mates(u).filter((x) => x.alive && x.energy < 100), (x) => x.energy)[0];
+    if (e) c.gainEnergy(e, 20);
+  }),
   himari_rear_reg: A((c, u) => {
     const t = c.g.himariTarget?.alive ? c.g.himariTarget : c.highestAtk(c.mates(u));
     atkUp(c, u, t, c.v(u, [4500, 6000, 8500]), 'himari_rear_reg');
@@ -549,6 +555,24 @@ export const passives: Record<string, Passive> = {
     for (const t of c.units.filter((x) => x.side === u.side && x.tags.has('syn_game_dev'))) c.mod(t, { spd: 10 }, 'al1s_aura');
     c.fire('al1s_aura');
   },
+  key_aura: (c, u) => {
+    if (!c.g.keyAura) {
+      c.g.keyAura = true;
+      for (const t of c.units.filter((x) => x.side !== u.side)) c.mod(t, { spd: -10 }, 'key_aura');
+      c.fire('key_aura');
+    }
+    c.on('battle_start', () => {
+      for (const t of c.units.filter((x) => x.side === u.side && x !== u && x.hasHp && x.tags.has('syn_game_dev'))) {
+        c.gainEnergy(t, t.unit?.id === 'u_aris' || t.unit?.id === 'u_al1s' ? 40 : 20);
+      }
+    }, u);
+  },
+  key_rear_react: (c, u) => c.on('ultimate_resolved', (e) => {
+    if (!e.src || e.src.side === u.side || !e.src.alive || !c.battleOnce(u, 'key_rear_react', 2)) return;
+    c.gainEnergy(e.src, -30);
+    c.delay(e.src, 0.3, u);
+    c.fire('key_rear_react');
+  }, u),
   al1s_rear_react: (c, u) => c.on('unit_defeated', (e) => {
     if (e.tgt?.side !== u.side || e.tgt.zone !== 'front' || !c.battleOnce(u, 'al1s_rear_react', 2)) return;
     c.hit(u, c.foes(u), 1.8, 'reaction', { fx: 'al1s_rear_react' });
