@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "ktfr-rules-2.7.5",
+  "rulesVersion": "ktfr-rules-2.7.6",
   "source": "GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.",
   "run": {
     "chapters": 5,
@@ -167,15 +167,15 @@
   },
   "defeatDamage": {
     "chapterBase": [
-      6,
-      8,
-      10,
-      12,
-      14
+      30,
+      30,
+      30,
+      30,
+      30
     ],
-    "perSurvivingEnemyFront": 2,
-    "eliteBonus": 3,
-    "bossBonus": 6,
+    "perSurvivingEnemyFront": 0,
+    "eliteBonus": 0,
+    "bossBonus": 0,
     "finalBossLossEndsRun": true
   },
   "units": {

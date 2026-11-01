@@ -821,8 +821,12 @@ function supporter(tier: 2 | 4 | 6): SynFx {
 function controller(tier: 2 | 4 | 6): SynFx {
   return (c, k) => {
     const SYN = 'syn_controller';
+    // v2.4.9 2단계: 지속 +1턴 대신 디버프를 받고 있는 적이 받는 피해 +20%(4·6단계는 그대로)
+    if (tier === 2) {
+      c.hook((h) => { if (h.src.side === 'ally' && h.tgt.side === 'enemy' && c.hasDebuff(h.tgt)) { h.inc += s(k, 2000); c.fire('syn_controller_2'); } });
+      return;
+    }
     c.extraTurns.push((src, tgt, id) => (isMem(src, SYN) && !tgt.boss && (id === 'st_stun' || id === 'st_silence' || id === 'st_delayed') ? 1 : 0));
-    if (tier === 2) return;
     const fx = `syn_controller_${tier === 6 ? 'plat' : 4}`;
     c.hook((h) => { if (h.src.side === 'ally' && h.tgt.side === 'enemy' && c.isControlled(h.tgt)) { h.inc += s(k, tier === 6 ? 3500 : 2000); c.fire(fx); } });
     c.expires.push((u, st) => {

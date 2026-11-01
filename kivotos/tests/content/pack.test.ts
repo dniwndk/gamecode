@@ -182,7 +182,8 @@ describe('정식 콘텐츠 팩 ba-content-2.8.1', () => {
     expect(r.run.startRunHp).toBe(100);
     expect(r.income.baseByChapter).toEqual([6, 6, 7, 8, 8]);
     expect(r.xp.perBattle).toBe(3);
-    expect(r.defeatDamage).toMatchObject({ chapterBase: [6, 8, 10, 12, 14], perSurvivingEnemyFront: 2, eliteBonus: 3, bossBonus: 6 });
+    expect(r.defeatDamage).toMatchObject({ chapterBase: [30, 30, 30, 30, 30], perSurvivingEnemyFront: 0, eliteBonus: 0, bossBonus: 0 });
+    expect(r.run.startRunHp).toBe(100);
     expect(r.shop.levels.find((l) => l.level === 8)!.costOddsPct).toEqual([12, 20, 35, 27, 6]);
   });
 

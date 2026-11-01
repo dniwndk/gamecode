@@ -2,6 +2,8 @@
 import type { GameCommandType } from '../../app/gameClient';
 import type { DialogueKey, EnemyDefinition, EquipmentDefinition, OopartDefinition, StrategyDefinition, SynergyDefinition, UnitDefinition } from '../../core/types/content';
 import { h } from './dom';
+import { setGameNames } from './gameText';
+import { STATUS_LABEL, shortName } from './components';
 import { chooseFxTier } from './fx/capabilities';
 import { createFx, NO_FX, type Fx } from './fx/engine';
 import { createSfx, type Sfx } from './fx/sfx';
@@ -113,6 +115,12 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
   const eqs = new Map(pack.equipment.map((e) => [e.id, e]));
   const strats = new Map(pack.strategies.map((s) => [s.id, s]));
   const oops = new Map(pack.ooparts.map((o) => [o.id, o]));
+  // v2.4.9: 화면 글자 속 내부 ID를 이름으로(gameText)
+  setGameNames(new Map<string, string>([
+    ...pack.units.map((u) => [u.id, shortName(u.name)] as [string, string]),
+    ...[...syns.values(), ...enemies.values(), ...eqs.values(), ...strats.values(), ...oops.values()].map((x) => [x.id, x.name] as [string, string]),
+    ...Object.entries(STATUS_LABEL),
+  ]));
   const effects = new Map(pack.effects.map((e) => [e.id, e]));
   const lines = new Map(pack.dialogue.map((d) => [d.unitId, d]));
   const portraitIds = new Map(pack.units.map((u) => [u.id, u.portraitAssetId]));

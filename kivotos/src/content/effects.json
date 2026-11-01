@@ -5011,7 +5011,7 @@
     "scope": "deployed_all",
     "execution": "synergy_container",
     "trigger": "아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용",
-    "spec": "컨트롤러 구성원이 건 기절·침묵·지연 지속 +1턴(보스 제외)",
+    "spec": "디버프를 받고 있는 적이 받는 피해 +20% (v2.4.9: 원안 \"컨트롤러 구성원이 건 기절·침묵·지연 지속 +1턴(보스 제외)\"을 사용자 요청으로 교체. 4·6단계는 그대로)",
     "limits": "상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.",
     "sourceReference": "GDD v2.3 5장 (신규)",
     "implementation": "spec_only",

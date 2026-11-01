@@ -1,4 +1,6 @@
 // 작은 DOM 도우미. 문자열은 언제나 textContent로만 넣는다(innerHTML 금지, 사양서 2장 4).
+// 글자와 title·aria-label은 gameText를 거쳐 내부 코드가 화면에 나가지 않게 한다(v2.4.9).
+import { gameText } from './gameText';
 type Child = Node | string | number | null | undefined | false;
 type Attrs = Record<string, string | number | boolean | null | undefined | EventListener>;
 
@@ -20,6 +22,8 @@ export function setAttrs(node: Element, attrs: Attrs): void {
       node.style.cssText = String(value);
     } else if (value === true) {
       node.setAttribute(key, '');
+    } else if (key === 'title' || key === 'aria-label' || key === 'placeholder' || key === 'alt') {
+      node.setAttribute(key, gameText(String(value)));
     } else {
       node.setAttribute(key, String(value));
     }
@@ -29,7 +33,7 @@ export function setAttrs(node: Element, attrs: Attrs): void {
 export function append(node: Node, children: (Child | Child[])[]): void {
   for (const child of children.flat()) {
     if (child === null || child === undefined || child === false) continue;
-    node.appendChild(typeof child === 'object' ? child : document.createTextNode(String(child)));
+    node.appendChild(typeof child === 'object' ? child : document.createTextNode(typeof child === 'string' ? gameText(child) : String(child)));
   }
 }
 
