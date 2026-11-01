@@ -5869,7 +5869,7 @@
     "scope": "global",
     "execution": "oopart_container",
     "trigger": null,
-    "spec": "상점 5번째(추천) 칸의 추천 모드 확률 50% → 80%",
+    "spec": "상점 5번째(추천) 칸의 추천 모드 확률 30% → 60%",
     "limits": "보유하는 동안 상시. 전투 handler는 전역 주기(7.1)·root 한도(9.4)를 따른다. 대가는 이득과 같은 handler에서 함께 적용한다.",
     "sourceReference": "OOPARTS v1 2.1 범용 (11)",
     "implementation": "spec_only",
