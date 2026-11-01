@@ -1050,7 +1050,7 @@
     "chapter": 5,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 80000,
+    "statScaleBps": 71000,
     "candidates": [
       {
         "id": "A",

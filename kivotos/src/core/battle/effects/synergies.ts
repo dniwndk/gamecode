@@ -105,7 +105,8 @@ function millennium(tier: 2 | 4 | 6 | 8): SynFx {
 function trinity(tier: 2 | 4 | 6 | 8): SynFx {
   return (c, k) => {
     const SYN = 'syn_trinity';
-    const t = { 2: [1500, 1500, 0, 0, 0], 4: [2800, 2800, 3500, 1800, 0], 6: [4500, 4500, 5000, 3200, 2000], 8: [6000, 6000, 6500, 4000, 2500] }[tier];
+    // v2.4.15(D-045): 4·6·8단계 하향 — 9명 편성이 4·5장 전 노드를 2성으로도 전승하던 문제
+    const t = { 2: [1500, 1500, 0, 0, 0], 4: [1800, 1800, 2500, 1000, 0], 6: [2200, 2200, 2500, 1200, 800], 8: [2500, 2500, 3000, 1200, 1000] }[tier];
     stats(c, SYN, 'trinity', { hpPct: t[0], atkPct: t[1], healRecv: t[2] }, 0, k);
     if (tier === 2 || tier === 8) for (const u of allyFront(c)) c.mod(u, { healRecv: s(k, 2000) }, 'trinity_front');
     if (tier === 2) return;
@@ -120,7 +121,7 @@ function trinity(tier: 2 | 4 | 6 | 8): SynFx {
       if (c.pulseOnce('trinity_sp')) {
         c.proc('synergy', SYN, '첫 치유 · SP +1', u);
         c.gainSp('ally', 1);
-        if (tier >= 6) for (const m of allyFront(c).filter((x) => x.alive)) c.gainEnergy(m, 15);
+        if (tier >= 6) for (const m of allyFront(c).filter((x) => x.alive)) c.gainEnergy(m, 5);
       }
     });
     if (tier === 8) c.overheal.push((_src, tgt, over) => {
@@ -128,7 +129,7 @@ function trinity(tier: 2 | 4 | 6 | 8): SynFx {
       bell += over;
       const cap = ally(c).filter((x) => x.hasHp).reduce((a, x) => a + x.maxHp, 0) * 0.25;
       if (bell >= cap) {
-        const amt = bell * 1.5; bell = 0;
+        const amt = bell * 0.5; bell = 0;
         c.proc('synergy', SYN, '종소리!', tgt);
         for (const f of c.front('enemy')) c.rawDamage(tgt, f, amt, { kind: 'synergy', fx: 'syn_trinity_plat', silent: true });
       }
@@ -252,7 +253,7 @@ function valkyrie(tier: 2 | 3): SynFx {
       if (!c.rootOnce('valk') || !c.pulseOnce('valk', 2)) return;
       c.proc('synergy', SYN, '체포 협조', e.src);
       c.delay(e.tgt, 0.15, e.src);
-      for (const m of mem(c, SYN).filter((x) => x.zone === 'front' && x.alive)) c.gainEnergy(m, 15);
+      for (const m of mem(c, SYN).filter((x) => x.zone === 'front' && x.alive)) c.gainEnergy(m, 5);
     });
   };
 }
@@ -639,7 +640,7 @@ function justice(c: Battle, k: number, team: boolean): void {
   c.on('unit_defeated', (e) => {
     const u = e.src;
     if (e.tgt?.side !== 'enemy' || !isMem(u, SYN)) return;
-    if (team) { c.proc('synergy', SYN, '정의 집행', u); for (const m of mem(c, SYN).filter((x) => x !== u)) c.gainEnergy(m, 15); }
+    if (team) { c.proc('synergy', SYN, '정의 집행', u); for (const m of mem(c, SYN).filter((x) => x !== u)) c.gainEnergy(m, 5); }
     if (c.has('oop_tsurugi_novel') && u!.alive && c.once(u!, 'tsurugi_novel')) { c.proc('oopart', 'oop_tsurugi_novel', '폭주!', u); c.advance(u!, 0.15); }
   });
 }
