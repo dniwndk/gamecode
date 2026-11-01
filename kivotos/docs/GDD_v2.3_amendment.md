@@ -92,7 +92,7 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_shun` | 스노하라 슌 | 2 | front_only | 1160/146/44/110/0.22/0.5 | syn_shanhaijing, syn_plum_blossom, syn_sniper | `eff_common_basic_atk` | `eff_shun_skill` | `eff_shun_ult` | `eff_shun_passive` | — | — | 개전 에너지 부스트 / 고공격력 적 저격수 |
 | `u_tsubaki` | 카스가 츠바키 | 2 | front_only | 1820/70/95/94/0.05/0.5 | syn_hyakkiyako, syn_training, syn_tank | `eff_common_basic_atk` | `eff_tsubaki_skill` | `eff_tsubaki_ult` | `eff_tsubaki_passive` | — | — | 광역 도발 탱커 / 위기 응급 회복 |
 | `u_tsukuyo` | 오오노 츠쿠요 | 2 | front_only | 1720/90/86/104/0.05/0.5 | syn_hyakkiyako, syn_ninjutsu, syn_tank | `eff_common_basic_atk` | `eff_tsukuyo_skill` | `eff_tsukuyo_ult` | — | — | — | 큰 키로 시선을 끄는 인법 탱커 / 바꿔치기 회피 |
-| `u_yuuka` | 하야세 유우카 | 2 | front_only | 1750/85/90/96/0.08/0.5 | syn_millennium, syn_seminar, syn_tank | `eff_common_basic_atk` | `eff_yuuka_skill` | `eff_yuuka_ult` | `eff_yuuka_passive` | — | — | 자가·광역 보호막 탱커 |
+| `u_yuuka` | 하야세 유우카 | 3 | front_only | 1750/85/90/96/0.08/0.5 | syn_millennium, syn_seminar, syn_tank | `eff_common_basic_atk` | `eff_yuuka_skill` | `eff_yuuka_ult` | `eff_yuuka_passive` | — | — | 자가·광역 보호막 탱커 |
 | `u_akane` | 무로카사 아카네 | 3 | front_only | 1350/162/54/108/0.18/0.5 | syn_millennium, syn_cc, syn_blaster, syn_plat_codename | `eff_common_basic_atk` | `eff_akane_skill` | `eff_akane_ult` | — | — | — | 폭탄 설치 후 일괄 기폭 / 광역 딜러 |
 | `u_atsuko` | 하카리 아츠코 | 3 | front_only | 1920/110/92/102/0.1/0.5 | syn_arius, syn_tank, syn_plat_vanitas | `eff_common_basic_atk` | `eff_atsuko_skill` | `eff_atsuko_ult` | `eff_atsuko_passive` | — | — | 전방 광역 회피·치유 탱커 |
 | `u_azusa` | 시라스 아즈사 | 3 | front_only | 1300/168/50/108/0.22/0.5 | syn_trinity, syn_arius, syn_make_up, syn_sniper, syn_plat_vanitas | `eff_common_basic_atk` | `eff_azusa_skill` | `eff_azusa_ult` | `eff_azusa_passive` | — | — | 방어력 파괴 단일 딜러 / 약점 추가 피해 |
@@ -1462,7 +1462,7 @@ v2.3.5 플래티넘 단계(2026-10-31): 아래 V.200~V.208은 구성원이 많�
 ### V.201 `eff_syn_millennium_plat`
 - 출처/구역: 시너지 syn_millennium (4단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: 플래티넘 「밀레니엄 프라이스」. 전투 시작 및 매 2턴 시작마다 아군 전방 전원에게 2턴간 최대 HP 40% 보호막 및 에너지 +25 부여. 밀레니엄 구성원 ATK +55%. 보호막 보유 전방 아군의 가하는 피해 +45% 및 CRIT +20% 증가. 아군 보호막이 피해로 깨지면 깨진 보호막 양의 60%를 그 공격자에게 방어 무시(`true`) 피해로 되돌린다(유닛당 턴당 1회)
+- 본문: 플래티넘 「밀레니엄 프라이스」. 전투 시작 및 매 2턴 시작마다 아군 전방 전원에게 2턴간 최대 HP 20% 보호막 및 에너지 +12 부여. 밀레니엄 구성원 ATK +27.5%. 보호막 보유 전방 아군의 가하는 피해 +22.5% 및 CRIT +10% 증가. 아군 보호막이 피해로 깨지면 깨진 보호막 양의 30%를 그 공격자에게 방어 무시(`true`) 피해로 되돌린다(유닛당 턴당 1회)
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.202 `eff_syn_trinity_plat`
@@ -1520,6 +1520,24 @@ v2.3.7 탱커 전환(2026-10-31, 14장): 아래 V.209~V.210은 탱커로 옮긴 
 - 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
 - 본문: 자신이 1턴간 도발(`st_taunt`)하고 2턴간 최대 HP 20% 보호막을 얻은 뒤 적 최전열 1명에게 ATK 140% `normal` 피해
 - 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
+
+### V.211 `eff_syn_millennium_2`
+- 출처/구역: 시너지 syn_millennium (2단계) / `deployed_all`. 원안 행: v2.3 조정.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 전투 시작 시 아군 전방 전원에게 2턴간 최대 HP 7.5% 보호막 부여, 밀레니엄 구성원 ATK +7% 증가. (v2.4.5 수치 절반)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.212 `eff_syn_millennium_4`
+- 출처/구역: 시너지 syn_millennium (4단계) / `deployed_all`. 원안 행: v2.3 조정.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 전투 시작 및 매 2턴 시작마다 아군 전방 전원에게 2턴간 최대 HP 11% 보호막 부여. 밀레니엄 구성원 ATK +12.5%, 보호막 보유 전방 아군의 가하는 피해 +10% 증가. (v2.4.5 수치 절반)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.213 `eff_syn_millennium_6`
+- 출처/구역: 시너지 syn_millennium (6단계) / `deployed_all`. 원안 행: v2.3 조정.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 전투 시작 및 매 2턴 시작마다 아군 전방 전원에게 2턴간 최대 HP 16% 보호막 및 에너지 +10 부여. 밀레니엄 구성원 ATK +20%, 보호막 보유 전방 아군의 가하는 피해 +17.5% 및 CRIT +7.5% 증가. (v2.4.5 수치 절반)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ## 6. 삭제된 효과
 

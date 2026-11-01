@@ -526,7 +526,8 @@ export class Battle {
   shield(src: U, tgt: U | undefined, raw: number, turns = 2, fx?: string): number {
     if (!tgt || !tgt.alive || !tgt.hasHp || raw <= 0 || this.ended) return 0;
     if (this.noHeal.some((f) => f(tgt))) return 0;
-    const amt = Math.floor(raw * Math.max(0, 1 + this.sum(src, 'shieldGiven') / 10000) * Math.max(0, 1 + this.sum(tgt, 'shieldRecv') / 10000));
+    const sideBps = tgt.side === 'ally' ? (this.pack.rules.battle.allyShieldBps ?? 10000) / 10000 : 1;
+    const amt = Math.floor(raw * sideBps * Math.max(0, 1 + this.sum(src, 'shieldGiven') / 10000) * Math.max(0, 1 + this.sum(tgt, 'shieldRecv') / 10000));
     const room = Math.max(0, tgt.maxHp - this.shieldOf(tgt));
     const real = Math.min(room, amt);
     if (fx) this.fire(fx);

@@ -27,14 +27,14 @@ describe('정식 콘텐츠 팩 ba-content-2.8.1', () => {
 
   it('코스트 분포 19/27/28/14/13, 구역 분포 전방53·후방36·겸용12 (v2.3 3장, 아리스 2코·AL-1S 5코)', () => {
     const byCost = [1, 2, 3, 4, 5].map((c) => pack.units.filter((u) => u.cost === c).length);
-    expect(byCost).toEqual([19, 27, 28, 14, 13]);
+    expect(byCost).toEqual([19, 26, 29, 14, 13]);
     const byPos = ['front_only', 'rear_only', 'dual'].map((p) => pack.units.filter((u) => u.position === p).length);
     expect(byPos).toEqual([53, 36, 12]);
   });
 
-  it('효과 출처: 부록 C 그대로 204 + v2.3 교체·추가 210 + 카이저 론 1 + 오파츠 55 + v2.4 4·5장 적 24', () => {
+  it('효과 출처: 부록 C 그대로 201 + v2.3 교체·추가 213 + 카이저 론 1 + 오파츠 55 + v2.4 4·5장 적 24', () => {
     const prefix = (p: string) => pack.effects.filter((e) => e.catalogNo.startsWith(p)).length;
-    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.'), prefix('W.')]).toEqual([204, 210, 1, 55, 24]);
+    expect([prefix('C.'), prefix('V.'), prefix('v2.2'), prefix('O.'), prefix('W.')]).toEqual([201, 213, 1, 55, 24]);
     expect(byId(pack.effects, 'eff_aris_passive').catalogNo).toBe('C.300');
     expect(pack.effects.map((e) => e.id)).not.toContain('eff_syn_jackpot_2');
   });
