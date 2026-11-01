@@ -639,7 +639,7 @@
       "eff_oop_black_market_card"
     ],
     "benefit": "상점 새로고침 2G → 1G",
-    "drawback": "정산 이자 상한 5 → 2",
+    "drawback": "정산 이자 상한 −3(지금 상한에서. 기본 5 → 2, 세미나 2단계로 6이면 3)",
     "recipe": null,
     "flavor": "싸게 사는 대신 저축은 포기하는 인생"
   },

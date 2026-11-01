@@ -291,10 +291,10 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     if (need === null) r.xp = 0;
   }
 
-  /** 세미나 동아리 2·4단계: 정산 이자 상한 +2/+4 (v2.3 4장) */
+  /** 세미나 동아리 2·4단계: 정산 이자 상한 +1/+4 (v2.4.10, 원안 +2/+4) */
   const capBonus = (r: RunState) => {
     const c = synergyCounts(r).get('syn_seminar') ?? 0;
-    return c >= 4 ? 4 : c >= 2 ? 2 : 0;
+    return c >= 4 ? 4 : c >= 2 ? 1 : 0;
   };
   function interest(r: RunState) {
     const m = mods(r);

@@ -39,7 +39,11 @@ export const LEVEL_UP = { expPerLevel: 5, maxLevel: 6, awakenedMaxLevel: 10, atk
 export const MAKE_UP = { max: 4, atkBpsPerStack: 800, goldPerStack: [1, 2] } as const;
 export const WORKLOAD = { max: 5, atkBpsPerStack: 600 } as const;
 
-export const levelUpLevel = (exp: number, awakened: boolean) => Math.min(awakened ? LEVEL_UP.awakenedMaxLevel : LEVEL_UP.maxLevel, Math.floor(exp / LEVEL_UP.expPerLevel));
+/** awakened: AL-1S(레벨 10까지), 'unlimited': 무장 아리스(v2.4.10, 상한 없음) */
+export const levelUpLevel = (exp: number, awakened: boolean | 'unlimited') => {
+  const lv = Math.floor(exp / LEVEL_UP.expPerLevel);
+  return awakened === 'unlimited' ? lv : Math.min(awakened ? LEVEL_UP.awakenedMaxLevel : LEVEL_UP.maxLevel, lv);
+};
 
 /** 한 전투에서 정산에 필요한 사실 */
 export interface BattleStackInput {
@@ -105,7 +109,7 @@ export function stackBattleBonuses(pack: ContentPack, s: RunStacks, activeTiers:
   const on = (id: string) => activeTiers[id] !== undefined;
   if (on(LEVEL_UP_SYN)) add(owner(pack, LEVEL_UP_SYN), levelUpLevel(s.levelUpExp, false) * LEVEL_UP.atkBpsPerLevel);
   if (on(PRINCESS_SYN)) add(owner(pack, PRINCESS_SYN), levelUpLevel(s.levelUpExp, true) * LEVEL_UP.atkBpsPerLevel);
-  if (on(ARMED_HERO_SYN)) add(owner(pack, ARMED_HERO_SYN), levelUpLevel(s.levelUpExp, true) * LEVEL_UP.atkBpsPerLevel);
+  if (on(ARMED_HERO_SYN)) add(owner(pack, ARMED_HERO_SYN), levelUpLevel(s.levelUpExp, 'unlimited') * LEVEL_UP.atkBpsPerLevel);
   if (on(MAKE_UP_SYN)) for (const id of pack.synergies.find((x) => x.id === MAKE_UP_SYN)!.memberIds) add(id, s.makeUp * MAKE_UP.atkBpsPerStack);
   const hina = owner(pack, HEAD_PREFECT_SYN);
   if (on(HEAD_PREFECT_SYN)) add(hina, s.workload * WORKLOAD.atkBpsPerStack);
@@ -121,14 +125,17 @@ export function runStackLines(s: RunStacks, synergyId: string, awakened: boolean
     case PRINCESS_SYN:
     case ARMED_HERO_SYN: {
       const princess = synergyId !== LEVEL_UP_SYN || awakened;
-      const max = princess ? LEVEL_UP.awakenedMaxLevel : LEVEL_UP.maxLevel;
-      const lv = levelUpLevel(s.levelUpExp, princess);
+      const unlimited = synergyId === ARMED_HERO_SYN;
+      const max = unlimited ? Infinity : princess ? LEVEL_UP.awakenedMaxLevel : LEVEL_UP.maxLevel;
+      const lv = levelUpLevel(s.levelUpExp, unlimited ? 'unlimited' : princess);
       const toNext = lv >= max ? null : (lv + 1) * LEVEL_UP.expPerLevel - s.levelUpExp;
       const lines: StackLine[] = [
-        { label: '레벨', value: `Lv.${lv} / ${max} · ATK +${(lv * LEVEL_UP.atkBpsPerLevel) / 100}%`, progress: { current: lv, max }, note: null },
+        unlimited
+          ? { label: '레벨', value: `Lv.${lv} (상한 없음) · ATK +${(lv * LEVEL_UP.atkBpsPerLevel) / 100}%`, progress: null, note: null }
+          : { label: '레벨', value: `Lv.${lv} / ${max} · ATK +${(lv * LEVEL_UP.atkBpsPerLevel) / 100}%`, progress: { current: lv, max }, note: null },
         { label: '경험치', value: String(s.levelUpExp), progress: null, note: toNext === null ? '최고 레벨' : `다음 레벨까지 ${toNext}` },
       ];
-      if (!princess) lines.push({ label: '각성', value: `${Math.min(s.levelUpExp, AWAKEN_EXP)} / ${AWAKEN_EXP}`, progress: { current: Math.min(s.levelUpExp, AWAKEN_EXP), max: AWAKEN_EXP }, note: `경험치 ${AWAKEN_EXP} + 3성 아리스면 AL-1S (케이 보유 시 무장 아리스)` });
+      if (!princess) lines.push({ label: '각성', value: `${Math.min(s.levelUpExp, AWAKEN_EXP)} / ${AWAKEN_EXP}`, progress: { current: Math.min(s.levelUpExp, AWAKEN_EXP), max: AWAKEN_EXP }, note: `경험치 ${AWAKEN_EXP} + 3성 아리스면 AL-1S (그 전에 케이를 보유하면 무장 아리스)` });
       return lines;
     }
     case MAKE_UP_SYN:
