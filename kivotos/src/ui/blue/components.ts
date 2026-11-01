@@ -206,9 +206,9 @@ export function synergyTip(ctx: Ctx, s: SynergyStateView, run?: RunView | null):
     for (const i of [...run.board.front, ...run.board.rear]) if (i) { deployed.add(i.unitId); owned.add(i.unitId); }
     for (const i of run.board.bench) if (i) owned.add(i.unitId);
   }
-  const scope = syn.countScope === 'front_only' ? '전방에 놓인 구성원만 셉니다' : syn.countScope === 'rear_only' ? '후방에 놓인 구성원만 셉니다' : '편성된 구성원(전방+후방)을 셉니다';
+  const scope = syn.countScope === 'front_only' ? '전방에 놓인 구성원만 셉니다' : syn.countScope === 'rear_only' ? '후방에 놓인 구성원만 셉니다' : null;
   return h('div', { class: 'k-syn-tip' },
-    h('header', null, synHex(ctx, syn.id, { size: 34 }), h('div', null, h('strong', null, syn.name), h('small', null, scope))),
+    h('header', null, synHex(ctx, syn.id, { size: 34 }), h('div', null, h('strong', null, syn.name), scope ? h('small', null, scope) : null)),
     // 런 동안 쌓인 스택(값은 게임 쪽이 준다)
     s.stacks?.length ? h('div', { class: 'k-stack-box' }, h('span', { class: 'k-stack-title' }, '지금까지 쌓인 스택'), ...s.stacks.map((l) => h('div', { class: 'k-stack-line' },
       h('div', { class: 'k-stack-head' }, h('b', null, l.label), h('strong', null, l.value)),

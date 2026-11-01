@@ -737,6 +737,17 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       case 'TOGGLE_SHOP_LOCK':
         r.locked = !r.locked;
         return ok();
+      case 'SORT_BENCH': {
+        // 대기석 정렬: 코스트 낮은 순 → 같은 코스트면 같은 학생끼리(학생 순서) → 성급 높은 순. 빈칸은 뒤로
+        const order = new Map(pack.units.map((u, i) => [u.id, i]));
+        const list = r.bench.filter((i): i is Inst => !!i).sort((a, b) =>
+          unitById.get(a.unitId)!.cost - unitById.get(b.unitId)!.cost
+          || order.get(a.unitId)! - order.get(b.unitId)!
+          || b.star - a.star
+          || Number(a.instanceId.slice(1)) - Number(b.instanceId.slice(1)));
+        r.bench = [...list, ...Array.from({ length: r.bench.length - list.length }, () => null)];
+        return ok();
+      }
       case 'BUY_XP': {
         const times = Math.max(1, Math.min(10, Number(payload.times ?? 1)));
         if (xpToNext(r.level) === null) return no('이미 최고 레벨이에요');

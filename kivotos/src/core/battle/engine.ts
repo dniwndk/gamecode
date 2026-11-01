@@ -406,7 +406,7 @@ export class Battle {
     const direct = DIRECT.has(kind);
     const aoe = o.aoe ?? list.length > 1;
     const canCrit = o.crit ?? direct;
-    const esc = escalationDamageBps(this.av, this.pack.rules.battle);
+    const esc = escalationDamageBps(this.av, this.pack.rules.battle, src.side);
     const res: HitRes[] = [];
     // 묶음: 피해를 먼저 모두 확정한다(7.6)
     const nextCrit = canCrit && this.stOf(src, 'st_next_crit');
@@ -651,7 +651,7 @@ export class Battle {
     // 지속 피해·회복(대상 차례 시작에 틱)
     for (const s of [...u.st]) {
       if (!u.alive) break;
-      if (s.id === 'st_burn' && s.params.tick) this.rawDamage(s.src, u, Math.floor(s.params.tick * (100 / (100 + this.def(u))) * Math.max(0.1, 1 + (this.sum(u, 'dmgTaken') - this.sum(u, 'dmgRed')) / 10000) * (1 + escalationDamageBps(this.av, this.pack.rules.battle) / 10000)), { kind: 'dot' });
+      if (s.id === 'st_burn' && s.params.tick) this.rawDamage(s.src, u, Math.floor(s.params.tick * (100 / (100 + this.def(u))) * Math.max(0.1, 1 + (this.sum(u, 'dmgTaken') - this.sum(u, 'dmgRed')) / 10000) * (1 + escalationDamageBps(this.av, this.pack.rules.battle, s.src?.side ?? this.foe(u.side)) / 10000)), { kind: 'dot' });
       if (s.id === 'st_hot' && s.params.hot && s.src) this.heal(s.src, u, s.params.hot);
     }
     if (u.alive) this.emit({ type: 'turn_start', src: u, tgt: u });
@@ -806,8 +806,8 @@ export class Battle {
   }
 
   private tickEscalation(): void {
-    const e = escalationDamageBps(this.av, this.pack.rules.battle);
-    if (e !== this.escBps) { this.escBps = e; this.log({ t: 'escalation', av: this.av, damageBps: e }); }
+    const e = escalationDamageBps(this.av, this.pack.rules.battle, 'ally');
+    if (e !== this.escBps) { this.escBps = e; this.log({ t: 'escalation', av: this.av, damageBps: e, enemyDamageBps: escalationDamageBps(this.av, this.pack.rules.battle, 'enemy') }); }
   }
 
   // ── 준비 ───────────────────────────────────────────────

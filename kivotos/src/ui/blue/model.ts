@@ -62,8 +62,8 @@ export type BattleEventView =
   | { t: 'status'; av: number; target: Ref; statusId: string; op: 'add' | 'remove'; replacedFrom?: string }
   | { t: 'resource'; av: number; side: Side; sp?: number; energy?: { unit: Ref; value: number } }
   | { t: 'timeline'; av: number; upcoming: Ref[] }
-  /** 격화 단계가 바뀐 순간. damageBps는 지금 양쪽 모든 피해에 더해지는 비율(시간 제한 대신, GDD v2.3 13장) */
-  | { t: 'escalation'; av: number; damageBps: number }
+  /** 격화 단계가 바뀐 순간. damageBps는 지금 아군 피해에, enemyDamageBps는 적 피해에 더해지는 비율(v2.4.12)(시간 제한 대신, GDD v2.3 13장) */
+  | { t: 'escalation'; av: number; damageBps: number; enemyDamageBps?: number }
   | { t: 'defeated'; av: number; target: Ref; by?: Ref }
   /**
    * 연출용 표시 이벤트(선택). 시너지·오파츠가 발동한 순간을 알린다. 바로 뒤에 오는 피해·치유·자원 이벤트가 그 효과다.

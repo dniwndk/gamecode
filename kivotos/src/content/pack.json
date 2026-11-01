@@ -1,7 +1,7 @@
 {
   "packId": "ba-kivotos",
-  "contentVersion": "ba-content-3.2.4",
-  "rulesVersion": "ktfr-rules-2.7.9",
+  "contentVersion": "ba-content-3.3.0",
+  "rulesVersion": "ktfr-rules-2.8.0",
   "expectedCounts": {
     "units": 103,
     "synergies": 66,
@@ -25,11 +25,11 @@
     },
     {
       "path": "docs/GDD_v2.3_amendment.md",
-      "sha256": "febf5579f5f59f83b15b4352bcc99b64166cb8a79d0241df1c11a9746318854c"
+      "sha256": "3dbb757cd6eaf0cf3f4502e23d55e3ce73933ec2da3de368f8c1d2fc04656441"
     },
     {
       "path": "docs/OOPARTS_v1.md",
-      "sha256": "3aac85edfacf46b4176039a459de16ffb939f24aba00871119b54c3750aac1d8"
+      "sha256": "737156f37a18be29b1812f223507d776acdf28a817e21d90d13bf698f042de55"
     },
     {
       "path": "docs/GDD_v2.4_chapters45.md",

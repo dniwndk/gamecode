@@ -53,7 +53,7 @@ export type BattleEvent =
   | { t: 'status'; av: number; target: Ref; statusId: string; op: 'add' | 'remove'; replacedFrom?: string }
   | { t: 'resource'; av: number; side: Side; sp?: number; energy?: { unit: Ref; value: number } }
   | { t: 'timeline'; av: number; upcoming: Ref[] }
-  | { t: 'escalation'; av: number; damageBps: number }
+  | { t: 'escalation'; av: number; /** 아군 피해 증가 */ damageBps: number; /** 적 피해 증가(v2.4.12) */ enemyDamageBps: number }
   | { t: 'defeated'; av: number; target: Ref; by?: Ref }
   | { t: 'proc'; av: number; cause: { kind: 'synergy' | 'oopart'; id: string }; label: string; unit?: Ref; chain?: number }
   | { t: 'end'; av: number; outcome: 'win' | 'loss'; reason: 'enemy_front_wiped' | 'ally_front_wiped' | 'both_wiped' };

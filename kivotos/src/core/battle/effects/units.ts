@@ -113,9 +113,9 @@ export const actives: Record<string, Active> = {
   tsubaki_skill: A((c, u) => { tauntFoe(c, u, c.highestAtk(c.foes(u)), 'tsubaki_skill', 1); defUp(c, u, u, 2500, 'tsubaki_skill'); }, (c, u) => c.foes(u).some((t) => !t.st.some((s) => s.id === 'st_taunted' && s.params.by === u.uid && s.turns >= 1))),
   tsubaki_ult: A((c, u) => { for (const t of c.foes(u)) tauntFoe(c, u, t, 'tsubaki_ult', 2); guard(c, u, u, c.v(u, [2000, 2500, 3200]), 'tsubaki_ult'); }, (c, u) => c.foes(u).some((t) => !t.st.some((s) => s.id === 'st_taunted' && s.params.by === u.uid && s.turns >= 1))),
   tsukuyo_skill: A((c, u) => { taunt(c, u, 'tsukuyo_skill', 2); guard(c, u, u, 2000, 'tsukuyo_skill'); }, needBuff('tsukuyo_skill', 'self')),
-  tsukuyo_ult: A((c, u) => { c.shield(u, u, u.maxHp * c.v(u, [0.3, 0.35, 0.42]), 2, 'tsukuyo_ult'); u.d.evade = 1; }),
-  yuuka_skill: A((c, u) => { c.shield(u, u, u.maxHp * c.v(u, [0.132, 0.156, 0.192]), 2, 'yuuka_skill'); }, (c, u) => c.shieldOf(u) < u.maxHp * 0.2),
-  yuuka_ult: A((c, u) => { for (const t of c.mates(u)) c.shield(u, t, u.maxHp * c.v(u, [0.108, 0.132, 0.168]), 2, 'yuuka_ult'); }, needShield('mates')),
+  tsukuyo_ult: A((c, u) => { c.shield(u, u, u.maxHp * c.v(u, [0.225, 0.263, 0.315]), 2, 'tsukuyo_ult'); u.d.evade = 1; }),
+  yuuka_skill: A((c, u) => { c.shield(u, u, u.maxHp * c.v(u, [0.099, 0.117, 0.144]), 2, 'yuuka_skill'); }, (c, u) => c.shieldOf(u) < u.maxHp * 0.2),
+  yuuka_ult: A((c, u) => { for (const t of c.mates(u)) c.shield(u, t, u.maxHp * c.v(u, [0.081, 0.099, 0.126]), 2, 'yuuka_ult'); }, needShield('mates')),
 
   // ── 3코 ──
   akane_skill: A((c, u) => { const t = c.pick(u); c.hit(u, t, 1.5, S); if (t?.alive) c.apply(u, t, 'st_bomb', { turns: 2, params: { by: u.uid }, key: `${u.uid}:bomb`, fx: 'akane_skill' }); }),
@@ -131,7 +131,7 @@ export const actives: Record<string, Active> = {
   azusa_ult: A((c, u) => { c.hit(u, c.pick(u), c.v(u, [3.1, 3.55, 4.3]), X); }),
   chihiro_rear_reg: A((c, u) => { c.dispel(c.randomOf(c.foes(u)), 1); for (const t of c.mates(u)) critUp(c, u, t, c.v(u, [1200, 1500, 2000]), 'chihiro_rear_reg'); }),
   eimi_skill: A((c, u) => { c.hit(u, c.pick(u), 1.0, S); guard(c, u, u, 2500, 'eimi_skill'); taunt(c, u, 'eimi_skill', 2); }),
-  eimi_ult: A((c, u) => { c.shield(u, u, u.maxHp * c.v(u, [0.3, 0.35, 0.45]), 2, 'eimi_ult'); for (const t of c.mates(u)) c.apply(u, t, 'st_immune', { turns: 2, fx: 'eimi_ult', key: `${u.uid}:immune` }); }),
+  eimi_ult: A((c, u) => { c.shield(u, u, u.maxHp * c.v(u, [0.225, 0.263, 0.338]), 2, 'eimi_ult'); for (const t of c.mates(u)) c.apply(u, t, 'st_immune', { turns: 2, fx: 'eimi_ult', key: `${u.uid}:immune` }); }),
   hanako_rear_reg: A((c, u) => { u.d.hanako = (u.d.hanako ?? 0) + 1; const k = u.d.hanako % 3 === 0 ? 2 : 1; for (const t of c.mates(u)) c.heal(u, t, c.atk(u) * c.v(u, [1.2, 1.4, 1.7]) * k); }),
   hifumi_rear_reg: A((c, u) => { c.g.decoy = { ...(c.g.decoy ?? {}), [u.side]: 1 }; for (const t of c.mates(u)) atkUp(c, u, t, c.v(u, [1500, 2000, 2800]), 'hifumi_rear_reg'); c.fire('hifumi_rear_reg'); }),
   hiyori_rear_reg: A((c, u) => {
@@ -140,7 +140,7 @@ export const actives: Record<string, Active> = {
     const arius = (c.g.ariusCount ?? 0) >= 3 ? 1000 : 0;
     defDown(c, u, t, c.v(u, [3000, 3500, 4500]) + arius, 'hiyori_rear_reg');
   }),
-  iori_skill: A((c, u) => { taunt(c, u, 'iori_skill', 1); c.shield(u, u, u.maxHp * 0.2, 2, 'iori_skill'); c.hit(u, c.pick(u), 1.4, S); }),
+  iori_skill: A((c, u) => { taunt(c, u, 'iori_skill', 1); c.shield(u, u, u.maxHp * 0.15, 2, 'iori_skill'); c.hit(u, c.pick(u), 1.4, S); }),
   iori_ult: A((c, u) => { const t = c.pick(u); const adj = t ? c.adjacent(t) : undefined; c.hit(u, t, c.v(u, [2.7, 3.1, 3.75]), X, { aoe: false }); c.hit(u, adj, c.v(u, [1.35, 1.55, 1.9]), X, { aoe: false }); }),
   izuna_skill: A((c, u) => { c.hit(u, c.pick(u), 1.65, S); critUp(c, u, u, 1500, 'izuna_skill'); }),
   izuna_ult: A((c, u) => { c.hit(u, c.pick(u), c.v(u, [2.45, 2.8, 3.35]), X); spdUp(c, u, u, 20, 'izuna_ult'); c.advance(u, 0.35); }),
@@ -165,7 +165,7 @@ export const actives: Record<string, Active> = {
   marina_skill: A((c, u) => { const ts = c.firstN(u, 2); c.hit(u, ts, 1.4, S); for (const t of ts) tauntFoe(c, u, t, 'marina_skill', 1); }),
   marina_ult: A((c, u) => { const ts = c.foes(u); c.hit(u, ts, c.v(u, [1.75, 2.05, 2.5]), X); for (const t of ts) buff(c, u, t, 'st_healing_received_down', { healRecv: -4000 }, 'marina_ult'); }),
   mimori_rear_reg: A((c, u) => { for (const t of c.mates(u)) { t.d.resist = 1; c.gainEnergy(t, c.v(u, [10, 12, 15])); } c.fire('mimori_rear_reg'); }),
-  mina_skill: A((c, u) => { const ts = c.firstN(u, 2); c.hit(u, ts, 1.2, S); for (const t of ts) { atkDown(c, u, t, 2000, 'mina_skill'); defDown(c, u, t, 2000, 'mina_skill'); } c.shield(u, u, u.maxHp * 0.18, 2, 'mina_skill'); }),
+  mina_skill: A((c, u) => { const ts = c.firstN(u, 2); c.hit(u, ts, 1.2, S); for (const t of ts) { atkDown(c, u, t, 2000, 'mina_skill'); defDown(c, u, t, 2000, 'mina_skill'); } c.shield(u, u, u.maxHp * 0.135, 2, 'mina_skill'); }),
   mina_ult: A((c, u) => { const t = c.pick(u); c.hit(u, t, c.v(u, [2.65, 3.05, 3.7]), X); if (t) c.delay(t, 0.35, u); }),
   misaki_rear_reg: A((c, u) => { const b = u.d.misaki ? 5000 : 0; u.d.misaki = false; c.hit(u, c.foes(u), c.v(u, [1.2, 1.4, 1.7]), R, { bonus: b }); }),
   moe_rear_reg: A((c, u) => { c.hit(u, c.foes(u), c.v(u, [1.15, 1.35, 1.65]), R); }),
@@ -179,15 +179,15 @@ export const actives: Record<string, Active> = {
   saki_rear_reg: A((c, u) => { for (const t of c.mates(u)) atkUp(c, u, t, c.v(u, [2000, 2500, 3200]), 'saki_rear_reg'); c.hit(u, c.pick(u), 1.0, R); }),
   shigure_skill: A((c, u) => { c.hit(u, c.pick(u), 1.6, S); c.heal(u, u, u.maxHp * 0.1); }),
   shigure_ult: A((c, u) => { c.hit(u, c.pick(u), c.v(u, [3.0, 3.45, 4.2]), X, { bonus: u.turn >= 5 ? 4000 : 0 }); }),
-  shizuko_rear_reg: A((c, u) => { for (const t of c.mates(u)) { c.shield(u, t, c.atk(u) * c.v(u, [1.1, 1.3, 1.6]), 2, 'shizuko_rear_reg'); critUp(c, u, t, 1200, 'shizuko_rear_reg'); } }),
-  toki_skill: A((c, u) => { c.shield(u, u, u.maxHp * 0.2, 2, 'toki_skill'); atkUp(c, u, u, 2500, 'toki_skill'); c.hit(u, c.pick(u), 1.5, S); }),
+  shizuko_rear_reg: A((c, u) => { for (const t of c.mates(u)) { c.shield(u, t, c.atk(u) * c.v(u, [0.825, 0.975, 1.2]), 2, 'shizuko_rear_reg'); critUp(c, u, t, 1200, 'shizuko_rear_reg'); } }),
+  toki_skill: A((c, u) => { c.shield(u, u, u.maxHp * 0.15, 2, 'toki_skill'); atkUp(c, u, u, 2500, 'toki_skill'); c.hit(u, c.pick(u), 1.5, S); }),
   toki_ult: A((c, u) => { c.hit(u, c.foes(u), c.v(u, [1.8, 2.1, 2.55]), X); c.hit(u, c.pick(u), 0.8, X, { true: true, aoe: false }); }),
   tomoe_rear_reg: A((c, u) => {
     for (const t of c.mates(u)) c.gainEnergy(t, 15);
     atkUp(c, u, c.mates(u).find((x) => x.unit?.id === 'u_cherino'), c.v(u, [2500, 3000, 4000]), 'tomoe_rear_reg');
     c.fire('tomoe_rear_reg');
   }),
-  utaha_rear_reg: A((c, u) => { const t = c.lowestRatio(c.mates(u))[0]; c.shield(u, t, c.atk(u) * c.v(u, [1.4, 1.65, 2.0]), 2, 'utaha_rear_reg'); guard(c, u, t, 1000, 'utaha_rear_reg'); }),
+  utaha_rear_reg: A((c, u) => { const t = c.lowestRatio(c.mates(u))[0]; c.shield(u, t, c.atk(u) * c.v(u, [1.05, 1.238, 1.5]), 2, 'utaha_rear_reg'); guard(c, u, t, 1000, 'utaha_rear_reg'); }),
   yuzu_rear_reg: A((c, u) => {
     const b = u.d.locker ? 5000 : 0; u.d.locker = false;
     for (let i = 0; i < 3; i++) c.hit(u, c.randomOf(c.foes(u)), c.v(u, [0.7, 0.8, 1.0]), R, { bonus: b });
@@ -195,7 +195,7 @@ export const actives: Record<string, Active> = {
 
   // ── 4코 ──
   akemi_skill: A((c, u) => { c.hit(u, c.firstN(u, 2), 1.6, S); c.cleanse(u, 1); atkUp(c, u, u, 2500, 'akemi_skill'); }),
-  akemi_ult: A((c, u) => { c.hit(u, c.foes(u), c.v(u, [2.15, 2.5, 3.05]), X); c.shield(u, u, u.maxHp * 0.25, 2, 'akemi_ult'); }),
+  akemi_ult: A((c, u) => { c.hit(u, c.foes(u), c.v(u, [2.15, 2.5, 3.05]), X); c.shield(u, u, u.maxHp * 0.188, 2, 'akemi_ult'); }),
   ako_rear_reg: A((c, u) => {
     critUp(c, u, c.highestAtk(c.mates(u)), c.v(u, [2500, 3200, 4200]), 'ako_rear_reg', 2, c.v(u, [4500, 6000, 8500]));
     c.heal(u, c.lowestRatio(c.mates(u))[0], c.atk(u) * c.v(u, [1.2, 1.45, 1.8]));
@@ -213,23 +213,23 @@ export const actives: Record<string, Active> = {
     const r = c.hit(u, c.highestHp(c.foes(u)), c.v(u, [3.4, 3.95, 4.8]), X);
     if (r.some((x) => x.killed)) follow(c, u, c.foes(u), 1.0, 'haruna_ult');
   }),
-  hoshino_skill: A((c, u) => { const t = c.pick(u); c.hit(u, t, 1.4, S); tauntFoe(c, u, t, 'hoshino_skill', 1); c.shield(u, u, u.maxHp * 0.2, 2, 'hoshino_skill'); }),
+  hoshino_skill: A((c, u) => { const t = c.pick(u); c.hit(u, t, 1.4, S); tauntFoe(c, u, t, 'hoshino_skill', 1); c.shield(u, u, u.maxHp * 0.15, 2, 'hoshino_skill'); }),
   hoshino_ult: A((c, u) => {
     const ts = c.foes(u);
     c.hit(u, ts, c.v(u, [1.85, 2.15, 2.65]), X);
     for (const t of ts) if (c.rng.chance(6000)) stun(c, u, t, 'hoshino_ult');
-    c.shield(u, u, u.maxHp * c.v(u, [0.25, 0.3, 0.38]), 2, 'hoshino_ult');
+    c.shield(u, u, u.maxHp * c.v(u, [0.188, 0.225, 0.285]), 2, 'hoshino_ult');
   }),
   kanna_skill: A((c, u) => { const t = c.pick(u); c.hit(u, t, 1.65, S); defDown(c, u, t, 2500, 'kanna_skill'); vuln(c, u, t, 1500, 'kanna_skill'); }),
   kanna_ult: A((c, u) => { c.hit(u, c.pick(u), c.v(u, [3.1, 3.6, 4.4]), X); for (const t of c.mates(u)) atkUp(c, u, t, 2500, 'kanna_ult'); }),
-  mine_skill: A((c, u) => { taunt(c, u, 'mine_skill', 2); c.shield(u, u, u.maxHp * 0.2, 2, 'mine_skill'); }, anyOf(needBuff('mine_skill', 'self'), needShield('self'))),
+  mine_skill: A((c, u) => { taunt(c, u, 'mine_skill', 2); c.shield(u, u, u.maxHp * 0.15, 2, 'mine_skill'); }, anyOf(needBuff('mine_skill', 'self'), needShield('self'))),
   mine_ult: A((c, u) => { for (const t of c.mates(u)) c.heal(u, t, t.maxHp * c.v(u, [0.15, 0.18, 0.22])); c.hit(u, c.pick(u), 2.0, X); }),
   miyako_skill: A((c, u) => { const t = c.highestAtk(c.foes(u)); c.hit(u, t, 1.5, S); stun(c, u, t, 'miyako_skill'); guard(c, u, u, 2000, 'miyako_skill'); }),
   miyako_ult: A((c, u) => {
     const ts = c.firstN(u, 2);
     c.hit(u, ts, c.v(u, [2.2, 2.55, 3.1]), X);
     stun(c, u, ts.find((t) => t.alive), 'miyako_ult');
-    for (const t of c.mates(u)) c.shield(u, t, t.maxHp * 0.2, 2, 'miyako_ult');
+    for (const t of c.mates(u)) c.shield(u, t, t.maxHp * 0.15, 2, 'miyako_ult');
   }),
   miyu_skill: A((c, u) => { const t = c.pick(u); c.hit(u, t, 1.75, S); vuln(c, u, t, 2500, 'miyu_skill'); }),
   miyu_ult: A((c, u) => { c.hit(u, c.highestHp(c.foes(u)), c.v(u, [3.3, 3.85, 4.65]), X); }),
@@ -276,16 +276,16 @@ export const actives: Record<string, Active> = {
   }),
   hina_skill: A((c, u) => { c.hit(u, c.foes(u), 1.55, S); }),
   hina_ult: A((c, u) => { c.hit(u, c.foes(u), c.v(u, [2.6, 3.05, 3.8]), X); atkUp(c, u, u, 3000, 'hina_ult', 3); }),
-  hoshino_armed_skill: A((c, u) => { c.shield(u, u, u.maxHp * 0.25, 2, 'hoshino_armed_skill'); atkUp(c, u, u, 3000, 'hoshino_armed_skill'); c.hit(u, c.firstN(u, 2), 1.75, S); }),
+  hoshino_armed_skill: A((c, u) => { c.shield(u, u, u.maxHp * 0.188, 2, 'hoshino_armed_skill'); atkUp(c, u, u, 3000, 'hoshino_armed_skill'); c.hit(u, c.firstN(u, 2), 1.75, S); }),
   hoshino_armed_ult: A((c, u) => { c.hit(u, c.foes(u), c.v(u, [2.7, 3.15, 3.9]), X); c.hit(u, c.pick(u), 1.3, X, { true: true, aoe: false }); }),
   kisaki_skill: A((c, u) => { for (const t of c.mates(u)) dmgUp(c, u, t, { ultDmg: 3500 }, 'kisaki_skill'); }, needBuff('kisaki_skill', 'mates')),
   kisaki_ult: A((c, u) => { for (const t of c.mates(u)) c.gainEnergy(t, 30); c.hit(u, c.foes(u), c.v(u, [2.2, 2.6, 3.2]), X); }),
-  kisaki_rear_reg: A((c, u) => { for (const t of c.mates(u)) { dmgUp(c, u, t, { skillDmg: c.v(u, [3000, 3800, 5000]), ultDmg: c.v(u, [3000, 3800, 5000]) }, 'kisaki_rear_reg'); c.shield(u, t, c.atk(u) * 1.1, 2, 'kisaki_rear_reg'); } }),
-  mika_skill: A((c, u) => { c.hit(u, c.pick(u), 1.9, S); c.shield(u, u, u.maxHp * c.v(u, [0.2, 0.25, 0.32]), 2, 'mika_skill'); }),
+  kisaki_rear_reg: A((c, u) => { for (const t of c.mates(u)) { dmgUp(c, u, t, { skillDmg: c.v(u, [3000, 3800, 5000]), ultDmg: c.v(u, [3000, 3800, 5000]) }, 'kisaki_rear_reg'); c.shield(u, t, c.atk(u) * 0.825, 2, 'kisaki_rear_reg'); } }),
+  mika_skill: A((c, u) => { c.hit(u, c.pick(u), 1.9, S); c.shield(u, u, u.maxHp * c.v(u, [0.15, 0.188, 0.24]), 2, 'mika_skill'); }),
   mika_ult: A((c, u) => { c.hit(u, c.highestHp(c.foes(u)), c.v(u, [4.2, 4.9, 6.0]), X); }),
   nagisa_rear_reg: A((c, u) => { for (const t of c.mates(u)) { atkUp(c, u, t, c.v(u, [3000, 3800, 5000]), 'nagisa_rear_reg'); guard(c, u, t, 1000, 'nagisa_rear_reg'); c.gainEnergy(t, 20); } }),
   rio_rear_reg: A((c, u) => {
-    for (const t of c.mates(u)) c.shield(u, t, c.atk(u) * c.v(u, [1.35, 1.6, 2.0]), 2, 'rio_rear_reg');
+    for (const t of c.mates(u)) c.shield(u, t, c.atk(u) * c.v(u, [1.013, 1.2, 1.5]), 2, 'rio_rear_reg');
     const ts = c.foes(u);
     c.hit(u, ts, 1.1, R);
     for (const t of ts) defDown(c, u, t, 2500, 'rio_rear_reg');
@@ -341,7 +341,7 @@ export const passives: Record<string, Passive> = {
   }, u),
   ayane_rear_react: (c, u) => c.on('healed', (e) => {
     if (!allyFrontHit(u, e)) return;
-    react(c, u, 'ayane_rear_react', 0, 2, () => { c.shield(u, e.tgt, c.atk(u) * c.v(u, [0.55, 0.65, 0.85]), 2, 'ayane_rear_react'); });
+    react(c, u, 'ayane_rear_react', 0, 2, () => { c.shield(u, e.tgt, c.atk(u) * c.v(u, [0.413, 0.488, 0.638]), 2, 'ayane_rear_react'); });
   }, u),
   chinatsu_rear_react: (c, u) => c.on('status_applied', (e) => {
     if (!e.tgt || e.tgt.side !== u.side || e.converted || (e.statusId !== 'st_stun' && e.statusId !== 'st_silence')) return;
@@ -454,7 +454,7 @@ export const passives: Record<string, Passive> = {
   }, u),
   shizuko_rear_react: (c, u) => c.on('damage_received', (e) => {
     if (!allyFrontHit(u, e)) return;
-    react(c, u, 'shizuko_rear_react', 2, 1, () => c.shield(u, e.tgt, c.atk(u) * c.v(u, [1.3, 1.55, 1.9]), 2, 'shizuko_rear_react') > 0);
+    react(c, u, 'shizuko_rear_react', 2, 1, () => c.shield(u, e.tgt, c.atk(u) * c.v(u, [0.975, 1.163, 1.425]), 2, 'shizuko_rear_react') > 0);
   }, u),
   toki_passive: (c, u) => {
     c.mod(u, { dmgUp: 2000 }, 'toki_passive', () => c.shieldOf(u) > 0);

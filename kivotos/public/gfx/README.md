@@ -5,7 +5,7 @@
 
 | 폴더 | 수 | 원본 → 여기 | 쓰는 곳 |
 |---|---:|---|---|
-| synergy | 64 | SVG. 처음 27종은 획 3.4 → 4.4로 굵게(2026-10-30 가시성 개선), 나머지 37종은 `KTFR_Synergy37_Ooparts55.zip`(획 4.4) 그대로 | `synHex` 시너지 배지 안 흰 문양 |
+| synergy | 66 | SVG. 2026-11-01 사용자 제공 `kivotos_synergy_icons_66.zip`으로 66종 전부 교체(흰 획, 48×48 viewBox) | `synHex` 시너지 배지 안 흰 문양 |
 | ooparts | 55 | PNG 1024(알파) → WebP 256, 품질 85 | 도감 「오파츠」 탭. 등급 바탕·테두리는 CSS가 칠하고, 전설은 공개 전 실루엣 |
 | status | 20 | SVG 그대로 | 전투 상태 칩(CSS 마스크로 글자색을 따름) |
 | enemies | 13 | PNG 1024/1536 → WebP 512, 보스 768 | `enemyPortrait`, 전투 적 칸 |

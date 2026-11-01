@@ -177,15 +177,16 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
     return h('div', { class: 'k-board' },
       h('div', { class: 'k-board-plane', 'aria-hidden': 'true' }),
       h('div', { class: 'k-board-dir' }, icon('back', 18, 'k-up'), '적 방향'),
-      h('div', { class: 'k-row-label is-front' }, icon('front', 22), h('b', null, '전방'), h('small', null, 'F1~F4 · 피격·공격')),
+      h('div', { class: 'k-row-label is-front' }, icon('front', 22), h('b', null, '전방'), ),
       front,
       h('div', { class: 'k-frontline', 'aria-hidden': 'true' }, h('span', null, 'FRONT LINE')),
-      h('div', { class: 'k-row-label is-rear' }, icon('rear', 22), h('b', null, '후방'), h('small', null, 'R1~R6 · HP 없음 · 정기 지원')),
+      h('div', { class: 'k-row-label is-rear' }, icon('rear', 22), h('b', null, '후방'), ),
       rear,
       h('div', { class: 'k-deploy-count', title: '편성 인원 / 레벨' }, h('b', null, `${run.deployedCount}`), h('span', null, `/ ${run.deployLimit}`), h('small', null, '편성')));
   }
 
   function intelPanel(): HTMLElement {
+    const enemyBps = ctx.driver.catalog.rules.battle.enemyStatBps ?? { hp: 10000, atk: 10000, def: 10000 };
     const cand = run.node.candidates.find((c) => c.id === run.node.chosen) ?? run.node.candidates[0];
     const nodeLabel = run.nodeType === 'boss' ? '보스' : run.nodeType === 'elite' ? '정예' : '일반';
     const tabs = h('div', { class: 'k-cand-tabs', role: 'tablist' }, ...run.node.candidates.map((c) => h('button', {
@@ -210,7 +211,7 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
         );
         attachTip(ctx, row, () => h('div', { class: 'k-enemy-tip' },
           h('strong', null, e.name), h('p', null, e.role),
-          h('div', { class: 'k-enemy-stats' }, `HP ${Math.round(e.baseStats.hp * run.node.statScaleBps / 10000).toLocaleString()} · ATK ${Math.round(e.baseStats.atk * run.node.statScaleBps / 10000)} · DEF ${e.baseStats.def} · SPD ${e.baseStats.spd}`),
+          h('div', { class: 'k-enemy-stats' }, `HP ${Math.floor(e.baseStats.hp * run.node.statScaleBps / 10000 * enemyBps.hp / 10000).toLocaleString()} · ATK ${Math.floor(e.baseStats.atk * run.node.statScaleBps / 10000 * enemyBps.atk / 10000)} · DEF ${Math.floor(e.baseStats.def * enemyBps.def / 10000)} · SPD ${e.baseStats.spd}`),
           h('p', { class: 'k-counter' }, icon('info', 16), readable(ctx, e.counterplay))));
         return row;
       })),
@@ -228,7 +229,8 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
   function benchRow(): HTMLElement {
     const sel = ctx.ui.selected ? find(ctx.ui.selected) : null;
     return h('div', { class: 'k-bench' },
-      h('div', { class: 'k-bench-label' }, icon('bench', 22), h('b', null, '대기석'), h('small', null, `${run.board.bench.filter(Boolean).length}/${run.board.bench.length}`)),
+      h('div', { class: 'k-bench-label' }, icon('bench', 22), h('b', null, '대기석'), h('small', null, `${run.board.bench.filter(Boolean).length}/${run.board.bench.length}`),
+        h('button', { class: 'k-btn k-bench-sort', type: 'button', title: '코스트 순, 같은 코스트는 같은 학생끼리 (단축키 S)', disabled: !run.board.bench.some(Boolean), onclick: () => void ctx.send('SORT_BENCH') }, '정렬')),
       h('div', { class: 'k-bench-slots' }, ...run.board.bench.map((inst, i) => slot('bench', i, inst))),
       h('div', { class: cls('k-sell', sel && 'is-armed'), 'data-drop': 'sell', role: 'button', tabindex: sel ? 0 : -1,
         onclick: () => { if (sel) void sell(sel.inst); },
@@ -363,6 +365,7 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
     if (k >= '1' && k <= '5') void ctx.send('BUY_UNIT', { slotIndex: Number(k) - 1 });
     else if (k === 'r') void ctx.send('REROLL_SHOP');
     else if (k === 'l') void ctx.send('TOGGLE_SHOP_LOCK');
+    else if (k === 's') void ctx.send('SORT_BENCH');
     else if (k === 'e') void ctx.send('BUY_XP', { times: 1 });
     else if (k === 'escape' && ctx.ui.selected) { ctx.ui.selected = null; draw(); }
     else return;

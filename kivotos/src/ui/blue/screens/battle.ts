@@ -93,6 +93,8 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
   const avText = h('small', null, 'AV 0');
   const escStartAv = ctx.driver.catalog.rules.battle.escalation.startAv;
   let escBps = 0;
+  let escEnemyBps = 0;
+  const escLabel = () => `격화 · 적 +${escEnemyBps / 100}% · 아군 +${escBps / 100}%`;
   const avBox = h('div', { class: 'k-av', title: '시간 제한 없음 · 오래 끌면 양쪽 피해가 함께 커지는 격화' }, h('div', { class: 'k-av-bar' }, avFill), avText);
   const spBox = h('div', { class: 'k-sp', 'aria-label': '팀 SP' });
   const logList = h('ol', { class: 'k-log-list' });
@@ -348,10 +350,10 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
     return true;
   }
   function escalate(bps: number) {
-    field.style.setProperty('--heat', String(escalationHeat(bps)));
+    field.style.setProperty('--heat', String(escalationHeat(escEnemyBps)));
     field.classList.toggle('is-heated', bps > 0);
     if (skipping || bps <= 0) return;
-    const b = h('div', { class: 'k-esc-banner' }, h('small', null, 'ESCALATION'), h('b', null, `격화 · 모든 피해 +${bps / 100}%`));
+    const b = h('div', { class: 'k-esc-banner' }, h('small', null, 'ESCALATION'), h('b', null, escLabel()));
     el.append(b);
     setTimeout(() => b.remove(), 1600);
     ctx.sfx.play('escalation');
@@ -394,7 +396,7 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
   async function apply(e: BattleEventView) {
     // 시간 제한은 없다. 막대는 격화가 시작되는 AV까지 차오르고, 그 뒤로는 격화 수치를 함께 보여 준다.
     avFill.style.setProperty('--p', `${Math.min(100, (e.av / escStartAv) * 100)}%`);
-    avText.textContent = escBps ? `AV ${e.av} · 격화 +${escBps / 100}%` : `AV ${e.av}`;
+    avText.textContent = escBps ? `AV ${e.av} · ${escLabel()}` : `AV ${e.av}`;
     switch (e.t) {
       case 'timeline': paintTimeline(e.upcoming); break;
       case 'action': {
@@ -510,8 +512,9 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
       }
       case 'escalation':
         escBps = e.damageBps;
+        escEnemyBps = e.enemyDamageBps ?? e.damageBps;
         avBox.classList.toggle('is-hot', escBps > 0);
-        avText.textContent = `AV ${e.av} · 격화 +${escBps / 100}%`;
+        avText.textContent = `AV ${e.av} · ${escLabel()}`;
         escalate(escBps);
         break;
       case 'end':

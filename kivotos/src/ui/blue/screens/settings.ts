@@ -41,7 +41,7 @@ export function mountSettings(ctx: Ctx): Screen {
             onchange: () => ctx.sfx.play('hit', { power: 2 }) })),
         h('h3', null, '단축키'),
         h('dl', { class: 'k-keys' },
-          ...[['1~5', '상점 구매'], ['R', '새로고침'], ['L', '상점 잠금'], ['E', 'XP 구매'], ['Space', '전투 재생/일시정지'], ['Esc', '창 닫기 · 선택 해제']].flatMap(([k, v]) => [h('dt', null, h('kbd', null, k)), h('dd', null, v)]))));
+          ...[['1~5', '상점 구매'], ['R', '새로고침'], ['L', '상점 잠금'], ['E', 'XP 구매'], ['S', '대기석 정렬'], ['Space', '전투 재생/일시정지'], ['Esc', '창 닫기 · 선택 해제']].flatMap(([k, v]) => [h('dt', null, h('kbd', null, k)), h('dd', null, v)]))));
   };
   draw();
   return { el };
