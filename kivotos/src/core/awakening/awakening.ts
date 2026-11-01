@@ -12,6 +12,9 @@ export interface OwnedUnitRef {
   acquiredOrder: number;
 }
 
+/** v2.4.11: 각성 학생은 3성 아리스가 바뀌어도 2성으로 시작한다(그 뒤로는 다른 5코처럼 상점에서 사 합성) */
+export const AWAKENED_STAR = 2;
+
 export interface AwakeningPlan {
   /** 각성하는 개체. 자리와 장비는 그대로 두고 unitId만 바뀐다. */
   instanceId: string;
@@ -45,7 +48,7 @@ export function resolveAwakenings(pack: ContentPack, owned: readonly OwnedUnitRe
       instanceId: target.instanceId,
       fromUnitId: def.id,
       intoUnitId,
-      star: target.star,
+      star: AWAKENED_STAR,
       autoSellInstanceIds: copies.filter((c) => c !== target).map((c) => c.instanceId),
     });
   }
@@ -56,17 +59,26 @@ export function resolveAwakenings(pack: ContentPack, owned: readonly OwnedUnitRe
  * 기본 각성 형태를 이미 보유해 분기가 닫힌 동반 학생(v2.4.10: AL-1S로 각성했으면 케이). 상점에서 뺀다.
  * 분기 형태(무장 아리스)를 보유했거나 각성 전이면 비어 있다.
  */
-export function blockedCompanions(pack: ContentPack, ownedUnitIds: readonly string[]): string[] {
+export function blockedCompanions(pack: ContentPack, ownedUnitIds: Iterable<string>): string[] {
+  const ids = new Set(ownedUnitIds);
   const out: string[] = [];
   for (const def of pack.units) {
     const a = def.awakening;
-    if (a && a.alternates.length && ownedUnitIds.includes(a.intoUnitId)) out.push(...a.alternates.map((x) => x.withUnitId));
+    if (a && a.alternates.length && ids.has(a.intoUnitId)) out.push(...a.alternates.map((x) => x.withUnitId));
   }
   return out;
 }
 
-/** 상점에 나올 수 있는 학생인가. 각성 학생은 늘 빠지고, 각성을 마친 원래 학생도 빠진다. */
-export function shopAllows(unit: Pick<UnitDefinition, 'id' | 'shopEligible'>, awakenedFromIds: ReadonlySet<string>): boolean {
+/**
+ * 상점에 나올 수 있는 학생인가. 각성을 마친 원래 학생은 빠진다.
+ * 각성 학생은 그 판에서 실제로 각성한 형태(awakenedIntoIds)만 나온다(v2.4.11: 다른 5코와 같은 장수).
+ */
+export function shopAllows(
+  unit: Pick<UnitDefinition, 'id' | 'shopEligible' | 'awakenedFrom'>,
+  awakenedFromIds: ReadonlySet<string>,
+  awakenedIntoIds: ReadonlySet<string> = new Set(),
+): boolean {
+  if (unit.awakenedFrom) return awakenedIntoIds.has(unit.id);
   return unit.shopEligible && !awakenedFromIds.has(unit.id);
 }
 

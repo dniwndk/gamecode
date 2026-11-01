@@ -21,13 +21,18 @@ export function heldCopies(pack: ContentPack, owned: readonly OwnedCopy[]): Map<
   return out;
 }
 
-/** 상점에 나오지 않는 학생: 최고 성급을 보유한 학생(팔기 전까지), 각성 학생, 각성을 마친 원래 학생 */
-export function shopExcluded(pack: ContentPack, owned: readonly OwnedCopy[], awakenedFromIds: ReadonlySet<string> = new Set()): Set<string> {
+/** 상점에 나오지 않는 학생: 최고 성급을 보유한 학생(팔기 전까지), 그 판에 각성하지 않은 각성 학생, 각성을 마친 원래 학생 */
+export function shopExcluded(
+  pack: ContentPack,
+  owned: readonly OwnedCopy[],
+  awakenedFromIds: ReadonlySet<string> = new Set(),
+  awakenedIntoIds: ReadonlySet<string> = new Set(),
+): Set<string> {
   const out = new Set<string>();
   if (pack.rules.shop.excludeMaxStarOwned) for (const o of owned) if (o.star >= pack.rules.units.maxStar) out.add(o.unitId);
-  for (const u of pack.units) if (!shopAllows(u, awakenedFromIds)) out.add(u.id);
+  for (const u of pack.units) if (!shopAllows(u, awakenedFromIds, awakenedIntoIds)) out.add(u.id);
   // v2.4.10: 기본 형태(AL-1S)로 이미 각성했으면 분기 동반 학생(케이)은 그 판에 다시 나오지 않는다
-  for (const id of blockedCompanions(pack, owned.map((o) => o.unitId))) out.add(id);
+  for (const id of blockedCompanions(pack, [...owned.map((o) => o.unitId), ...awakenedIntoIds])) out.add(id);
   return out;
 }
 
@@ -43,12 +48,13 @@ export function remainingCopies(
   owned: readonly OwnedCopy[],
   shown: readonly (string | null)[] = [],
   awakenedFromIds: ReadonlySet<string> = new Set(),
+  awakenedIntoIds: ReadonlySet<string> = new Set(),
 ): Map<string, number> {
   const held = heldCopies(pack, owned);
-  const excluded = shopExcluded(pack, owned, awakenedFromIds);
+  const excluded = shopExcluded(pack, owned, awakenedFromIds, awakenedIntoIds);
   const out = new Map<string, number>();
   for (const u of pack.units) {
-    if (!u.shopEligible) continue;
+    if (u.awakenedFrom ? !awakenedIntoIds.has(u.id) : !u.shopEligible) continue;
     const left = excluded.has(u.id) ? 0 : copiesFor(pack, u) - (held.get(u.id) ?? 0) - shown.filter((s) => s === u.id).length;
     out.set(u.id, Math.max(0, left));
   }
@@ -61,6 +67,8 @@ export interface ShopRollInput {
   /** 추적 중인 시너지(5번 칸 추천 모드) */
   trackedSynergyId: string | null;
   awakenedFromIds?: ReadonlySet<string>;
+  /** 그 판에 각성한 형태(v2.4.11: 각성 후 상점에 나온다) */
+  awakenedIntoIds?: ReadonlySet<string>;
   /** 오파츠 보정(OOPARTS_v1): 칸 수, 추천 모드 확률, 1번 칸 최고 코스트(C03) */
   slots?: number;
   recommendedChanceBps?: number;
@@ -92,7 +100,7 @@ export function rollShopDetailed(pack: ContentPack, input: ShopRollInput, rng: R
   const { recommendedSlotIndex } = pack.rules.shop;
   const slots = input.slots ?? pack.rules.shop.slots;
   const recommendedModeChanceBps = input.recommendedChanceBps ?? pack.rules.shop.recommendedModeChanceBps;
-  const remaining = remainingCopies(pack, input.owned, [], input.awakenedFromIds);
+  const remaining = remainingCopies(pack, input.owned, [], input.awakenedFromIds, input.awakenedIntoIds);
   const odds = costOdds(pack, input.level);
   // 등급별 후보는 ID순(5.2)
   const byCost = [1, 2, 3, 4, 5].map((c) => pack.units.filter((u) => u.cost === c && remaining.has(u.id)).map((u) => u.id).sort());

@@ -2,17 +2,17 @@
 import { describe, expect, it } from 'vitest';
 import { contentPack as pack } from '../../src/content';
 import { awakeningProgress, blockedCompanions, resolveAwakenings, shopAllows, type OwnedUnitRef } from '../../src/core/awakening/awakening';
-import { shopExcluded } from '../../src/core/shop/shop';
+import { copiesFor, remainingCopies, shopExcluded } from '../../src/core/shop/shop';
 
 const aris = (instanceId: string, star: number, deployed: boolean, acquiredOrder: number): OwnedUnitRef => ({ instanceId, unitId: 'u_aris', star, deployed, acquiredOrder });
 const unit = (id: string) => pack.units.find((u) => u.id === id)!;
 
 describe('각성 판정', () => {
-  it('3성이어도 경험치 14는 그대로, 15가 되면 3성 AL-1S', () => {
+  it('3성이어도 경험치 14는 그대로, 15가 되면 2성 AL-1S(v2.4.11)', () => {
     const owned = [aris('a', 3, true, 0)];
     expect(resolveAwakenings(pack, owned, { u_aris: 14 })).toEqual([]);
     expect(resolveAwakenings(pack, owned, { u_aris: 15 })).toEqual([
-      { instanceId: 'a', fromUnitId: 'u_aris', intoUnitId: 'u_al1s', star: 3, autoSellInstanceIds: [] },
+      { instanceId: 'a', fromUnitId: 'u_aris', intoUnitId: 'u_al1s', star: 2, autoSellInstanceIds: [] },
     ]);
   });
 
@@ -54,6 +54,22 @@ describe('각성 판정', () => {
     expect(shopAllows(unit('u_aris_armed'), new Set())).toBe(false);
     expect(shopAllows(unit('u_aris'), new Set())).toBe(true);
     expect(shopAllows(unit('u_aris'), new Set(['u_aris']))).toBe(false);
+  });
+
+  it('각성 뒤에는 각성한 형태 하나만 다른 5코와 같은 장수로 상점에 나온다(v2.4.11)', () => {
+    const from = new Set(['u_aris']);
+    expect(shopAllows(unit('u_al1s'), from, new Set(['u_al1s']))).toBe(true);
+    expect(shopAllows(unit('u_aris_armed'), from, new Set(['u_al1s']))).toBe(false);
+    expect(shopAllows(unit('u_aris_armed'), from, new Set(['u_aris_armed']))).toBe(true);
+    const five = copiesFor(pack, unit('u_hina'));
+    expect(copiesFor(pack, unit('u_aris_armed'))).toBe(five);
+    // 각성한 2성(1성 3장)도 장수에서 빠진다
+    const left = remainingCopies(pack, [{ unitId: 'u_aris_armed', star: 2 }], [], from, new Set(['u_aris_armed']));
+    expect(left.get('u_aris_armed')).toBe(five - 3);
+    expect(left.has('u_al1s')).toBe(false);
+    expect(left.get('u_aris')).toBe(0);
+    // AL-1S를 팔았어도 케이는 돌아오지 않는다
+    expect(shopExcluded(pack, [], from, new Set(['u_al1s'])).has('u_key')).toBe(true);
   });
 
   it('진행 표시: 각성까지 x/15 · ★3 필요', () => {
