@@ -170,6 +170,7 @@
       "u_neru",
       "u_noa",
       "u_al1s",
+      "u_aris_armed",
       "u_himari",
       "u_rio",
       "u_key"
@@ -763,20 +764,20 @@
     "countScope": "deployed_all",
     "tiers": [
       {
-        "threshold": 3,
+        "threshold": 2,
         "grade": "normal",
         "effectIds": [
           "eff_syn_game_dev_2"
         ],
-        "spec": "(3명, v2.4.7에서 2명 → 3명) 전투 시작 시 무작위 \"버그\" 1개: 아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40"
+        "spec": "전투 시작 시 무작위 \"버그\" 1개: 아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40"
       },
       {
-        "threshold": 5,
+        "threshold": 4,
         "grade": "normal",
         "effectIds": [
           "eff_syn_game_dev_4"
         ],
-        "spec": "(5명, v2.4.7에서 4명 → 5명. 케이가 있어야 닿는다) 전투 시작 시 \"버그\" 3개(아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40) 중 2개를 적용(유즈의 디버깅). 준비 단계에서 고른 2개를 쓰고, 고르지 않았으면 앞의 2개"
+        "spec": "전투 시작 시 \"버그\" 3개(아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40) 중 2개를 적용(유즈의 디버깅). 준비 단계에서 고른 2개를 쓰고, 고르지 않았으면 앞의 2개"
       }
     ],
     "memberIds": [
@@ -785,13 +786,13 @@
       "u_momoi",
       "u_yuzu",
       "u_al1s",
-      "u_key"
+      "u_aris_armed"
     ],
     "documented": {
       "frontOnly": 1,
-      "rearOnly": 2,
+      "rearOnly": 1,
       "dual": 2,
-      "maxLegalCount": 5
+      "maxLegalCount": 4
     }
   },
   {
@@ -1614,6 +1615,7 @@
       "u_nonomi",
       "u_yuzu",
       "u_al1s",
+      "u_aris_armed",
       "u_hikari",
       "u_hina"
     ],
@@ -1771,14 +1773,13 @@
       "u_koyuki",
       "u_kanna",
       "u_miyu",
-      "u_seia",
-      "u_key"
+      "u_seia"
     ],
     "documented": {
       "frontOnly": 1,
-      "rearOnly": 4,
+      "rearOnly": 3,
       "dual": 4,
-      "maxLegalCount": 9
+      "maxLegalCount": 8
     }
   },
   {
@@ -1982,6 +1983,56 @@
     }
   },
   {
+    "id": "syn_unique_armed_hero",
+    "name": "「용사 아리스, 풀 장비로 출격!」",
+    "category": "unique",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_aris_armed"
+        ],
+        "spec": "「빠밤! 레벨업」의 경험치와 레벨을 그대로 이어받아 계속 쌓는다: 적 처치 경험치 1(정예·보스는 3), 출전한 전투에서 이기면 1, 경험치 5마다 레벨업해 런이 끝날 때까지 무장 아리스 ATK +5% 영구 누적(레벨 10까지, +50%). 「빛의 검 오버차지」: 무장 아리스가 필살기를 쓸 때마다 오버차지 1단계(전투 종료까지, 최대 2). 2단계가 된 즉시 적 전원에게 ATK 300% 피해(케이가 함께 출전해 있으면 방어 무시)를 주고 자신의 에너지 +50(전투당 1회). 「열쇠의 가호」: 케이가 함께 출전해 있으면, 무장 아리스가 처음 전투불능이 될 때 HP 30%로 다시 일어난다(전투당 1회)"
+      }
+    ],
+    "memberIds": [
+      "u_aris_armed"
+    ],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 0,
+      "dual": 1,
+      "maxLegalCount": 1
+    }
+  },
+  {
+    "id": "syn_unique_key",
+    "name": "「왕녀의 열쇠」",
+    "category": "unique",
+    "countScope": "deployed_all",
+    "tiers": [
+      {
+        "threshold": 1,
+        "grade": "normal",
+        "effectIds": [
+          "eff_syn_uni_key"
+        ],
+        "spec": "「왕녀의 열쇠」 아리스(아리스·AL-1S·무장 아리스 중 하나)가 함께 출전해 있을 때만: 전투 시작 시 아리스 에너지 +40, 전투 내내 아리스 ATK +20%·SPD +10. 아리스가 필살기를 쓴 직후 케이가 「신명 문자 해킹」(V.216)을 1회 더 발동한다(전투당 2회). 각성 분기: 케이를 보유(출전·대기)한 상태에서 아리스가 각성 조건을 채우면 AL-1S 대신 「텐도 아리스 (무장)」으로 각성한다(9장). 아리스가 없으면 아무 효과도 없다"
+      }
+    ],
+    "memberIds": [
+      "u_key"
+    ],
+    "documented": {
+      "frontOnly": 0,
+      "rearOnly": 1,
+      "dual": 0,
+      "maxLegalCount": 1
+    }
+  },
+  {
     "id": "syn_unique_invisible",
     "name": "「저 여기 있어요…」",
     "category": "unique",
@@ -2130,7 +2181,8 @@
       "u_midori",
       "u_momoi",
       "u_yuzu",
-      "u_al1s"
+      "u_al1s",
+      "u_aris_armed"
     ],
     "documented": {
       "frontOnly": 1,

@@ -31,7 +31,10 @@ export function resolveAwakenings(pack: ContentPack, owned: readonly OwnedUnitRe
   for (const def of pack.units) {
     const a = def.awakening;
     if (!a || (expByUnitId[def.id] ?? 0) < a.expRequired) continue;
-    if (owned.some((o) => o.unitId === a.intoUnitId)) continue;
+    const forms = [a.intoUnitId, ...a.alternates.map((x) => x.intoUnitId)];
+    if (owned.some((o) => forms.includes(o.unitId))) continue;
+    // v2.4.8: 동반 학생을 보유하면 그 분기로(케이 → 무장 아리스)
+    const intoUnitId = a.alternates.find((x) => owned.some((o) => o.unitId === x.withUnitId))?.intoUnitId ?? a.intoUnitId;
     const copies = owned.filter((o) => o.unitId === def.id);
     // 필요 성급 이상 중 출전 중인 쪽 → 먼저 얻은 쪽
     const target = copies
@@ -41,7 +44,7 @@ export function resolveAwakenings(pack: ContentPack, owned: readonly OwnedUnitRe
     plans.push({
       instanceId: target.instanceId,
       fromUnitId: def.id,
-      intoUnitId: a.intoUnitId,
+      intoUnitId,
       star: target.star,
       autoSellInstanceIds: copies.filter((c) => c !== target).map((c) => c.instanceId),
     });

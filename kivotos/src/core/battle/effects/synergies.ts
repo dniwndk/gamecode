@@ -1,10 +1,12 @@
 // 시너지 단계 효과 116개(docs/GDD_v2.3_amendment.md 1장, GDD v2.1 10.4). 켜진 단계의 효과 하나만 등록한다.
 // 「하위 효과 포함」 단계는 아래 단계의 수치를 대체하고 반응은 이어받는다. scale: 티파티 삼두정치로 최고 단계 수치 +30%.
 import type { Battle, Ev, U } from './kit';
-import { atkDown, atkUp, buff, burn, critUp, defDown, dmgUp, follow, guard, spdDown, stun, taunt, vuln } from './kit';
+import { atkDown, atkUp, buff, burn, critUp, defDown, dmgUp, follow, guard, keyHack, spdDown, stun, taunt, vuln } from './kit';
 
 type SynFx = (c: Battle, k: number) => void;
 const ally = (c: Battle) => c.units.filter((x) => x.side === 'ally');
+/** 아리스와 각성 형태(v2.4.8 무장 아리스 포함) */
+const ARIS_FORMS = new Set(['u_aris', 'u_al1s', 'u_aris_armed']);
 const allyFront = (c: Battle) => ally(c).filter((x) => x.zone === 'front' && x.hasHp);
 const mem = (c: Battle, syn: string) => ally(c).filter((x) => x.tags.has(syn));
 const s = (k: number, x: number) => Math.round(x * k);
@@ -929,6 +931,42 @@ const UNIQUE: Record<string, SynFx> = {
       return true;
     });
   },
+  // v2.4.8 V.219 「왕녀의 열쇠」: 아리스(어느 형태든)가 함께 출전해 있을 때만
+  syn_uni_key: (c) => {
+    const k = ally(c).find((x) => x.unit?.id === 'u_key');
+    const a = ally(c).find((x) => ARIS_FORMS.has(x.unit?.id ?? ''));
+    if (!k || !a) return;
+    c.mod(a, { atkPct: 2000, spd: 10 }, 'uni_key');
+    c.on('battle_start', () => { c.gainEnergy(a, 40); c.proc('synergy', 'syn_unique_key', '왕녀의 열쇠 · 접속', a); });
+    c.on('ultimate_resolved', (e) => {
+      if (e.src !== a || !k.alive || !c.battleOnce(k, 'uni_key_echo', 2)) return;
+      c.proc('synergy', 'syn_unique_key', 'Key · 해킹 추가 실행', k);
+      keyHack(c, k, 'reaction', 'syn_uni_key');
+    });
+  },
+  // v2.4.8 V.226 「용사 아리스, 풀 장비로 출격!」: 레벨은 runStacks, 여기서는 오버차지와 케이 동반 부활
+  syn_uni_aris_armed: (c) => {
+    const a = ally(c).find((x) => x.unit?.id === 'u_aris_armed');
+    if (!a) return;
+    const key = () => ally(c).some((x) => x.unit?.id === 'u_key');
+    c.on('ultimate_resolved', (e) => {
+      if (e.src !== a) return;
+      a.d.overcharge = Math.min(2, (a.d.overcharge ?? 0) + 1);
+      c.proc('synergy', 'syn_unique_armed_hero', `빛의 검 오버차지 ${a.d.overcharge}단계`, a, a.d.overcharge);
+      if (a.d.overcharge === 2 && c.battleOnce(a, 'overcharge')) {
+        c.proc('synergy', 'syn_unique_armed_hero', '빛이여!! 오버차지 해방!', a);
+        c.hit(a, c.front('enemy'), 3.0, 'synergy', { true: key(), fx: 'syn_uni_aris_armed' });
+        c.gainEnergy(a, 50);
+      }
+    });
+    if (key()) c.saves.push((u) => {
+      if (u !== a || !c.battleOnce(a, 'key_guard')) return false;
+      a.hp = Math.floor(a.maxHp * 0.3);
+      c.proc('synergy', 'syn_unique_armed_hero', '열쇠의 가호 · 다시 일어선다', a);
+      c.log({ t: 'heal', av: c.av, source: a.ref, target: a.ref, amount: a.hp });
+      return true;
+    });
+  },
   syn_uni_miyu: (c) => {
     const m = ally(c).find((x) => x.unit?.id === 'u_miyu');
     if (!m) return;
@@ -957,7 +995,7 @@ const EASTER: Record<string, SynFx> = {
     c.blockers.push((t, _id, debuff) => t.side === 'enemy' && !debuff && !!saori());
   },
   syn_plat_ending_credits: (c) => {
-    const railgun = () => ally(c).find((x) => (x.unit?.id === 'u_aris' || x.unit?.id === 'u_al1s') && x.alive);
+    const railgun = () => ally(c).find((x) => ARIS_FORMS.has(x.unit?.id ?? '') && x.alive);
     c.on('pulse', (e) => {
       const a = railgun();
       if (e.n! % 2 !== 0 || !a) return;

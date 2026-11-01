@@ -5,6 +5,8 @@ import type { ContentPack } from '../types/content';
 
 export const LEVEL_UP_SYN = 'syn_unique_level_up';
 export const PRINCESS_SYN = 'syn_unique_nameless_princess';
+/** 무장 아리스 고유(v2.4.8). 「이름 없는 신들의 왕녀」와 같이 레벨 10까지 이어 쌓는다 */
+export const ARMED_HERO_SYN = 'syn_unique_armed_hero';
 export const MAKE_UP_SYN = 'syn_make_up';
 export const SWEETS_SYN = 'syn_sweets';
 export const HEAD_PREFECT_SYN = 'syn_unique_head_prefect';
@@ -48,7 +50,7 @@ export interface BattleStackInput {
   ownedUnitIds: readonly string[];
   /** 전투 시점에 켜져 있던 시너지와 단계 index */
   activeTiers: Readonly<Record<string, number>>;
-  /** 아리스·AL-1S가 처치한 적. eliteOrBoss면 경험치 3 */
+  /** 아리스·AL-1S·무장 아리스가 처치한 적. eliteOrBoss면 경험치 3 */
   levelUpKills: readonly { eliteOrBoss: boolean }[];
 }
 
@@ -65,7 +67,7 @@ export function settleRunStacks(pack: ContentPack, prev: RunStacks, b: BattleSta
   const on = (id: string) => b.activeTiers[id] !== undefined;
 
   // 빠밤! 레벨업 / 이름 없는 신들의 왕녀: 처치 1(정예·보스 3) + 출전 전투 승리 1
-  if (on(LEVEL_UP_SYN) || on(PRINCESS_SYN)) {
+  if (on(LEVEL_UP_SYN) || on(PRINCESS_SYN) || on(ARMED_HERO_SYN)) {
     next.levelUpExp += b.levelUpKills.reduce((a, k) => a + (k.eliteOrBoss ? LEVEL_UP.eliteBossKillExp : LEVEL_UP.killExp), 0);
     if (b.outcome === 'win') next.levelUpExp += LEVEL_UP.winExp;
   }
@@ -103,6 +105,7 @@ export function stackBattleBonuses(pack: ContentPack, s: RunStacks, activeTiers:
   const on = (id: string) => activeTiers[id] !== undefined;
   if (on(LEVEL_UP_SYN)) add(owner(pack, LEVEL_UP_SYN), levelUpLevel(s.levelUpExp, false) * LEVEL_UP.atkBpsPerLevel);
   if (on(PRINCESS_SYN)) add(owner(pack, PRINCESS_SYN), levelUpLevel(s.levelUpExp, true) * LEVEL_UP.atkBpsPerLevel);
+  if (on(ARMED_HERO_SYN)) add(owner(pack, ARMED_HERO_SYN), levelUpLevel(s.levelUpExp, true) * LEVEL_UP.atkBpsPerLevel);
   if (on(MAKE_UP_SYN)) for (const id of pack.synergies.find((x) => x.id === MAKE_UP_SYN)!.memberIds) add(id, s.makeUp * MAKE_UP.atkBpsPerStack);
   const hina = owner(pack, HEAD_PREFECT_SYN);
   if (on(HEAD_PREFECT_SYN)) add(hina, s.workload * WORKLOAD.atkBpsPerStack);
@@ -115,8 +118,9 @@ export interface StackLine { label: string; value: string; progress: { current: 
 export function runStackLines(s: RunStacks, synergyId: string, awakened: boolean): StackLine[] | null {
   switch (synergyId) {
     case LEVEL_UP_SYN:
-    case PRINCESS_SYN: {
-      const princess = synergyId === PRINCESS_SYN || awakened;
+    case PRINCESS_SYN:
+    case ARMED_HERO_SYN: {
+      const princess = synergyId !== LEVEL_UP_SYN || awakened;
       const max = princess ? LEVEL_UP.awakenedMaxLevel : LEVEL_UP.maxLevel;
       const lv = levelUpLevel(s.levelUpExp, princess);
       const toNext = lv >= max ? null : (lv + 1) * LEVEL_UP.expPerLevel - s.levelUpExp;
@@ -124,7 +128,7 @@ export function runStackLines(s: RunStacks, synergyId: string, awakened: boolean
         { label: '레벨', value: `Lv.${lv} / ${max} · ATK +${(lv * LEVEL_UP.atkBpsPerLevel) / 100}%`, progress: { current: lv, max }, note: null },
         { label: '경험치', value: String(s.levelUpExp), progress: null, note: toNext === null ? '최고 레벨' : `다음 레벨까지 ${toNext}` },
       ];
-      if (!princess) lines.push({ label: '각성', value: `${Math.min(s.levelUpExp, AWAKEN_EXP)} / ${AWAKEN_EXP}`, progress: { current: Math.min(s.levelUpExp, AWAKEN_EXP), max: AWAKEN_EXP }, note: `경험치 ${AWAKEN_EXP} + 3성 아리스면 AL-1S` });
+      if (!princess) lines.push({ label: '각성', value: `${Math.min(s.levelUpExp, AWAKEN_EXP)} / ${AWAKEN_EXP}`, progress: { current: Math.min(s.levelUpExp, AWAKEN_EXP), max: AWAKEN_EXP }, note: `경험치 ${AWAKEN_EXP} + 3성 아리스면 AL-1S (케이 보유 시 무장 아리스)` });
       return lines;
     }
     case MAKE_UP_SYN:

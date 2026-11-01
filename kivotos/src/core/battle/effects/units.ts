@@ -2,7 +2,7 @@
 // 키는 효과 ID에서 eff_를 뺀 것. 성급별 수치 a/b/c는 c.v(u, [a, b, c]).
 import {
   A, anyOf, atkDown, atkUp, buff, burn, critUp, defDown, defUp, dmgUp, follow, guard, hot, isAllyFront, needBuff, needHeal,
-  needSelfHeal, needShield, react, silence, spdDown, spdUp, stun, taunt, tauntFoe, vuln,
+  keyHack, needSelfHeal, needShield, react, silence, spdDown, spdUp, stun, taunt, tauntFoe, vuln,
   type Active, type Battle, type Ev, type U,
 } from './kit';
 import type { Passive } from '../engine';
@@ -261,12 +261,13 @@ export const actives: Record<string, Active> = {
   al1s_rear_reg: A((c, u) => { c.hit(u, c.foes(u), 1.4, R, { true: true }); const t = c.sortBy(c.mates(u), (x) => x.energy)[0]; if (t) c.gainEnergy(t, 15); }),
   hikari_skill: A((c, u) => { for (const t of c.mates(u)) { dmgUp(c, u, t, { dmgUp: 2800 }, 'hikari_skill'); critUp(c, u, t, 0, 'hikari_skill', 2, 3500); } c.hit(u, c.pick(u), 1.55, S); }),
   hikari_ult: A((c, u) => { c.hit(u, c.foes(u), c.v(u, [2.4, 2.8, 3.45]), X); for (const t of c.mates(u)) c.advance(t, 0.25); }),
-  key_rear_reg: A((c, u) => {
-    const t = c.highestAtk(c.foes(u));
-    if (t) { c.hit(u, t, c.v(u, [1.6, 1.9, 2.4]), R, { true: true }); if (t.alive) silence(c, u, t, 'key_rear_reg'); }
-    const e = c.sortBy(c.mates(u).filter((x) => x.alive && x.energy < 100), (x) => x.energy)[0];
-    if (e) c.gainEnergy(e, 20);
+  key_rear_reg: A((c, u) => keyHack(c, u, R, 'key_rear_reg')),
+  aris_armed_skill: A((c, u) => { const ts = c.foes(u); c.hit(u, ts, 1.6, S); for (const t of ts) defDown(c, u, t, 1500, 'aris_armed_skill'); c.gainEnergy(u, 25); }),
+  aris_armed_ult: A((c, u) => {
+    const r = c.hit(u, c.foes(u), c.v(u, [2.1, 2.5, 3.0]), X, { true: withKey(c, u) });
+    c.gainEnergy(u, Math.min(20, 10 * r.filter((x) => x.killed).length));
   }),
+  aris_armed_rear_reg: A((c, u) => { c.hit(u, c.foes(u), 1.5, R); const t = c.sortBy(c.mates(u), (x) => x.energy)[0]; if (t) c.gainEnergy(t, 15); }),
   himari_rear_reg: A((c, u) => {
     const t = c.g.himariTarget?.alive ? c.g.himariTarget : c.highestAtk(c.mates(u));
     atkUp(c, u, t, c.v(u, [4500, 6000, 8500]), 'himari_rear_reg');
@@ -304,6 +305,8 @@ export const actives: Record<string, Active> = {
 // ── 패시브·후방 반응 ─────────────────────────────────────
 /** 아군 전방 한 명이 피격됐는가(후방 반응 공통 조건) */
 const allyFrontHit = (u: U, e: Ev) => !!e.tgt && e.tgt.side === u.side && e.tgt.zone === 'front' && e.tgt.alive;
+/** 케이가 같은 편으로 출전해 있는가(무장 아리스 V.221·V.226) */
+export const withKey = (c: Battle, u: U) => c.units.some((x) => x.side === u.side && x.unit?.id === 'u_key');
 const allyFrontAct = (u: U, e: Ev) => !!e.src && e.src.side === u.side && e.src.zone === 'front' && e.src.hasHp;
 
 export const passives: Record<string, Passive> = {
@@ -562,9 +565,7 @@ export const passives: Record<string, Passive> = {
       c.fire('key_aura');
     }
     c.on('battle_start', () => {
-      for (const t of c.units.filter((x) => x.side === u.side && x !== u && x.hasHp && x.tags.has('syn_game_dev'))) {
-        c.gainEnergy(t, t.unit?.id === 'u_aris' || t.unit?.id === 'u_al1s' ? 40 : 20);
-      }
+      for (const t of c.units.filter((x) => x.side === u.side && x !== u && x.hasHp && x.tags.has('syn_millennium'))) c.gainEnergy(t, 15);
     }, u);
   },
   key_rear_react: (c, u) => c.on('ultimate_resolved', (e) => {
@@ -572,6 +573,24 @@ export const passives: Record<string, Passive> = {
     c.gainEnergy(e.src, -30);
     c.delay(e.src, 0.3, u);
     c.fire('key_rear_react');
+  }, u),
+  aris_armed_passive: (c, u) => c.on('turn_start', (e) => {
+    if (e.src !== u || u.zone !== 'front') return;
+    u.d.charge = Math.min(3, (u.d.charge ?? 0) + 1);
+    buff(c, u, u, 'st_charge_aris', { dmgUp: 1000, stacks: u.d.charge }, 'aris_armed_passive', 999, `${u.uid}:charge`);
+    if (u.d.charge === 3 && c.battleOnce(u, 'aris_armed_charge')) c.gainEnergy(u, 30);
+  }, u),
+  aris_armed_aura: (c, u) => {
+    if (c.g.arisArmedAura) return;
+    c.g.arisArmedAura = true;
+    for (const t of c.units.filter((x) => x.side === u.side && x.tags.has('syn_game_dev'))) c.mod(t, { atkPct: 1500 }, 'aris_armed_aura');
+    c.mod(u, { dmgRed: 1000 }, 'aris_armed_aura');
+    c.fire('aris_armed_aura');
+  },
+  aris_armed_rear_react: (c, u) => c.on('ultimate_resolved', (e) => {
+    if (!allyFrontAct(u, e) || e.src === u || !c.battleOnce(u, 'aris_armed_rear_react', 3)) return;
+    c.hit(u, c.lowestHp(c.foes(u)), 1.5, 'reaction', { fx: 'aris_armed_rear_react' });
+    if (u.zone === 'rear') c.emit({ type: 'reaction_resolved', src: u, fx: 'aris_armed_rear_react' });
   }, u),
   al1s_rear_react: (c, u) => c.on('unit_defeated', (e) => {
     if (e.tgt?.side !== u.side || e.tgt.zone !== 'front' || !c.battleOnce(u, 'al1s_rear_react', 2)) return;

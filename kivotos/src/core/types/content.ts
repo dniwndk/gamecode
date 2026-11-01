@@ -49,6 +49,11 @@ export interface UnitAwakening {
   expRequired: number;
   /** 이 성급 이상인 개체만 각성한다. 각성 학생은 같은 성급으로 시작한다. */
   starRequired: number;
+  /**
+   * 동반 조건이 있는 다른 각성 형태(v2.4.8). 각성하는 순간 withUnitId를 보유(출전·대기)하고 있으면
+   * intoUnitId 대신 이쪽으로 각성한다. 앞에 있는 것이 먼저다. 경험치·성급 조건은 같다.
+   */
+  alternates: { intoUnitId: string; withUnitId: string }[];
 }
 
 /** easteregg: v2.3.5 전 이름은 platinum. 극악 조건의 원작 재현 시너지(ID는 syn_plat_* 그대로). */

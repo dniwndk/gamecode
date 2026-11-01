@@ -675,7 +675,7 @@
       "critBps": 1500,
       "critDamageBps": 5000
     },
-    "role": "성장형 광역 레일건 / 3성·경험치 15에 AL-1S로 각성",
+    "role": "성장형 광역 레일건 / 3성·경험치 15에 AL-1S로 각성(케이 보유 시 무장 아리스)",
     "abilityIds": {
       "basic": "eff_common_basic_atk",
       "skill": "eff_aris_skill",
@@ -692,7 +692,13 @@
       "intoUnitId": "u_al1s",
       "counterSynergyId": "syn_unique_level_up",
       "expRequired": 15,
-      "starRequired": 3
+      "starRequired": 3,
+      "alternates": [
+        {
+          "intoUnitId": "u_aris_armed",
+          "withUnitId": "u_key"
+        }
+      ]
     },
     "awakenedFrom": null
   },
@@ -3021,6 +3027,46 @@
     "awakenedFrom": "u_aris"
   },
   {
+    "id": "u_aris_armed",
+    "name": "텐도 아리스 (무장)",
+    "cost": 5,
+    "position": "dual",
+    "synergyIds": [
+      "syn_millennium",
+      "syn_game_dev",
+      "syn_blaster",
+      "syn_unique_armed_hero",
+      "syn_plat_ending_credits"
+    ],
+    "baseStats": {
+      "hp": 2100,
+      "atk": 235,
+      "def": 70,
+      "spd": 106,
+      "critBps": 2500,
+      "critDamageBps": 5000
+    },
+    "role": "각성 전용(상점 없음, 케이 보유 시) 광역 충전 레일건 캐리 / 존재 효과: 게임개발부 ATK 증가",
+    "abilityIds": {
+      "basic": "eff_common_basic_atk",
+      "skill": "eff_aris_armed_skill",
+      "ultimate": "eff_aris_armed_ult",
+      "frontEffects": [
+        "eff_aris_armed_passive",
+        "eff_aris_armed_aura"
+      ],
+      "rearAction": "eff_aris_armed_rear_reg",
+      "rearEffects": [
+        "eff_aris_armed_rear_react",
+        "eff_aris_armed_aura"
+      ]
+    },
+    "portraitAssetId": "portrait_u_aris_armed",
+    "shopEligible": false,
+    "awakening": null,
+    "awakenedFrom": "u_aris"
+  },
+  {
     "id": "u_hikari",
     "name": "타치바나 히카리",
     "cost": 5,
@@ -3374,8 +3420,7 @@
     "position": "rear_only",
     "synergyIds": [
       "syn_millennium",
-      "syn_game_dev",
-      "syn_controller"
+      "syn_unique_key"
     ],
     "baseStats": {
       "hp": 1350,
@@ -3385,7 +3430,7 @@
       "critBps": 1500,
       "critDamageBps": 5000
     },
-    "role": "후방 해킹 제어 / 존재 효과: 적 전원 속도 저하·게임개발부 에너지",
+    "role": "후방 해킹 제어 / 존재 효과: 적 전원 속도 저하·밀레니엄 에너지 / 아리스와 함께면 각성이 무장 아리스로",
     "abilityIds": {
       "basic": null,
       "skill": null,

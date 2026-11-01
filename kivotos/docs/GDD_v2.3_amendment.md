@@ -43,7 +43,7 @@
 
 CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 
-## 3. 유닛 마스터 v2.3 (101명)
+## 3. 유닛 마스터 v2.3 (103명)
 
 | ID | 이름 | 코스트 | 구역 | HP/ATK/DEF/SPD/CRIT/CRIT_DMG | 태그 | 기본 공격 | 전투 스킬 | 필살기 | 전방 패시브 | 후방 정기 지원 | 후방 반응 지원 | 역할 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -67,7 +67,7 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_suzumi` | 모리즈키 스즈미 | 1 | dual | 1100/90/55/104/0.1/0.5 | syn_trinity, syn_vigilante, syn_controller | `eff_common_basic_atk` | `eff_suzumi_skill` | `eff_suzumi_ult` | — | `eff_suzumi_rear_reg` | — | 맨 앞 적 기절 / 빠른 적 공격력 약화 |
 | `u_yoshimi` | 이바라기 요시미 | 1 | front_only | 1000/110/40/108/0.15/0.5 | syn_trinity, syn_sweets, syn_attacker | `eff_common_basic_atk` | `eff_yoshimi_skill` | `eff_yoshimi_ult` | — | — | — | 단 걸 먹고 버티는 단일 딜러 |
 | `u_akari` | 와니부치 아카리 | 2 | front_only | 1200/138/46/104/0.15/0.5 | syn_gehenna, syn_gourmet, syn_blaster | `eff_common_basic_atk` | `eff_akari_skill` | `eff_akari_ult` | — | — | — | 전방 광역 폭파 / 처치 에너지 환급 |
-| `u_aris` | 텐도 아리스 | 2 | dual | 1200/138/45/92/0.15/0.5 | syn_millennium, syn_game_dev, syn_blaster, syn_unique_level_up, syn_plat_ending_credits | `eff_common_basic_atk` | `eff_aris_skill` | `eff_aris_ult` | `eff_aris_passive` | `eff_aris_rear_reg` | — | 성장형 광역 레일건 / 3성·경험치 15에 AL-1S로 각성 |
+| `u_aris` | 텐도 아리스 | 2 | dual | 1200/138/45/92/0.15/0.5 | syn_millennium, syn_game_dev, syn_blaster, syn_unique_level_up, syn_plat_ending_credits | `eff_common_basic_atk` | `eff_aris_skill` | `eff_aris_ult` | `eff_aris_passive` | `eff_aris_rear_reg` | — | 성장형 광역 레일건 / 3성·경험치 15에 AL-1S로 각성(케이 보유 시 무장 아리스) |
 | `u_ayane` | 오쿠소라 아야네 | 2 | rear_only | 980/108/45/104/0.05/0.5 | syn_abydos, syn_healer, syn_plat_last_line | — | — | — | — | `eff_ayane_rear_reg` | `eff_ayane_rear_react` | 3인 치유 + 치유 반응 보호막 |
 | `u_chinatsu` | 히노미야 치나츠 | 2 | rear_only | 950/118/42/108/0.05/0.5 | syn_gehenna, syn_prefect, syn_healer | — | — | — | — | `eff_chinatsu_rear_reg` | `eff_chinatsu_rear_react` | 단일 치유 + 디버프 해제 / 기절·침묵 응급 해제 |
 | `u_chise` | 와라쿠 치세 | 2 | rear_only | 960/132/40/104/0.12/0.5 | syn_hyakkiyako, syn_yinyang, syn_blaster | — | — | — | — | `eff_chise_rear_reg` | — | 부적 화염 광역 화상 |
@@ -137,6 +137,7 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_tsurugi` | 켄자키 츠루기 | 4 | front_only | 2300/175/80/110/0.22/0.5 | syn_trinity, syn_justice, syn_tank | `eff_common_basic_atk` | `eff_tsurugi_skill` | `eff_tsurugi_ult` | `eff_tsurugi_passive` | — | — | 광폭한 산탄 결전 탱커 / 맞을수록 강해짐 |
 | `u_akira` | 키요스미 아키라 | 5 | front_only | 2000/232/66/124/0.3/0.5 | syn_outlaw, syn_attacker | `eff_common_basic_atk` | `eff_akira_skill` | `eff_akira_ult` | `eff_akira_passive`, `eff_akira_aura` | — | — | 적 버프 강탈·무력화 / 존재 효과: 개전 버프 강탈 |
 | `u_al1s` | AL-1S | 5 | dual | 2050/240/66/104/0.25/0.5 | syn_millennium, syn_game_dev, syn_blaster, syn_unique_nameless_princess, syn_plat_ending_credits | `eff_common_basic_atk` | `eff_al1s_skill` | `eff_al1s_ult` | `eff_al1s_passive`, `eff_al1s_aura` | `eff_al1s_rear_reg` | `eff_al1s_rear_react`, `eff_al1s_aura` | 각성 전용(상점 없음) 광역 방어 무시 캐리 / 존재 효과: 적 전원 받는 피해 증가 |
+| `u_aris_armed` | 텐도 아리스 (무장) | 5 | dual | 2100/235/70/106/0.25/0.5 | syn_millennium, syn_game_dev, syn_blaster, syn_unique_armed_hero, syn_plat_ending_credits | `eff_common_basic_atk` | `eff_aris_armed_skill` | `eff_aris_armed_ult` | `eff_aris_armed_passive`, `eff_aris_armed_aura` | `eff_aris_armed_rear_reg` | `eff_aris_armed_rear_react`, `eff_aris_armed_aura` | 각성 전용(상점 없음, 케이 보유 시) 광역 충전 레일건 캐리 / 존재 효과: 게임개발부 ATK 증가 |
 | `u_hikari` | 타치바나 히카리 | 5 | front_only | 1800/220/72/122/0.26/0.5 | syn_highlander, syn_blaster | `eff_common_basic_atk` | `eff_hikari_skill` | `eff_hikari_ult` | `eff_hikari_passive` | — | — | 전방 버프 증폭기 / 초특급 열차포 광역 타격 |
 | `u_himari` | 아케보시 히마리 | 5 | rear_only | 1300/165/60/118/0.15/0.5 | syn_millennium, syn_paranormal, syn_supporter | — | — | — | — | `eff_himari_rear_reg` | `eff_himari_rear_react` | 최고 공격력 아군 초증폭 + 팀 SP·에너지 공급 |
 | `u_hina` | 소라사키 히나 | 5 | front_only | 2100/235/78/114/0.28/0.5 | syn_gehenna, syn_prefect, syn_blaster, syn_unique_head_prefect | `eff_common_basic_atk` | `eff_hina_skill` | `eff_hina_ult` | `eff_hina_passive`, `eff_hina_aura` | — | — | 광역 절대 화력 캐리 / 존재 효과: 적 전방 방어력 약화 |
@@ -147,18 +148,18 @@ CRIT_DMG는 전원 0.5. 효과 수는 기본 공격을 빼고 센다.
 | `u_rio` | 츠카츠키 리오 | 5 | rear_only | 1400/170/70/114/0.15/0.5 | syn_millennium, syn_seminar, syn_supporter | — | — | — | — | `eff_rio_rear_reg` | `eff_rio_rear_react` | 후방 전체 보호막·방깎 + 아군 필살기 호응 포격 |
 | `u_saori` | 죠마에 사오리 | 5 | front_only | 2000/242/68/118/0.35/0.5 | syn_arius, syn_sniper, syn_plat_vanitas | `eff_common_basic_atk` | `eff_saori_skill` | `eff_saori_ult` | `eff_saori_passive` | — | — | 확정 치명타 관통 사수 / 아리우스 연쇄 협동 공격 |
 | `u_seia` | 유리조노 세이아 | 5 | rear_only | 1400/185/65/116/0.15/0.5 | syn_trinity, syn_tea_party, syn_controller, syn_plat_tea_party | — | — | — | — | `eff_seia_rear_reg` | `eff_seia_aura` | 예지 침묵 / 적 필살기 대비 |
-| `u_key` | 케이 | 5 | rear_only | 1350/180/62/120/0.15/0.5 | syn_millennium, syn_game_dev, syn_controller | — | — | — | — | `eff_key_rear_reg` | `eff_key_rear_react`, `eff_key_aura` | 후방 해킹 제어 / 존재 효과: 적 전원 속도 저하·게임개발부 에너지 |
+| `u_key` | 케이 | 5 | rear_only | 1350/180/62/120/0.15/0.5 | syn_millennium, syn_unique_key | — | — | — | — | `eff_key_rear_reg` | `eff_key_rear_react`, `eff_key_aura` | 후방 해킹 제어 / 존재 효과: 적 전원 속도 저하·밀레니엄 에너지 / 아리스와 함께면 각성이 무장 아리스로 |
 | `u_wakamo` | 코사카 와카모 | 5 | front_only | 2000/248/62/115/0.28/0.5 | syn_hyakkiyako, syn_outlaw, syn_attacker, syn_unique_calamity_fox | `eff_common_basic_atk` | `eff_wakamo_skill` | `eff_wakamo_ult` | `eff_wakamo_passive`, `eff_wakamo_aura` | — | — | 단일 결전 폭발 딜러 / 존재 효과: 적 전원 속도 저하 |
 
-## 4. 시너지 v2.3 (64종)
+## 4. 시너지 v2.3 (66종)
 
-F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 v2.1 6장 용량 식(전방 4·후방 6·출전 10)으로 센 값이다. 각성 학생 AL-1S는 아리스와 같은 사람이라 따로 세지 않는다(1장). 그래서 구성원 칸에 `al1s`가 있어도 F/R/D는 그대로다.
+F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 v2.1 6장 용량 식(전방 4·후방 6·출전 10)으로 센 값이다. 각성 학생 AL-1S·무장 아리스는 아리스와 같은 사람이라 따로 세지 않는다(1장). 그래서 구성원 칸에 `al1s`·`aris_armed`가 있어도 F/R/D는 그대로다.
 
 | ID | 이름 | 분류 | 집계 범위 | 단계 | F/R/D | 최대 합법 | 구성원 |
 |---|---|---|---|---|---|---|---|
 | `syn_abydos` | 아비도스 | faction | `deployed_all` | 2: eff_syn_abydos_2; 4: eff_syn_abydos_4; 5: eff_syn_abydos_6 | 5/1/0 | 5 | serika, shiroko, ayane, nonomi, hoshino, hoshino_armed |
 | `syn_gehenna` | 게헨나 | faction | `deployed_all` | 2: eff_syn_gehenna_2; 4: eff_syn_gehenna_4; 6: eff_syn_gehenna_6; 8(플래티넘): eff_syn_gehenna_plat | 9/5/2 | 10 | haruka, junko, fuuka, kayoko, iori, mutsuki, aru, ako, hina, chinatsu, haruna, izumi, akari, juri, kasumi, megu |
-| `syn_millennium` | 밀레니엄 | faction | `deployed_all` | 2: eff_syn_millennium_2; 4: eff_syn_millennium_4; 6: eff_syn_millennium_6; 8(플래티넘): eff_syn_millennium_plat | 7/13/3 | 10 | kotama, asuna, yuuka, momoi, hare, karin, toki, neru, aris, al1s, himari, rio, akane, midori, yuzu, chihiro, maki, noa, koyuki, utaha, hibiki, kotori, eimi, key |
+| `syn_millennium` | 밀레니엄 | faction | `deployed_all` | 2: eff_syn_millennium_2; 4: eff_syn_millennium_4; 6: eff_syn_millennium_6; 8(플래티넘): eff_syn_millennium_plat | 7/13/3 | 10 | kotama, asuna, yuuka, momoi, hare, karin, toki, neru, aris, al1s, aris_armed, himari, rio, akane, midori, yuzu, chihiro, maki, noa, koyuki, utaha, hibiki, kotori, eimi, key |
 | `syn_trinity` | 트리니티 | faction | `deployed_all` | 2: eff_syn_trinity_2; 4: eff_syn_trinity_4; 6: eff_syn_trinity_6; 8(플래티넘): eff_syn_trinity_plat | 9/8/2 | 10 | suzumi, serina, hasumi, azusa, koharu, mika, hifumi, hanako, nagisa, seia, tsurugi, mashiro, mine, hanae, reisa, kazusa, yoshimi, airi, natsu |
 | `syn_hyakkiyako` | 백귀야행 | faction | `deployed_all` | 2: eff_syn_hyakkiyako_2; 4: eff_syn_hyakkiyako_4; 5: eff_syn_hyakkiyako_6; 7(플래티넘): eff_syn_hyakkiyako_plat | 6/4/0 | 8 | michiru, tsubaki, izuna, shizuko, wakamo, tsukuyo, mimori, kaede, niya, chise |
 | `syn_shanhaijing` | 산해경 | faction | `deployed_all` | 2: eff_syn_shanhaijing_2; 4: eff_syn_shanhaijing_4 | 2/0/2 | 4 | kokona, shun, mina, kisaki |
@@ -174,7 +175,7 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | `syn_school_lunch` | 급양부 | club | `deployed_all` | 2: eff_syn_school_lunch_2 | 0/2/0 | 2 | fuuka, juri |
 | `syn_hot_spring` | 온천개발부 | club | `deployed_all` | 2: eff_syn_hot_spring_2 | 1/1/0 | 2 | kasumi, megu |
 | `syn_cc` | C&C | club | `deployed_all` | 2: eff_syn_cc_2; 4: eff_syn_cc_4 | 4/1/0 | 5 | asuna, karin, toki, neru, akane |
-| `syn_game_dev` | 게임개발부 | club | `deployed_all` | 3: eff_syn_game_dev_2; 5: eff_syn_game_dev_4 | 1/2/2 | 5 | momoi, aris, al1s, midori, yuzu, key |
+| `syn_game_dev` | 게임개발부 | club | `deployed_all` | 2: eff_syn_game_dev_2; 4: eff_syn_game_dev_4 | 1/1/2 | 4 | momoi, aris, al1s, aris_armed, midori, yuzu |
 | `syn_veritas` | 베리타스 | club | `deployed_all` | 2: eff_syn_veritas_2; 4: eff_syn_veritas_4 | 0/4/0 | 4 | kotama, hare, chihiro, maki |
 | `syn_seminar` | 세미나 | club | `deployed_all` | 2: eff_syn_seminar_2; 4: eff_syn_seminar_4 | 1/2/1 | 4 | yuuka, rio, noa, koyuki |
 | `syn_engineering` | 엔지니어부 | club | `deployed_all` | 2: eff_syn_engineering_2; 3: eff_syn_engineering_3 | 0/3/0 | 3 | utaha, hibiki, kotori |
@@ -197,10 +198,10 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | `syn_tank` | 탱커 | role | `deployed_all` | 2: eff_syn_tank_2; 3: eff_syn_tank_3; 4: eff_syn_tank_4 | 18/0/0 | 4 | haruka, yuuka, tsubaki, marina, atsuko, hoshino, miyako, akemi, hoshino_armed, eimi, mine, natsu, tsukuyo, kirino, iori, mina, toki, tsurugi |
 | `syn_attacker` | 어태커 | role | `deployed_all` | 2: eff_syn_attacker_2; 3: eff_syn_attacker_3; 4: eff_syn_attacker_4 | 16/0/0 | 4 | serika, asuna, shiroko, nozomi, izuna, aru, neru, mika, wakamo, akira, izumi, midori, reisa, kazusa, yoshimi, shigure |
 | `syn_sniper` | 스나이퍼 | role | `deployed_all` | 2: eff_syn_sniper_2; 4: eff_syn_sniper_4; 6(플래티넘): eff_syn_sniper_plat | 6/3/0 | 7 | fubuki, hasumi, karin, shun, azusa, hiyori, saori, haruna, mashiro |
-| `syn_blaster` | 블래스터 | role | `deployed_all` | 2: eff_syn_blaster_2; 4: eff_syn_blaster_4; 6: eff_syn_blaster_6; 8(플래티넘): eff_syn_blaster_plat | 11/7/3 | 10 | junko, michiru, rabu, momoi, momiji, nonomi, mutsuki, moe, aris, al1s, hina, hikari, akari, kasumi, megu, akane, yuzu, maki, hibiki, kaede, chise, misaki |
+| `syn_blaster` | 블래스터 | role | `deployed_all` | 2: eff_syn_blaster_2; 4: eff_syn_blaster_4; 6: eff_syn_blaster_6; 8(플래티넘): eff_syn_blaster_plat | 11/7/3 | 10 | junko, michiru, rabu, momoi, momiji, nonomi, mutsuki, moe, aris, al1s, aris_armed, hina, hikari, akari, kasumi, megu, akane, yuzu, maki, hibiki, kaede, chise, misaki |
 | `syn_healer` | 힐러 | role | `deployed_all` | 2: eff_syn_healer_2; 4: eff_syn_healer_4; 6(플래티넘): eff_syn_healer_plat | 0/7/2 | 8 | serina, kokona, fuuka, ayane, koharu, shizuko, chinatsu, hanako, hanae |
 | `syn_supporter` | 서포터 | role | `deployed_all` | 2: eff_syn_supporter_2; 4: eff_syn_supporter_4; 6(플래티넘): eff_syn_supporter_plat | 1/16/2 | 9 | kotama, nodoka, saki, ako, cherino, himari, rio, kisaki, juri, chihiro, noa, utaha, kotori, hifumi, nagisa, airi, mimori, niya, tomoe |
-| `syn_controller` | 컨트롤러 | role | `deployed_all` | 2: eff_syn_controller_2; 4: eff_syn_controller_4; 6(플래티넘): eff_syn_controller_plat | 1/4/4 | 9 | suzumi, hare, kayoko, miyu, kanna, koyuki, seia, meru, key |
+| `syn_controller` | 컨트롤러 | role | `deployed_all` | 2: eff_syn_controller_2; 4: eff_syn_controller_4; 6(플래티넘): eff_syn_controller_plat | 1/3/4 | 8 | suzumi, hare, kayoko, miyu, kanna, koyuki, seia, meru |
 | `syn_unique_dawn_horus` | 「으헤~ 아저씨는 좀 쉴래」 | unique | `front_only` | 1: eff_syn_uni_hoshino | 1/0/0 | 1 | hoshino |
 | `syn_unique_outlaw_boss` | 「계획대로야!」 | unique | `front_only` | 1: eff_syn_uni_aru | 1/0/0 | 1 | aru |
 | `syn_unique_head_prefect` | 「조금만 쉬고 싶어」 | unique | `front_only` | 1: eff_syn_uni_hina | 1/0/0 | 1 | hina |
@@ -209,12 +210,14 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 | `syn_unique_red_mustache` | 「수염의 위엄」 | unique | `front_only` | 1: eff_syn_uni_cherino | 1/0/0 | 1 | cherino |
 | `syn_unique_level_up` | 「빠밤! 레벨업」 | unique | `deployed_all` | 1: eff_syn_uni_aris | 0/0/1 | 1 | aris |
 | `syn_unique_nameless_princess` | 「이름 없는 신들의 왕녀」 | unique | `deployed_all` | 1: eff_syn_uni_al1s | 0/0/1 | 1 | al1s |
+| `syn_unique_armed_hero` | 「용사 아리스, 풀 장비로 출격!」 | unique | `deployed_all` | 1: eff_syn_uni_aris_armed | 0/0/1 | 1 | aris_armed |
+| `syn_unique_key` | 「왕녀의 열쇠」 | unique | `deployed_all` | 1: eff_syn_uni_key | 0/1/0 | 1 | key |
 | `syn_unique_invisible` | 「저 여기 있어요…」 | unique | `deployed_all` | 1: eff_syn_uni_miyu | 0/0/1 | 1 | miyu |
 | `syn_unique_bank_robber` | 「은행 털러 가자」 | unique | `front_only` | 1: eff_syn_uni_shiroko | 1/0/0 | 1 | shiroko |
 | `syn_unique_gold_card` | 「골드 카드」 | unique | `front_only` | 1: eff_syn_uni_nonomi | 1/0/0 | 1 | nonomi |
 | `syn_unique_caspalug` | 「카스팔루그」 | unique | `front_only` | 1: eff_syn_uni_kazusa | 1/0/0 | 1 | kazusa |
 | `syn_plat_vanitas` | 「Vanitas vanitatum」 | easteregg | `deployed_all` | 5: eff_syn_plat_vanitas | 3/2/0 | 5 | azusa, atsuko, hiyori, saori, misaki |
-| `syn_plat_ending_credits` | 「엔딩 크레딧」 | easteregg | `deployed_all` | 4: eff_syn_plat_ending_credits | 1/1/2 | 4 | momoi, aris, al1s, midori, yuzu |
+| `syn_plat_ending_credits` | 「엔딩 크레딧」 | easteregg | `deployed_all` | 4: eff_syn_plat_ending_credits | 1/1/2 | 4 | momoi, aris, al1s, aris_armed, midori, yuzu |
 | `syn_plat_codename` | 「코드네임 00~05」 | easteregg | `deployed_all` | 5: eff_syn_plat_codename | 4/1/0 | 5 | asuna, karin, toki, neru, akane |
 | `syn_plat_tea_party` | 「티파티 삼두정치」 | easteregg | `deployed_all` | 3: eff_syn_plat_tea_party | 1/2/0 | 3 | mika, nagisa, seia |
 | `syn_plat_last_line` | 「아비도스 최후의 방어선」 | easteregg | `deployed_all` | 5: eff_syn_plat_last_line | 4/1/0 | 5 | serika, shiroko, ayane, nonomi, hoshino |
@@ -941,13 +944,13 @@ F/R/D는 구성원 중 전방 전용/후방 전용/겸용 수, 최대 합법은 
 ### V.115 `eff_syn_game_dev_2`
 - 출처/구역: 시너지 syn_game_dev (1단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: (3명, v2.4.7에서 2명 → 3명) 전투 시작 시 무작위 "버그" 1개: 아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40
+- 본문: 전투 시작 시 무작위 "버그" 1개: 아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.116 `eff_syn_game_dev_4`
 - 출처/구역: 시너지 syn_game_dev (2단계) / `deployed_all`. 원안 행: v2.3 신규.
 - 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
-- 본문: (5명, v2.4.7에서 4명 → 5명. 케이가 있어야 닿는다) 전투 시작 시 "버그" 3개(아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40) 중 2개를 적용(유즈의 디버깅). 준비 단계에서 고른 2개를 쓰고, 고르지 않았으면 앞의 2개
+- 본문: 전투 시작 시 "버그" 3개(아군 전원 ATK +30% / 적 전원 SPD -20 / 아군 전방 전원 에너지 +40) 중 2개를 적용(유즈의 디버깅). 준비 단계에서 고른 2개를 쓰고, 고르지 않았으면 앞의 2개
 - 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ### V.117 `eff_syn_veritas_2`
@@ -1567,8 +1570,58 @@ v2.3.7 탱커 전환(2026-10-31, 14장): 아래 V.209~V.210은 탱커로 옮긴 
 ### V.218 `eff_key_aura`
 - 출처/구역: u_key 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
 - 실행: **패시브/반응 컨테이너**. battle_start.
-- 본문: 존재 효과 「Key의 권한」: 케이가 출전해 있는 동안 적 전원 SPD -10. 전투 시작 시 아군 게임개발부 구성원(케이 제외) 에너지 +20, 아리스 또는 AL-1S는 대신 에너지 +40
+- 본문: 존재 효과 「Key의 권한」: 케이가 출전해 있는 동안 적 전원 SPD -10. 전투 시작 시 아군 밀레니엄 구성원(케이 제외) 에너지 +15 (v2.4.8: 게임개발부 +20·아리스 +40에서 바꿈. 아리스 몫은 고유 「왕녀의 열쇠」로 옮김)
 - 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
+
+v2.4.8 케이 고유 시너지·무장 아리스(2026-11-01 사용자 요청): 케이의 시너지를 밀레니엄 + 고유 「왕녀의 열쇠」로 바꾸고, 케이를 보유하면 아리스의 각성 대상이 AL-1S 대신 「텐도 아리스 (무장)」이 된다(9장). 아래 V.219~V.226.
+
+### V.219 `eff_syn_uni_key`
+- 출처/구역: 시너지 syn_unique_key (1단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 「왕녀의 열쇠」 아리스(아리스·AL-1S·무장 아리스 중 하나)가 함께 출전해 있을 때만: 전투 시작 시 아리스 에너지 +40, 전투 내내 아리스 ATK +20%·SPD +10. 아리스가 필살기를 쓴 직후 케이가 「신명 문자 해킹」(V.216)을 1회 더 발동한다(전투당 2회). 각성 분기: 케이를 보유(출전·대기)한 상태에서 아리스가 각성 조건을 채우면 AL-1S 대신 「텐도 아리스 (무장)」으로 각성한다(9장). 아리스가 없으면 아무 효과도 없다
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
+
+### V.220 `eff_aris_armed_skill`
+- 출처/구역: u_aris_armed 전투 스킬 / `front`. 원안 행: v2.3 신규.
+- 실행: **SKILL 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 「광자 충전 사격」 적 전방 전원에게 ATK 160% 피해, 맞은 적 2턴간 DEF -15%(`st_def_down`). 자신의 에너지 +25
+- 제한: CD2; 기본 비용/자원은7.4; 자동 사용 조건10.3.
+
+### V.221 `eff_aris_armed_ult`
+- 출처/구역: u_aris_armed 필살기 / `front`. 원안 행: v2.3 신규.
+- 실행: **ULTIMATE 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 「빛이여! 슈퍼노바 풀 차지」 적 전원에게 ATK 210/250/300% 피해. 케이가 함께 출전해 있으면 이 피해는 방어 무시(`true`). 이 공격으로 처치한 적 1명마다 자신의 에너지 +10(최대 +20)
+- 제한: CD0; 개인 차례당 1회; ENERGY100 소비.
+
+### V.222 `eff_aris_armed_passive`
+- 출처/구역: u_aris_armed 전방 패시브 / `front`. 원안 행: v2.3 신규.
+- 실행: **패시브/반응 컨테이너**. 자기 turn_start.
+- 본문: 「풀 장비」 전방 자기 turn_start마다 st_charge_aris 1중첩, 최대 3. 중첩당 가하는 피해 +10%, 전투 종료까지. 3중첩이 된 차례에 자신의 에너지 +30(전투당 1회)
+- 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
+
+### V.223 `eff_aris_armed_aura`
+- 출처/구역: u_aris_armed 전방 패시브·후방 반응 지원 / `both`. 원안 행: v2.3 신규.
+- 실행: **패시브/반응 컨테이너**. battle_start.
+- 본문: 존재 효과 「용사 파티 집결」: 무장 아리스가 출전해 있는 동안(전방·후방 모두) 아군 게임개발부 구성원 ATK +15%, 무장 아리스가 받는 피해 -10%
+- 제한: 개인 차례당1회, handler/root당 1회; 상시·초기 효과는 해당 시점에만.
+
+### V.224 `eff_aris_armed_rear_reg`
+- 출처/구역: u_aris_armed 후방 정기 지원 / `rear`. 원안 행: v2.3 신규.
+- 실행: **REAR 본문 직접 실행**. ActionResolver에서 본문 실행. 완료 후 대응 resolved 이벤트를 1회 발행.
+- 본문: 후방 자신의 정기 차례에 적 전방 전체에 ATK 150% 피해. 그 뒤 아군 전방 중 에너지가 가장 높은 1명에게 에너지 +15
+- 제한: 정상 후방 차례당1회; 기본 SP/에너지 소비·지급 없음.
+
+### V.225 `eff_aris_armed_rear_react`
+- 출처/구역: u_aris_armed 후방 반응 지원 / `rear`. 원안 행: v2.3 신규.
+- 실행: **패시브/반응 컨테이너**. ultimate_resolved.
+- 본문: 「지원 사격」 아군 전방이 필살기를 쓴 직후 적 전방 중 HP가 가장 낮은 1명에게 ATK 150% 피해(전투당 3회)
+- 제한: 전투당 3회; 개인 차례당1회, handler/root당 1회.
+
+### V.226 `eff_syn_uni_aris_armed`
+- 출처/구역: 시너지 syn_unique_armed_hero (1단계) / `deployed_all`. 원안 행: v2.3 신규.
+- 실행: **시너지 컨테이너: 상시·초기·반응·주기 handler 분리**. 아래 각 문장의 실제 조건별로 분리; 팀 주기는 7.1, 카운터·예외는 10.4 적용.
+- 본문: 「빠밤! 레벨업」의 경험치와 레벨을 그대로 이어받아 계속 쌓는다: 적 처치 경험치 1(정예·보스는 3), 출전한 전투에서 이기면 1, 경험치 5마다 레벨업해 런이 끝날 때까지 무장 아리스 ATK +5% 영구 누적(레벨 10까지, +50%). 「빛의 검 오버차지」: 무장 아리스가 필살기를 쓸 때마다 오버차지 1단계(전투 종료까지, 최대 2). 2단계가 된 즉시 적 전원에게 ATK 300% 피해(케이가 함께 출전해 있으면 방어 무시)를 주고 자신의 에너지 +50(전투당 1회). 「열쇠의 가호」: 케이가 함께 출전해 있으면, 무장 아리스가 처음 전투불능이 될 때 HP 30%로 다시 일어난다(전투당 1회)
+- 제한: 상시 modifier는 횟수 제한 없음. 반응의 명시 상한 우선; 미지정은10.4 기본값. 각 handler/root당 1회.
 
 ## 6. 삭제된 효과
 
@@ -1681,16 +1734,20 @@ v2.3에서 폐기된 시너지 이름(스트라이커·어설트)이 남아 있�
 | `u_meru` | 히메키 메루 | 붉은겨울 · 지식해방전선 | 지식해방전선 부원 → 단일 침묵 |
 | `u_shigure` | 마요이 시구레 | 붉은겨울 · 227호 특별반 | 혹한 정류장에서 버티는 227호 특별반 → 장기전 딜러 |
 | `u_misaki` | 이마시노 미사키 | 아리우스 · 아리우스 스쿼드 | 아리우스 스쿼드 로켓 사수 → 후방 광역, 아군이 쓰러지면 보복 |
-| `u_key` | 케이 | 밀레니엄 · 게임개발부 | 아리스 안에 잠들어 있던 왕녀의 조력자 AI "Key". 「신명 문자」를 다루는 해커 → 후방 제어 5코(v2.4.7 사용자 추가, 원작 직접 전투 모습이 없어 능력은 창작) |
+| `u_key` | 케이 | 밀레니엄 | 아리스 안에 잠들어 있던 왕녀의 조력자 AI "Key". 「신명 문자」를 다루는 해커 → 후방 제어 5코(v2.4.7 사용자 추가, 원작 직접 전투 모습이 없어 능력은 창작) |
+| `u_aris_armed` | 텐도 아리스 (무장) | 밀레니엄 · 게임개발부 | 케이와 함께 각성한 아리스. 「빛의 검: 슈퍼노바」에 장비를 더한 용사 형태 → 각성 전용 5코(v2.4.8 사용자 추가, 원작 직접 형태는 없어 능력은 창작) |
 | `u_al1s` | AL-1S | 밀레니엄 · 게임개발부 | 아리스의 본래 정체, "이름 없는 신들의 왕녀" AL-1S → 각성 전용 5코, 「아트라하시스의 방주」 |
 
 ## 9. 각성
 
 일정 조건을 채운 학생이 런 도중 다른 학생으로 바뀐다. 표는 `scripts/extract-content.mjs`가 읽어 유닛의 `awakening`(원래 학생)·`awakenedFrom`(각성 학생)에 넣는다. 각성 학생은 상점에 나오지 않는다.
 
-| 원래 학생 | 각성 학생 | 경험치를 세는 고유 시너지 | 필요 경험치 | 필요 성급 |
-|---|---|---|---|---|
-| `u_aris` | `u_al1s` | `syn_unique_level_up` | 15 | 3 |
+| 원래 학생 | 각성 학생 | 경험치를 세는 고유 시너지 | 필요 경험치 | 필요 성급 | 동반 조건 |
+|---|---|---|---|---|---|
+| `u_aris` | `u_al1s` | `syn_unique_level_up` | 15 | 3 | — |
+| `u_aris` | `u_aris_armed` | `syn_unique_level_up` | 15 | 3 | `u_key` 보유 |
+
+- **분기(v2.4.8).** 동반 조건이 있는 줄을 먼저 본다. 각성하는 순간 케이를 보유(출전·대기)하고 있으면 「텐도 아리스 (무장)」, 아니면 AL-1S가 된다. 각성 학생은 런에 하나만 있을 수 있어 한 번 각성하면 다른 형태로는 바뀌지 않는다. 무장 아리스도 아리스와 같은 사람으로 세고, 「이름 없는 신들의 왕녀」 대신 「용사 아리스, 풀 장비로 출격!」(V.226)이 경험치와 레벨을 이어받는다.
 
 - **경험치.** 「빠밤! 레벨업」(V.170)이 런 단위로 센다. 처치 1(정예·보스 3), 출전한 전투 승리 1. 아리스를 팔거나 합성해도 남고, 다시 사면 이어진다. 출전하지 않은 전투에서는 쌓이지 않는다.
 - **조건.** 경험치 15 이상(v2.3.9, 전에는 30), 그리고 3성 아리스를 보유(출전·대기). 둘 중 하나만 채우면 기다린다. 경험치가 먼저 차면 아리스를 3성으로 합성하는 순간을, 3성이 먼저면 경험치를 기다린다.

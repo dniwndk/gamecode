@@ -55,6 +55,14 @@ export function react(c: Battle, u: U, fx: string, cd: number, perTurn: number, 
   if (u.zone === 'rear') c.emit({ type: 'reaction_resolved', src: u, fx });
 }
 
+/** 케이 「신명 문자 해킹」(V.216). 후방 정기 지원과 고유 「왕녀의 열쇠」(V.219)의 추가 발동이 같이 쓴다 */
+export function keyHack(c: Battle, u: U, kind: 'rear' | 'reaction', fx: string): void {
+  const t = c.highestAtk(c.foes(u));
+  if (t) { c.hit(u, t, c.v(u, [1.6, 1.9, 2.4]), kind, { true: true, fx }); if (t.alive) silence(c, u, t, fx); }
+  const e = c.sortBy(c.mates(u).filter((x) => x.alive && x.energy < 100), (x) => x.energy)[0];
+  if (e) c.gainEnergy(e, 20);
+}
+
 /** 10.3 자동 사용 조건 */
 export const needHeal = (ratio: number) => (c: Battle, u: U) => c.mates(u).some((x) => c.hpRatio(x) <= ratio);
 export const needSelfHeal = (ratio: number) => (c: Battle, u: U) => c.hpRatio(u) <= ratio;
