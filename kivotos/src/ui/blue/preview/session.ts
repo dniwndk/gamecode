@@ -60,6 +60,8 @@ interface RunState {
   stacks: RunStacks;
   /** 각성을 마친 원래 학생(상점·판매 규칙) */
   awakenedFrom: Set<string>;
+  /** 그 판에 각성한 형태. 각성 뒤로 상점에 나온다(v2.4.11) */
+  awakenedInto: Set<string>;
   /** 독립 RNG 스트림(12.2): 상점, 보상 */
   shopRng: Rng;
   rewardRng: Rng;
@@ -231,7 +233,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   function rollShop(r: RunState, keepOffered = false) {
     const m = mods(r);
     const fresh = rollShopDetailed(pack, {
-      level: r.level, owned: all(r).map((i) => ({ unitId: i.unitId, star: i.star })), trackedSynergyId: r.tracked, awakenedFromIds: r.awakenedFrom,
+      level: r.level, owned: all(r).map((i) => ({ unitId: i.unitId, star: i.star })), trackedSynergyId: r.tracked, awakenedFromIds: r.awakenedFrom, awakenedIntoIds: r.awakenedInto,
       slots: m.shopSlots ?? undefined, recommendedChanceBps: m.recommendedChanceBps ?? undefined,
       topCostFirstSlot: m.levelUpTopCostSlot && r.levelUpPending,
     }, r.shopRng);
@@ -411,13 +413,15 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
   /** 각성 경험치는 「빠밤! 레벨업」 런 스택 하나로 센다(각성 표의 원래 학생 모두에게) */
   const awakeningExp = (r: RunState) => Object.fromEntries(pack.units.filter((u) => u.awakening).map((u) => [u.id, r.stacks.levelUpExp]));
 
-  /** 각성(코어 resolveAwakenings, 9장): 경험치 15 + 3성 아리스 → 그 자리에서 3성 AL-1S, 남은 아리스는 자동 판매 */
+  /** 각성(코어 resolveAwakenings, 9장): 경험치 + 3성 아리스 → 그 자리에서 2성 AL-1S(또는 무장 아리스, v2.4.11), 남은 아리스는 자동 판매 */
   function awaken(r: RunState) {
     const deployedIds = new Set(deployedInsts(r).map((i) => i.instanceId));
     const owned = all(r).map((i) => ({ instanceId: i.instanceId, unitId: i.unitId, star: i.star, deployed: deployedIds.has(i.instanceId), acquiredOrder: Number(i.instanceId.slice(1)) }));
     for (const plan of resolveAwakenings(pack, owned, awakeningExp(r))) {
       const at = locate(r, plan.instanceId)!;
-      r[at.zone][at.index]!.unitId = plan.intoUnitId;
+      const inst = r[at.zone][at.index]!;
+      inst.unitId = plan.intoUnitId;
+      inst.star = plan.star as 1 | 2 | 3;
       for (const id of plan.autoSellInstanceIds) {
         const s = locate(r, id);
         if (!s) continue;
@@ -427,6 +431,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         r[s.zone][s.index] = null;
       }
       r.awakenedFrom.add(plan.fromUnitId);
+      r.awakenedInto.add(plan.intoUnitId);
       r.recruited.add(plan.intoUnitId);
       cue({ kind: 'awaken', unitId: plan.intoUnitId, star: plan.star });
     }
@@ -549,7 +554,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
       recruited: new Set(chosen.map((u) => u.id)), deployed: new Set(),
       oop: { ...emptyOopartRunState(), owned: [...(opts.ooparts ?? [])] }, oopOffer: null, oopStartDone: false,
       runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false, freeRerollsUsed: 0,
-      stacks: emptyRunStacks(), awakenedFrom: new Set(),
+      stacks: emptyRunStacks(), awakenedFrom: new Set(), awakenedInto: new Set(),
       shopRng: Rng.forStream(seed, 'shop'), rewardRng: Rng.forStream(seed, 'reward'),
     };
     // 처음부터 가진 오파츠도 획득 즉시 효과를 받는다(게마트리아의 계약 −25)
@@ -685,7 +690,6 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
         const at = locate(r, String(payload.instanceId));
         if (!at) return no('학생을 찾을 수 없어요', 'INVALID_PAYLOAD');
         const inst = r[at.zone][at.index]!;
-        if (unitById.get(inst.unitId)!.awakenedFrom) return no(`${unitById.get(inst.unitId)!.name}은(는) 팔 수 없어요`);
         r.gold += sellValue(inst, r);
         r.stash.push(...inst.equipment);
         r[at.zone][at.index] = null;
