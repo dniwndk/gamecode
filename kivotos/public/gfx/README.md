@@ -5,7 +5,8 @@
 
 | 폴더 | 수 | 원본 → 여기 | 쓰는 곳 |
 |---|---:|---|---|
-| synergy | 66 | SVG. 2026-11-01 사용자 제공 `kivotos_synergy_icons_66.zip`으로 66종 전부 교체(흰 획, 48×48 viewBox) | `synHex` 시너지 배지 안 흰 문양 |
+| synergy | 66 | SVG. 2026-11-01 사용자 제공 `kivotos_synergy_icons_66_hq_framed.zip`으로 66종 다시 교체(흰 단색, 48×48 viewBox) | `synHex` 시너지 배지 안 흰 문양 |
+| synergy-frames | 5 | WebP 320px(원본 512px PNG). 같은 묶음의 등급 테두리: inactive·bronze·silver·gold·prismatic | `synHex` 배경. 미발동 inactive, 발동 단계 1·2·3 = 동·은·금, 플래티넘 단계·이스터에그 = prismatic, 고유 = gold. 단계를 모를 때(도감·카드)는 그 시너지의 최고 단계 테두리 |
 | ooparts | 55 | PNG 1024(알파) → WebP 256, 품질 85 | 도감 「오파츠」 탭. 등급 바탕·테두리는 CSS가 칠하고, 전설은 공개 전 실루엣 |
 | status | 20 | SVG 그대로 | 전투 상태 칩(CSS 마스크로 글자색을 따름) |
 | enemies | 13 | PNG 1024/1536 → WebP 512, 보스 768 | `enemyPortrait`, 전투 적 칸 |
