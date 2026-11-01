@@ -13,6 +13,7 @@ const input = (allies: BattleAllyInput[], enemies: BattleEnemyInput[], extra: Pa
 });
 const started = (i: BattleInput): Battle => { const c = createBattle(pack, i); c.snapshot(); c.emit({ type: 'battle_start' }); return c; };
 const find = (c: Battle, key: string): U => c.units.find((u) => u.key === key)!;
+const byIdTier = () => pack.synergies.find((s) => s.id === 'syn_game_dev')!.tiers.map((t) => t.threshold);
 
 describe('효과 handler', () => {
   it('오파츠를 뺀 효과 439개가 모두 엔진에 등록돼 있다', () => {
@@ -174,6 +175,15 @@ describe('4·5장 적(v2.4.2)', () => {
       expect(out.aborted).toBe(false);
       expect(out.firedEffects.some((id) => id.startsWith(boss)), boss).toBe(true);
     }
+  });
+});
+
+describe('케이(v2.4.7)', () => {
+  it('후방 해킹·존재 효과·필살기 대응이 작동하고, 게임개발부는 3명부터 켜진다', () => {
+    const out = simulateBattle(pack, input([ally('u_aris', 0, 'front', 2), ally('u_midori', 1, 'front', 2), ally('u_key', 0, 'rear', 2)], [enemy('en_pmc_heavy'), enemy('en_pmc_heavy', 1)], { activeTiers: { syn_game_dev: 0 } }));
+    expect(out.aborted).toBe(false);
+    expect(out.firedEffects).toEqual(expect.arrayContaining(['key_aura', 'key_rear_reg']));
+    expect(byIdTier()).toEqual([3, 5]);
   });
 });
 
