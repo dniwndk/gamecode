@@ -276,8 +276,6 @@ export interface RulesConfig {
     energy: { start: number; max: number };
     /** 전투 엔진 적 능력치 보정(v2.4 1장). 노드 배율 뒤에 곱한다 */
     enemyStatBps: { hp: number; atk: number; def: number };
-    /** 아군이 받는 보호막 양 배율(v2.4.5). 효과 문장의 수치 위에 곱한다 */
-    allyShieldBps: number;
   };
   rng: { algorithm: string; zeroSeedReplacement: number; streams: string[] };
   ooparts: OopartRules;
