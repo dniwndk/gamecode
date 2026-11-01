@@ -604,7 +604,7 @@ const v24Defeat = nums(runRow.get('장별 패배 기본 피해'));
 if (v24Income.length !== v24Chapters || v24Defeat.length !== v24Chapters) fail('v2.4 1장 장별 값 개수가 장 수와 다름');
 
 const rules = {
-  rulesVersion: 'ktfr-rules-2.8.1',
+  rulesVersion: 'ktfr-rules-2.8.2',
   source: 'GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.',
   run: {
     chapters: v24Chapters, battlesPerChapter: 5,
@@ -655,7 +655,7 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-3.3.1',
+  contentVersion: 'ba-content-3.3.2',
   rulesVersion: rules.rulesVersion,
   expectedCounts: { units: 103, synergies: 66, equipment: 12, strategies: 13, enemies: 25, nodes: 25, effects: 505, dialogueFiles: 103, statuses: 20, ooparts: 55 },
   sources: [
