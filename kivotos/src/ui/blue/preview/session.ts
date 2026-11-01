@@ -304,10 +304,10 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
 
   function defeatDamage(r: RunState, survivingFront: number): { total: number; parts: { label: string; value: number }[] } {
     const n = node(r);
-    const parts = [{ label: `${r.chapter}장 기본`, value: rules.defeatDamage.chapterBase[r.chapter - 1] }];
-    if (survivingFront) parts.push({ label: `남은 적 전방 ${survivingFront}명 × ${rules.defeatDamage.perSurvivingEnemyFront}`, value: survivingFront * rules.defeatDamage.perSurvivingEnemyFront });
-    if (n.type === 'elite') parts.push({ label: '정예', value: rules.defeatDamage.eliteBonus });
-    if (n.type === 'boss') parts.push({ label: '보스', value: rules.defeatDamage.bossBonus });
+    const parts = [{ label: '패배', value: rules.defeatDamage.chapterBase[r.chapter - 1] }];
+    if (survivingFront && rules.defeatDamage.perSurvivingEnemyFront) parts.push({ label: `남은 적 전방 ${survivingFront}명 × ${rules.defeatDamage.perSurvivingEnemyFront}`, value: survivingFront * rules.defeatDamage.perSurvivingEnemyFront });
+    if (n.type === 'elite' && rules.defeatDamage.eliteBonus) parts.push({ label: '정예', value: rules.defeatDamage.eliteBonus });
+    if (n.type === 'boss' && rules.defeatDamage.bossBonus) parts.push({ label: '보스', value: rules.defeatDamage.bossBonus });
     return { total: parts.reduce((a, p) => a + p.value, 0), parts };
   }
 

@@ -215,7 +215,7 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
         return row;
       })),
       h('p', { class: 'k-threat' }, icon('warning', 18), cand.threat),
-      h('div', { class: 'k-defeat' }, h('span', null, '패배하면 런 체력'), h('b', null, `−${run.node.defeatDamagePreview}`), h('small', null, '(남은 적 전방 수에 따라 달라짐)')),
+      h('div', { class: 'k-defeat' }, h('span', null, '패배하면 런 체력'), h('b', null, `−${run.node.defeatDamagePreview}`)),
       run.strategies.length ? h('div', { class: 'k-strats' }, h('small', null, '보유 전략'), ...run.strategies.map((id) => {
         const st = ctx.lookup.strategy(id);
         const chip = h('span', { class: 'k-strat-chip', tabindex: 0 }, icon('strategy', 16), st?.name ?? id);

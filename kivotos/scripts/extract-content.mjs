@@ -604,7 +604,7 @@ const v24Defeat = nums(runRow.get('장별 패배 기본 피해'));
 if (v24Income.length !== v24Chapters || v24Defeat.length !== v24Chapters) fail('v2.4 1장 장별 값 개수가 장 수와 다름');
 
 const rules = {
-  rulesVersion: 'ktfr-rules-2.7.5',
+  rulesVersion: 'ktfr-rules-2.7.6',
   source: 'GDD v2.1 4.1·5장 + v2.2 1장 + v2.3 11장 + OOPARTS v1 1장. 표에서 직접 읽은 값은 shop.levels/shop.copiesByCost/xpToNext/ooparts, 나머지는 해당 절의 확정 초기값.',
   run: {
     chapters: v24Chapters, battlesPerChapter: 5,
@@ -620,7 +620,8 @@ const rules = {
     interest: { stepGold: 10, cap: 5 },
   },
   sell: { formula: 'cost*3^(star-1) - (star>=2 ? 1 : 0)', depreciationFromStar: 2, depreciationGold: 1 },
-  defeatDamage: { chapterBase: v24Defeat, perSurvivingEnemyFront: 2, eliteBonus: 3, bossBonus: 6, finalBossLossEndsRun: true },
+  // v2.4.9: 패배 한 번에 30 고정(v2.4 1장). 남은 적·정예·보스 추가 피해 없음
+  defeatDamage: { chapterBase: v24Defeat, perSurvivingEnemyFront: 0, eliteBonus: 0, bossBonus: 0, finalBossLossEndsRun: true },
   units: { maxStar: 3, mergeCount: 3, starStatMultiplierBps: [10000, 18000, 32000], equipmentSlots: 2 },
   battle: {
     // v2.3 13장: 시간 제한(1000AV 패배)을 없애고 격화로 교착만 막는다.
@@ -654,7 +655,7 @@ const portraits = units.map((u) => ({
 // ───────────────────────── 팩 매니페스트 ─────────────────────────
 const pack = {
   packId: 'ba-kivotos',
-  contentVersion: 'ba-content-3.2.0',
+  contentVersion: 'ba-content-3.2.1',
   rulesVersion: rules.rulesVersion,
   expectedCounts: { units: 103, synergies: 66, equipment: 12, strategies: 13, enemies: 25, nodes: 25, effects: 505, dialogueFiles: 103, statuses: 20, ooparts: 55 },
   sources: [
