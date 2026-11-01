@@ -115,7 +115,7 @@ export const actives: Record<string, Active> = {
   tsukuyo_skill: A((c, u) => { taunt(c, u, 'tsukuyo_skill', 2); guard(c, u, u, 2000, 'tsukuyo_skill'); }, needBuff('tsukuyo_skill', 'self')),
   tsukuyo_ult: A((c, u) => { c.shield(u, u, u.maxHp * c.v(u, [0.225, 0.263, 0.315]), 2, 'tsukuyo_ult'); u.d.evade = 1; }),
   yuuka_skill: A((c, u) => { c.shield(u, u, u.maxHp * c.v(u, [0.099, 0.117, 0.144]), 2, 'yuuka_skill'); }, (c, u) => c.shieldOf(u) < u.maxHp * 0.2),
-  yuuka_ult: A((c, u) => { for (const t of c.mates(u)) c.shield(u, t, u.maxHp * c.v(u, [0.081, 0.099, 0.126]), 2, 'yuuka_ult'); }, needShield('mates')),
+  yuuka_ult: A((c, u) => { for (const t of [u, ...c.lowestRatio(c.mates(u).filter((x) => x !== u))]) c.shield(u, t, u.maxHp * c.v(u, [0.081, 0.099, 0.126]), 2, 'yuuka_ult'); }, needShield('mates')),
 
   // ── 3코 ──
   akane_skill: A((c, u) => { const t = c.pick(u); c.hit(u, t, 1.5, S); if (t?.alive) c.apply(u, t, 'st_bomb', { turns: 2, params: { by: u.uid }, key: `${u.uid}:bomb`, fx: 'akane_skill' }); }),

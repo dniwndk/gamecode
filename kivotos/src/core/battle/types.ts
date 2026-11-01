@@ -24,6 +24,8 @@ export interface BattleInput {
   /** 전투 RNG 씨앗(런 씨앗 + 노드 + 회차) */
   seed: string;
   nodeType: 'normal' | 'elite' | 'boss';
+  /** 장(1~5). 장별 격화 시작 AV에 쓴다(v2.4.13). 없으면 기본 시작 AV */
+  chapter?: number;
   /** 노드 배율(HP·ATK에만, A16) */
   statScaleBps: number;
   allies: BattleAllyInput[];

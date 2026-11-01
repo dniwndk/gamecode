@@ -91,7 +91,8 @@ export function mountBattle(ctx: Ctx, s: UiState): Screen {
   const timeline = h('div', { class: 'k-timeline', 'aria-label': '행동 순서' });
   const avFill = h('i');
   const avText = h('small', null, 'AV 0');
-  const escStartAv = ctx.driver.catalog.rules.battle.escalation.startAv;
+  const escRules = ctx.driver.catalog.rules.battle.escalation;
+  const escStartAv = (ctx.driver.get().run?.chapter && escRules.startAvByChapter?.[ctx.driver.get().run!.chapter - 1]) || escRules.startAv;
   let escBps = 0;
   let escEnemyBps = 0;
   const escLabel = () => `격화 · 적 +${escEnemyBps / 100}% · 아군 +${escBps / 100}%`;
