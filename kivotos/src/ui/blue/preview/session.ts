@@ -451,6 +451,7 @@ export function createPreviewSession(catalog: ContentCatalog, base: GameSnapshot
     const out = simulateBattle(pack, {
       seed: `${r.seed}|battle|${r.chapter}-${r.battle}`,
       nodeType: n.type,
+      chapter: r.chapter,
       statScaleBps: n.statScaleBps,
       allies,
       enemies: [

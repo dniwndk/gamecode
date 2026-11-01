@@ -474,7 +474,7 @@
     "scope": "front",
     "execution": "ability_ultimate",
     "trigger": null,
-    "spec": "아군 전방 전원에게 2턴간 유우카 최대 HP 8.1/9.9/12.6% 보호막 부여",
+    "spec": "자신과 HP 비율이 가장 낮은 다른 아군 전방 1명에게 2턴간 유우카 최대 HP 8.1/9.9/12.6% 보호막 부여",
     "limits": "CD0; 개인 차례당 1회; ENERGY100 소비.",
     "sourceReference": "GDD v2.3 5장 (교체)",
     "implementation": "spec_only",

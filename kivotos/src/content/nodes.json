@@ -820,7 +820,7 @@
     "chapter": 4,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 80000,
+    "statScaleBps": 100000,
     "candidates": [
       {
         "id": "A",
@@ -850,7 +850,7 @@
     "chapter": 4,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 58000,
+    "statScaleBps": 72500,
     "candidates": [
       {
         "id": "A",
@@ -1050,7 +1050,7 @@
     "chapter": 5,
     "battle": 4,
     "type": "elite",
-    "statScaleBps": 90000,
+    "statScaleBps": 112500,
     "candidates": [
       {
         "id": "A",
@@ -1084,7 +1084,7 @@
     "chapter": 5,
     "battle": 5,
     "type": "boss",
-    "statScaleBps": 65000,
+    "statScaleBps": 81250,
     "candidates": [
       {
         "id": "A",
