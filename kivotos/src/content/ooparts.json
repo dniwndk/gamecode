@@ -736,7 +736,7 @@
     "effectIds": [
       "eff_oop_schale_annex_key"
     ],
-    "benefit": "준비 단계마다 새로고침 4회 무료 (v2.3.7, 상점 칸 증가는 없앰)",
+    "benefit": "준비 단계마다 새로고침 4회 무료",
     "drawback": null,
     "recipe": null,
     "flavor": "샬레에 방이 하나 늘었다. 학생들이 더 자주 들른다"

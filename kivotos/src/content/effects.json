@@ -6441,7 +6441,7 @@
     "scope": "global",
     "execution": "oopart_container",
     "trigger": null,
-    "spec": "준비 단계마다 새로고침 4회 무료 (v2.3.7, 상점 칸 증가는 없앰)",
+    "spec": "준비 단계마다 새로고침 4회 무료",
     "limits": "보유하는 동안 상시. 전투 handler는 전역 주기(7.1)·root 한도(9.4)를 따른다. 대가는 이득과 같은 handler에서 함께 적용한다.",
     "sourceReference": "OOPARTS v1 4.2 범용 (3)",
     "implementation": "spec_only",
