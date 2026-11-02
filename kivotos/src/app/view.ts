@@ -171,6 +171,8 @@ export interface MultiView {
   lastOpponent: string | null;
   /** 내 최종 순위(정해지면) */
   place: number | null;
+  /** 이번 라운드가 크립 라운드면 모두가 받는 보상(오파츠면 등급이 모두 같다). PvP 라운드면 null */
+  creep: { kind: 'equipment' } | { kind: 'oopart'; rarity: 'common' | 'uncommon' | 'rare' | 'legendary' } | null;
 }
 
 export interface OopartOfferView {

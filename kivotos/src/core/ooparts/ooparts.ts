@@ -80,6 +80,23 @@ export function rollOopartOffer(pack: ContentPack, state: OopartRunState, source
   return offer;
 }
 
+/**
+ * 정해진 등급에서 아직 없는 오파츠 하나를 뽑는다(멀티 크립 라운드). 그 등급이 다 떨어졌으면
+ * rollOopartOffer와 같은 순서로 한 단계씩 내려가고, 그다음 올라간다. 남은 것이 없으면 null.
+ */
+export function rollOopartOfRarity(pack: ContentPack, state: OopartRunState, rarity: OopartRarity, rng: Rng): string | null {
+  const rules = pack.rules.ooparts;
+  const order = rules.rarityOrder;
+  const at = Math.max(0, order.indexOf(rarity as (typeof order)[number]));
+  const owned = new Set(state.owned);
+  const boosted = boostedOoparts(pack, state);
+  for (const r of [...order.slice(0, at + 1).reverse(), ...order.slice(at + 1)]) {
+    const pool = pack.ooparts.filter((o) => o.rarity === r && !owned.has(o.id));
+    if (pool.length) return pool[rng.weightedIndex(pool.map((o) => (boosted.has(o.id) ? rules.recipeWeight : 1)))].id;
+  }
+  return null;
+}
+
 /** 오파츠 하나를 얻는다. 레시피가 완성되면 그 자리에서 재료를 지우고 전설로 바꾼다(1.3절). */
 export function acquireOopart(pack: ContentPack, state: OopartRunState, profile: OopartProfile, id: string): AcquireResult {
   const defs = byId(pack);

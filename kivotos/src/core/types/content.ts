@@ -171,7 +171,8 @@ export interface OopartDefinition {
   flavor: string;
 }
 
-export type OopartSourceId = 'run_start' | 'elite' | 'boss' | 'rescue';
+/** creep: 멀티 크립 라운드 지급(규칙 sources에는 없고 방이 등급을 정한다) */
+export type OopartSourceId = 'run_start' | 'elite' | 'boss' | 'rescue' | 'creep';
 
 export interface OopartSourceRule {
   id: OopartSourceId;

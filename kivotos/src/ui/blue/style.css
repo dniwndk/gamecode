@@ -1744,3 +1744,12 @@ kbd { font-family: var(--f-num); }
 .is-mobile .k-lobby-body { width: auto; padding: 10px 12px 24px; }
 .is-mobile .k-lobby-cols, .is-mobile .k-mp-end-body { grid-template-columns: 1fr; }
 .is-mobile .k-lobby-code > b { font-size: 44px; }
+
+/* 멀티 크립 라운드(D-050) */
+.k-creep { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: rgba(155,93,229,.10); border: 1px solid rgba(155,93,229,.35); }
+.k-creep p { margin: 0 0 4px; font-size: 15px; }
+.k-creep-head b { color: #7a3fc4; }
+.k-creep-foes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.k-creep-foe { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.k-creep-foe .k-enemy-face { width: 40px; height: 40px; flex: none; }
+.k-next-creep { display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; color: #7a3fc4; }

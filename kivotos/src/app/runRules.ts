@@ -10,7 +10,7 @@ export {
 } from '../core/synergy/runStacks';
 export { oopartModifiers, oopartSupport, type OopartModifiers, type OopartSupport } from '../core/ooparts/modifiers';
 export {
-  acquireOopart, emptyOopartProfile, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, rollOopartOffer,
+  acquireOopart, emptyOopartProfile, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, rollOopartOffer, rollOopartOfRarity,
   type OopartMerge, type OopartProfile, type OopartRunState, type RecipeBadge,
 } from '../core/ooparts/ooparts';
 export { simulateBattle, battleTiers, flipBattleOutput, type BattleAllyInput, type BattleInput, type BattleOutput, type BattleTeamInput } from '../core/battle';
