@@ -20,10 +20,18 @@ export function mountRunSetup(ctx: Ctx, s: UiState): Screen {
     const bosses = (run.offers?.bosses ?? []).filter(Boolean);
     el.replaceChildren(
       h('header', { class: 'k-setup-head' },
-        h('button', { class: 'k-back', 'aria-label': '홈으로', onclick: () => void ctx.send('ABANDON_RUN') }, icon('back', 28)),
+        run.multi ? null : h('button', { class: 'k-back', 'aria-label': '홈으로', onclick: () => void ctx.send('ABANDON_RUN') }, icon('back', 28)),
         h('div', null, h('span', { class: 'k-kicker' }, 'OPERATION BRIEFING'), h('h2', null, '작전 브리핑'))),
       h('div', { class: 'k-setup-grid' },
-        h('section', { class: 'k-panel k-seed' },
+        run.multi ? h('section', { class: 'k-panel k-seed k-mp-brief' },
+          h('h3', null, icon('users', 22), `멀티플레이 · 방 ${run.multi.roomCode}`),
+          h('p', { class: 'k-muted' }, `${run.multi.players.length}명이 같은 상점 풀을 나눠 써요. 라운드마다 무작위 상대의 편성과 싸우고, 런 체력이 0이 되면 탈락이에요.`),
+          h('ol', { class: 'k-lobby-list' }, ...run.multi.players.map((p) => h('li', null, icon(p.host ? 'crown' : 'users', 20), h('b', null, p.name), p.you ? h('small', null, '나') : null))),
+          h('div', { class: 'k-start-vals' },
+            h('span', null, icon('heart', 20), h('b', null, String(ctx.driver.catalog.rules.run.startRunHp)), '런 체력'),
+            h('span', null, icon('gold', 20), h('b', null, String(ctx.driver.catalog.rules.run.startGold)), '골드'),
+            h('span', null, h('i', null, 'Lv'), h('b', null, String(ctx.driver.catalog.rules.run.startLevel)), '레벨'))) : null,
+        run.multi ? null : h('section', { class: 'k-panel k-seed' },
           h('h3', null, icon('map', 22), '시드'),
           h('p', { class: 'k-muted' }, '같은 시드는 같은 상점과 같은 적 후보를 만납니다. 비우고 적용하면 무작위.'),
           h('div', { class: 'k-seed-row' }, seedInput, apply),
@@ -32,7 +40,7 @@ export function mountRunSetup(ctx: Ctx, s: UiState): Screen {
             h('span', null, icon('heart', 20), h('b', null, String(ctx.driver.catalog.rules.run.startRunHp)), '런 체력'),
             h('span', null, icon('gold', 20), h('b', null, String(ctx.driver.catalog.rules.run.startGold)), '골드'),
             h('span', null, h('i', null, 'Lv'), h('b', null, String(ctx.driver.catalog.rules.run.startLevel)), '레벨'))),
-        h('section', { class: 'k-panel k-bosses' },
+        run.multi ? null : h('section', { class: 'k-panel k-bosses' },
           h('h3', null, icon('skull', 22), '장별 보스'),
           h('div', { class: 'k-boss-row' }, ...bosses.map((id, i) => {
             const e = ctx.lookup.enemy(id)!;

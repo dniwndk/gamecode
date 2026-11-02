@@ -7,7 +7,7 @@ import { cls, h } from '../dom';
 import { icon } from '../icons';
 import { fxList } from '../summary';
 import { oopartChip } from './ooparts';
-import type { RunView, UiState, UnitInstanceView, Zone } from '../model';
+import type { MultiView, RunView, UiState, UnitInstanceView, Zone } from '../model';
 
 type Loc = { zone: Zone; index: number };
 
@@ -295,8 +295,15 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
         h('button', { class: cls('k-btn is-lock', run.shop.locked && 'on'), 'aria-pressed': run.shop.locked ? 'true' : 'false', onclick: () => void ctx.send('TOGGLE_SHOP_LOCK'), title: '단축키 L' },
           icon(run.shop.locked ? 'lock' : 'unlock', 24), h('span', null, run.shop.locked ? '잠김' : '잠금'), h('kbd', null, 'L'))));
     const noFront = !run.board.front.some(Boolean);
-    const start = h('button', { class: 'k-start', disabled: noFront, title: noFront ? '전방에 최소 1명이 필요해요' : '전투 시작', onclick: () => { ctx.ui.selected = null; void ctx.send('START_BATTLE'); } },
-      h('span', { class: 'k-start-ico' }, icon('sword', 34)), h('span', { class: 'k-start-text' }, h('b', null, '출격'), h('small', null, noFront ? '전방에 최소 1명이 필요해요' : `${run.chapter}-${run.battle} 전투 시작`)));
+    const mp = run.multi;
+    const start = mp
+      ? (mp.ready
+        ? h('button', { class: 'k-start is-waiting', title: '출격 대기 취소', onclick: () => void ctx.send('CANCEL_READY') },
+          h('span', { class: 'k-start-ico' }, icon('pause', 34)), h('span', { class: 'k-start-text' }, h('b', null, '대기 중'), h('small', null, `${mp.readyCount}/${mp.aliveCount}명 준비 · 누르면 취소`)))
+        : h('button', { class: 'k-start', disabled: noFront, title: noFront ? '전방에 최소 1명이 필요해요' : '출격 대기', onclick: () => { ctx.ui.selected = null; void ctx.send('START_BATTLE'); } },
+          h('span', { class: 'k-start-ico' }, icon('sword', 34)), h('span', { class: 'k-start-text' }, h('b', null, '출격'), h('small', null, noFront ? '전방에 최소 1명이 필요해요' : `라운드 ${mp.round} · 모두 준비되면 시작 (${mp.readyCount}/${mp.aliveCount})`))))
+      : h('button', { class: 'k-start', disabled: noFront, title: noFront ? '전방에 최소 1명이 필요해요' : '전투 시작', onclick: () => { ctx.ui.selected = null; void ctx.send('START_BATTLE'); } },
+        h('span', { class: 'k-start-ico' }, icon('sword', 34)), h('span', { class: 'k-start-text' }, h('b', null, '출격'), h('small', null, noFront ? '전방에 최소 1명이 필요해요' : `${run.chapter}-${run.battle} 전투 시작`)));
     return h('div', { class: 'k-shop' }, level, cards, side, start);
   }
 
@@ -307,7 +314,9 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
       h('div', { class: 'k-dialog-body k-menu-list' },
         h('p', { class: 'k-muted' }, `시드 ${run.seed}`),
         h('button', { class: 'k-btn is-ghost', onclick: () => { close(); openHelp(); } }, icon('info', 22), '조작 안내'),
-        h('button', { class: 'k-btn is-danger', onclick: async () => { close(); if (await ctx.confirm({ title: '작전 포기', body: ['이번 작전을 포기하고 홈으로 돌아갑니다.', '포기한 작전은 되돌릴 수 없어요.'], confirm: '포기', danger: true })) await ctx.send('ABANDON_RUN'); } }, icon('flag', 22), '작전 포기')));
+        run.multi
+          ? h('button', { class: 'k-btn is-danger', onclick: async () => { close(); if (await ctx.confirm({ title: '방에서 나가기', body: ctx.multi.isHost() ? ['방장이 나가면 방이 닫히고 모두의 게임이 끝나요.', '정말 나갈까요?'] : ['지금 나가면 남은 인원 중 꼴찌로 탈락해요.', '다시 들어올 수 없어요.'], confirm: '나가기', danger: true })) await ctx.send('ABANDON_RUN'); } }, icon('flag', 22), '방에서 나가기')
+          : h('button', { class: 'k-btn is-danger', onclick: async () => { close(); if (await ctx.confirm({ title: '작전 포기', body: ['이번 작전을 포기하고 홈으로 돌아갑니다.', '포기한 작전은 되돌릴 수 없어요.'], confirm: '포기', danger: true })) await ctx.send('ABANDON_RUN'); } }, icon('flag', 22), '작전 포기')));
     close = ctx.modal(panel, { label: '작전 메뉴' });
   }
 
@@ -326,7 +335,7 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
     top.querySelector('.k-top-left')?.after(nodeTrack(run));
     el.replaceChildren(
       top,
-      h('div', { class: 'k-prep-main' }, synergyPanel(), boardPanel(), intelPanel()),
+      h('div', { class: 'k-prep-main' }, synergyPanel(), boardPanel(), run.multi ? scorePanel(ctx, run, run.multi) : intelPanel()),
       benchRow(),
       shopBar(),
     );
@@ -372,6 +381,14 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
     e.preventDefault();
   };
   document.addEventListener('keydown', onKey);
+  // 멀티 준비 마감 시계: 1초마다 글자만 바꾼다
+  const tick = setInterval(() => {
+    const t = el.querySelector<HTMLElement>('[data-deadline]');
+    if (!t) return;
+    const left = Math.max(0, Math.ceil((Number(t.dataset.deadline) - Date.now()) / 1000));
+    t.textContent = `${left}초`;
+    t.classList.toggle('is-urgent', left <= 10);
+  }, 1000);
 
   draw();
   // 화면 진입 직후 쌓인 연출은 건너뛴다(새로고침 시 같은 말풍선이 반복되지 않게)
@@ -387,9 +404,34 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
       requestAnimationFrame(() => playCues(s));
     },
     destroy() {
+      clearInterval(tick);
       document.removeEventListener('keydown', onKey);
       cancelDrag();
       hideTip();
     },
   };
+}
+
+/** 멀티플레이 점수판(적 예고 자리). 런 체력 순, 탈락자는 순위와 함께 아래로 */
+export function scorePanel(ctx: Ctx, run: RunView, mp: MultiView): HTMLElement {
+  const deadlineAt = mp.deadlineInMs === null ? null : Date.now() + mp.deadlineInMs;
+  return h('aside', { class: 'k-panel k-intel k-score', 'aria-label': '점수판' },
+    h('header', { class: 'k-panel-head' }, h('h2', null, '점수판'), h('span', { class: `k-node-badge is-${run.nodeType}` }, icon('users', 16), `라운드 ${mp.round}/${mp.totalRounds}`)),
+    deadlineAt !== null && !mp.ready ? h('p', { class: 'k-deadline' }, icon('warning', 18), '준비 마감까지 ', h('b', { 'data-deadline': String(deadlineAt) }, `${Math.ceil(mp.deadlineInMs! / 1000)}초`), ' · 지나면 지금 편성으로 출격해요') : null,
+    h('ol', { class: 'k-score-list' }, ...mp.players.map((p) => {
+      const pct = p.runHpMax ? Math.max(0, Math.min(100, (p.runHp / p.runHpMax) * 100)) : 0;
+      const row = h('li', { class: cls('k-score-row', p.you && 'is-you', !p.alive && 'is-out', !p.connected && 'is-off'), tabindex: 0 },
+        h('span', { class: 'k-score-place' }, p.place ? `${p.place}위` : p.ready ? icon('check', 18) : icon('dot', 14)),
+        h('div', { class: 'k-score-main' },
+          h('div', { class: 'k-score-name' }, p.host ? icon('crown', 16) : null, h('b', null, p.name), p.you ? h('small', null, '나') : null, !p.connected && p.alive ? h('small', null, '연결 끊김') : null),
+          h('i', { class: 'k-score-hp', style: `--p:${pct}%` })),
+        h('span', { class: 'k-score-num' }, h('b', null, String(p.runHp)), h('small', null, `Lv${p.level}`)),
+        p.streak.count >= 2 ? h('span', { class: cls('k-score-streak', p.streak.kind === 'loss' && 'is-loss') }, `${p.streak.count}${p.streak.kind === 'win' ? '연승' : '연패'}`) : null);
+      if (p.board.length) attachTip(ctx, row, () => h('div', { class: 'k-score-tip' }, h('strong', null, `${p.name}의 편성`),
+        h('div', { class: 'k-score-board' }, ...p.board.map((u) => h('span', { class: 'k-score-unit', title: ctx.lookup.unit(u.unitId).name }, portrait(ctx, u.unitId, 'is-round'), h('small', null, '★'.repeat(u.star)))))));
+      return row;
+    })),
+    mp.lastOpponent ? h('p', { class: 'k-muted k-score-last' }, `지난 상대: ${mp.lastOpponent}`) : null,
+    h('div', { class: 'k-defeat' }, h('span', null, '패배하면 런 체력'), h('b', null, `−${run.node.defeatDamagePreview}+`)),
+    h('p', { class: 'k-muted k-score-note' }, '패배 피해는 장 기본값에 상대의 남은 전방 학생 수만큼 더해져요.'));
 }

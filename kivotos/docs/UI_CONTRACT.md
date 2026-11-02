@@ -92,3 +92,11 @@ src/ui/       화면 (지금은 src/ui/blue/ 「샬레 작전 단말」 화면)
 - 신호 `awaken`(`unitId`: 각성 학생, `star`): 아리스가 AL-1S로 각성한 순간.
 - 패배 결과 화면의 학생 그림은 `defeat/<unitId>.webp`(배포 경로 기준). 없으면 기본 초상화를 쓴다.
 
+
+## 멀티플레이 (2026-11-02, D-049)
+
+- 화면 모양 타입은 `src/app/view.ts`로 옮겼다(`ui/blue/model.ts`는 다시 내보내기만). 솔로 런 세션은 `app/run/session.ts`의 `createRunSession`.
+- `run.multi?: MultiView`: 멀티 방일 때만 있다. `players[]`(이름·런 체력·레벨·대기·순위·연승연패·출전 학생), `round/totalRounds`, `ready`, `readyCount/aliveCount`, `deadlineInMs`(남은 준비 시간, 없으면 null), `lastOpponent`, `place`. 이름은 플레이어가 정한 글자라 화면에 그대로 보여도 되고, `seat`은 화면에 보이지 않는 구분용이다.
+- 멀티에서 `START_BATTLE`은 출격 대기, 새 명령 `CANCEL_READY`는 대기 취소. 대기 중에는 편성 명령이 거절된다. `ABANDON_RUN`은 방에서 나가기(방장이면 방이 닫힌다). `NEW_RUN`은 거절된다.
+- 멀티 전투의 적 진영 `combatants`는 `unitId`가 있는 학생이다(`enemyId` 없음). `nodeLabel`은 `라운드 위치 vs 상대 이름`.
+- 화면 쪽 통신(`ui/blue/multi/`)은 `app/multi/net.ts`의 `Conn` 모양만 맞추면 바꿔 끼울 수 있다(지금은 PeerJS WebRTC와 같은 기기 탭 BroadcastChannel).
