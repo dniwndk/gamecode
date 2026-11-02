@@ -9,6 +9,7 @@ import { synergyFx } from './effects/synergies';
 import { actives, passives, registerBombs } from './effects/units';
 import type { BattleAllyInput, BattleInput, BattleOutput } from './types';
 
+export { flipBattleOutput } from './flip';
 export type { BattleInput, BattleOutput, BattleEvent, BattleAllyInput, BattleEnemyInput, BattleCombatant, BattleContribution, BattleTeamInput } from './types';
 
 export const registry: Registry = {

@@ -43,7 +43,9 @@ export type GameCommandType =
   | 'CHOOSE_OOPART'
   | 'SKIP_OOPART'
   | 'IMPORT_SAVE'
-  | 'ABANDON_RUN';
+  | 'ABANDON_RUN'
+  /** 멀티플레이: 출격 대기(START_BATTLE) 취소 */
+  | 'CANCEL_READY';
 
 /** 12.2: 같은 commandId는 한 번만 적용, expectedRevision이 다르면 거부 */
 export interface GameCommand {
