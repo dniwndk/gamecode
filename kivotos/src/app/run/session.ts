@@ -766,7 +766,7 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
       case 'MOVE_UNIT': {
         const from = locate(r, String(payload.instanceId));
         const to = payload.to as { zone: Zone; index: number } | undefined;
-        if (!from || !to || !(to.zone in { front: 1, rear: 1, bench: 1 })) return no('옮길 위치가 올바르지 않아요', 'INVALID_PAYLOAD');
+        if (!from || !to || !['front', 'rear', 'bench'].includes(to.zone) || !Number.isInteger(to.index) || to.index < 0 || to.index >= r[to.zone].length) return no('옮길 위치가 올바르지 않아요', 'INVALID_PAYLOAD');
         if (from.zone === to.zone && from.index === to.index) return ok();
         const inst = r[from.zone][from.index]!;
         const occupant = r[to.zone][to.index];
@@ -846,7 +846,7 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
         if (eq.zone === 'rear' && !placeable(u).rear) return no(`${eq.name}은(는) 후방 학생 전용이에요`);
         if (eq.uniquePerUnit && inst.equipment.includes(eqId)) return no('같은 장비는 한 학생에게 하나만 장착할 수 있어요');
         const replace = payload.replaceIndex === undefined ? -1 : Number(payload.replaceIndex);
-        if (inst.equipment.length >= equipSlots(r, inst.unitId) && replace < 0) return no('장비 칸이 가득 찼어요. 교체할 칸을 골라 주세요');
+        if (inst.equipment.length >= equipSlots(r, inst.unitId) && !(Number.isInteger(replace) && replace >= 0 && replace < inst.equipment.length)) return no('장비 칸이 가득 찼어요. 교체할 칸을 골라 주세요');
         r.stash.splice(stashIdx, 1);
         if (replace >= 0 && inst.equipment[replace]) { r.stash.push(inst.equipment[replace]); inst.equipment[replace] = eqId; }
         else inst.equipment.push(eqId);
