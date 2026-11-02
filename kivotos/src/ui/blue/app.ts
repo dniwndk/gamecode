@@ -22,6 +22,8 @@ import { mountRunEnd } from './screens/runEnd';
 import { mountRunSetup } from './screens/runSetup';
 import { mountSettings } from './screens/settings';
 import { mountStrategyChoice } from './screens/strategy';
+import { mountLobby } from './screens/lobby';
+import { createMultiController, type MultiController } from './multi/controller';
 
 export interface Settings {
   reduceMotion: boolean;
@@ -43,7 +45,7 @@ export interface Screen {
   destroy?(): void;
 }
 
-export type LocalRoute = 'codex' | 'settings' | null;
+export type LocalRoute = 'codex' | 'settings' | 'multi' | null;
 
 export interface Ctx {
   driver: UiDriver;
@@ -65,6 +67,8 @@ export interface Ctx {
   /** public/ 아래 그림 주소(배포 경로 기준). 예: art('cutins/u_aru.webp') */
   art(path: string): string;
   go(route: LocalRoute): void;
+  /** 멀티플레이(방 만들기·참가·로비). 시작하면 ctx.driver가 방의 드라이버로 바뀐다 */
+  multi: MultiController;
   lookup: {
     unit(id: string): UnitDefinition;
     syn(id: string): SynergyDefinition | undefined;
@@ -107,7 +111,19 @@ function loadSettings(): Settings {
   return { ...DEFAULT_SETTINGS, reduceMotion: reduce };
 }
 
-export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
+export function mountBlueUi(root: HTMLElement, soloDriver: UiDriver): void {
+  // 화면이 보는 드라이버는 솔로 세션과 멀티플레이 방 사이를 오간다. 화면은 언제나 이 겉 드라이버만 본다
+  let inner = soloDriver;
+  const outerFns = new Set<(s: UiState) => void>();
+  let unsubInner = inner.subscribe((st) => { for (const f of outerFns) f(st); });
+  const driver: UiDriver = {
+    catalog: soloDriver.catalog,
+    get preview() { return inner.preview; },
+    get: () => inner.get(),
+    subscribe(fn) { outerFns.add(fn); return () => outerFns.delete(fn); },
+    send: (type, payload) => inner.send(type, payload),
+    resume() { inner.resume?.(); },
+  };
   const { pack } = driver.catalog;
   const units = new Map(pack.units.map((u) => [u.id, u]));
   const syns = new Map(pack.synergies.map((s) => [s.id, s]));
@@ -211,7 +227,8 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     scene: (url, o) => fx.scene(url, o),
   };
 
-  let route: LocalRoute = null;
+  // 참가 링크(?room=코드)로 들어오면 멀티플레이 로비부터
+  let route: LocalRoute = new URLSearchParams(location.search).has('room') && driver.get().phase === 'HOME' ? 'multi' : null;
   let current: Screen | null = null;
   let currentKey = '';
 
@@ -306,6 +323,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     sfx,
     art,
     go(r) { route = r; render(driver.get()); },
+    multi: null as unknown as MultiController,
     lookup: {
       unit: (id) => units.get(id)!,
       syn: (id) => syns.get(id),
@@ -329,6 +347,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
 
   function screenFor(s: UiState): [string, () => Screen] {
     if (s.phase === 'HOME' || !s.run) {
+      if (route === 'multi') return ['multi', () => mountLobby(ctx)];
       if (route === 'codex') return ['codex', () => mountCodex(ctx)];
       if (route === 'settings') return ['settings', () => mountSettings(ctx)];
       return ['home', () => mountHome(ctx, s)];
@@ -350,7 +369,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
 
   // 런 시작·출격·런 종료처럼 큰 장면 전환만 파편으로 부수고, 나머지는 가벼운 빛 쓸기
   function bigMove(from: string, to: string): boolean {
-    if (to === 'codex' || to === 'settings' || from === 'codex' || from === 'settings') return false;
+    if (to === 'codex' || to === 'settings' || to === 'multi' || from === 'codex' || from === 'settings' || from === 'multi') return false;
     return to === 'setup' || to === 'end' || to.startsWith('battle-') || (from === 'home' && to !== 'home');
   }
 
@@ -358,7 +377,7 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
   function applyScene(s: UiState, key: string) {
     const ch = s.run?.chapter ?? 1;
     let o: { img: string; mix: number; wash: number; left?: boolean };
-    if (key === 'home' || key === 'codex' || key === 'settings') o = { img: 'bg_home', mix: 1, wash: key === 'home' ? 0.82 : 0.6, left: key === 'home' };
+    if (key === 'home' || key === 'codex' || key === 'settings' || key === 'multi') o = { img: 'bg_home', mix: 1, wash: key === 'home' ? 0.82 : 0.6, left: key === 'home' };
     else if (key === 'setup') o = { img: 'cut_sortie', mix: 1, wash: 0.5 };
     else if (key === 'end') o = { img: s.phase === 'RUN_COMPLETE' ? 'cut_clear' : 'cut_defeat', mix: 1, wash: 0.42 };
     else if (key === 'prep') o = { img: `bg_ch${ch}`, mix: 0.9, wash: 0.5 };
@@ -428,5 +447,21 @@ export function mountBlueUi(root: HTMLElement, driver: UiDriver): void {
     render(s);
     celebrateMerges(s);
   });
+
+  // 솔로 ↔ 멀티 드라이버 바꾸기: 연출 신호 번호는 드라이버마다 따로라 새 드라이버의 마지막 번호부터 본다
+  function switchTo(next: UiDriver) {
+    if (next === inner) return;
+    unsubInner();
+    inner = next;
+    unsubInner = inner.subscribe((st) => { for (const f of outerFns) f(st); });
+    const last = inner.get().cues.at(-1)?.id ?? 0;
+    ctx.ui.lastCue = last;
+    lastMergeCue = last;
+    ctx.ui.selected = null;
+    const st = inner.get();
+    if (st.phase !== 'HOME') route = null;
+    render(st);
+  }
+  ctx.multi = createMultiController(driver.catalog, (d) => switchTo(d ?? soloDriver), (m) => ctx.toast(m, 'error'));
   render(driver.get());
 }

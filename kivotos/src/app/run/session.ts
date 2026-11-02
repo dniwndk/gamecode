@@ -376,7 +376,7 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
       },
       node: {
         candidates: n.candidates.map((c) => ({ ...c, front: [...c.front], rear: [...c.rear] })),
-        chosen: cand.id, defeatDamagePreview: Math.max(1, defeatDamage(r, cand.front.length).total - mods(r).defeatDamageReduction) + mods(r).runHpLossPerBattle, statScaleBps: n.statScaleBps,
+        chosen: cand.id, defeatDamagePreview: Math.max(1, defeatDamage(r, multi ? 0 : cand.front.length).total - mods(r).defeatDamageReduction) + mods(r).runHpLossPerBattle, statScaleBps: n.statScaleBps,
       },
       nodeHistory: [...r.history],
       offers: r.offers,
@@ -639,6 +639,8 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
     const r = run;
     switch (type) {
       case 'NEW_RUN': {
+        // 멀티: 방이 처음 한 번만 연다(방 씨앗). 진행 중에는 새로 만들 수 없다
+        if (multi && run) return no('대전 중에는 새 작전을 시작할 수 없어요', 'WRONG_PHASE');
         const seed = typeof payload.seed === 'string' && payload.seed.trim() ? payload.seed.trim().toUpperCase() : randomSeed();
         run = freshRun(seed);
         phase = 'RUN_SETUP';
