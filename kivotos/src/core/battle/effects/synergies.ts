@@ -162,11 +162,11 @@ function hyakkiyako(tier: 2 | 4 | 6 | 8): SynFx {
       c.proc('synergy', SYN, tier >= 6 ? '백야제 만개화' : '여우불 행렬', u);
       const r1 = c.hit(u, front, 0.9, 'synergy', { true: true, fx });
       c.g.onibiMark?.(u, r1);
-      vuln(c, u, front, 1500, fx);
+      vuln(c, u, front, s(k, 1500), fx);
       if (tier >= 6) {
         const r2 = c.hit(u, c.foes(u), 1.2, 'synergy', { true: true, fx });
         c.g.onibiMark?.(u, r2);
-        for (const m of allyFront(c).filter((x) => x.alive)) c.advance(m, 0.1);
+        for (const m of allyFront(c).filter((x) => x.alive)) c.advance(m, 0.1 * k);
       }
     });
     if (tier === 8) c.on('pulse', () => {

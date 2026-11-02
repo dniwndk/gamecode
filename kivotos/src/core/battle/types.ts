@@ -30,6 +30,12 @@ export interface BattleTeamInput {
   strategies: string[];
   ooparts: string[];
   runAtkBpsByUnit?: Record<string, number>;
+  /** 학생별 ATK·최대 HP·보호막 부여 bps와 SPD(고정치) 보정(멀티 PvP 밸런스 표). 키는 unitId */
+  statBpsByUnit?: Record<string, { atk?: number; hp?: number; spd?: number; shield?: number }>;
+  /** 시너지 발동 피해(fx가 그 시너지 것인 타격) bps 보정(멀티 PvP 밸런스 표). 키는 시너지 ID */
+  synergyDmgBps?: Record<string, number>;
+  /** 시너지 효과 수치 배율(능력치 보정 등 s(k, …)로 계산되는 값, 멀티 PvP 밸런스 표). 키는 시너지 ID */
+  synergyScale?: Record<string, number>;
   fullEnergyUnitIds?: string[];
   dessert?: boolean;
   dessertHalf?: boolean;
@@ -53,6 +59,12 @@ export interface BattleInput {
   ooparts: string[];
   /** 런 스택(레벨업·보충수업·업무량)의 학생별 ATK bps */
   runAtkBpsByUnit?: Record<string, number>;
+  /** 학생별 ATK·최대 HP·보호막 부여 bps와 SPD(고정치) 보정(멀티 PvP 밸런스 표). 키는 unitId */
+  statBpsByUnit?: Record<string, { atk?: number; hp?: number; spd?: number; shield?: number }>;
+  /** 시너지 발동 피해 bps 보정(멀티 PvP 밸런스 표). 키는 시너지 ID */
+  synergyDmgBps?: Record<string, number>;
+  /** 시너지 효과 수치 배율(멀티 PvP 밸런스 표). 키는 시너지 ID */
+  synergyScale?: Record<string, number>;
   /** 에너지 100으로 시작하는 학생(조금만 쉬고 싶어) */
   fullEnergyUnitIds?: string[];
   /** 디저트 타임 예약(지난 전투 승리) */

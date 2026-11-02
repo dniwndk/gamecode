@@ -113,3 +113,34 @@ describe('PvP 전투', () => {
     expect(outcomes.loss).toBeGreaterThan(60);
   });
 });
+
+describe('PvP 밸런스 표(D-051)', () => {
+  const hyakki = ['u_wakamo', 'u_izuna', 'u_tsubaki', 'u_tsukuyo'].map((id, i) => unit(id, i, 'front'))
+    .concat(['u_niya', 'u_mimori', 'u_shizuko', 'u_chise'].map((id, i) => unit(id, i, 'rear')));
+  const trin = ['u_mika', 'u_tsurugi', 'u_mine', 'u_azusa'].map((id, i) => unit(id, i, 'front'))
+    .concat(['u_koharu', 'u_mashiro', 'u_hifumi', 'u_hanako'].map((id, i) => unit(id, i, 'rear')));
+
+  it('켜진 시너지에만(최소 인원 이상) 보정이 붙는다', async () => {
+    const { withPvpBalance } = await import('../../src/app/run/multiRules');
+    const t = withPvpBalance(pack, team(hyakki), { syn_hyakkiyako: { power: 0.5, atk: -1000, hp: -1000 }, syn_trinity: { power: 0.5, min: 6 } });
+    expect(t.synergyScale).toEqual({ syn_hyakkiyako: 0.5 });
+    expect(t.synergyDmgBps).toEqual({ syn_hyakkiyako: -5000 });
+    expect(Object.values(t.statBpsByUnit).every((x) => x.atk === -1000 && x.hp === -1000)).toBe(true);
+    const few = withPvpBalance(pack, team(trin.slice(0, 4)), { syn_trinity: { power: 0.5, min: 6 } });
+    expect(few.synergyScale).toEqual({});
+  });
+
+  it('보정은 그 편성의 시너지 세기·능력치를 실제로 바꾼다', () => {
+    const base = team(hyakki);
+    const weak: BattleTeamInput = { ...base, synergyScale: { syn_hyakkiyako: 0.3 }, synergyDmgBps: { syn_hyakkiyako: -7000 }, statBpsByUnit: Object.fromEntries(hyakki.map((u) => [u.unitId, { hp: -5000 }])) };
+    // 상대 진영으로 둘 때와 아군 진영으로 둘 때 모두 적용된다
+    const asFoe = (t: BattleTeamInput) => simulateBattle(pack, pvp(team(trin), t, 'BAL'));
+    const asAlly = (t: BattleTeamInput) => simulateBattle(pack, { ...pvp(t, team(trin), 'BAL'), statBpsByUnit: t.statBpsByUnit, synergyDmgBps: t.synergyDmgBps, synergyScale: t.synergyScale });
+    const hpOf = (out: ReturnType<typeof simulateBattle>, side: 'ally' | 'enemy') => out.combatants.filter((c) => c.ref.side === side).reduce((a, c) => a + c.maxHp, 0);
+    expect(hpOf(asFoe(weak), 'enemy')).toBeLessThan(hpOf(asFoe(base), 'enemy') * 0.6);
+    expect(hpOf(asAlly(weak), 'ally')).toBeLessThan(hpOf(asAlly(base), 'ally') * 0.6);
+    const dmg = (out: ReturnType<typeof simulateBattle>, side: 'ally' | 'enemy') => out.events.filter((e) => e.t === 'damage' && e.source.side === side).slice(0, 30).reduce((a, e) => a + (e.t === 'damage' ? e.amount : 0), 0);
+    expect(dmg(asFoe(weak), 'enemy')).toBeLessThan(dmg(asFoe(base), 'enemy'));
+    expect(dmg(asAlly(weak), 'ally')).toBeLessThan(dmg(asAlly(base), 'ally'));
+  });
+});

@@ -10,12 +10,13 @@
 // - 크립 라운드(D-050): 각 장 4번째(솔로의 정예 칸)는 모두가 같은 몬스터와 싸운다. 승패와 관계없이 보상을 받는데,
 //   보상 종류(장비 3택1 / 오파츠 1개)와 오파츠 등급은 방이 정해 모두 같다. 어떤 오파츠가 나오는지는 사람마다 다르다.
 // - 패배 피해는 라운드와 관계없이 10(오파츠 피해 증감은 그대로). 런 체력 0이면 탈락.
+// - PvP 전투에는 시너지 밸런스 표(D-051, multiRules PVP_SYNERGY_BPS)를 양쪽에 붙인다. 크립 라운드에는 붙이지 않는다.
 // - 한 명만 남거나 마지막 라운드가 끝나면 순위(남은 체력 순)를 정한다.
 import type { ContentCatalog } from '../gameClient';
 import { flipBattleOutput, Rng, simulateBattle, type BattleTeamInput, type OwnedCopy } from '../runRules';
 import { createRunSession, type ProfileStore, type RunSession } from '../run/session';
 import type { MultiPlayerView, MultiView } from '../view';
-import { creepRewardFor, isCreepNode, type CreepReward } from '../run/multiRules';
+import { creepRewardFor, isCreepNode, withPvpBalance, type CreepReward } from '../run/multiRules';
 
 export const MAX_PLAYERS = 8;
 export const MIN_PLAYERS = 2;
@@ -290,7 +291,8 @@ export class Room {
           p.lastOpponent = null; p.lastOpponentName = null;
         }
       } else {
-      const teams = new Map(alive.map((p) => [p.seat, p.session!.team()!]));
+      // PvP 밸런스 표(D-051)를 붙인 편성
+      const teams = new Map(alive.map((p) => [p.seat, withPvpBalance(pack, p.session!.team()!)]));
       for (const [a, b] of this.pair(alive)) {
         // 홀수: 다른 플레이어 하나의 잔상과 싸운다(잔상 주인은 영향 없음)
         const ghost = b ?? alive.filter((x) => x !== a)[this.rng.nextInt(alive.length - 1)];
@@ -342,7 +344,8 @@ export class Room {
 function allySide(t: BattleTeamInput) {
   return {
     allies: t.units, activeTiers: t.activeTiers, strategies: t.strategies, ooparts: t.ooparts,
-    runAtkBpsByUnit: t.runAtkBpsByUnit, fullEnergyUnitIds: t.fullEnergyUnitIds, dessert: t.dessert, dessertHalf: t.dessertHalf,
+    runAtkBpsByUnit: t.runAtkBpsByUnit, statBpsByUnit: t.statBpsByUnit, synergyDmgBps: t.synergyDmgBps, synergyScale: t.synergyScale,
+    fullEnergyUnitIds: t.fullEnergyUnitIds, dessert: t.dessert, dessertHalf: t.dessertHalf,
     gameDevBugs: t.gameDevBugs, serikaWins: t.serikaWins,
   };
 }
