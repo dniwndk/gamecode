@@ -1179,6 +1179,7 @@ kbd { font-family: var(--f-num); }
 .k-oop-head small { color: var(--ink-2); font-size: 13px; }
 .k-oop-text p { margin: 0; font-size: 14px; line-height: 1.45; }
 .k-oop-drawback { color: #c2352a; }
+.k-oop-pvp { color: #2a6fc2; }
 .k-oop-flavor { color: var(--ink-2); font-style: italic; font-size: 13px !important; }
 .k-codex-syn b { display: block; font-size: 18px; }
 .k-codex-syn small { color: var(--ink-2); font-size: 15px; font-family: var(--f-num); }

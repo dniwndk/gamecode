@@ -1,5 +1,5 @@
 // 멀티플레이 전용 런 규칙(D-049·D-050). 솔로 규칙(rules.json)은 건드리지 않는다.
-import type { ContentPack, OopartRarity } from '../../core/types/content';
+import type { ContentPack, NodeDefinition, OopartRarity } from '../../core/types/content';
 import { Rng } from '../runRules';
 
 /** 멀티: 패배마다 런 체력 −10(장·정예·보스 상관없이). 오파츠 피해 감소·증가는 그대로 붙는다 */
@@ -8,7 +8,20 @@ export const MULTI_DEFEAT_DAMAGE = 10;
 /** 크립 라운드 보상. 라운드마다 방이 한 번 정하고 모두 같은 보상(오파츠면 같은 등급)을 받는다 */
 export type CreepReward = { kind: 'equipment' } | { kind: 'oopart'; rarity: OopartRarity };
 
-/** 각 장의 정예 칸(4번째 전투)이 크립 라운드: 모두가 같은 몬스터와 싸운다 */
+/**
+ * 멀티 라운드 칸(D-052). 장마다 1~4번째는 PvP(일반 칸으로 친다: 정예·보스 보정 없음),
+ * 5번째는 그 장 정예 칸의 몬스터와 싸우는 크립 라운드. 보스 라운드는 없다.
+ */
+export function multiNode(pack: ContentPack, chapter: number, battle: number): NodeDefinition {
+  if (battle >= pack.rules.run.battlesPerChapter) {
+    const elite = pack.nodes.find((n) => n.chapter === chapter && n.type === 'elite');
+    if (elite) return { ...elite, battle };
+  }
+  const n = pack.nodes.find((x) => x.chapter === chapter && x.battle === battle) ?? pack.nodes[0];
+  return n.type === 'normal' ? n : { ...n, type: 'normal' };
+}
+
+/** 크립 라운드 칸인가(multiNode가 정예로 돌려주는 칸 = 각 장 5번째): 모두가 같은 몬스터와 싸운다 */
 export const isCreepNode = (nodeType: string) => nodeType === 'elite';
 
 /**

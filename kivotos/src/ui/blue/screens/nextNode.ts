@@ -19,7 +19,7 @@ export function mountNextNode(ctx: Ctx, s: UiState): Screen {
     newChapter && run.chapter > 1 ? h('div', { class: 'k-next-art' }, h('img', { src: ctx.art('keyart/cut_victory.webp'), alt: '' }), h('b', null, `CHAPTER ${run.chapter - 1} CLEAR`)) : null,
     h('div', { class: 'k-next-card' },
       h('span', { class: 'k-next-kicker' }, newChapter ? `CHAPTER ${run.chapter}` : 'NEXT OPERATION'),
-      h('h2', null, run.multi ? `라운드 ${run.multi.round} · ${run.multi.creep ? '크립 라운드' : run.nodeType === 'boss' ? 'PvP · 장비 보상' : 'PvP'}` : newChapter ? `${run.chapter}장 · ${CHAPTER_NAME[run.chapter] ?? ''}` : `${run.chapter}-${run.battle} ${type}`),
+      h('h2', null, run.multi ? `라운드 ${run.multi.round} · ${run.multi.creep ? '크립 라운드' : 'PvP'}` : newChapter ? `${run.chapter}장 · ${CHAPTER_NAME[run.chapter] ?? ''}` : `${run.chapter}-${run.battle} ${type}`),
       run.multi?.creep ? h('p', { class: 'k-next-creep' }, icon('diamond', 20), `모두 같은 몬스터와 싸워요 · 보상 ${creepRewardText(run.multi.creep)}(승패 무관)`) : null,
       nodeTrack(run),
       h('p', null, icon('heart', 20), `런 체력 ${run.runHp}/${run.runHpMax}`, h('span', null, ' · '), icon('gold', 20), `${run.gold}G`),

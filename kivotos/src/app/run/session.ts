@@ -15,7 +15,7 @@ import type {
   BattleEventView, BattleView, Cue, MultiView, ResultView, RunView, ShopSlotView, SynergyStateView, UiDriver, UiState,
   UnitInstanceView, Zone,
 } from '../view';
-import { isCreepNode, MULTI_DEFEAT_DAMAGE, type CreepReward } from './multiRules';
+import { isCreepNode, multiNode, MULTI_DEFEAT_DAMAGE, type CreepReward } from './multiRules';
 
 interface Inst { instanceId: string; unitId: string; star: 1 | 2 | 3; equipment: string[] }
 
@@ -157,7 +157,8 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
   const listeners = new Set<(s: UiState) => void>();
 
   // ── 파생 값 ─────────────────────────────────────────────
-  const node = (r: RunState): NodeDefinition => pack.nodes.find((n) => n.chapter === r.chapter && n.battle === r.battle) ?? pack.nodes[0];
+  // 멀티는 라운드 칸 규칙이 다르다(D-052: 1~4 PvP, 5번째 정예 크립, 보스 없음)
+  const node = (r: RunState): NodeDefinition => multi ? multiNode(pack, r.chapter, r.battle) : pack.nodes.find((n) => n.chapter === r.chapter && n.battle === r.battle) ?? pack.nodes[0];
   const xpToNext = (lv: number) => rules.xp.xpToNext[String(lv)] ?? null;
   const all = (r: RunState) => [...r.front, ...r.rear, ...r.bench].filter((x): x is Inst => !!x);
   const deployedInsts = (r: RunState) => [...r.front, ...r.rear].filter((x): x is Inst => !!x);
@@ -320,7 +321,7 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
   /** 정예·1·2장 보스 승리 뒤 오파츠, 없으면 다음 노드로 */
   function afterRewards(r: RunState) {
     const n = node(r);
-    // 멀티 크립 라운드(정예 칸)는 크립 보상만 준다
+    // 멀티 크립 라운드(각 장 5번째, 정예 칸)는 크립 보상만 준다
     const source: OopartSourceId | null = multi && isCreepNode(n.type) ? null : n.type === 'elite' ? 'elite' : n.type === 'boss' ? 'boss' : null;
     if (source && offerOoparts(r, source, 'advance')) return;
     advanceNode(r);
@@ -667,7 +668,7 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
         const res = r.lastResult;
         const n = node(r);
         if (!res) return no('정산할 전투가 없어요', 'WRONG_PHASE');
-        if (multi) return ok(afterMultiBattle(r, res, n));
+        if (multi) return ok(afterMultiBattle(r, res));
         if (r.runHp <= 0 || (res.outcome === 'loss' && n.type === 'boss' && r.chapter === rules.run.chapters)) { phase = 'RUN_FAILED'; return ok(); }
         if (res.outcome === 'win' && n.type === 'boss' && r.chapter === rules.run.chapters) { phase = 'RUN_COMPLETE'; return ok(); }
         if (res.outcome === 'win' && (n.type === 'elite' || n.type === 'boss')) {
@@ -883,10 +884,10 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
   }
 
   /**
-   * 멀티 전투 확인 뒤: 탈락·최종 순위면 런 끝, 정예·보스 라운드는 승패와 관계없이 장비(와 오파츠) 보상,
+   * 멀티 전투 확인 뒤: 탈락·최종 순위면 런 끝, 크립 라운드(각 장 5번째)는 승패와 관계없이 크립 보상,
    * 연패 구조 요청은 솔로와 같다. 마지막 라운드 뒤에는 방이 순위를 정할 때까지 결과 화면에 머문다.
    */
-  function afterMultiBattle(r: RunState, res: ResultView, n: NodeDefinition): void {
+  function afterMultiBattle(r: RunState, res: ResultView): void {
     if (r.place !== null) { phase = r.place === 1 ? 'RUN_COMPLETE' : 'RUN_FAILED'; return; }
     if (r.runHp <= 0) { phase = 'RUN_FAILED'; return; }
     if (r.chapter === rules.run.chapters && r.battle >= rules.run.battlesPerChapter) { phase = 'RESULT'; return; }
@@ -898,7 +899,7 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
       if (id) { r.oopOffer = { ids: [id], source: 'creep', grant: true, after: 'advance' }; phase = 'OOPART_CHOICE'; return; }
       r.gold += oopartSkipGold(pack);
     }
-    if (creep?.kind === 'equipment' || n.type === 'boss') {
+    if (creep?.kind === 'equipment') {
       r.offers = { equipment: shuffle(pack.equipment.filter((e) => e.chapters.includes(r.chapter))).slice(0, 3).map((e) => e.id) };
       phase = 'EQUIPMENT_CHOICE';
       return;

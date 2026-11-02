@@ -4,6 +4,11 @@ import { oopartModifiers } from '../../ooparts/modifiers';
 import type { Battle, U } from './kit';
 import { atkUp, buff, follow, spdDown, stun, vuln } from './kit';
 
+/** PvP용 예언 회로 피해(D-052). 솔로 정예·보스 +20%가 25전 중 약 10전에 걸리는 것과 평균을 맞춘다 */
+const PVP_PROPHECY_DMG_BPS = 1000;
+/** PvP용 위니페소키 돌 발동 횟수(전투당) */
+const PVP_WINNIPESAUKEE_USES = 3;
+
 const ally = (c: Battle) => c.units.filter((x) => x.side === c.me);
 const on = (c: Battle, syn: string) => c.tier(syn) !== undefined;
 
@@ -36,7 +41,11 @@ export function registerOoparts(c: Battle): void {
   if (om.spMax) c.spMax[c.me] = om.spMax;
   c.sp[c.me] = Math.min(c.spMax[c.me], c.sp[c.me] + om.spStartBonus);
   if (om.basicEnergyBonus) c.basicEnergy.push((u) => (u.side === c.me ? om.basicEnergyBonus : 0));
+  // PvP(상대가 학생 진영)인가. 보스·정예 전용 오파츠는 PvP에서 PvP용 효과로 바뀐다(D-052)
+  const pvp = !!c.foeState;
   if (om.eliteBossDamageBps) c.hook((h) => { if (h.src.side === c.me && (h.tgt.boss || c.input.nodeType === 'elite')) h.out += om.eliteBossDamageBps; });
+  // 예언 회로(R05) PvP: 상대 학생에게 주는 피해 +10%
+  if (pvp && c.has('oop_prophecy_circuit')) c.hook((h) => { if (h.src.side === c.me && h.tgt.side === c.them) h.out += PVP_PROPHECY_DMG_BPS; });
 
   // 바그다드 전지(C07)·L05: SP가 0이 되면 +2
   let refills = 0;
@@ -184,9 +193,11 @@ export function registerOoparts(c: Battle): void {
     c.proc('oopart', 'oop_atlantis_medal', '첫 스킬 쿨다운 −1', u);
   });
   // 위니퍼소키 돌(C18): 컨트롤러 기절이 보스에 막히면 15% 지연 + 1턴 받는 피해 +20%
+  // PvP(보스 없음): 컨트롤러 기절이 걸리면 같은 효과(전투당 3회)
   if (om.winnipesaukee && on(c, 'syn_controller')) c.on('status_applied', (e) => {
-    if (!e.converted || e.statusId !== 'st_stun' || !e.tgt || e.src?.side !== c.me || !e.src.tags.has('syn_controller')) return;
-    c.proc('oopart', 'oop_winnipesaukee_stone', '보스 행동 지연', e.tgt);
+    if (e.statusId !== 'st_stun' || !e.tgt || e.src?.side !== c.me || !e.src.tags.has('syn_controller')) return;
+    if (pvp ? e.converted || !c.battleOnce(null, 'winnipesaukee_pvp', PVP_WINNIPESAUKEE_USES) : !e.converted) return;
+    c.proc('oopart', 'oop_winnipesaukee_stone', pvp ? '기절 · 행동 지연' : '보스 행동 지연', e.tgt);
     c.delay(e.tgt, 0.15, e.src);
     vuln(c, e.src, e.tgt, 2000, 'oop_winnipesaukee_stone', 1);
   });
@@ -252,7 +263,18 @@ export function registerOoparts(c: Battle): void {
     }
   }
   // 데카그라마톤 예언 회로(R05): 보스 임계 패턴이 처음 발동할 때 아군이 받는 피해 -50%
-  if (c.has('oop_prophecy_circuit')) {
+  // PvP: 상대 학생이 처음 필살기를 쓸 때 그 필살기 동안 아군 전방이 받는 피해 -50%
+  if (pvp && c.has('oop_prophecy_circuit')) {
+    let caster: U | null = null;
+    const clear = () => { for (const u of c.units) for (const s of u.st.filter((x) => x.key === 'prophecy')) c.removeStatus(u, s); };
+    c.on('ultimate_declared', (e) => {
+      if (e.src?.side !== c.them || caster || !c.battleOnce(null, 'prophecy')) return;
+      caster = e.src;
+      c.proc('oopart', 'oop_prophecy_circuit', '예언 · 피해 -50%');
+      for (const u of c.front(c.me)) buff(c, null, u, 'st_damage_reduction', { dmgRed: 5000 }, 'oop_prophecy_circuit', 1, 'prophecy');
+    }, null, true);
+    c.on('ultimate_resolved', (e) => { if (caster && e.src === caster) clear(); }, null, true);
+  } else if (c.has('oop_prophecy_circuit')) {
     c.g.bossPattern = () => {
       if (!c.battleOnce(null, 'prophecy')) return;
       c.proc('oopart', 'oop_prophecy_circuit', '예언 · 피해 -50%');

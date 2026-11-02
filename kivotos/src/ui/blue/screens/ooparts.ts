@@ -34,6 +34,7 @@ export function oopartBody(ctx: Ctx, id: string): HTMLElement[] {
   if (!o) return [h('p', null, id)];
   const out: HTMLElement[] = [h('p', { class: 'k-oop-benefit' }, readable(ctx, o.benefit))];
   if (o.drawback) out.push(h('p', { class: 'k-oop-drawback' }, `대가 · ${readable(ctx, o.drawback)}`));
+  if (o.pvp) out.push(h('p', { class: 'k-oop-pvp' }, readable(ctx, o.pvp)));
   out.push(h('p', { class: 'k-oop-flavor' }, o.flavor));
   const sup = oopartSupportLine(ctx, id);
   if (sup) out.push(sup);

@@ -7,7 +7,8 @@
 // - 살아 있는 모두가 출격 대기하면 라운드를 돌린다. 절반 이상이 대기하면 준비 마감 시계가 돈다.
 //   마감이 되면 남은 사람은 지금 편성 그대로(선택 화면은 첫 후보로) 출격한다. 연결이 끊긴 사람은 기다리지 않는다.
 // - 짝은 무작위(직전 상대는 가능하면 피함). 홀수면 한 명은 다른 플레이어의 「잔상」과 싸우고, 잔상 주인은 영향이 없다.
-// - 크립 라운드(D-050): 각 장 4번째(솔로의 정예 칸)는 모두가 같은 몬스터와 싸운다. 승패와 관계없이 보상을 받는데,
+// - 라운드(D-052): 장마다 1~4번째는 PvP, 5번째는 크립 라운드(그 장 정예 칸 몬스터). 보스 라운드는 없다.
+// - 크립 라운드(D-050): 모두가 같은 몬스터와 싸운다. 승패와 관계없이 보상을 받는데,
 //   보상 종류(장비 3택1 / 오파츠 1개)와 오파츠 등급은 방이 정해 모두 같다. 어떤 오파츠가 나오는지는 사람마다 다르다.
 // - 패배 피해는 라운드와 관계없이 10(오파츠 피해 증감은 그대로). 런 체력 0이면 탈락.
 // - PvP 전투에는 시너지 밸런스 표(D-051, multiRules PVP_SYNERGY_BPS)를 양쪽에 붙인다. 크립 라운드에는 붙이지 않는다.
@@ -16,7 +17,7 @@ import type { ContentCatalog } from '../gameClient';
 import { flipBattleOutput, Rng, simulateBattle, type BattleTeamInput, type OwnedCopy } from '../runRules';
 import { createRunSession, type ProfileStore, type RunSession } from '../run/session';
 import type { MultiPlayerView, MultiView } from '../view';
-import { creepRewardFor, isCreepNode, withPvpBalance, type CreepReward } from '../run/multiRules';
+import { creepRewardFor, isCreepNode, multiNode, withPvpBalance, type CreepReward } from '../run/multiRules';
 
 export const MAX_PLAYERS = 8;
 export const MIN_PLAYERS = 2;
@@ -165,7 +166,7 @@ export class Room {
     const r = Math.min(this.round, this.totalRounds() - 1);
     const chapter = Math.floor(r / rr.battlesPerChapter) + 1;
     const battle = (r % rr.battlesPerChapter) + 1;
-    return this.catalog.pack.nodes.find((n) => n.chapter === chapter && n.battle === battle) ?? this.catalog.pack.nodes[0];
+    return multiNode(this.catalog.pack, chapter, battle);
   }
 
   /** 다음 라운드가 크립 라운드면 그 보상(모두 같다), 아니면 null */

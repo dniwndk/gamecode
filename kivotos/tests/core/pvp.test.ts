@@ -144,3 +144,33 @@ describe('PvP 밸런스 표(D-051)', () => {
     expect(dmg(asAlly(weak), 'ally')).toBeLessThan(dmg(asAlly(base), 'ally'));
   });
 });
+
+describe('PvP 오파츠(D-052): 보스·정예 전용 효과의 PvP판', () => {
+  const procs = (out: ReturnType<typeof simulateBattle>, id: string) => out.events.filter((e) => e.t === 'proc' && e.cause.id === id).length;
+  /** 그 진영의 첫 피해(같은 씨앗이면 첫 공격은 같은 행동이라 피해 보정만 차이 난다) */
+  const dealt = (out: ReturnType<typeof simulateBattle>, side: 'ally' | 'enemy') => { const e = out.events.find((x) => x.t === 'damage' && x.source.side === side); return e?.t === 'damage' ? e.amount : 0; };
+
+  it('예언 회로: PvP에서 피해 +10%와 첫 필살기 피해 감소가 양쪽 진영에서 돈다', () => {
+    const plain = simulateBattle(pack, pvp(team(GEHENNA), team(MILLENNIUM), 'PROPH'));
+    const mine = simulateBattle(pack, pvp(team(GEHENNA, { ooparts: ['oop_prophecy_circuit'] }), team(MILLENNIUM), 'PROPH'));
+    const theirs = simulateBattle(pack, pvp(team(GEHENNA), team(MILLENNIUM, { ooparts: ['oop_prophecy_circuit'] }), 'PROPH'));
+    expect(procs(plain, 'oop_prophecy_circuit')).toBe(0);
+    expect(procs(mine, 'oop_prophecy_circuit')).toBe(1);
+    expect(procs(theirs, 'oop_prophecy_circuit')).toBe(1);
+    expect(dealt(mine, 'ally')).toBeGreaterThan(dealt(plain, 'ally'));
+    expect(dealt(theirs, 'enemy')).toBeGreaterThan(dealt(plain, 'enemy'));
+  });
+
+  it('위니페소키 돌: PvP에서 컨트롤러 기절에 걸리고 전투당 3회까지', () => {
+    const ctrl = [unit('u_kanna', 0, 'front'), unit('u_koyuki', 1, 'front'), unit('u_kayoko', 2, 'front'), unit('u_hare', 0, 'rear'), unit('u_seia', 1, 'rear'), unit('u_meru', 2, 'rear')];
+    let fired = 0;
+    for (let i = 0; i < 20; i++) {
+      const out = simulateBattle(pack, pvp(team(ctrl, { ooparts: ['oop_winnipesaukee_stone'] }), team(MILLENNIUM), `WIN${i}`));
+      const n = procs(out, 'oop_winnipesaukee_stone');
+      expect(n).toBeLessThanOrEqual(3);
+      fired += n;
+      expect(procs(simulateBattle(pack, pvp(team(ctrl), team(MILLENNIUM), `WIN${i}`)), 'oop_winnipesaukee_stone')).toBe(0);
+    }
+    expect(fired).toBeGreaterThan(0);
+  });
+});

@@ -152,7 +152,7 @@ describe('멀티플레이 방', () => {
           const b = x.get().run?.lastBattle;
           if (!b || x.get().phase !== 'BATTLE' || seen.get(b.battleId)?.has(i)) continue;
           expect(b.events.length).toBeGreaterThan(0);
-          // 크립 라운드(정예 칸)는 몬스터전이라 결과를 맞대 보지 않는다
+          // 크립 라운드(각 장 5번째)는 몬스터전이라 결과를 맞대 보지 않는다
           if (x.get().run!.nodeType === 'elite') continue;
           expect(b.combatants.some((c) => c.ref.side === 'enemy' && c.unitId)).toBe(true);
           if (!seen.has(b.battleId)) { seen.set(b.battleId, new Map()); rounds++; }
@@ -175,7 +175,7 @@ describe('멀티플레이 방', () => {
     expect(opposite).toBeGreaterThan(0);
   });
 
-  it('패배 피해는 10, 각 장 4번째는 크립 라운드: 모두 같은 몬스터와 싸우고 같은 보상(오파츠면 같은 등급)을 받는다', async () => {
+  it('패배 피해는 10, 장마다 1~4는 PvP·5번째는 정예 크립 라운드(보스 없음): 크립은 모두 같은 보상(오파츠면 같은 등급)', async () => {
     const { host, guests } = setup(3);
     await flush();
     host.start();
@@ -206,8 +206,13 @@ describe('멀티플레이 방', () => {
           seenBattle.add(`${i}|${run.lastBattle.battleId}`);
           const res = run.lastResult!;
           if (res.outcome === 'loss') losses.push(res.runHp.breakdown[0]?.value ?? -1);
+          // 보스 라운드는 없고, 정예(크립)는 각 장 5번째뿐이다
+          expect(run.nodeType).not.toBe('boss');
+          expect(run.nodeType === 'elite').toBe(run.battle === 5);
           if (run.nodeType === 'elite') {
             creepBattles++;
+            const elite = pack.nodes.find((n) => n.chapter === run.chapter && n.type === 'elite')!;
+            expect(run.nodeId).toBe(elite.id);
             // 크립 라운드: 상대는 몬스터(학생이 아님)
             expect(run.lastBattle.combatants.some((c) => c.ref.side === 'enemy' && c.unitId)).toBe(false);
           }
