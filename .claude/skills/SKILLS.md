@@ -1,7 +1,7 @@
 # 게임 개발 스킬 모음 — 설명과 사용법
 
 기획서를 첨부해 게임을 빌드할 때 쓰는 Claude Code 스킬 모음. 기존 스킬 3개(`game-blueprint`, `self-check`, `redesign`)에
-공개 저장소 9곳에서 고른 스킬 52개를 더했다. 모두 `.claude/skills/<이름>/SKILL.md`에 있어 이 저장소에서 Claude Code를 열면 바로 쓰인다.
+공개 저장소 10곳에서 고른 스킬 53개를 더했다. 모두 `.claude/skills/<이름>/SKILL.md`에 있어 이 저장소에서 Claude Code를 열면 바로 쓰인다.
 
 ## 쓰는 법
 
@@ -78,6 +78,12 @@
 | `frontend-design` | 템플릿처럼 보이지 않는 UI 미감·타이포그래피 | Anthropic 공식 |
 | `algorithmic-art` | p5.js 시드 기반 생성 아트 (배경·타이틀·절차적 그림) | Anthropic 공식 |
 | `redesign` | 랜딩 페이지(게임 소개 페이지) 고급화 | 기존 |
+| `pixelfx` | 픽셀 아트 이펙트 244종(불·폭발·물·얼음·번개·마법·타격·픽업·UI 등 20분류)을 코드로 찾아 쓰고, 색 바꾸고, 스프라이트 시트(PNG + Aseprite형 JSON)로 내보낸다. 새 이펙트는 초안 → 렌더 → 눈으로 확인 → 수정을 반복해 만든다. 캐릭터의 예비 동작·타격 정지·반동(act)까지 다룬다 | pixelfx |
+
+`pixelfx` 쓰는 법
+- 처음 쓸 때 스킬이 이펙트 라이브러리를 프로젝트 **옆 폴더**에 `git clone https://github.com/patch-gg/pixelfx`로 받는다(저장소 안에는 받지 않는다). Node 18 이상만 있으면 되고 설치 단계는 없다. GIF·MP4 미리보기는 ffmpeg가 있을 때만.
+- 요청 예시: "마법사 궁극기에 프로스트 노바 넣어 줘", "코인 획득 반짝임 다섯 가지로 만들어 보고 좋은 두 개 보여 줘", "불·폭발 분류를 Godot용 스프라이트 시트로 내보내 줘", "이 타격 이펙트가 둥둥 떠. 더 묵직하게"
+- 웹 게임(캔버스·Phaser·PixiJS)은 코드를 그대로 가져다 쓰고, 다른 엔진은 스프라이트 시트로 쓴다.
 
 ### 게임 UI/UX 디자인 전문
 | 스킬 | 하는 일 | 출처 |
@@ -153,6 +159,7 @@
 | [szilu/ux-designer-skill](https://github.com/szilu/ux-designer-skill) | c869d32 | MIT (`_licenses/`) | ux-designer |
 | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | 623a9a9 | MIT (`_licenses/`) | ui-ux-pro-max |
 | [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai) | b37e020 | MIT (`_licenses/`) | humanize-korean, humanize, humanize-scan, humanize-redo + `.claude/agents/` 4개 (공식 `install.sh --copy`로 설치) |
+| [patch-gg/pixelfx](https://github.com/patch-gg/pixelfx) | a841596 | MIT (`_licenses/`, NOTICE 포함) | pixelfx (스킬 폴더만. 라이브러리는 사용 시 따로 받음) |
 | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | 8644175 | Apache-2.0 (`_licenses/`) | impeccable + `.claude/agents/impeccable-*` 4개 |
 
 수정한 곳: `router/SKILL.md` 맨 위에 "이 저장소에서는 스킬이 `.claude/skills/<이름>/`에 평평하게 설치돼 있다"는 안내를 덧붙였다. 또 다음을 고쳤다.
