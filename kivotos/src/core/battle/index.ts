@@ -75,8 +75,18 @@ interface StudentTeam {
   activeTiers: Record<string, number>;
   ooparts: string[];
   runAtkBpsByUnit?: Record<string, number>;
+  statBpsByUnit?: Record<string, { atk?: number; hp?: number; spd?: number; shield?: number }>;
+  synergyDmgBps?: Record<string, number>;
   fullEnergyUnitIds?: string[];
   serikaWins?: number;
+}
+
+/** 이스터에그 배율(티파티)과 PvP 밸런스 배율을 곱한다 */
+function mergeScale(base: Record<string, number>, extra?: Record<string, number>): Record<string, number> {
+  if (!extra) return base;
+  const out = { ...base };
+  for (const [k, v] of Object.entries(extra)) out[k] = (out[k] ?? 1) * v;
+  return out;
 }
 
 /** 학생 진영의 유닛을 놓는다(능력치·태그). 효과 등록은 registerTeam에서 */
@@ -123,12 +133,21 @@ function registerTeam(c: Battle, team: StudentTeam, strategies: readonly string[
   for (const u of c.units.filter((x) => x.side === side)) {
     const bps = team.runAtkBpsByUnit?.[u.key];
     if (bps) c.mod(u, { atkPct: bps }, 'run_stacks');
+    const st = team.statBpsByUnit?.[u.key];
+    if (st && (st.atk || st.hp || st.spd || st.shield)) c.mod(u, { ...(st.atk ? { atkPct: st.atk } : {}), ...(st.hp ? { hpPct: st.hp } : {}), ...(st.spd ? { spd: st.spd } : {}), ...(st.shield ? { shieldGiven: st.shield } : {}) }, 'pvp_balance');
   }
   if (team.fullEnergyUnitIds?.length) c.on('battle_start', () => {
     for (const u of c.front(side).filter((x) => team.fullEnergyUnitIds!.includes(x.key))) {
       c.proc('synergy', 'syn_unique_head_prefect', '푹 쉬었다 · 에너지 100', u);
       c.gainEnergy(u, 100);
     }
+  });
+
+  // PvP 밸런스: 이 진영 시너지 발동 피해 보정(fx 이름이 syn_<시너지>_… 인 타격)
+  const sdm = Object.entries(team.synergyDmgBps ?? {}).filter(([, v]) => v);
+  if (sdm.length) c.hook((h) => {
+    if (h.src.side !== side || !h.fx) return;
+    for (const [sid, v] of sdm) if (h.fx.startsWith(`${sid}_`)) { h.mul *= Math.max(0, 1 + v / 10000); return; }
   });
 
   // ── 시너지 ──
@@ -155,7 +174,7 @@ export function createBattle(pack: ContentPack, input: BattleInput): Battle {
   const opp = input.opponent;
   const ally: StudentTeam = {
     side: 'ally', units: input.allies, activeTiers: input.activeTiers, ooparts: input.ooparts,
-    runAtkBpsByUnit: input.runAtkBpsByUnit, fullEnergyUnitIds: input.fullEnergyUnitIds, serikaWins: input.serikaWins,
+    runAtkBpsByUnit: input.runAtkBpsByUnit, statBpsByUnit: input.statBpsByUnit, synergyDmgBps: input.synergyDmgBps, fullEnergyUnitIds: input.fullEnergyUnitIds, serikaWins: input.serikaWins,
   };
   const { tiers, scale } = battleTiers(pack, input.allies.map((a) => a.unitId), input.activeTiers);
   c.tiers = tiers;
@@ -172,13 +191,13 @@ export function createBattle(pack: ContentPack, input: BattleInput): Battle {
       frontUltEnergy: 100, frontSkillCdBonus: 0, nonCritBps: 0, gold: [],
       input: {
         ...input, allies: opp.units, enemies: [], activeTiers: opp.activeTiers, strategies: opp.strategies, ooparts: opp.ooparts,
-        runAtkBpsByUnit: opp.runAtkBpsByUnit, fullEnergyUnitIds: opp.fullEnergyUnitIds, dessert: opp.dessert, dessertHalf: opp.dessertHalf,
+        runAtkBpsByUnit: opp.runAtkBpsByUnit, statBpsByUnit: opp.statBpsByUnit, synergyDmgBps: opp.synergyDmgBps, synergyScale: opp.synergyScale, fullEnergyUnitIds: opp.fullEnergyUnitIds, dessert: opp.dessert, dessertHalf: opp.dessertHalf,
         gameDevBugs: opp.gameDevBugs, serikaWins: opp.serikaWins, opponent: undefined,
       },
     };
     foe = {
-      team: { side: 'enemy', units: opp.units, activeTiers: opp.activeTiers, ooparts: opp.ooparts, runAtkBpsByUnit: opp.runAtkBpsByUnit, fullEnergyUnitIds: opp.fullEnergyUnitIds, serikaWins: opp.serikaWins },
-      scale: ft.scale, strategies: opp.strategies,
+      team: { side: 'enemy', units: opp.units, activeTiers: opp.activeTiers, ooparts: opp.ooparts, runAtkBpsByUnit: opp.runAtkBpsByUnit, statBpsByUnit: opp.statBpsByUnit, synergyDmgBps: opp.synergyDmgBps, fullEnergyUnitIds: opp.fullEnergyUnitIds, serikaWins: opp.serikaWins },
+      scale: mergeScale(ft.scale, opp.synergyScale), strategies: opp.strategies,
     };
     addStudents(c, foe.team);
   } else {
@@ -223,7 +242,7 @@ export function createBattle(pack: ContentPack, input: BattleInput): Battle {
     return false;
   });
 
-  registerTeam(c, ally, input.strategies, scale);
+  registerTeam(c, ally, input.strategies, mergeScale(scale, input.synergyScale));
   if (foe) registerTeam(c.view('enemy'), foe.team, foe.strategies, foe.scale);
 
   c.finalizeHp();

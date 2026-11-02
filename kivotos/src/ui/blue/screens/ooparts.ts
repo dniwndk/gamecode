@@ -14,7 +14,13 @@ const SOURCE_TITLE: Record<string, [string, string]> = {
   elite: ['정예 전리품 · 오파츠', '정예를 쓰러뜨린 자리에서 오파츠를 발견했어요.'],
   boss: ['보스 전리품 · 희귀 오파츠', '보스가 지키던 희귀 오파츠 중 하나를 가져가요.'],
   rescue: ['구조 요청', '연패 끝에 지원 물자가 도착했어요. 오파츠 하나를 받아요.'],
+  creep: ['크립 전리품 · 오파츠', '크립 라운드 전리품이에요. 이번 라운드는 모두 같은 등급의 오파츠를 하나씩 받아요.'],
 };
+
+/** 멀티 크립 라운드 보상 문구 */
+export function creepRewardText(c: { kind: 'equipment' } | { kind: 'oopart'; rarity: string }): string {
+  return c.kind === 'equipment' ? '장비 3택1' : `${OOPART_RARITY[c.rarity]?.[0] ?? ''} 오파츠 1개`;
+}
 
 /** 오파츠 그림(없으면 번호) */
 export function oopartArt(ctx: Ctx, id: string, className = 'k-oop-img'): HTMLElement {
@@ -28,6 +34,7 @@ export function oopartBody(ctx: Ctx, id: string): HTMLElement[] {
   if (!o) return [h('p', null, id)];
   const out: HTMLElement[] = [h('p', { class: 'k-oop-benefit' }, readable(ctx, o.benefit))];
   if (o.drawback) out.push(h('p', { class: 'k-oop-drawback' }, `대가 · ${readable(ctx, o.drawback)}`));
+  if (o.pvp) out.push(h('p', { class: 'k-oop-pvp' }, readable(ctx, o.pvp)));
   out.push(h('p', { class: 'k-oop-flavor' }, o.flavor));
   const sup = oopartSupportLine(ctx, id);
   if (sup) out.push(sup);

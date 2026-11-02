@@ -506,6 +506,11 @@ const ooparts = oopRows.map(({ layout, heading, c }) => {
   item.sourceHeading = heading;
   return item;
 });
+// 10절 멀티 PvP 효과(D-052) → ooparts[].pvp
+for (const c of section(oop, '## 10. 멀티 PvP 효과 (D-052)').filter((l) => /^\| [CURL]\d{2} \|/.test(l)).map(cells)) {
+  const item = oopByCode.get(c[0]) ?? fail(`PvP 효과 표의 ${c[0]}가 없음`);
+  item.pvp = plain(c[1]);
+}
 for (const item of ooparts) {
   if (!item.recipe) continue;
   const parts = item.recipe.map((code) => oopByCode.get(code) ?? fail(`${item.id}: 레시피의 ${code}가 없음`));

@@ -23,6 +23,7 @@ import { mountRunSetup } from './screens/runSetup';
 import { mountSettings } from './screens/settings';
 import { mountStrategyChoice } from './screens/strategy';
 import { mountLobby } from './screens/lobby';
+import { mountChatDock } from './multi/chatDock';
 import { createMultiController, type MultiController } from './multi/controller';
 
 export interface Settings {
@@ -463,5 +464,7 @@ export function mountBlueUi(root: HTMLElement, soloDriver: UiDriver): void {
     render(st);
   }
   ctx.multi = createMultiController(driver.catalog, (d) => switchTo(d ?? soloDriver), (m) => ctx.toast(m, 'error'));
+  // 방에 있는 동안 떠 있는 채팅 창
+  stage.insertBefore(mountChatDock(ctx.multi, (m) => ctx.toast(m, 'error')).el, layer);
   render(driver.get());
 }

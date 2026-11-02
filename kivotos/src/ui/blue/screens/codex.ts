@@ -43,6 +43,7 @@ export function mountCodex(ctx: Ctx): Screen {
             hidden ? h('p', { class: 'k-muted' }, '특정 오파츠를 모으면 합쳐져 나타나요. 한 번 완성하면 조합법이 공개돼요.') : h('p', null, readable(ctx, o.benefit)),
             !hidden && o.recipe ? h('p', { class: 'k-oop-recipe-line' }, `조합 · ${o.recipe.map(oopName).join(' + ')}`) : null,
             !hidden && o.drawback ? h('p', { class: 'k-oop-drawback' }, `대가 · ${readable(ctx, o.drawback)}`) : null,
+            !hidden && o.pvp ? h('p', { class: 'k-oop-pvp' }, readable(ctx, o.pvp)) : null,
             !hidden ? h('p', { class: 'k-oop-flavor' }, o.flavor) : null,
             !hidden ? oopartSupportLine(ctx, o.id) : null));
       })))));

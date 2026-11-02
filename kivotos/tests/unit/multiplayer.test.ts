@@ -6,6 +6,8 @@ import { createGuest, createHost, type Conn, type Guest, type Host } from '../..
 import type { RoomClock } from '../../src/app/multi/room';
 import type { UiDriver } from '../../src/app/view';
 import { contentPack as pack } from '../../src/content';
+import { creepRewardFor, MULTI_DEFEAT_DAMAGE } from '../../src/app/run/multiRules';
+import { CHAT_BURST, CHAT_MAX_LENGTH, cleanChat } from '../../src/app/multi/chat';
 
 const catalog = { pack, rules: pack.rules, validation: { errors: [], warnings: [] }, assetUrl: () => null } as unknown as ContentCatalog;
 
@@ -151,6 +153,8 @@ describe('멀티플레이 방', () => {
           const b = x.get().run?.lastBattle;
           if (!b || x.get().phase !== 'BATTLE' || seen.get(b.battleId)?.has(i)) continue;
           expect(b.events.length).toBeGreaterThan(0);
+          // 크립 라운드(각 장 5번째)는 몬스터전이라 결과를 맞대 보지 않는다
+          if (x.get().run!.nodeType === 'elite') continue;
           expect(b.combatants.some((c) => c.ref.side === 'enemy' && c.unitId)).toBe(true);
           if (!seen.has(b.battleId)) { seen.set(b.battleId, new Map()); rounds++; }
           seen.get(b.battleId)!.set(i, x.get().run!.lastResult!.outcome);
@@ -170,6 +174,64 @@ describe('멀티플레이 방', () => {
     let opposite = 0;
     for (const m of seen.values()) if (m.size === 2) { const [x, y] = [...m.values()]; if (x !== y) opposite++; }
     expect(opposite).toBeGreaterThan(0);
+  });
+
+  it('패배 피해는 10, 장마다 1~4는 PvP·5번째는 정예 크립 라운드(보스 없음): 크립은 모두 같은 보상(오파츠면 같은 등급)', async () => {
+    const { host, guests } = setup(3);
+    await flush();
+    host.start();
+    await flush();
+    const drivers: UiDriver[] = [host.local()!, ...guests.map((g) => g.driver)];
+    const rarity = new Map(pack.ooparts.map((o) => [o.id, o.rarity]));
+    /** 장 → 자리별 크립 보상(오파츠 등급 또는 'equipment') */
+    const got = new Map<number, Map<number, string>>();
+    const losses: number[] = [];
+    const seenBattle = new Set<string>();
+    let creepBattles = 0;
+    for (let guard = 0; guard < 4000; guard++) {
+      let done = 0;
+      for (const [i, d] of drivers.entries()) {
+        const s = d.get();
+        const run = s.run;
+        if (run && s.phase === 'OOPART_CHOICE' && run.ooparts.offer?.source === 'creep') {
+          expect(run.ooparts.offer.grant).toBe(true);
+          expect(run.ooparts.offer.ids.length).toBe(1);
+          if (!got.has(run.chapter)) got.set(run.chapter, new Map());
+          got.get(run.chapter)!.set(i, rarity.get(run.ooparts.offer.ids[0])!);
+        }
+        if (run && s.phase === 'EQUIPMENT_CHOICE' && run.nodeType === 'elite') {
+          if (!got.has(run.chapter)) got.set(run.chapter, new Map());
+          got.get(run.chapter)!.set(i, 'equipment');
+        }
+        if (run && s.phase === 'BATTLE' && run.lastBattle && !seenBattle.has(`${i}|${run.lastBattle.battleId}`)) {
+          seenBattle.add(`${i}|${run.lastBattle.battleId}`);
+          const res = run.lastResult!;
+          if (res.outcome === 'loss') losses.push(res.runHp.breakdown[0]?.value ?? -1);
+          // 보스 라운드는 없고, 정예(크립)는 각 장 5번째뿐이다
+          expect(run.nodeType).not.toBe('boss');
+          expect(run.nodeType === 'elite').toBe(run.battle === 5);
+          if (run.nodeType === 'elite') {
+            creepBattles++;
+            const elite = pack.nodes.find((n) => n.chapter === run.chapter && n.type === 'elite')!;
+            expect(run.nodeId).toBe(elite.id);
+            // 크립 라운드: 상대는 몬스터(학생이 아님)
+            expect(run.lastBattle.combatants.some((c) => c.ref.side === 'enemy' && c.unitId)).toBe(false);
+          }
+        }
+        const r = await step(d);
+        await flush();
+        if (r === 'done') done++;
+      }
+      if (done === drivers.length) break;
+    }
+    expect(losses.length).toBeGreaterThan(0);
+    expect(losses.every((v) => v === MULTI_DEFEAT_DAMAGE)).toBe(true);
+    expect(creepBattles).toBeGreaterThan(0);
+    expect(got.size).toBeGreaterThan(0);
+    for (const [chapter, bySeat] of got) {
+      const want = creepRewardFor(pack, 'ROOM-SEED', chapter);
+      for (const v of bySeat.values()) expect(v).toBe(want.kind === 'equipment' ? 'equipment' : want.rarity);
+    }
   });
 
   it('준비 마감: 절반 이상이 대기하면 시계가 돌고, 마감되면 남은 사람도 지금 편성으로 출격한다', async () => {
@@ -200,3 +262,63 @@ describe('멀티플레이 방', () => {
     expect(host.local()!.get().phase).toBe('RUN_COMPLETE');
   });
 });
+
+describe('멀티플레이 채팅', () => {
+  it('누가 보내든 모두가 같은 기록을 받고, 늦게 들어온 사람도 지난 기록을 본다', async () => {
+    const { host, guests } = setup(2);
+    await flush();
+    expect(host.say('  안녕   하세요 ')).toBeNull();
+    expect(guests[0].say('반가워요')).toBeNull();
+    await flush();
+    // 나중에 들어온 사람
+    const [h, g] = pipe();
+    host.accept(h);
+    const late = createGuest(catalog, g, '늦은사람');
+    await flush();
+    const texts = (x: { text: string; system?: boolean }[]) => x.filter((m) => !m.system).map((m) => m.text);
+    expect(texts(host.room.chat.history())).toEqual(['안녕 하세요', '반가워요']);
+    expect(texts(guests[0].chat())).toEqual(['안녕 하세요', '반가워요']);
+    expect(texts(late.chat())).toEqual(['안녕 하세요', '반가워요']);
+    // 보낸 사람 번호로 내 줄을 가린다
+    const mine = guests[0].chat().find((m) => m.text === '반가워요')!;
+    expect(mine.from).toBe(guests[0].you());
+    expect(mine.name).toBe('참가자1');
+    expect(host.room.chat.history().some((m) => m.system && m.text.includes('늦은사람'))).toBe(true);
+  });
+
+  it('빈 문장·긴 문장·도배를 거른다', async () => {
+    const { host, guests } = setup(2);
+    await flush();
+    const errors: string[] = [];
+    guests[0].onChatError((m) => errors.push(m));
+    expect(host.say('   ')).not.toBeNull();
+    expect(guests[0].say('\n\t')).not.toBeNull();
+    host.say('가'.repeat(500));
+    expect([...host.room.chat.history().at(-1)!.text].length).toBe(CHAT_MAX_LENGTH);
+    // 연결 너머로 직접 보낸 이상한 값도 방장이 거른다
+    for (let i = 0; i < CHAT_BURST + 2; i++) guests[0].say(`도배 ${i}`);
+    await flush();
+    const spam = host.room.chat.history().filter((m) => m.text.startsWith('도배'));
+    expect(spam.length).toBe(CHAT_BURST);
+    expect(errors.length).toBe(2);
+    expect(cleanChat({ text: 'x' })).toBeNull();
+    expect(cleanChat('a\u202eb')).toBe('a b');
+  });
+
+  it('게임 중에도 채팅이 오가고, 순위가 정해지면 방 알림이 남는다', async () => {
+    const { host, guests } = setup(2);
+    await flush();
+    host.start();
+    await flush();
+    expect(guests[0].say('준비 끝')).toBeNull();
+    await flush();
+    expect(host.room.chat.history().at(-1)!.text).toBe('준비 끝');
+    // 참가자가 나가면 순위 알림
+    await guests[0].driver.send('ABANDON_RUN');
+    await flush();
+    const sys = host.room.chat.history().filter((m) => m.system).map((m) => m.text);
+    expect(sys.some((t) => t.includes('참가자1') && t.includes('나갔어요'))).toBe(true);
+    expect(sys.some((t) => t.includes('우승'))).toBe(true);
+  });
+});
+

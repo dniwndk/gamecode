@@ -8,13 +8,14 @@
 import type { CommandResult, ContentCatalog, GameCommandType, GameSnapshot, RunPhase } from '../gameClient';
 import type { BaseStats, NodeDefinition, OopartSourceId, UnitDefinition } from '../../core/types/content';
 import {
-  acquireOopart, costOdds, emptyOopartProfile, emptyRunStacks, resolveAwakenings, runStackLines, settleRunStacks, stackBattleBonuses, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer,
+  acquireOopart, costOdds, emptyOopartProfile, emptyRunStacks, resolveAwakenings, runStackLines, settleRunStacks, stackBattleBonuses, oopartModifiers, oopartSupport, emptyOopartRunState, markRescueUsed, oopartSkipGold, recipeBadge, rescueDue, Rng, rollOopartOffer, rollOopartOfRarity,
   rollShopDetailed, simulateBattle, synergyCondition, type BattleAllyInput, type BattleOutput, type BattleTeamInput, type OopartModifiers, type OwnedCopy, type RunStacks, type OopartProfile, type OopartRunState,
 } from '../runRules';
 import type {
   BattleEventView, BattleView, Cue, MultiView, ResultView, RunView, ShopSlotView, SynergyStateView, UiDriver, UiState,
   UnitInstanceView, Zone,
 } from '../view';
+import { isCreepNode, multiNode, MULTI_DEFEAT_DAMAGE, type CreepReward } from './multiRules';
 
 interface Inst { instanceId: string; unitId: string; star: 1 | 2 | 3; equipment: string[] }
 
@@ -70,6 +71,8 @@ interface RunState {
   ready: boolean;
   /** 멀티: 방이 정한 최종 순위(정해지면 다음 확인에서 런이 끝난다) */
   place: number | null;
+  /** 멀티: 이번 크립 라운드 보상(전투 확인 뒤 지급) */
+  creep: CreepReward | null;
 }
 
 /** 오파츠 레시피 공개 기록(모든 판 공통). 화면 계층이 localStorage 등으로 넣어 준다. 없으면 이번 세션 메모리에만 */
@@ -96,6 +99,8 @@ export interface RunSession extends UiDriver {
   team(): BattleTeamInput | null;
   /** 방이 돌린 PvP 전투 결과를 이 플레이어 시점으로 정산한다(출격과 같은 처리) */
   applyBattle(out: BattleOutput, meta: { opponentName: string; battleId: string }): void;
+  /** 크립 라운드: 지금 노드의 몬스터와 싸우고(씨앗은 방이 준다), 확인 뒤 보상을 받는다 */
+  runCreep(seed: string, reward: CreepReward): void;
   /** 공용 풀 계산용: 가진 학생, 상점에 떠 있는 칸 */
   ownedCopies(): OwnedCopy[];
   shopShown(): (string | null)[];
@@ -152,7 +157,8 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
   const listeners = new Set<(s: UiState) => void>();
 
   // ── 파생 값 ─────────────────────────────────────────────
-  const node = (r: RunState): NodeDefinition => pack.nodes.find((n) => n.chapter === r.chapter && n.battle === r.battle) ?? pack.nodes[0];
+  // 멀티는 라운드 칸 규칙이 다르다(D-052: 1~4 PvP, 5번째 정예 크립, 보스 없음)
+  const node = (r: RunState): NodeDefinition => multi ? multiNode(pack, r.chapter, r.battle) : pack.nodes.find((n) => n.chapter === r.chapter && n.battle === r.battle) ?? pack.nodes[0];
   const xpToNext = (lv: number) => rules.xp.xpToNext[String(lv)] ?? null;
   const all = (r: RunState) => [...r.front, ...r.rear, ...r.bench].filter((x): x is Inst => !!x);
   const deployedInsts = (r: RunState) => [...r.front, ...r.rear].filter((x): x is Inst => !!x);
@@ -315,7 +321,8 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
   /** 정예·1·2장 보스 승리 뒤 오파츠, 없으면 다음 노드로 */
   function afterRewards(r: RunState) {
     const n = node(r);
-    const source: OopartSourceId | null = n.type === 'elite' ? 'elite' : n.type === 'boss' ? 'boss' : null;
+    // 멀티 크립 라운드(각 장 5번째, 정예 칸)는 크립 보상만 준다
+    const source: OopartSourceId | null = multi && isCreepNode(n.type) ? null : n.type === 'elite' ? 'elite' : n.type === 'boss' ? 'boss' : null;
     if (source && offerOoparts(r, source, 'advance')) return;
     advanceNode(r);
     phase = 'NEXT_NODE';
@@ -345,6 +352,8 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
   }
 
   function defeatDamage(r: RunState, survivingFront: number): { total: number; parts: { label: string; value: number }[] } {
+    // 멀티: 패배마다 고정 피해(D-050)
+    if (multi) return { total: MULTI_DEFEAT_DAMAGE, parts: [{ label: '패배', value: MULTI_DEFEAT_DAMAGE }] };
     const n = node(r);
     const parts = [{ label: '패배', value: rules.defeatDamage.chapterBase[r.chapter - 1] }];
     if (survivingFront && rules.defeatDamage.perSurvivingEnemyFront) parts.push({ label: `남은 적 전방 ${survivingFront}명 × ${rules.defeatDamage.perSurvivingEnemyFront}`, value: survivingFront * rules.defeatDamage.perSurvivingEnemyFront });
@@ -497,12 +506,12 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
     };
   }
 
-  function simulate(r: RunState): { battle: BattleView; result: ResultView; stacks: RunStacks } {
+  function simulate(r: RunState, seed = `${r.seed}|battle|${r.chapter}-${r.battle}`): { battle: BattleView; result: ResultView; stacks: RunStacks } {
     const n = node(r);
     const cand = n.candidates.find((c) => c.id === r.chosen) ?? n.candidates[0];
     const t = teamOf(r);
     const out = simulateBattle(pack, {
-      seed: `${r.seed}|battle|${r.chapter}-${r.battle}`,
+      seed,
       nodeType: n.type,
       chapter: r.chapter,
       statScaleBps: n.statScaleBps,
@@ -613,7 +622,7 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
       },
       recruited: new Set(chosen.map((u) => u.id)), deployed: new Set(),
       oop: { ...emptyOopartRunState(), owned: [...(opts.ooparts ?? [])] }, oopOffer: null, oopStartDone: false,
-      runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false, freeRerollsUsed: 0,
+      creep: null, runHpMax: rules.run.startRunHp, strategyPicksLeft: 1, levelUpPending: false, lastStandUsed: false, freeRerollsUsed: 0,
       stacks: emptyRunStacks(), awakenedFrom: new Set(), awakenedInto: new Set(), ready: false, place: null,
       shopRng: Rng.forStream(seed, 'shop'), rewardRng: Rng.forStream(seed, 'reward'),
     };
@@ -659,7 +668,7 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
         const res = r.lastResult;
         const n = node(r);
         if (!res) return no('정산할 전투가 없어요', 'WRONG_PHASE');
-        if (multi) return ok(afterMultiBattle(r, res, n));
+        if (multi) return ok(afterMultiBattle(r, res));
         if (r.runHp <= 0 || (res.outcome === 'loss' && n.type === 'boss' && r.chapter === rules.run.chapters)) { phase = 'RUN_FAILED'; return ok(); }
         if (res.outcome === 'win' && n.type === 'boss' && r.chapter === rules.run.chapters) { phase = 'RUN_COMPLETE'; return ok(); }
         if (res.outcome === 'win' && (n.type === 'elite' || n.type === 'boss')) {
@@ -875,19 +884,27 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
   }
 
   /**
-   * 멀티 전투 확인 뒤: 탈락·최종 순위면 런 끝, 정예·보스 라운드는 승패와 관계없이 장비(와 오파츠) 보상,
+   * 멀티 전투 확인 뒤: 탈락·최종 순위면 런 끝, 크립 라운드(각 장 5번째)는 승패와 관계없이 크립 보상,
    * 연패 구조 요청은 솔로와 같다. 마지막 라운드 뒤에는 방이 순위를 정할 때까지 결과 화면에 머문다.
    */
-  function afterMultiBattle(r: RunState, res: ResultView, n: NodeDefinition): void {
+  function afterMultiBattle(r: RunState, res: ResultView): void {
     if (r.place !== null) { phase = r.place === 1 ? 'RUN_COMPLETE' : 'RUN_FAILED'; return; }
     if (r.runHp <= 0) { phase = 'RUN_FAILED'; return; }
     if (r.chapter === rules.run.chapters && r.battle >= rules.run.battlesPerChapter) { phase = 'RESULT'; return; }
-    if (n.type === 'elite' || n.type === 'boss') {
+    // 크립 라운드 보상(승패와 관계없이, 모두 같은 종류·등급)
+    const creep = r.creep;
+    r.creep = null;
+    if (creep?.kind === 'oopart') {
+      const id = rollOopartOfRarity(pack, r.oop, creep.rarity, r.rewardRng);
+      if (id) { r.oopOffer = { ids: [id], source: 'creep', grant: true, after: 'advance' }; phase = 'OOPART_CHOICE'; return; }
+      r.gold += oopartSkipGold(pack);
+    }
+    if (creep?.kind === 'equipment') {
       r.offers = { equipment: shuffle(pack.equipment.filter((e) => e.chapters.includes(r.chapter))).slice(0, 3).map((e) => e.id) };
       phase = 'EQUIPMENT_CHOICE';
       return;
     }
-    if (res.outcome === 'loss' && r.streak.kind === 'loss' && rescueDue(pack, r.oop, r.streak.count)) {
+    if (!creep && res.outcome === 'loss' && r.streak.kind === 'loss' && rescueDue(pack, r.oop, r.streak.count)) {
       r.oop = markRescueUsed(r.oop);
       if (offerOoparts(r, 'rescue', 'advance')) return;
     }
@@ -956,6 +973,13 @@ export function createRunSession(catalog: ContentCatalog, base: GameSnapshot, op
       if (!r) return;
       const label = `${r.chapter}-${r.battle} vs ${meta.opponentName}`;
       finishBattle(r, settle(r, out, activeTierMap(r), meta.battleId, label));
+      emit();
+    },
+    runCreep(seed, reward) {
+      const r = run;
+      if (!r) return;
+      r.creep = reward;
+      finishBattle(r, simulate(r, seed));
       emit();
     },
     ownedCopies: () => allInst().map((i) => ({ unitId: i.unitId, star: i.star })),

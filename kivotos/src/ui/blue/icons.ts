@@ -44,10 +44,12 @@ const PATHS: Record<string, string> = {
   flag: 'M5 21V4M5 4h12l-2 4 2 4H5',
   check: 'M4 12.5l5 5L20 6.5',
   map: 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14',
+  chat: 'M4 5h16v11H9l-5 4zM8 9.5h8M8 12.5h5',
+  send: 'M3 11.5 21 3l-6.5 18-3-7.5zM11.5 13.5 21 3',
 };
 
 /** 선이 필요한 아이콘(나머지는 채움) */
-const STROKED = new Set(['vault', 'reroll', 'lock', 'unlock', 'front', 'rear', 'bench', 'equipment', 'strategy', 'pin', 'info', 'close', 'codex', 'records', 'import', 'export', 'warning', 'back', 'home', 'plus', 'minus', 'sword', 'users', 'flag', 'check', 'map', 'settings', 'sell']);
+const STROKED = new Set(['vault', 'reroll', 'lock', 'unlock', 'front', 'rear', 'bench', 'equipment', 'strategy', 'pin', 'info', 'close', 'codex', 'records', 'import', 'export', 'warning', 'back', 'home', 'plus', 'minus', 'sword', 'users', 'flag', 'check', 'map', 'settings', 'sell', 'chat', 'send']);
 
 export function icon(name: string, size = 24, extraClass = ''): SVGElement {
   const d = PATHS[name] ?? PATHS.dot;

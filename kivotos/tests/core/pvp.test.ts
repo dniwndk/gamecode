@@ -113,3 +113,64 @@ describe('PvP 전투', () => {
     expect(outcomes.loss).toBeGreaterThan(60);
   });
 });
+
+describe('PvP 밸런스 표(D-051)', () => {
+  const hyakki = ['u_wakamo', 'u_izuna', 'u_tsubaki', 'u_tsukuyo'].map((id, i) => unit(id, i, 'front'))
+    .concat(['u_niya', 'u_mimori', 'u_shizuko', 'u_chise'].map((id, i) => unit(id, i, 'rear')));
+  const trin = ['u_mika', 'u_tsurugi', 'u_mine', 'u_azusa'].map((id, i) => unit(id, i, 'front'))
+    .concat(['u_koharu', 'u_mashiro', 'u_hifumi', 'u_hanako'].map((id, i) => unit(id, i, 'rear')));
+
+  it('켜진 시너지에만(최소 인원 이상) 보정이 붙는다', async () => {
+    const { withPvpBalance } = await import('../../src/app/run/multiRules');
+    const t = withPvpBalance(pack, team(hyakki), { syn_hyakkiyako: { power: 0.5, atk: -1000, hp: -1000 }, syn_trinity: { power: 0.5, min: 6 } });
+    expect(t.synergyScale).toEqual({ syn_hyakkiyako: 0.5 });
+    expect(t.synergyDmgBps).toEqual({ syn_hyakkiyako: -5000 });
+    expect(Object.values(t.statBpsByUnit).every((x) => x.atk === -1000 && x.hp === -1000)).toBe(true);
+    const few = withPvpBalance(pack, team(trin.slice(0, 4)), { syn_trinity: { power: 0.5, min: 6 } });
+    expect(few.synergyScale).toEqual({});
+  });
+
+  it('보정은 그 편성의 시너지 세기·능력치를 실제로 바꾼다', () => {
+    const base = team(hyakki);
+    const weak: BattleTeamInput = { ...base, synergyScale: { syn_hyakkiyako: 0.3 }, synergyDmgBps: { syn_hyakkiyako: -7000 }, statBpsByUnit: Object.fromEntries(hyakki.map((u) => [u.unitId, { hp: -5000 }])) };
+    // 상대 진영으로 둘 때와 아군 진영으로 둘 때 모두 적용된다
+    const asFoe = (t: BattleTeamInput) => simulateBattle(pack, pvp(team(trin), t, 'BAL'));
+    const asAlly = (t: BattleTeamInput) => simulateBattle(pack, { ...pvp(t, team(trin), 'BAL'), statBpsByUnit: t.statBpsByUnit, synergyDmgBps: t.synergyDmgBps, synergyScale: t.synergyScale });
+    const hpOf = (out: ReturnType<typeof simulateBattle>, side: 'ally' | 'enemy') => out.combatants.filter((c) => c.ref.side === side).reduce((a, c) => a + c.maxHp, 0);
+    expect(hpOf(asFoe(weak), 'enemy')).toBeLessThan(hpOf(asFoe(base), 'enemy') * 0.6);
+    expect(hpOf(asAlly(weak), 'ally')).toBeLessThan(hpOf(asAlly(base), 'ally') * 0.6);
+    const dmg = (out: ReturnType<typeof simulateBattle>, side: 'ally' | 'enemy') => out.events.filter((e) => e.t === 'damage' && e.source.side === side).slice(0, 30).reduce((a, e) => a + (e.t === 'damage' ? e.amount : 0), 0);
+    expect(dmg(asFoe(weak), 'enemy')).toBeLessThan(dmg(asFoe(base), 'enemy'));
+    expect(dmg(asAlly(weak), 'ally')).toBeLessThan(dmg(asAlly(base), 'ally'));
+  });
+});
+
+describe('PvP 오파츠(D-052): 보스·정예 전용 효과의 PvP판', () => {
+  const procs = (out: ReturnType<typeof simulateBattle>, id: string) => out.events.filter((e) => e.t === 'proc' && e.cause.id === id).length;
+  /** 그 진영의 첫 피해(같은 씨앗이면 첫 공격은 같은 행동이라 피해 보정만 차이 난다) */
+  const dealt = (out: ReturnType<typeof simulateBattle>, side: 'ally' | 'enemy') => { const e = out.events.find((x) => x.t === 'damage' && x.source.side === side); return e?.t === 'damage' ? e.amount : 0; };
+
+  it('예언 회로: PvP에서 피해 +10%와 첫 필살기 피해 감소가 양쪽 진영에서 돈다', () => {
+    const plain = simulateBattle(pack, pvp(team(GEHENNA), team(MILLENNIUM), 'PROPH'));
+    const mine = simulateBattle(pack, pvp(team(GEHENNA, { ooparts: ['oop_prophecy_circuit'] }), team(MILLENNIUM), 'PROPH'));
+    const theirs = simulateBattle(pack, pvp(team(GEHENNA), team(MILLENNIUM, { ooparts: ['oop_prophecy_circuit'] }), 'PROPH'));
+    expect(procs(plain, 'oop_prophecy_circuit')).toBe(0);
+    expect(procs(mine, 'oop_prophecy_circuit')).toBe(1);
+    expect(procs(theirs, 'oop_prophecy_circuit')).toBe(1);
+    expect(dealt(mine, 'ally')).toBeGreaterThan(dealt(plain, 'ally'));
+    expect(dealt(theirs, 'enemy')).toBeGreaterThan(dealt(plain, 'enemy'));
+  });
+
+  it('위니페소키 돌: PvP에서 컨트롤러 기절에 걸리고 전투당 3회까지', () => {
+    const ctrl = [unit('u_kanna', 0, 'front'), unit('u_koyuki', 1, 'front'), unit('u_kayoko', 2, 'front'), unit('u_hare', 0, 'rear'), unit('u_seia', 1, 'rear'), unit('u_meru', 2, 'rear')];
+    let fired = 0;
+    for (let i = 0; i < 20; i++) {
+      const out = simulateBattle(pack, pvp(team(ctrl, { ooparts: ['oop_winnipesaukee_stone'] }), team(MILLENNIUM), `WIN${i}`));
+      const n = procs(out, 'oop_winnipesaukee_stone');
+      expect(n).toBeLessThanOrEqual(3);
+      fired += n;
+      expect(procs(simulateBattle(pack, pvp(team(ctrl), team(MILLENNIUM), `WIN${i}`)), 'oop_winnipesaukee_stone')).toBe(0);
+    }
+    expect(fired).toBeGreaterThan(0);
+  });
+});

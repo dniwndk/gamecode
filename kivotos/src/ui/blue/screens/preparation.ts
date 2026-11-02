@@ -6,7 +6,7 @@ import {
 import { cls, h } from '../dom';
 import { icon } from '../icons';
 import { fxList } from '../summary';
-import { oopartChip } from './ooparts';
+import { creepRewardText, oopartChip } from './ooparts';
 import type { MultiView, RunView, UiState, UnitInstanceView, Zone } from '../model';
 
 type Loc = { zone: Zone; index: number };
@@ -416,7 +416,8 @@ export function mountPreparation(ctx: Ctx, s0: UiState): Screen {
 export function scorePanel(ctx: Ctx, run: RunView, mp: MultiView): HTMLElement {
   const deadlineAt = mp.deadlineInMs === null ? null : Date.now() + mp.deadlineInMs;
   return h('aside', { class: 'k-panel k-intel k-score', 'aria-label': '점수판' },
-    h('header', { class: 'k-panel-head' }, h('h2', null, '점수판'), h('span', { class: `k-node-badge is-${run.nodeType}` }, icon('users', 16), `라운드 ${mp.round}/${mp.totalRounds}`)),
+    h('header', { class: 'k-panel-head' }, h('h2', null, '점수판'), h('span', { class: `k-node-badge is-${run.nodeType}` }, icon(mp.creep ? 'diamond' : 'users', 16), `라운드 ${mp.round}/${mp.totalRounds}${mp.creep ? ' · 크립' : ''}`)),
+    mp.creep ? creepBox(ctx, run, mp.creep) : null,
     deadlineAt !== null && !mp.ready ? h('p', { class: 'k-deadline' }, icon('warning', 18), '준비 마감까지 ', h('b', { 'data-deadline': String(deadlineAt) }, `${Math.ceil(mp.deadlineInMs! / 1000)}초`), ' · 지나면 지금 편성으로 출격해요') : null,
     h('ol', { class: 'k-score-list' }, ...mp.players.map((p) => {
       const pct = p.runHpMax ? Math.max(0, Math.min(100, (p.runHp / p.runHpMax) * 100)) : 0;
@@ -432,6 +433,21 @@ export function scorePanel(ctx: Ctx, run: RunView, mp: MultiView): HTMLElement {
       return row;
     })),
     mp.lastOpponent ? h('p', { class: 'k-muted k-score-last' }, `지난 상대: ${mp.lastOpponent}`) : null,
-    h('div', { class: 'k-defeat' }, h('span', null, '패배하면 런 체력'), h('b', null, `−${run.node.defeatDamagePreview}+`)),
-    h('p', { class: 'k-muted k-score-note' }, '패배 피해는 장 기본값에 상대의 남은 전방 학생 수만큼 더해져요.'));
+    h('div', { class: 'k-defeat' }, h('span', null, '패배하면 런 체력'), h('b', null, `−${run.node.defeatDamagePreview}`)),
+    h('p', { class: 'k-muted k-score-note' }, mp.creep ? '크립 라운드도 지면 런 체력이 깎여요. 보상은 승패와 관계없이 받아요.' : '멀티에서는 어느 라운드든 패배하면 런 체력이 깎여요.'));
+}
+
+/** 크립 라운드: 모두가 싸울 몬스터와 모두 같은 보상 */
+function creepBox(ctx: Ctx, run: RunView, creep: NonNullable<MultiView['creep']>): HTMLElement {
+  const cand = run.node.candidates.find((c) => c.id === run.node.chosen) ?? run.node.candidates[0];
+  const all = [...cand.front, ...cand.rear];
+  const uniq = [...new Set(all.map((x) => x.enemyId))];
+  return h('section', { class: 'k-creep', 'aria-label': '크립 라운드' },
+    h('p', { class: 'k-creep-head' }, h('b', null, '크립 라운드'), ` · 보상 ${creepRewardText(creep)}`),
+    h('p', { class: 'k-muted' }, creep.kind === 'oopart' ? '모두 같은 등급의 오파츠를 받아요. 어떤 오파츠인지는 사람마다 달라요.' : '모두 장비 하나를 골라요.'),
+    h('div', { class: 'k-creep-foes' }, ...uniq.map((id) => {
+      const e = ctx.lookup.enemy(id)!;
+      const n = all.filter((x) => x.enemyId === id).length;
+      return h('span', { class: 'k-creep-foe', title: e.name }, enemyPortrait(ctx, id), h('small', null, `${e.name.replace(/\s*\(.*\)$/, '')}${n > 1 ? ` ×${n}` : ''}`));
+    })));
 }

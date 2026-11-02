@@ -166,12 +166,15 @@ export interface OopartDefinition {
   effectIds: string[];
   benefit: string;
   drawback: string | null;
+  /** 멀티 PvP에서 바뀌는 효과(보스·정예 전용 효과의 PvP판, D-052). 없으면 솔로와 같다 */
+  pvp?: string;
   /** 전설만: 재료 오파츠 ID. 모두 보유하면 자동으로 합쳐진다. */
   recipe: string[] | null;
   flavor: string;
 }
 
-export type OopartSourceId = 'run_start' | 'elite' | 'boss' | 'rescue';
+/** creep: 멀티 크립 라운드 지급(규칙 sources에는 없고 방이 등급을 정한다) */
+export type OopartSourceId = 'run_start' | 'elite' | 'boss' | 'rescue' | 'creep';
 
 export interface OopartSourceRule {
   id: OopartSourceId;

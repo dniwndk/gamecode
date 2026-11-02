@@ -7,12 +7,18 @@
 // - 살아 있는 모두가 출격 대기하면 라운드를 돌린다. 절반 이상이 대기하면 준비 마감 시계가 돈다.
 //   마감이 되면 남은 사람은 지금 편성 그대로(선택 화면은 첫 후보로) 출격한다. 연결이 끊긴 사람은 기다리지 않는다.
 // - 짝은 무작위(직전 상대는 가능하면 피함). 홀수면 한 명은 다른 플레이어의 「잔상」과 싸우고, 잔상 주인은 영향이 없다.
-// - 패배 피해는 솔로 공식(장 기본 + 남은 상대 전방 수, 정예·보스 라운드 가산). 런 체력 0이면 탈락.
+// - 라운드(D-052): 장마다 1~4번째는 PvP, 5번째는 크립 라운드(그 장 정예 칸 몬스터). 보스 라운드는 없다.
+// - 크립 라운드(D-050): 모두가 같은 몬스터와 싸운다. 승패와 관계없이 보상을 받는데,
+//   보상 종류(장비 3택1 / 오파츠 1개)와 오파츠 등급은 방이 정해 모두 같다. 어떤 오파츠가 나오는지는 사람마다 다르다.
+// - 패배 피해는 라운드와 관계없이 10(오파츠 피해 증감은 그대로). 런 체력 0이면 탈락.
+// - PvP 전투에는 시너지 밸런스 표(D-051, multiRules PVP_SYNERGY_BPS)를 양쪽에 붙인다. 크립 라운드에는 붙이지 않는다.
 // - 한 명만 남거나 마지막 라운드가 끝나면 순위(남은 체력 순)를 정한다.
 import type { ContentCatalog } from '../gameClient';
 import { flipBattleOutput, Rng, simulateBattle, type BattleTeamInput, type OwnedCopy } from '../runRules';
 import { createRunSession, type ProfileStore, type RunSession } from '../run/session';
 import type { MultiPlayerView, MultiView } from '../view';
+import { ChatLog, type ChatMessage } from './chat';
+import { creepRewardFor, isCreepNode, multiNode, withPvpBalance, type CreepReward } from '../run/multiRules';
 
 export const MAX_PLAYERS = 8;
 export const MIN_PLAYERS = 2;
@@ -61,11 +67,21 @@ export class Room {
   private rng: Rng;
   private round = 0;
   private nextId = 0;
+  /** 방 채팅(로비부터 끝까지 한 기록) */
+  readonly chat: ChatLog;
 
   constructor(catalog: ContentCatalog, opts: RoomOptions) {
     this.catalog = catalog;
     this.opts = opts;
     this.rng = Rng.forStream(opts.seed, 'setup');
+    this.chat = new ChatLog(() => opts.clock.now());
+  }
+
+  /** 플레이어 id의 채팅. 방에 없는 사람이면 거절 */
+  say(id: number, text: unknown): { ok: true; message: ChatMessage } | { ok: false; message: string } {
+    const p = this.players.find((x) => x.id === id);
+    if (!p) return { ok: false, message: '방에 없어요' };
+    return this.chat.say(id, p.name, text);
   }
 
   // ── 로비 ───────────────────────────────────────────────
@@ -88,6 +104,7 @@ export class Room {
     for (let k = 2; taken.has(n); k++) n = `${cleanName(name, seat)} ${k}`;
     const id = this.nextId++;
     this.players.push({ id, seat, name: n, connected: true, session: null, place: null, lastOpponent: null, lastOpponentName: null });
+    this.chat.system(`${n} 님이 들어왔어요`);
     this.lobbyChanged();
     return id;
   }
@@ -99,6 +116,7 @@ export class Room {
   disconnect(id: number): void {
     const p = this.players.find((x) => x.id === id);
     if (!p) return;
+    if (p.connected) this.chat.system(`${p.name} 님이 나갔어요`);
     if (!this.started) {
       this.players = this.players.filter((x) => x !== p);
       this.players.forEach((x, i) => { x.seat = i; });
@@ -155,6 +173,21 @@ export class Room {
 
   private totalRounds(): number { return this.catalog.rules.run.chapters * this.catalog.rules.run.battlesPerChapter; }
 
+  /** 다음에 돌 라운드의 노드(모두 같은 칸에 있다) */
+  private currentNode() {
+    const rr = this.catalog.rules.run;
+    const r = Math.min(this.round, this.totalRounds() - 1);
+    const chapter = Math.floor(r / rr.battlesPerChapter) + 1;
+    const battle = (r % rr.battlesPerChapter) + 1;
+    return multiNode(this.catalog.pack, chapter, battle);
+  }
+
+  /** 다음 라운드가 크립 라운드면 그 보상(모두 같다), 아니면 null */
+  creepReward(): CreepReward | null {
+    const node = this.currentNode();
+    return isCreepNode(node.type) ? creepRewardFor(this.catalog.pack, this.opts.seed, node.chapter) : null;
+  }
+
   private viewFor(seat: number): MultiView {
     const alive = this.alive();
     const players: MultiPlayerView[] = this.players.map((p) => {
@@ -180,6 +213,7 @@ export class Room {
       deadlineInMs: this.deadlineAt === null ? null : Math.max(0, this.deadlineAt - this.opts.clock.now()),
       lastOpponent: me?.lastOpponentName ?? null,
       place: me?.place ?? null,
+      creep: this.creepReward(),
     };
   }
 
@@ -192,6 +226,7 @@ export class Room {
   private leave(seat: number): void {
     const p = this.players[seat];
     if (!p || p.place !== null) return;
+    if (p.connected) this.chat.system(`${p.name} 님이 나갔어요`);
     p.connected = false;
     // 스스로 나가면 지금 남은 사람 중 꼴찌로 탈락
     p.place = this.alive().length;
@@ -260,10 +295,19 @@ export class Room {
       if (alive.length < 2) return;
       const pack = this.catalog.pack;
       const info = alive[0].session!.info();
-      const node = pack.nodes.find((n) => n.chapter === info.chapter && n.battle === info.battle) ?? pack.nodes[0];
-      const teams = new Map(alive.map((p) => [p.seat, p.session!.team()!]));
+      const node = this.currentNode();
       const hpBefore = new Map(alive.map((p) => [p.seat, p.session!.info().runHp]));
       const roundNo = this.round + 1;
+      const creep = this.creepReward();
+      if (creep) {
+        // 크립 라운드: 모두 같은 몬스터(같은 씨앗)와 싸운다
+        for (const p of alive) {
+          p.session!.runCreep(`${this.opts.seed}|r${roundNo}|creep`, creep);
+          p.lastOpponent = null; p.lastOpponentName = null;
+        }
+      } else {
+      // PvP 밸런스 표(D-051)를 붙인 편성
+      const teams = new Map(alive.map((p) => [p.seat, withPvpBalance(pack, p.session!.team()!)]));
       for (const [a, b] of this.pair(alive)) {
         // 홀수: 다른 플레이어 하나의 잔상과 싸운다(잔상 주인은 영향 없음)
         const ghost = b ?? alive.filter((x) => x !== a)[this.rng.nextInt(alive.length - 1)];
@@ -282,6 +326,7 @@ export class Room {
           b.session!.applyBattle(flipBattleOutput(out), { opponentName: a.name, battleId });
           b.lastOpponent = a.seat; b.lastOpponentName = a.name;
         }
+      }
       }
       this.round++;
       // 탈락: 이번 라운드에 체력이 0이 된 사람. 더 많이 깎인(남은 체력이 낮은) 사람이 뒤 순위
@@ -304,7 +349,11 @@ export class Room {
       rest.forEach((p, i) => { p.place = i + 1; });
       this.clearDeadline();
     }
-    for (const p of this.players) if (p.place !== null && p.session && p.session.info().place === null) p.session.finish(p.place);
+    for (const p of this.players) {
+      if (p.place === null || !p.session || p.session.info().place !== null) continue;
+      this.chat.system(p.place === 1 ? `${p.name} 님 우승!` : `${p.name} 님 최종 ${p.place}위`);
+      p.session.finish(p.place);
+    }
   }
 
   /** 방장이 방을 닫을 때 */
@@ -314,7 +363,8 @@ export class Room {
 function allySide(t: BattleTeamInput) {
   return {
     allies: t.units, activeTiers: t.activeTiers, strategies: t.strategies, ooparts: t.ooparts,
-    runAtkBpsByUnit: t.runAtkBpsByUnit, fullEnergyUnitIds: t.fullEnergyUnitIds, dessert: t.dessert, dessertHalf: t.dessertHalf,
+    runAtkBpsByUnit: t.runAtkBpsByUnit, statBpsByUnit: t.statBpsByUnit, synergyDmgBps: t.synergyDmgBps, synergyScale: t.synergyScale,
+    fullEnergyUnitIds: t.fullEnergyUnitIds, dessert: t.dessert, dessertHalf: t.dessertHalf,
     gameDevBugs: t.gameDevBugs, serikaWins: t.serikaWins,
   };
 }
