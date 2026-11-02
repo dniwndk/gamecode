@@ -55,26 +55,26 @@ export const equipmentFx: Record<string, Passive> = {
   },
 };
 
-const allyFront = (c: Battle) => c.units.filter((x) => x.side === 'ally' && x.zone === 'front' && x.hasHp);
-const ally = (c: Battle) => c.units.filter((x) => x.side === 'ally');
+const allyFront = (c: Battle) => c.units.filter((x) => x.side === c.me && x.zone === 'front' && x.hasHp);
+const ally = (c: Battle) => c.units.filter((x) => x.side === c.me);
 
 export const strategyFx: Record<string, (c: Battle) => void> = {
-  str_schale_supply: (c) => c.on('battle_start', () => { c.gainSp('ally', 2); for (const u of allyFront(c)) c.gainEnergy(u, 25); c.fire('str_schale_supply'); }),
+  str_schale_supply: (c) => c.on('battle_start', () => { c.gainSp(c.me, 2); for (const u of allyFront(c)) c.gainEnergy(u, 25); c.fire('str_schale_supply'); }),
   str_aegis_barrier: (c) => {
     for (const u of allyFront(c)) c.mod(u, { defPct: 3000 }, 'str_aegis_barrier', () => c.shieldOf(u) > 0);
     c.on('battle_start', () => { for (const u of allyFront(c)) c.shield(u, u, u.maxHp * 0.25, 3, 'str_aegis_barrier'); });
   },
   str_relief_knights: (c) => {
     for (const u of ally(c)) c.mod(u, { healDone: 3000 }, 'str_relief_knights');
-    c.on('turn_start', (e) => { const u = e.src; if (u && u.side === 'ally' && u.zone === 'front' && u.hasHp) c.heal(u, u, u.maxHp * 0.06, 'str_relief_knights'); });
-    c.on('healed', (e) => { const t = e.tgt; if (t && t.side === 'ally' && t.zone === 'front' && c.once(t, 'relief_energy')) c.gainEnergy(t, 8); });
+    c.on('turn_start', (e) => { const u = e.src; if (u && u.side === c.me && u.zone === 'front' && u.hasHp) c.heal(u, u, u.maxHp * 0.06, 'str_relief_knights'); });
+    c.on('healed', (e) => { const t = e.tgt; if (t && t.side === c.me && t.zone === 'front' && c.once(t, 'relief_energy')) c.gainEnergy(t, 8); });
   },
   str_rapid_fire: (c) => { for (const u of allyFront(c)) c.mod(u, { spd: 14, basicDmg: 3500, followDmg: 3500 }, 'str_rapid_fire'); c.fire('str_rapid_fire'); },
   str_precision_sniping: (c) => {
     for (const u of ally(c)) c.mod(u, { crit: 1800, critDmg: 3500 }, 'str_precision_sniping');
     c.on('damage_dealt', (e) => {
       const u = e.src;
-      if (!u || u.side !== 'ally' || e.kind !== 'ultimate' || !e.tgt?.alive || !c.once(u, 'precision')) return;
+      if (!u || u.side !== c.me || e.kind !== 'ultimate' || !e.tgt?.alive || !c.once(u, 'precision')) return;
       c.hit(u, e.tgt, 0.6, 'synergy', { true: true, fx: 'str_precision_sniping' });
     });
   },
@@ -82,10 +82,10 @@ export const strategyFx: Record<string, (c: Battle) => void> = {
     for (const u of ally(c).filter((x) => x.zone === 'rear')) c.mod(u, { spd: 20, atkPct: 2500 }, 'str_rear_command');
     let n = 0;
     c.on('rear_action_resolved', (e) => {
-      if (e.src?.side !== 'ally') return;
+      if (e.src?.side !== c.me) return;
       if (++n < 3) return;
       n = 0;
-      c.gainSp('ally', 1);
+      c.gainSp(c.me, 1);
       for (const u of allyFront(c).filter((x) => x.alive)) atkUp(c, null, u, 1500, 'str_rear_command');
     });
   },
@@ -98,10 +98,10 @@ export const strategyFx: Record<string, (c: Battle) => void> = {
   },
   str_outlaw_frenzy: (c) => {
     for (const u of allyFront(c)) c.mod(u, { dmgUp: 3500 }, 'str_outlaw_frenzy', () => c.hpRatio(u) <= 0.7);
-    c.on('turn_end', (e) => { const u = e.src; if (u && u.side === 'ally' && u.zone === 'front' && u.hasHp && c.hpRatio(u) <= 0.7) c.gainEnergy(u, 15); });
+    c.on('turn_end', (e) => { const u = e.src; if (u && u.side === c.me && u.zone === 'front' && u.hasHp && c.hpRatio(u) <= 0.7) c.gainEnergy(u, 15); });
     c.on('damage_received', (e) => {
       const u = e.tgt;
-      if (!u || u.side !== 'ally' || !u.alive || c.hpRatio(u) > 0.3 || !c.battleOnce(u, 'frenzy_shield')) return;
+      if (!u || u.side !== c.me || !u.alive || c.hpRatio(u) > 0.3 || !c.battleOnce(u, 'frenzy_shield')) return;
       c.shield(u, u, u.maxHp * 0.25, 2, 'str_outlaw_frenzy');
     });
   },
@@ -109,13 +109,13 @@ export const strategyFx: Record<string, (c: Battle) => void> = {
     for (const u of ally(c)) c.mod(u, { trueDmg: 4000 }, 'str_mystic_resonance');
     c.on('status_applied', (e) => {
       const u = e.src;
-      if (!u || u.side !== 'ally' || !e.tgt || e.tgt.side !== 'enemy' || !c.once(u, 'mystic')) return;
+      if (!u || u.side !== c.me || !e.tgt || e.tgt.side !== c.them || !c.once(u, 'mystic')) return;
       if (c.rng.chance(5000)) { c.gainEnergy(u, 10); c.fire('str_mystic_resonance'); }
     });
   },
   str_overclock: (c) => c.on('ultimate_resolved', (e) => {
     const u = e.src;
-    if (!u || u.side !== 'ally' || u.zone !== 'front' || !c.once(u, 'overclock')) return;
+    if (!u || u.side !== c.me || u.zone !== 'front' || !c.once(u, 'overclock')) return;
     c.reduceCd(u, 1);
     c.advance(u, 0.25);
     c.fire('str_overclock');
@@ -126,7 +126,7 @@ export const strategyFx: Record<string, (c: Battle) => void> = {
     if (!shooters.length) return;
     const avg = shooters.reduce((a, x) => a + c.atk(x), 0) / shooters.length;
     const src = shooters[0];
-    for (const t of c.front('enemy')) {
+    for (const t of c.front(c.them)) {
       c.hit(src, t, 0, 'synergy', { raw: t.boss ? avg * 1.2 : t.maxHp * 0.08, crit: false, fx: 'str_sandstorm', aoe: true });
       if (t.alive) c.apply(src, t, 'st_spd_down', { params: { spd: -15 }, fx: 'str_sandstorm', key: 'sandstorm' });
     }
@@ -134,7 +134,7 @@ export const strategyFx: Record<string, (c: Battle) => void> = {
   str_fireworks: (c) => {
     let n = 0;
     const count = (e: { fx?: string; src?: U }) => {
-      if (e.src?.side !== 'ally' || e.fx === 'str_fireworks') return;
+      if (e.src?.side !== c.me || e.fx === 'str_fireworks') return;
       if (!c.rootOnce(`fireworks:${e.src.uid}`)) return;
       if (++n < 4) return;
       n = 0;
@@ -142,7 +142,7 @@ export const strategyFx: Record<string, (c: Battle) => void> = {
       const top = c.highestAtk(ally(c).filter((x) => x.alive));
       if (!top) return;
       const big = c.atk(top);
-      for (const t of c.front('enemy')) c.hit(top, t, 0, 'synergy', { raw: big * 1.4, fx: 'str_fireworks', aoe: true });
+      for (const t of c.front(c.them)) c.hit(top, t, 0, 'synergy', { raw: big * 1.4, fx: 'str_fireworks', aoe: true });
       for (const t of allyFront(c).filter((x) => x.alive)) c.heal(top, t, big * 0.8, 'str_fireworks');
     };
     c.on('followup_resolved', count);

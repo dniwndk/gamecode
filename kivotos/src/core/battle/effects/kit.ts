@@ -77,4 +77,5 @@ export const A = (run: (c: Battle, u: U) => void, auto?: (c: Battle, u: U) => bo
 
 /** 이 유닛 자신의 사건인가 */
 export const mine = (u: U) => (e: Ev) => e.src === u;
-export const isAllyFront = (u: U) => u.side === 'ally' && u.zone === 'front' && u.hasHp;
+/** 살아 있는 전방(HP 보유) 학생. 진영은 부르는 쪽이 u.side로 거른다(PvP에서는 양쪽 모두 학생) */
+export const isAllyFront = (u: U) => u.zone === 'front' && u.hasHp && !!u.unit;

@@ -4,13 +4,13 @@ import type { Battle, Ev, U } from './kit';
 import { atkDown, atkUp, buff, burn, critUp, defDown, dmgUp, follow, guard, keyHack, spdDown, stun, taunt, vuln } from './kit';
 
 type SynFx = (c: Battle, k: number) => void;
-const ally = (c: Battle) => c.units.filter((x) => x.side === 'ally');
+const ally = (c: Battle) => c.units.filter((x) => x.side === c.me);
 /** 아리스와 각성 형태(v2.4.8 무장 아리스 포함) */
 const ARIS_FORMS = new Set(['u_aris', 'u_al1s', 'u_aris_armed']);
 const allyFront = (c: Battle) => ally(c).filter((x) => x.zone === 'front' && x.hasHp);
 const mem = (c: Battle, syn: string) => ally(c).filter((x) => x.tags.has(syn));
 const s = (k: number, x: number) => Math.round(x * k);
-const isMem = (u: U | undefined, syn: string) => !!u && u.side === 'ally' && u.tags.has(syn);
+const isMem = (c: Battle, u: U | undefined, syn: string) => !!u && u.side === c.me && u.tags.has(syn);
 const DIRECT = new Set(['basic', 'skill', 'ultimate', 'rear']);
 /** 구성원 능력치(비구성원은 others 배율) */
 function stats(c: Battle, syn: string, id: string, bag: Record<string, number>, others = 0, k = 1): void {
@@ -35,7 +35,7 @@ function abydos(tier: 2 | 4 | 6): SynFx {
     for (const u of ally(c)) c.mod(u, { atkPct: s(k, u.tags.has(SYN) ? own : all), defPct: s(k, u.tags.has(SYN) ? own : all) }, 'abydos');
     startEnergy(c, () => allyFront(c), tier === 4 ? 35 : 50, SYN, '아비도스 · 초기 에너지');
     c.on('ultimate_resolved', (e) => {
-      if (!isMem(e.src, SYN)) return;
+      if (!isMem(c, e.src, SYN)) return;
       const free = !!e.src!.d.lastStandUlt;
       e.src!.d.lastStandUlt = false;
       if (!c.rootOnce('abydos') || (!free && !c.pulseOnce('abydos', 2))) return;
@@ -61,7 +61,7 @@ function gehenna(tier: 2 | 4 | 6 | 8): SynFx {
     let totals = 0;
     c.on('damage_dealt', (e) => {
       const u = e.src;
-      if (!isMem(u, SYN) || (e.kind !== 'skill' && e.kind !== 'ultimate') || !e.tgt) return;
+      if (!isMem(c, u, SYN) || (e.kind !== 'skill' && e.kind !== 'ultimate') || !e.tgt) return;
       if (u!.zone === 'front' && e.tgt.alive && c.once(u!, 'gehenna_blast')) { c.proc('synergy', SYN, '추가 폭발', u); follow(c, u!, e.tgt, 0.7, `syn_gehenna_${tier === 8 ? 'plat' : tier}`); }
       if (tier >= 6 && c.rootOnce('gehenna_bomb') && c.pulseOnce('gehenna_bomb', tier === 8 ? 3 : 2)) {
         bombs++;
@@ -94,7 +94,7 @@ function millennium(tier: 2 | 4 | 6 | 8): SynFx {
     if (tier >= 4) c.on('pulse', (e) => { if (e.n! % 2 === 0) wave('보호막 재전개'); });
     if (t.dmg) for (const u of allyFront(c)) c.mod(u, { dmgUp: s(k, t.dmg), crit: s(k, t.crit) }, 'millennium', () => c.shieldOf(u) > 0);
     if (tier === 8) c.on('shield_broken', (e) => {
-      if (!e.tgt || e.tgt.side !== 'ally' || !e.src || e.src.side === 'ally' || !e.src.alive || !c.once(e.tgt, 'millennium_reflect')) return;
+      if (!e.tgt || e.tgt.side !== c.me || !e.src || e.src.side === c.me || !e.src.alive || !c.once(e.tgt, 'millennium_reflect')) return;
       c.proc('synergy', SYN, '프라이스 반격', e.tgt);
       c.rawDamage(e.tgt, e.src, Math.floor(e.amount! * 0.3), { true: true, kind: 'synergy', fx: 'syn_millennium_plat', silent: true });
     });
@@ -114,24 +114,24 @@ function trinity(tier: 2 | 4 | 6 | 8): SynFx {
     const fx = `syn_trinity_${tier === 8 ? 'plat' : tier}`;
     c.on('healed', (e) => {
       const u = e.tgt;
-      if (!u || u.side !== 'ally' || u.zone !== 'front') return;
+      if (!u || u.side !== c.me || u.zone !== 'front') return;
       if (tier >= 6) c.cleanse(u, 1);
       dmgUp(c, null, u, { dmgUp: s(k, t[3]) }, fx, 2, 'trinity_heal');
       if (t[4]) critUp(c, null, u, s(k, t[4]), fx);
       if (c.pulseOnce('trinity_sp')) {
         c.proc('synergy', SYN, '첫 치유 · SP +1', u);
-        c.gainSp('ally', 1);
+        c.gainSp(c.me, 1);
         if (tier >= 6) for (const m of allyFront(c).filter((x) => x.alive)) c.gainEnergy(m, 5);
       }
     });
     if (tier === 8) c.overheal.push((_src, tgt, over) => {
-      if (tgt.side !== 'ally') return;
+      if (tgt.side !== c.me) return;
       bell += over;
       const cap = ally(c).filter((x) => x.hasHp).reduce((a, x) => a + x.maxHp, 0) * 0.25;
       if (bell >= cap) {
         const amt = bell * 0.5; bell = 0;
         c.proc('synergy', SYN, '종소리!', tgt);
-        for (const f of c.front('enemy')) c.rawDamage(tgt, f, amt, { kind: 'synergy', fx: 'syn_trinity_plat', silent: true });
+        for (const f of c.front(c.them)) c.rawDamage(tgt, f, amt, { kind: 'synergy', fx: 'syn_trinity_plat', silent: true });
       }
     });
   };
@@ -146,7 +146,7 @@ function hyakkiyako(tier: 2 | 4 | 6 | 8): SynFx {
     const fx = `syn_hyakkiyako_${tier === 8 ? 'plat' : tier}`;
     // 도깨비불: 기본/스킬 해소 시 대상에게 45% true(유닛당 차례당 1회)
     if (tier === 2 || tier === 8 || tier === 4 || tier === 6) c.on('damage_dealt', (e) => {
-      if (!isMem(e.src, SYN) || (e.kind !== 'basic' && e.kind !== 'skill') || !e.tgt?.alive || !c.once(e.src!, 'onibi')) return;
+      if (!isMem(c, e.src, SYN) || (e.kind !== 'basic' && e.kind !== 'skill') || !e.tgt?.alive || !c.once(e.src!, 'onibi')) return;
       c.proc('synergy', SYN, '도깨비불', e.src);
       const r = c.hit(e.src!, e.tgt, 0.45, 'synergy', { true: true, fx });
       c.g.onibiMark?.(e.src, r);
@@ -154,7 +154,7 @@ function hyakkiyako(tier: 2 | 4 | 6 | 8): SynFx {
     if (!t.lim) return;
     let actions = 0;
     c.on('ally_action_resolved', (e) => {
-      if (!isMem(e.src, SYN)) return;
+      if (!isMem(c, e.src, SYN)) return;
       actions++;
       if (!c.rootOnce('hyakki') || !c.pulseOnce('hyakki', t.lim)) return;
       const u = e.src!;
@@ -192,7 +192,7 @@ function shanhaijing(tier: 2 | 4): SynFx {
     startEnergy(c, () => allyFront(c), 40, SYN, '산해경 · 초기 에너지');
     c.on('ultimate_resolved', (e) => {
       const u = e.src;
-      if (!u || u.side !== 'ally' || !c.rootOnce('shanhai') || !c.pulseOnce('shanhai', 2)) return;
+      if (!u || u.side !== c.me || !c.rootOnce('shanhai') || !c.pulseOnce('shanhai', 2)) return;
       c.proc('synergy', SYN, '필살기 환급', u);
       c.heal(u, u, u.maxHp * 0.15, 'syn_shanhaijing_4');
       c.gainEnergy(u, 20);
@@ -209,12 +209,12 @@ function redWinter(tier: 2 | 4): SynFx {
     else for (const u of ally(c)) c.mod(u, { atkPct: s(k, 2500), hpPct: s(k, 2500) }, 'red_winter');
     const purge = (start: boolean) => {
       const src = mem(c, SYN).find((x) => x.alive) ?? allyFront(c)[0];
-      const t = c.highestHp(c.front('enemy'));
+      const t = c.highestHp(c.front(c.them));
       if (!src || !t) return;
       c.proc('synergy', SYN, '숙청 표적');
       c.apply(src, t, 'st_vuln', { params: { dmgTaken: s(k, tier === 2 ? 2000 : 3500) }, turns: tier === 2 ? 3 : 2, key: 'purge', fx });
       if (tier === 4) {
-        if (!start || true) c.gainSp('ally', 1);
+        if (!start || true) c.gainSp(c.me, 1);
         for (const m of allyFront(c).filter((x) => x.alive)) critUp(c, null, m, s(k, 2000), fx);
       }
     };
@@ -231,7 +231,7 @@ function valkyrie(tier: 2 | 3): SynFx {
     if (tier === 2) stats(c, SYN, 'valkyrie', { defPct: 2500, atkPct: 1800 }, 0, k);
     else for (const u of ally(c)) c.mod(u, { defPct: s(k, 3500), atkPct: s(k, 2800) }, 'valkyrie');
     const wanted = () => {
-      const t = c.highestAtk(c.front('enemy'));
+      const t = c.highestAtk(c.front(c.them));
       const src = mem(c, SYN).find((x) => x.alive) ?? null;
       if (!t) return;
       c.proc('synergy', SYN, '수배자 지정');
@@ -245,11 +245,11 @@ function valkyrie(tier: 2 | 3): SynFx {
       wanted();
       if (tier === 3 && e.n! <= 10) {
         c.proc('synergy', SYN, '일제 단속');
-        for (const t of c.front('enemy')) { buff(c, null, t, 'st_atk_down', { atkPct: -s(k, 2500) }, fx, 2, 'valk_sweep'); buff(c, null, t, 'st_def_down', { defPct: -s(k, 3000) }, fx, 2, 'valk_sweep'); }
+        for (const t of c.front(c.them)) { buff(c, null, t, 'st_atk_down', { atkPct: -s(k, 2500) }, fx, 2, 'valk_sweep'); buff(c, null, t, 'st_def_down', { defPct: -s(k, 3000) }, fx, 2, 'valk_sweep'); }
       }
     });
     if (tier === 3) c.on('damage_dealt', (e) => {
-      if (!e.direct || e.src?.side !== 'ally' || !e.tgt?.alive || !c.hasDebuff(e.tgt)) return;
+      if (!e.direct || e.src?.side !== c.me || !e.tgt?.alive || !c.hasDebuff(e.tgt)) return;
       if (!c.rootOnce('valk') || !c.pulseOnce('valk', 2)) return;
       c.proc('synergy', SYN, '체포 협조', e.src);
       c.delay(e.tgt, 0.15, e.src);
@@ -277,14 +277,14 @@ function srt(tier: 2 | 4): SynFx {
       c.proc('synergy', SYN, '전술 엄호', by);
       for (const f of front) c.shield(by, f, f.maxHp * 0.113, 2, 'syn_srt_4');
     };
-    c.on('rear_action_resolved', (e) => { if (e.src?.side === 'ally') cover(e.src); });
-    c.on('reaction_resolved', (e) => { if (e.src?.side === 'ally') cover(e.src); });
+    c.on('rear_action_resolved', (e) => { if (e.src?.side === c.me) cover(e.src); });
+    c.on('reaction_resolved', (e) => { if (e.src?.side === c.me) cover(e.src); });
     const strike = (e: Ev) => {
-      if (!isMem(e.src, SYN) || e.src!.zone !== 'front' || !c.rootOnce('srt_strike') || !c.pulseOnce('srt_strike', 2)) return;
+      if (!isMem(c, e.src, SYN) || e.src!.zone !== 'front' || !c.rootOnce('srt_strike') || !c.pulseOnce('srt_strike', 2)) return;
       const rear = mem(c, SYN).filter((x) => x.zone === 'rear');
       if (!rear.length) return;
       c.proc('synergy', SYN, '전술 지원 폭격', e.src);
-      for (const r of rear) follow(c, r, c.front('enemy'), 1.1, 'syn_srt_4');
+      for (const r of rear) follow(c, r, c.front(c.them), 1.1, 'syn_srt_4');
     };
     c.on('skill_resolved', strike);
     c.on('ultimate_resolved', strike);
@@ -297,16 +297,16 @@ function arius(tier: 2 | 4): SynFx {
     const SYN = 'syn_arius';
     if (tier === 2) stats(c, SYN, 'arius', { atkPct: 1800, critDmg: 3000 }, 0, k);
     else stats(c, SYN, 'arius', { atkPct: 3500, crit: 2500, critDmg: 5500 }, 0.5, k);
-    c.hook((h) => { if (isMem(h.src, SYN) && c.hasDebuff(h.tgt)) h.out += s(k, 2000); });
+    c.hook((h) => { if (isMem(c, h.src, SYN) && c.hasDebuff(h.tgt)) h.out += s(k, 2000); });
     if (tier === 2) return;
     c.on('battle_start', () => {
       c.proc('synergy', SYN, '전방 방어 붕괴');
       const src = mem(c, SYN)[0] ?? null;
-      for (const t of c.front('enemy')) c.apply(src, t, 'st_def_down', { params: { defPct: -s(k, 3000) }, turns: 3, key: 'arius_start', fx: 'syn_arius_4' });
+      for (const t of c.front(c.them)) c.apply(src, t, 'st_def_down', { params: { defPct: -s(k, 3000) }, turns: 3, key: 'arius_start', fx: 'syn_arius_4' });
     });
     c.on('damage_dealt', (e) => {
       const u = e.src;
-      if (!isMem(u, SYN) || !e.tgt || !c.hasDebuff(e.tgt) || !e.hp || !c.once(u!, 'arius_drain')) return;
+      if (!isMem(c, u, SYN) || !e.tgt || !c.hasDebuff(e.tgt) || !e.hp || !c.once(u!, 'arius_drain')) return;
       if (u!.zone === 'front') c.heal(u!, u, e.hp * 0.2, 'syn_arius_4');
       c.gainEnergy(u!, 12);
     });
@@ -319,10 +319,10 @@ function ps68(tier: 2 | 4): SynFx {
     const SYN = 'syn_problem_solver';
     let fee = 0;
     c.on('unit_defeated', (e) => {
-      if (e.tgt?.side === 'enemy' && isMem(e.src, SYN) && fee < 2) { fee++; c.proc('synergy', SYN, `의뢰비 +1G`, e.src, fee); }
-      if (tier === 4 && e.tgt && isMem(e.tgt, SYN) && c.battleOnce(e.tgt, 'ps68_mine')) {
+      if (e.tgt?.side === c.them && isMem(c, e.src, SYN) && fee < 2) { fee++; c.proc('synergy', SYN, `의뢰비 +1G`, e.src, fee); }
+      if (tier === 4 && e.tgt && isMem(c, e.tgt, SYN) && c.battleOnce(e.tgt, 'ps68_mine')) {
         c.proc('synergy', SYN, '지뢰 폭발!', e.tgt);
-        c.hit(e.tgt, c.front('enemy'), 1.2, 'synergy', { fx: 'syn_ps68_4' });
+        c.hit(e.tgt, c.front(c.them), 1.2, 'synergy', { fx: 'syn_ps68_4' });
       }
     }, null, true);
     c.ends.push(() => { if (fee) c.gold.push({ label: '흥신소68 · 의뢰비', value: fee }); });
@@ -334,9 +334,9 @@ function cc(tier: 2 | 4): SynFx {
   return (c) => {
     const SYN = 'syn_cc';
     c.on('unit_defeated', (e) => {
-      if (e.tgt?.side === 'enemy' && isMem(e.src, SYN) && e.src!.alive) { c.proc('synergy', SYN, '청소 완료', e.src); c.advance(e.src!, 0.2); }
+      if (e.tgt?.side === c.them && isMem(c, e.src, SYN) && e.src!.alive) { c.proc('synergy', SYN, '청소 완료', e.src); c.advance(e.src!, 0.2); }
     });
-    if (tier === 4) c.hook((h) => { if (isMem(h.src, SYN) && h.tgt.side === 'enemy' && c.hpRatio(h.tgt) <= 0.3 && DIRECT.has(h.kind)) h.forceCrit = true; });
+    if (tier === 4) c.hook((h) => { if (isMem(c, h.src, SYN) && h.tgt.side === c.them && c.hpRatio(h.tgt) <= 0.3 && DIRECT.has(h.kind)) h.forceCrit = true; });
   };
 }
 
@@ -356,10 +356,10 @@ function highlander(tier: 1 | 2): SynFx {
     c.on('battle_start', () => { c.proc('synergy', SYN, '전 차량 출발'); for (const u of allyFront(c)) c.advance(u, 0.25); });
     const train = (e: Ev) => {
       const u = e.src;
-      if (!u || (u.unit?.id !== 'u_nozomi' && u.unit?.id !== 'u_hikari') || u.side !== 'ally' || !c.once(u, 'express') || !c.rootOnce('express')) return;
+      if (!u || (u.unit?.id !== 'u_nozomi' && u.unit?.id !== 'u_hikari') || u.side !== c.me || !c.once(u, 'express') || !c.rootOnce('express')) return;
       c.proc('synergy', SYN, '대륙횡단 급행열차!', u);
       let r = c.hit(u, c.foes(u), 1.3, 'synergy', { fx: 'syn_highlander_2' });
-      c.gainSp('ally', 1);
+      c.gainSp(c.me, 1);
       // 무정차 운행표: 처치하면 70%로 한 번 더(최대 3연속)
       for (let i = 0; i < 2 && c.has('oop_express_ticket') && r.some((x) => x.killed) && c.foes(u).length; i++) {
         c.proc('oopart', 'oop_express_ticket', '무정차 운행!', u, i + 2);
@@ -379,18 +379,18 @@ function outlaw(tier: 2 | 4): SynFx {
     else stats(c, SYN, 'outlaw', { atkPct: 4500, hpPct: 3500, critDmg: 5000 }, 0.5, k);
     const steal = tier === 2 ? 0.15 : 0.2;
     c.on('damage_dealt', (e) => {
-      if (!isMem(e.src, SYN) || !e.direct || e.kind === 'rear' || !e.hp || e.src!.zone !== 'front') return;
+      if (!isMem(c, e.src, SYN) || !e.direct || e.kind === 'rear' || !e.hp || e.src!.zone !== 'front') return;
       c.heal(e.src!, e.src, e.hp * steal, `syn_outlaw_${tier}`);
     });
     if (tier === 2) return;
     const loot = (u: U | undefined) => {
-      if (!u || !isMem(u, SYN) || !u.alive || !c.once(u, 'outlaw_loot', 2) || !c.rootOnce('outlaw_loot')) return;
+      if (!u || !isMem(c, u, SYN) || !u.alive || !c.once(u, 'outlaw_loot', 2) || !c.rootOnce('outlaw_loot')) return;
       c.proc('synergy', SYN, '약탈 폭격', u);
-      c.hit(u, c.front('enemy'), 1.35, 'synergy', { true: true, fx: 'syn_outlaw_4' });
+      c.hit(u, c.front(c.them), 1.35, 'synergy', { true: true, fx: 'syn_outlaw_4' });
       c.gainEnergy(u, 25);
     };
     c.on('ultimate_resolved', (e) => loot(e.src));
-    c.on('unit_defeated', (e) => { if (e.tgt?.side === 'enemy') loot(e.src); });
+    c.on('unit_defeated', (e) => { if (e.tgt?.side === c.them) loot(e.src); });
   };
 }
 
@@ -403,13 +403,13 @@ function sniper(tier: 2 | 4 | 6): SynFx {
     if (tier === 2 && !quimbaya) return;
     const bonus = tier === 2 ? 2500 : tier === 4 ? 5000 : 8000;
     const aim = (label: string) => {
-      const t = c.highestHp(c.front('enemy'));
+      const t = c.highestHp(c.front(c.them));
       c.g.aim = t; c.g.aimFresh = true;
       if (t) c.proc(tier === 2 ? 'oopart' : 'synergy', tier === 2 ? 'oop_quimbaya_plane' : SYN, label);
     };
     c.on('battle_start', () => aim('조준'));
     c.hook((h) => {
-      if (!isMem(h.src, SYN) || h.tgt !== c.g.aim) return;
+      if (!isMem(c, h.src, SYN) || h.tgt !== c.g.aim) return;
       h.critDmg += s(k, bonus);
       if (quimbaya && c.g.aimFresh && tier >= 4) { h.forceCrit = true; c.g.aimFresh = false; }
     });
@@ -429,7 +429,7 @@ function prefect(tier: 2 | 4): SynFx {
   return (c) => {
     const SYN = 'syn_prefect';
     c.on('battle_start', () => {
-      const t = c.front('enemy').concat(c.rear('enemy')).find((x) => x.st.some((st) => !st.debuff));
+      const t = c.front(c.them).concat(c.rear(c.them)).find((x) => x.st.some((st) => !st.debuff));
       if (t && c.dispel(t, 1).length) c.proc('synergy', SYN, '단속!');
     });
     if (tier === 2) return;
@@ -447,8 +447,8 @@ function gourmet(tier: 2 | 4): SynFx {
     const SYN = 'syn_gourmet';
     c.on('unit_defeated', (e) => {
       const u = e.src;
-      if (e.tgt?.side !== 'enemy' || !isMem(u, SYN) || !c.once(u!, 'zero_star')) return;
-      const near = c.front('enemy').filter((x) => Math.abs(x.slot - e.tgt!.slot) <= 1);
+      if (e.tgt?.side !== c.them || !isMem(c, u, SYN) || !c.once(u!, 'zero_star')) return;
+      const near = c.front(c.them).filter((x) => Math.abs(x.slot - e.tgt!.slot) <= 1);
       if (!near.length) return;
       c.proc('synergy', SYN, '별점 0개!', u);
       c.hit(u!, near, 0.7, 'synergy', { fx: `syn_gourmet_${tier}` });
@@ -461,7 +461,7 @@ function gourmet(tier: 2 | 4): SynFx {
     c.on('battle_start', () => c.proc('synergy', SYN, '급양부 납치!'));
     c.on('damage_dealt', (e) => {
       const u = e.src;
-      if (!isMem(u, SYN) || !e.direct || u!.zone !== 'front' || !c.pulseOnce(`kidnap:${u!.uid}`, 2)) return;
+      if (!isMem(c, u, SYN) || !e.direct || u!.zone !== 'front' || !c.pulseOnce(`kidnap:${u!.uid}`, 2)) return;
       c.heal(lunch[0], u, c.atk(lunch[0]) * 0.4, 'syn_gourmet_4');
     });
   };
@@ -478,7 +478,7 @@ const SIMPLE: Record<string, SynFx> = {
     const src = mem(c, 'syn_hot_spring')[0];
     if (!src) return;
     c.proc('synergy', 'syn_hot_spring', '온천 폭파!');
-    for (const t of c.front('enemy')) { c.delay(t, 0.15, src); burn(c, src, t, 'syn_hot_spring_2'); }
+    for (const t of c.front(c.them)) { c.delay(t, 0.15, src); burn(c, src, t, 'syn_hot_spring_2'); }
     if (c.has('oop_hot_spring_map')) { c.proc('oopart', 'oop_hot_spring_map', '온천수 분출'); const t = c.lowestRatio(allyFront(c))[0]; c.heal(src, t, (t?.maxHp ?? 0) * 0.1); }
   }),
   syn_game_dev_2: (c) => gameDev(c, 1),
@@ -490,7 +490,7 @@ const SIMPLE: Record<string, SynFx> = {
   syn_engineering_2: (c) => engineering(c, 1),
   syn_engineering_3: (c) => engineering(c, 2),
   syn_paranormal_2: (c) => c.on('battle_start', () => {
-    const t = c.highestAtk(c.front('enemy'));
+    const t = c.highestAtk(c.front(c.them));
     if (!t) return;
     t.d.sealedUntil = t.turn + 2;
     c.proc('synergy', 'syn_paranormal', '패시브 봉인');
@@ -506,9 +506,9 @@ const SIMPLE: Record<string, SynFx> = {
   syn_justice_3: (c, k) => justice(c, k, true),
   syn_vigilante_2: (c) => {
     const SYN = 'syn_vigilante';
-    c.on('status_applied', (e) => { if (e.statusId === 'st_stun' && isMem(e.src, SYN) && e.tgt) e.tgt.d.vigilanteBy = e.src!.uid; });
+    c.on('status_applied', (e) => { if (e.statusId === 'st_stun' && isMem(c, e.src, SYN) && e.tgt) e.tgt.d.vigilanteBy = e.src!.uid; });
     c.hook((h) => {
-      if (!isMem(h.src, SYN) || h.tgt.d.vigilanteBy === undefined || h.tgt.d.vigilanteBy === h.src.uid || !DIRECT.has(h.kind)) return;
+      if (!isMem(c, h.src, SYN) || h.tgt.d.vigilanteBy === undefined || h.tgt.d.vigilanteBy === h.src.uid || !DIRECT.has(h.kind)) return;
       h.out += 4000; h.tgt.d.vigilanteBy = undefined; c.proc('synergy', SYN, '자경단 연계', h.src);
     });
   },
@@ -516,7 +516,7 @@ const SIMPLE: Record<string, SynFx> = {
   syn_remedial_knights_3: (c, k) => {
     stats(c, 'syn_remedial_knights', 'remedial', { healDone: 3000 }, 0, k);
     c.on('damage_received', (e) => {
-      if (e.tgt?.side !== 'ally' || !e.tgt.alive || c.hpRatio(e.tgt) > 0.2 || !c.battleOnce(null, 'remedial_save')) return;
+      if (e.tgt?.side !== c.me || !e.tgt.alive || c.hpRatio(e.tgt) > 0.2 || !c.battleOnce(null, 'remedial_save')) return;
       const healer = mem(c, 'syn_remedial_knights').find((x) => x.alive);
       if (!healer) return;
       c.proc('synergy', 'syn_remedial_knights', '긴급 구호', e.tgt);
@@ -533,9 +533,9 @@ const SIMPLE: Record<string, SynFx> = {
   syn_plum_blossom_2: (c) => {
     let stamps = 0;
     c.on('ultimate_resolved', (e) => {
-      if (e.src?.side !== 'ally') return;
+      if (e.src?.side !== c.me) return;
       stamps++;
-      if (stamps >= 3) { stamps = 0; c.proc('synergy', 'syn_plum_blossom', '도장 3개 · SP +1', e.src); c.gainSp('ally', 1); }
+      if (stamps >= 3) { stamps = 0; c.proc('synergy', 'syn_plum_blossom', '도장 3개 · SP +1', e.src); c.gainSp(c.me, 1); }
     });
   },
   syn_genryumon_2: (c) => {
@@ -544,7 +544,7 @@ const SIMPLE: Record<string, SynFx> = {
     if (kisaki) c.mod(kisaki, { ultDmg: 2000 }, 'genryumon');
     if (!kisaki || !mina) return;
     c.hook((h) => {
-      if (h.tgt !== kisaki || !mina.alive || mina.zone !== 'front' || h.src.side === 'ally' || !c.once(mina, 'genryumon')) return;
+      if (h.tgt !== kisaki || !mina.alive || mina.zone !== 'front' || h.src.side === c.me || !c.once(mina, 'genryumon')) return;
       c.proc('synergy', 'syn_genryumon', '미나가 대신 맞는다', mina);
       h.tgt = mina;
     });
@@ -552,7 +552,7 @@ const SIMPLE: Record<string, SynFx> = {
   syn_rw_office_2: (c) => rwOffice(c, 3, 0),
   syn_rw_office_3: (c) => rwOffice(c, 2, 2000),
   syn_knowledge_front_2: (c) => c.on('status_applied', (e) => {
-    if (!e.tgt || e.tgt.side !== 'enemy' || !e.statusId || e.converted) return;
+    if (!e.tgt || e.tgt.side !== c.them || !e.statusId || e.converted) return;
     const st = e.tgt.st.find((x) => x.id === e.statusId && !x.debuff);
     const to = c.highestAtk(allyFront(c));
     if (!st || !to || !c.pulseOnce('knowledge')) return;
@@ -591,7 +591,7 @@ function gameDev(c: Battle, n: 1 | 2): void {
   const third = n === 2 && c.has('oop_tsc_first_edition') ? [0, 1, 2].find((x) => !picks.includes(x)) : undefined;
   const apply = (i: number, f: number) => {
     if (i === 0) for (const u of ally(c)) c.mod(u, { atkPct: Math.round(3000 * f) }, 'game_dev');
-    if (i === 1) for (const u of c.units.filter((x) => x.side === 'enemy')) c.mod(u, { spd: -Math.round(20 * f) }, 'game_dev');
+    if (i === 1) for (const u of c.units.filter((x) => x.side === c.them)) c.mod(u, { spd: -Math.round(20 * f) }, 'game_dev');
   };
   for (const i of picks) apply(i, 1);
   if (third !== undefined) apply(third, 0.5);
@@ -608,13 +608,13 @@ function veritas(c: Battle, hack: boolean): void {
   const SYN = 'syn_veritas';
   c.on('turn_end', (e) => {
     const u = e.src;
-    if (!u || u.side !== 'enemy' || u.energy < 100 || u.d.veritas || !c.activeOf(u.d.ult)) return;
+    if (!u || u.side !== c.them || u.energy < 100 || u.d.veritas || !c.activeOf(u.d.ult)) return;
     u.d.veritas = true;
     c.proc('synergy', SYN, '필살기 예고 · 지연');
     c.delay(u, 0.5, null);
   });
   if (hack) c.on('battle_start', () => {
-    const t = c.front('enemy').find((x) => x.st.some((s) => !s.debuff));
+    const t = c.front(c.them).find((x) => x.st.some((s) => !s.debuff));
     const st = c.dispel(t, 1)[0];
     const to = c.highestAtk(allyFront(c));
     if (st && to) { c.proc('synergy', SYN, '버프 해킹', to); c.setStatus(null, to, st.id, { turns: st.turns, key: 'veritas', debuff: false, params: st.params }, true); }
@@ -636,10 +636,10 @@ function engineering(c: Battle, turrets: number): void {
 
 function justice(c: Battle, k: number, team: boolean): void {
   const SYN = 'syn_justice';
-  c.hook((h) => { if (isMem(h.src, SYN) && h.tgt.side === 'enemy' && c.hpRatio(h.tgt) <= 0.5) h.out += s(k, 2500); });
+  c.hook((h) => { if (isMem(c, h.src, SYN) && h.tgt.side === c.them && c.hpRatio(h.tgt) <= 0.5) h.out += s(k, 2500); });
   c.on('unit_defeated', (e) => {
     const u = e.src;
-    if (e.tgt?.side !== 'enemy' || !isMem(u, SYN)) return;
+    if (e.tgt?.side !== c.them || !isMem(c, u, SYN)) return;
     if (team) { c.proc('synergy', SYN, '정의 집행', u); for (const m of mem(c, SYN).filter((x) => x !== u)) c.gainEnergy(m, 5); }
     if (c.has('oop_tsurugi_novel') && u!.alive && c.once(u!, 'tsurugi_novel')) { c.proc('oopart', 'oop_tsurugi_novel', '폭주!', u); c.advance(u!, 0.15); }
   });
@@ -665,7 +665,7 @@ function dessert(c: Battle, team: boolean): void {
 function ninjutsu(c: Battle, counter: boolean): void {
   const SYN = 'syn_ninjutsu';
   c.hook((h) => {
-    if (!isMem(h.tgt, SYN) || h.src.side === 'ally' || h.tgt.zone !== 'front' || !c.battleOnce(h.tgt, 'ninjutsu')) return;
+    if (!isMem(c, h.tgt, SYN) || h.src.side === c.me || h.tgt.zone !== 'front' || !c.battleOnce(h.tgt, 'ninjutsu')) return;
     h.cancel = true;
     c.proc('synergy', SYN, '분신술!', h.tgt);
     if (counter && h.src.alive && h.src.hasHp && h.src.zone === 'front') c.g.counters = [...(c.g.counters ?? []), [h.tgt, h.src]];
@@ -690,20 +690,20 @@ function training(c: Battle, enlighten: boolean): void {
       if (enlighten && u.d.training === 5 && !u.d.enlightened) { u.d.enlightened = true; u.d.nullify = 1; c.proc('synergy', SYN, '득도!', u); }
     }, u);
   }
-  if (enlighten) c.hook((h) => { if (isMem(h.tgt, SYN) && h.tgt.d.nullify && h.src.side === 'enemy') { h.tgt.d.nullify = 0; h.cancel = true; c.fire('syn_training_3'); } });
+  if (enlighten) c.hook((h) => { if (isMem(c, h.tgt, SYN) && h.tgt.d.nullify && h.src.side === c.them) { h.tgt.d.nullify = 0; h.cancel = true; c.fire('syn_training_3'); } });
 }
 
 function rwOffice(c: Battle, every: number, vulnBps: number): void {
   const SYN = 'syn_rw_office';
   c.on('pulse', (e) => {
     if (e.n! % every !== 0) return;
-    const t = c.highestHp(c.front('enemy'));
+    const t = c.highestHp(c.front(c.them));
     if (!t) return;
     c.g.rwTarget = t;
     c.proc('synergy', SYN, '숙청 대상 지정');
     if (vulnBps) c.apply(null, t, 'st_vuln', { params: { dmgTaken: vulnBps }, turns: every, key: 'rw_office', fx: `syn_rw_office_${vulnBps ? 3 : 2}` });
   });
-  c.on('unit_defeated', (e) => { if (e.tgt && e.tgt === c.g.rwTarget) { c.g.rwTarget = null; c.proc('synergy', SYN, '숙청 완료 · SP +1'); c.gainSp('ally', 1); } });
+  c.on('unit_defeated', (e) => { if (e.tgt && e.tgt === c.g.rwTarget) { c.g.rwTarget = null; c.proc('synergy', SYN, '숙청 완료 · SP +1'); c.gainSp(c.me, 1); } });
 }
 
 // ── 역할군 ──
@@ -717,7 +717,7 @@ function tank(tier: 2 | 3 | 4): SynFx {
     });
     if (tier === 4) c.on('damage_received', (e) => {
       const u = e.tgt;
-      if (!isMem(u, SYN) || !u!.alive || c.hpRatio(u!) >= 0.5 || !c.battleOnce(u!, 'tank_shield')) return;
+      if (!isMem(c, u, SYN) || !u!.alive || c.hpRatio(u!) >= 0.5 || !c.battleOnce(u!, 'tank_shield')) return;
       c.proc('synergy', SYN, '최후의 방벽', u);
       c.shield(u!, u, u!.maxHp * 0.188 * k, 2, 'syn_tank_4');
     });
@@ -731,7 +731,7 @@ function attacker(tier: 2 | 3 | 4): SynFx {
     if (tier === 2) return;
     const max = c.has('oop_istanbul_rocket') ? 7 : 5;
     c.hook((h) => {
-      if (!isMem(h.src, SYN) || !DIRECT.has(h.kind) || h.aoe) return;
+      if (!isMem(c, h.src, SYN) || !DIRECT.has(h.kind) || h.aoe) return;
       const u = h.src;
       if (u.d.lastTgt === h.tgt.uid || (c.has('oop_istanbul_rocket') && u.d.chainKeep)) u.d.combo = Math.min(max, (u.d.combo ?? 0) + 1);
       else u.d.combo = 0;
@@ -742,7 +742,7 @@ function attacker(tier: 2 | 3 | 4): SynFx {
     });
     c.on('unit_defeated', (e) => {
       const u = e.src;
-      if (e.tgt?.side !== 'enemy' || !isMem(u, SYN)) return;
+      if (e.tgt?.side !== c.them || !isMem(c, u, SYN)) return;
       if (c.has('oop_istanbul_rocket')) { u!.d.chainKeep = true; c.fire('oop_istanbul_rocket'); }
       if (tier === 4 && u!.alive && u!.zone === 'front' && c.once(u!, 'attacker_extra')) {
         c.proc('synergy', SYN, '추가 행동!', u);
@@ -760,16 +760,16 @@ function blaster(tier: 2 | 4 | 6 | 8): SynFx {
     if (tier === 2) return;
     const fx = `syn_blaster_${tier === 8 ? 'plat' : tier}`;
     c.on('damage_dealt', (e) => {
-      if (!isMem(e.src, SYN) || !e.aoe || !e.direct || (e.group?.length ?? 0) < 3 || !c.rootOnce('blaster_def')) return;
+      if (!isMem(c, e.src, SYN) || !e.aoe || !e.direct || (e.group?.length ?? 0) < 3 || !c.rootOnce('blaster_def')) return;
       c.proc('synergy', SYN, '광역 방어 붕괴', e.src);
       for (const t of e.group!.filter((x) => x.alive)) defDown(c, e.src!, t, tier === 8 ? 2500 : 1500, fx);
-      if (tier >= 6 && c.pulseOnce('blaster_sp')) c.gainSp('ally', 1);
+      if (tier >= 6 && c.pulseOnce('blaster_sp')) c.gainSp(c.me, 1);
     });
     if (tier === 8) c.on('unit_defeated', (e) => {
-      if (!isMem(e.src, SYN) || !e.aoe || e.tgt?.side !== 'enemy' || (e.src!.d.chainDepth ?? 0) >= 4) return;
+      if (!isMem(c, e.src, SYN) || !e.aoe || e.tgt?.side !== c.them || (e.src!.d.chainDepth ?? 0) >= 4) return;
       e.src!.d.chainDepth = (e.src!.d.chainDepth ?? 0) + 1;
       c.proc('synergy', SYN, '연쇄 폭발!', e.src, e.src!.d.chainDepth);
-      c.hit(e.src!, c.front('enemy'), 0.6, 'synergy', { aoe: true, fx });
+      c.hit(e.src!, c.front(c.them), 0.6, 'synergy', { aoe: true, fx });
       e.src!.d.chainDepth--;
     });
   };
@@ -781,14 +781,14 @@ function healer(tier: 2 | 4 | 6): SynFx {
     stats(c, SYN, 'healer', { healDone: { 2: 2000, 4: 4000, 6: 6000 }[tier] }, 0, k);
     const fleece = c.has('oop_golden_fleece');
     if (tier >= 4 || fleece) c.overheal.push((src, tgt, over) => {
-      if (!isMem(src, SYN) || tgt.side !== 'ally') return;
+      if (!isMem(c, src, SYN) || tgt.side !== c.me) return;
       const rate = tier >= 4 ? (fleece ? 1.5 : 1) * 0.75 : 0.25; // v2.4.12: 보호막 75%
       if (fleece) c.proc('oopart', 'oop_golden_fleece', '넘친 치유 → 보호막', tgt);
       c.shield(src, tgt, over * rate, tier >= 4 ? 2 : 1, `syn_healer_${tier === 6 ? 'plat' : 4}`);
     });
     if (tier !== 6) return;
     c.on('healed', (e) => {
-      if (!isMem(e.src, SYN) || e.fx === 'syn_healer_plat' || !e.tgt) return;
+      if (!isMem(c, e.src, SYN) || e.fx === 'syn_healer_plat' || !e.tgt) return;
       const other = c.lowestRatio(allyFront(c).filter((x) => x.alive && x !== e.tgt))[0];
       if (other) c.heal(e.src!, other, e.amount! * 0.5, 'syn_healer_plat');
       e.tgt.d.blessing = Math.min(5, (e.tgt.d.blessing ?? 0) + 1);
@@ -801,16 +801,16 @@ function supporter(tier: 2 | 4 | 6): SynFx {
   return (c) => {
     const SYN = 'syn_supporter';
     const extra = tier === 6 ? 2 : 1;
-    c.extraTurns.push((src, tgt, id, debuff) => (isMem(src, SYN) && !debuff && tgt.side === 'ally' && id !== 'st_taunt' ? extra : 0));
+    c.extraTurns.push((src, tgt, id, debuff) => (isMem(c, src, SYN) && !debuff && tgt.side === c.me && id !== 'st_taunt' ? extra : 0));
     if (tier === 2) return;
-    c.on('battle_start', () => { c.proc('synergy', SYN, `서포터 · SP +${tier === 6 ? 2 : 1}`); c.gainSp('ally', tier === 6 ? 2 : 1); });
+    c.on('battle_start', () => { c.proc('synergy', SYN, `서포터 · SP +${tier === 6 ? 2 : 1}`); c.gainSp(c.me, tier === 6 ? 2 : 1); });
     c.on('status_applied', (e) => {
-      if (!isMem(e.src, SYN) || !e.tgt || e.tgt.side !== 'ally' || e.tgt.zone !== 'front') return;
+      if (!isMem(c, e.src, SYN) || !e.tgt || e.tgt.side !== c.me || e.tgt.zone !== 'front') return;
       const st = e.tgt.st.find((x) => x.id === e.statusId && x.src === e.src && !x.debuff);
       if (!st) return;
       if (c.once(e.tgt, `support_energy:${e.src!.uid}`)) c.gainEnergy(e.tgt, tier === 6 ? 15 : 10);
       if (tier === 6) {
-        const n = new Set(e.tgt.st.filter((x) => !x.debuff && x.src && isMem(x.src, SYN)).map((x) => x.key)).size;
+        const n = new Set(e.tgt.st.filter((x) => !x.debuff && x.src && isMem(c, x.src, SYN)).map((x) => x.key)).size;
         if (n >= 3 && !e.tgt.d.supportUlt && c.battleOnce(e.tgt, 'support_ult', 2)) { e.tgt.d.supportUlt = true; c.proc('synergy', SYN, '총지원 · 다음 필살기 +60%', e.tgt); }
       }
     });
@@ -824,22 +824,22 @@ function controller(tier: 2 | 4 | 6): SynFx {
     const SYN = 'syn_controller';
     // v2.4.9 2단계: 지속 +1턴 대신 디버프를 받고 있는 적이 받는 피해 +20%(4·6단계는 그대로)
     if (tier === 2) {
-      c.hook((h) => { if (h.src.side === 'ally' && h.tgt.side === 'enemy' && c.hasDebuff(h.tgt)) { h.inc += s(k, 2000); c.fire('syn_controller_2'); } });
+      c.hook((h) => { if (h.src.side === c.me && h.tgt.side === c.them && c.hasDebuff(h.tgt)) { h.inc += s(k, 2000); c.fire('syn_controller_2'); } });
       return;
     }
-    c.extraTurns.push((src, tgt, id) => (isMem(src, SYN) && !tgt.boss && (id === 'st_stun' || id === 'st_silence' || id === 'st_delayed') ? 1 : 0));
+    c.extraTurns.push((src, tgt, id) => (isMem(c, src, SYN) && !tgt.boss && (id === 'st_stun' || id === 'st_silence' || id === 'st_delayed') ? 1 : 0));
     const fx = `syn_controller_${tier === 6 ? 'plat' : 4}`;
-    c.hook((h) => { if (h.src.side === 'ally' && h.tgt.side === 'enemy' && c.isControlled(h.tgt)) { h.inc += s(k, tier === 6 ? 3500 : 2000); c.fire(fx); } });
+    c.hook((h) => { if (h.src.side === c.me && h.tgt.side === c.them && c.isControlled(h.tgt)) { h.inc += s(k, tier === 6 ? 3500 : 2000); c.fire(fx); } });
     c.expires.push((u, st) => {
-      if (u.side !== 'enemy' || !['st_stun', 'st_silence'].includes(st.id) || c.isControlled(u)) return;
+      if (u.side !== c.them || !['st_stun', 'st_silence'].includes(st.id) || c.isControlled(u)) return;
       c.delay(u, tier === 6 ? 0.2 : 0.1, null);
     });
     if (tier === 6) c.on('unit_defeated', (e) => {
       const t = e.tgt;
-      if (!t || t.side !== 'enemy') return;
+      if (!t || t.side !== c.them) return;
       const ctl = t.st.filter((x) => x.id === 'st_stun' || x.id === 'st_silence');
       if (!ctl.length) return;
-      const next = c.sortBy(c.front('enemy'), (x) => Math.abs(x.slot - t.slot), false)[0];
+      const next = c.sortBy(c.front(c.them), (x) => Math.abs(x.slot - t.slot), false)[0];
       if (!next) return;
       c.proc('synergy', SYN, '제압 전파', next);
       for (const st of ctl) {
@@ -857,7 +857,7 @@ const UNIQUE: Record<string, SynFx> = {
     if (!u) return;
     c.mod(u, { spd: -Math.floor(u.b.spd / 2) }, 'uni_hoshino', () => u.turn < 2 && !u.d.serious);
     c.on('unit_defeated', (e) => {
-      if (e.tgt?.side !== 'ally' || e.tgt === u || u.d.serious || !u.alive) return;
+      if (e.tgt?.side !== c.me || e.tgt === u || u.d.serious || !u.alive) return;
       u.d.serious = true;
       c.proc('synergy', 'syn_unique_dawn_horus', '진심 모드!', u);
       taunt(c, u, 'syn_uni_hoshino', 999);
@@ -884,7 +884,7 @@ const UNIQUE: Record<string, SynFx> = {
     const isMika = (u: U) => u.unit?.id === 'u_mika';
     c.shieldBreakers.push((src) => isMika(src));
     c.on('unit_defeated', (e) => {
-      if (!e.src || !isMika(e.src) || e.tgt?.side !== 'enemy' || !e.src.alive) return;
+      if (!e.src || !isMika(e.src) || e.tgt?.side !== c.them || !e.src.alive) return;
       c.proc('synergy', 'syn_unique_princess_stars', '롤케이크!', e.src);
       c.heal(e.src, e.src, e.src.maxHp * 0.15, 'syn_uni_mika');
     });
@@ -895,7 +895,7 @@ const UNIQUE: Record<string, SynFx> = {
     const him = c.sortBy(allyFront(c).filter((x) => x !== w), (x) => (x.unit?.cost ?? 0) * 10 + x.star)[0];
     if (!him) return;
     c.on('battle_start', () => c.proc('synergy', 'syn_unique_calamity_fox', `「그분」 지정`, him));
-    c.on('damage_received', (e) => { if (e.tgt === him && e.src?.side === 'enemy') e.src.d.wakamoMark = true; });
+    c.on('damage_received', (e) => { if (e.tgt === him && e.src?.side === c.them) e.src.d.wakamoMark = true; });
     c.hook((h) => { if (h.src === w && h.tgt.d.wakamoMark) h.out += 5000; });
   },
   syn_uni_cherino: (c) => {
@@ -923,7 +923,7 @@ const UNIQUE: Record<string, SynFx> = {
       c.proc('synergy', 'syn_unique_nameless_princess', `방주 기동 ${a.d.ark}단계`, a, a.d.ark);
       if (a.d.ark === 3 && c.battleOnce(a, 'ark')) {
         c.proc('synergy', 'syn_unique_nameless_princess', '아트라하시스 주포 발사!', a);
-        c.hit(a, c.front('enemy'), 3.5, 'synergy', { true: true, fx: 'syn_uni_al1s' });
+        c.hit(a, c.front(c.them), 3.5, 'synergy', { true: true, fx: 'syn_uni_al1s' });
         for (const u of allyFront(c).filter((x) => x.alive)) c.gainEnergy(u, 20);
       }
     });
@@ -960,7 +960,7 @@ const UNIQUE: Record<string, SynFx> = {
       c.proc('synergy', 'syn_unique_armed_hero', `빛의 검 오버차지 ${a.d.overcharge}단계`, a, a.d.overcharge);
       if (a.d.overcharge === 2 && c.battleOnce(a, 'overcharge')) {
         c.proc('synergy', 'syn_unique_armed_hero', '빛이여!! 오버차지 해방!', a);
-        c.hit(a, c.front('enemy'), 3.0, 'synergy', { true: key(), fx: 'syn_uni_aris_armed' });
+        c.hit(a, c.front(c.them), 3.0, 'synergy', { true: key(), fx: 'syn_uni_aris_armed' });
         c.gainEnergy(a, 50);
       }
     });
@@ -975,8 +975,8 @@ const UNIQUE: Record<string, SynFx> = {
   syn_uni_miyu: (c) => {
     const m = ally(c).find((x) => x.unit?.id === 'u_miyu');
     if (!m) return;
-    c.hidden.push((u) => u === m && c.front('ally').some((x) => x !== m));
-    c.mod(m, { atkPct: 5000 }, 'uni_miyu', () => c.front('ally').every((x) => x === m));
+    c.hidden.push((u) => u === m && c.front(c.me).some((x) => x !== m));
+    c.mod(m, { atkPct: 5000 }, 'uni_miyu', () => c.front(c.me).every((x) => x === m));
   },
   syn_uni_shiroko: (c) => c.ends.push((o) => { if (o === 'win' && c.rng.chance(3000)) { c.gold.push({ label: '은행 털이 · 전리품', value: 2 }); c.fire('syn_uni_shiroko'); } }),
   syn_uni_nonomi: (c) => c.fire('syn_uni_nonomi'),
@@ -991,13 +991,13 @@ const EASTER: Record<string, SynFx> = {
   syn_plat_vanitas: (c) => {
     const squad = () => mem(c, 'syn_plat_vanitas').filter((x) => x.alive);
     c.on('unit_defeated', (e) => {
-      if (e.tgt?.side !== 'ally') return;
+      if (e.tgt?.side !== c.me) return;
       c.proc('synergy', 'syn_plat_vanitas', 'Vanitas vanitatum');
       for (const u of squad()) { c.mod(u, { atkPct: 2500 }, 'vanitas'); c.gainEnergy(u, 50); }
     }, null, true);
     const saori = () => ally(c).find((x) => x.unit?.id === 'u_saori' && x.alive);
-    c.noHeal.push((t) => t.side === 'enemy' && !!saori());
-    c.blockers.push((t, _id, debuff) => t.side === 'enemy' && !debuff && !!saori());
+    c.noHeal.push((t) => t.side === c.them && !!saori());
+    c.blockers.push((t, _id, debuff) => t.side === c.them && !debuff && !!saori());
   },
   syn_plat_ending_credits: (c) => {
     const railgun = () => ally(c).find((x) => ARIS_FORMS.has(x.unit?.id ?? '') && x.alive);
@@ -1005,12 +1005,12 @@ const EASTER: Record<string, SynFx> = {
       const a = railgun();
       if (e.n! % 2 !== 0 || !a) return;
       c.proc('synergy', 'syn_plat_ending_credits', '빛이여! (자동 발사)', a.hasHp ? a : undefined);
-      c.hit(a, c.front('enemy'), 4.0, 'synergy', { fx: 'syn_plat_ending_credits' });
+      c.hit(a, c.front(c.them), 4.0, 'synergy', { fx: 'syn_plat_ending_credits' });
     });
     c.saves.push((u) => {
-      if (u.side !== 'ally' || c.front('ally').some((x) => x !== u && x.hp > 0) || !c.battleOnce(null, 'continue')) return false;
+      if (u.side !== c.me || c.front(c.me).some((x) => x !== u && x.hp > 0) || !c.battleOnce(null, 'continue')) return false;
       c.proc('synergy', 'syn_plat_ending_credits', '컨티뉴?');
-      for (const x of c.units.filter((y) => y.side === 'ally' && y.zone === 'front' && y.hasHp)) {
+      for (const x of c.units.filter((y) => y.side === c.me && y.zone === 'front' && y.hasHp)) {
         x.alive = true; x.hp = Math.max(1, Math.floor(x.maxHp * 0.3));
         c.log({ t: 'heal', av: c.av, source: x.ref, target: x.ref, amount: x.hp });
       }
@@ -1023,12 +1023,12 @@ const EASTER: Record<string, SynFx> = {
       c.proc('synergy', 'syn_plat_codename', '코드네임 00~05, 작전 개시');
       for (const u of team()) { c.newRoot(); if (u.zone === 'front') c.hit(u, c.pick(u), 1, 'basic', { fx: 'syn_plat_codename' }); else c.hit(u, c.pick(u), 1, 'rear', { fx: 'syn_plat_codename' }); }
     });
-    c.on('unit_defeated', (e) => { if (e.tgt?.side === 'enemy') for (const u of team()) c.advance(u, 0.15); });
+    c.on('unit_defeated', (e) => { if (e.tgt?.side === c.them) for (const u of team()) c.advance(u, 0.15); });
   },
   syn_plat_tea_party: (c) => c.fire('syn_plat_tea_party'),
   syn_plat_last_line: (c) => {
     c.saves.push((u) => {
-      if (u.side !== 'ally' || !u.hasHp || !c.battleOnce(u, 'last_line')) return false;
+      if (u.side !== c.me || !u.hasHp || !c.battleOnce(u, 'last_line')) return false;
       u.hp = 1;
       c.proc('synergy', 'syn_plat_last_line', '최후의 방어선 · HP 1로 버틴다', u);
       return true;
