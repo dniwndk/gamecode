@@ -2,6 +2,7 @@
 // 여기서는 통신 수단을 붙이고 화면 드라이버를 솔로 ↔ 멀티로 바꿔 끼운다.
 import type { ContentCatalog } from '../../../app/gameClient';
 import { createGuest, createHost, type Guest, type Host } from '../../../app/multi/net';
+import type { ChatMessage } from '../../../app/multi/chat';
 import type { LobbyView } from '../../../app/multi/room';
 import type { UiDriver } from '../../../app/view';
 import { localProfileStore } from '../preview/session';
@@ -27,6 +28,14 @@ export interface MultiController {
   /** 방에서 나간다(방장이면 방을 닫는다) */
   leave(reason?: string): void;
   isHost(): boolean;
+  /** 방 채팅 기록(방에 없으면 빈 배열) */
+  chat(): ChatMessage[];
+  /** 내 플레이어 번호(채팅에서 내 줄 구분) */
+  you(): number | null;
+  /** 채팅 보내기. 실패하면 이유 문장 */
+  say(text: string): string | null;
+  /** 새 채팅 줄·방 변경(입장·퇴장) 알림 */
+  onChat(fn: (m: ChatMessage | null) => void): () => void;
 }
 
 /** use(driver): 화면이 볼 드라이버를 바꾼다. null이면 솔로로 돌아간다 */
@@ -39,17 +48,22 @@ export function createMultiController(catalog: ContentCatalog, use: (d: UiDriver
   let guest: Guest | null = null;
   let guestClose: (() => void) | null = null;
   let unsubHome: (() => void) | null = null;
+  const chatFns = new Set<(m: ChatMessage | null) => void>();
+  const chatOut = (m: ChatMessage | null) => { for (const f of chatFns) f(m); };
+  let unsubChat: (() => void) | null = null;
 
   const saveName = (n: string) => { try { localStorage.setItem(NAME_KEY, n); } catch { /* 무시 */ } };
 
   function reset(error?: string) {
     unsubHome?.(); unsubHome = null;
+    unsubChat?.(); unsubChat = null;
     host?.close(); host = null;
     transport?.close(); transport = null;
     guest?.leave(); guest = null;
     guestClose?.(); guestClose = null;
     use(null);
     set({ kind: 'idle', ...(error ? { error } : {}) });
+    chatOut(null);
   }
 
   /** 멀티 화면이 홈으로 돌아가면(나가기) 방을 정리한다 */
@@ -82,6 +96,7 @@ export function createMultiController(catalog: ContentCatalog, use: (d: UiDriver
       });
       const h = host;
       transport.onConnection((c) => h.accept(c));
+      unsubChat = h.room.chat.onMessage((msg) => chatOut(msg));
       h.room.onLobby((lobby) => { if (status.kind === 'lobby') set({ ...status, lobby }); });
       set({ kind: 'lobby', role: 'host', code, lobby: h.room.lobby() });
     },
@@ -102,6 +117,9 @@ export function createMultiController(catalog: ContentCatalog, use: (d: UiDriver
       guestClose = link.close;
       const g = createGuest(catalog, link.conn, name);
       guest = g;
+      const offChat = g.onChat((msg) => chatOut(msg));
+      const offErr = g.onChatError((msg) => notify(msg));
+      unsubChat = () => { offChat(); offErr(); };
       g.onLobby((lobby) => { if (status.kind === 'connecting' || status.kind === 'lobby') set({ kind: 'lobby', role: 'guest', code, lobby }); });
       g.onStart(() => {
         set({ kind: 'playing', role: 'guest', code });
@@ -127,5 +145,14 @@ export function createMultiController(catalog: ContentCatalog, use: (d: UiDriver
     },
 
     leave() { reset(); },
+
+    chat: () => (host ? host.room.chat.history() : guest ? guest.chat() : []),
+    you: () => (host ? host.you : guest ? guest.you() : null),
+    say(text) {
+      if (host) return host.say(text);
+      if (guest) return guest.say(text);
+      return '방에 들어가 있지 않아요';
+    },
+    onChat(fn) { chatFns.add(fn); return () => chatFns.delete(fn); },
   };
 }

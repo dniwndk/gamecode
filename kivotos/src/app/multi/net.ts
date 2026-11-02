@@ -4,6 +4,7 @@
 import type { CommandResult, ContentCatalog, GameCommandType } from '../gameClient';
 import type { RunSession } from '../run/session';
 import type { BattleView, UiDriver, UiState } from '../view';
+import { CHAT_HISTORY, cleanChat, isChatMessage, type ChatMessage } from './chat';
 import { Room, type LobbyView, type RoomOptions } from './room';
 
 /** 한 상대와의 연결. 메시지는 JSON으로 바꿀 수 있는 값이다 */
@@ -14,14 +15,17 @@ export interface Conn {
   close(): void;
 }
 
-export const PROTOCOL = 1;
+export const PROTOCOL = 2;
 
 export type ToHost =
   | { t: 'hello'; protocol: number; name: string; contentVersion: string; rulesVersion: string }
-  | { t: 'cmd'; id: number; type: GameCommandType; payload: Record<string, unknown> };
+  | { t: 'cmd'; id: number; type: GameCommandType; payload: Record<string, unknown> }
+  | { t: 'chat'; text: string };
 
 export type ToGuest =
-  | { t: 'welcome'; lobby: LobbyView }
+  | { t: 'welcome'; lobby: LobbyView; you: number; chat: ChatMessage[] }
+  | { t: 'chat'; message: ChatMessage }
+  | { t: 'chatError'; message: string }
   | { t: 'reject'; message: string }
   | { t: 'lobby'; lobby: LobbyView }
   | { t: 'state'; state: UiState; at: number }
@@ -72,6 +76,10 @@ export interface Host {
   accept(conn: Conn): void;
   start(): { ok: true } | { ok: false; message: string };
   close(message?: string): void;
+  /** 방장 자신의 플레이어 번호(채팅 from과 비교) */
+  you: number;
+  /** 방장의 채팅. 거절되면 이유 문장 */
+  say(text: string): string | null;
 }
 
 export function createHost(catalog: ContentCatalog, opts: RoomOptions & { hostName: string }): Host {
@@ -81,6 +89,7 @@ export function createHost(catalog: ContentCatalog, opts: RoomOptions & { hostNa
   const pack = catalog.pack;
   const sendLobby = () => { const lobby = room.lobby(); for (const c of guests.keys()) safeSend(c, { t: 'lobby', lobby }); };
   room.onLobby(sendLobby);
+  room.chat.onMessage((message) => { for (const c of guests.keys()) safeSend(c, { t: 'chat', message }); });
 
   function attach(conn: Conn) {
     const g = guests.get(conn);
@@ -99,6 +108,8 @@ export function createHost(catalog: ContentCatalog, opts: RoomOptions & { hostNa
 
   return {
     room,
+    you: hostId,
+    say(text) { const r = room.say(hostId, text); return r.ok ? null : r.message; },
     local: () => { const seat = room.seatOf(hostId); return seat === null ? null : room.session(seat); },
     accept(conn) {
       conn.onMessage((m) => {
@@ -114,8 +125,13 @@ export function createHost(catalog: ContentCatalog, opts: RoomOptions & { hostNa
           const id = room.join(typeof m.name === 'string' ? m.name : '');
           if (id === null) { safeSend(conn, { t: 'reject', message: '방이 가득 찼어요' }); return; }
           guests.set(conn, { id, sentBattle: null, unsub: null });
-          safeSend(conn, { t: 'welcome', lobby: room.lobby() });
+          safeSend(conn, { t: 'welcome', lobby: room.lobby(), you: id, chat: room.chat.history() });
           sendLobby();
+          return;
+        }
+        if (m.t === 'chat') {
+          const r = room.say(g.id, m.text);
+          if (!r.ok) safeSend(conn, { t: 'chatError', message: r.message });
           return;
         }
         const cmd = checkGuestCommand(m);
@@ -161,6 +177,15 @@ export interface Guest {
   /** 거절·방 닫힘·연결 끊김(이유 문장) */
   onClosed(fn: (message: string) => void): () => void;
   leave(): void;
+  /** 내 플레이어 번호(환영 전에는 null) */
+  you(): number | null;
+  /** 지금까지 받은 채팅 */
+  chat(): ChatMessage[];
+  onChat(fn: (m: ChatMessage) => void): () => void;
+  /** 채팅 보내기. 보낼 내용이 없거나 연결이 끊겼으면 이유 문장 */
+  say(text: string): string | null;
+  /** 방장이 거절한 이유(도배 등) */
+  onChatError(fn: (message: string) => void): () => void;
 }
 
 export function createGuest(catalog: ContentCatalog, conn: Conn, name: string): Guest {
@@ -176,6 +201,15 @@ export function createGuest(catalog: ContentCatalog, conn: Conn, name: string): 
   const lobbyFns = new Set<(l: LobbyView) => void>();
   const startFns = new Set<() => void>();
   const closeFns = new Set<(m: string) => void>();
+  const chatFns = new Set<(m: ChatMessage) => void>();
+  const chatErrFns = new Set<(m: string) => void>();
+  let chat: ChatMessage[] = [];
+  let you: number | null = null;
+  const addChat = (msg: ChatMessage) => {
+    if (chat.some((x) => x.id === msg.id)) return;
+    chat = [...chat, msg].slice(-CHAT_HISTORY);
+    for (const fn of chatFns) fn(msg);
+  };
   const end = (message: string) => {
     if (closed) return;
     closed = true;
@@ -188,7 +222,13 @@ export function createGuest(catalog: ContentCatalog, conn: Conn, name: string): 
     if (!isObj(raw)) return;
     const m = raw as ToGuest;
     switch (m.t) {
-      case 'welcome': case 'lobby': lobby = m.lobby; for (const fn of lobbyFns) fn(m.lobby); break;
+      case 'welcome':
+        if (typeof m.you === 'number') you = m.you;
+        if (Array.isArray(m.chat)) for (const x of m.chat) if (isChatMessage(x)) addChat(x);
+        lobby = m.lobby; for (const fn of lobbyFns) fn(m.lobby); break;
+      case 'lobby': lobby = m.lobby; for (const fn of lobbyFns) fn(m.lobby); break;
+      case 'chat': if (isChatMessage(m.message)) addChat(m.message); break;
+      case 'chatError': if (typeof m.message === 'string') for (const fn of chatErrFns) fn(m.message); break;
       case 'reject': end(m.message); conn.close(); break;
       case 'closed': end(m.message); break;
       case 'res': pending.get(m.id)?.(m.result); pending.delete(m.id); break;
@@ -231,5 +271,15 @@ export function createGuest(catalog: ContentCatalog, conn: Conn, name: string): 
     onStart(fn) { startFns.add(fn); return () => startFns.delete(fn); },
     onClosed(fn) { closeFns.add(fn); return () => closeFns.delete(fn); },
     leave() { closed = true; conn.close(); },
+    you: () => you,
+    chat: () => chat,
+    onChat(fn) { chatFns.add(fn); return () => chatFns.delete(fn); },
+    onChatError(fn) { chatErrFns.add(fn); return () => chatErrFns.delete(fn); },
+    say(text) {
+      if (closed) return '방과 연결이 끊겼어요';
+      const t = cleanChat(text);
+      if (!t) return '보낼 내용이 없어요';
+      try { conn.send({ t: 'chat', text: t } satisfies ToHost); return null; } catch { return '방과 연결이 끊겼어요'; }
+    },
   };
 }

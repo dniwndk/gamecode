@@ -7,6 +7,7 @@ import type { RoomClock } from '../../src/app/multi/room';
 import type { UiDriver } from '../../src/app/view';
 import { contentPack as pack } from '../../src/content';
 import { creepRewardFor, MULTI_DEFEAT_DAMAGE } from '../../src/app/run/multiRules';
+import { CHAT_BURST, CHAT_MAX_LENGTH, cleanChat } from '../../src/app/multi/chat';
 
 const catalog = { pack, rules: pack.rules, validation: { errors: [], warnings: [] }, assetUrl: () => null } as unknown as ContentCatalog;
 
@@ -261,3 +262,63 @@ describe('멀티플레이 방', () => {
     expect(host.local()!.get().phase).toBe('RUN_COMPLETE');
   });
 });
+
+describe('멀티플레이 채팅', () => {
+  it('누가 보내든 모두가 같은 기록을 받고, 늦게 들어온 사람도 지난 기록을 본다', async () => {
+    const { host, guests } = setup(2);
+    await flush();
+    expect(host.say('  안녕   하세요 ')).toBeNull();
+    expect(guests[0].say('반가워요')).toBeNull();
+    await flush();
+    // 나중에 들어온 사람
+    const [h, g] = pipe();
+    host.accept(h);
+    const late = createGuest(catalog, g, '늦은사람');
+    await flush();
+    const texts = (x: { text: string; system?: boolean }[]) => x.filter((m) => !m.system).map((m) => m.text);
+    expect(texts(host.room.chat.history())).toEqual(['안녕 하세요', '반가워요']);
+    expect(texts(guests[0].chat())).toEqual(['안녕 하세요', '반가워요']);
+    expect(texts(late.chat())).toEqual(['안녕 하세요', '반가워요']);
+    // 보낸 사람 번호로 내 줄을 가린다
+    const mine = guests[0].chat().find((m) => m.text === '반가워요')!;
+    expect(mine.from).toBe(guests[0].you());
+    expect(mine.name).toBe('참가자1');
+    expect(host.room.chat.history().some((m) => m.system && m.text.includes('늦은사람'))).toBe(true);
+  });
+
+  it('빈 문장·긴 문장·도배를 거른다', async () => {
+    const { host, guests } = setup(2);
+    await flush();
+    const errors: string[] = [];
+    guests[0].onChatError((m) => errors.push(m));
+    expect(host.say('   ')).not.toBeNull();
+    expect(guests[0].say('\n\t')).not.toBeNull();
+    host.say('가'.repeat(500));
+    expect([...host.room.chat.history().at(-1)!.text].length).toBe(CHAT_MAX_LENGTH);
+    // 연결 너머로 직접 보낸 이상한 값도 방장이 거른다
+    for (let i = 0; i < CHAT_BURST + 2; i++) guests[0].say(`도배 ${i}`);
+    await flush();
+    const spam = host.room.chat.history().filter((m) => m.text.startsWith('도배'));
+    expect(spam.length).toBe(CHAT_BURST);
+    expect(errors.length).toBe(2);
+    expect(cleanChat({ text: 'x' })).toBeNull();
+    expect(cleanChat('a\u202eb')).toBe('a b');
+  });
+
+  it('게임 중에도 채팅이 오가고, 순위가 정해지면 방 알림이 남는다', async () => {
+    const { host, guests } = setup(2);
+    await flush();
+    host.start();
+    await flush();
+    expect(guests[0].say('준비 끝')).toBeNull();
+    await flush();
+    expect(host.room.chat.history().at(-1)!.text).toBe('준비 끝');
+    // 참가자가 나가면 순위 알림
+    await guests[0].driver.send('ABANDON_RUN');
+    await flush();
+    const sys = host.room.chat.history().filter((m) => m.system).map((m) => m.text);
+    expect(sys.some((t) => t.includes('참가자1') && t.includes('나갔어요'))).toBe(true);
+    expect(sys.some((t) => t.includes('우승'))).toBe(true);
+  });
+});
+

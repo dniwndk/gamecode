@@ -17,6 +17,7 @@ import type { ContentCatalog } from '../gameClient';
 import { flipBattleOutput, Rng, simulateBattle, type BattleTeamInput, type OwnedCopy } from '../runRules';
 import { createRunSession, type ProfileStore, type RunSession } from '../run/session';
 import type { MultiPlayerView, MultiView } from '../view';
+import { ChatLog, type ChatMessage } from './chat';
 import { creepRewardFor, isCreepNode, multiNode, withPvpBalance, type CreepReward } from '../run/multiRules';
 
 export const MAX_PLAYERS = 8;
@@ -66,11 +67,21 @@ export class Room {
   private rng: Rng;
   private round = 0;
   private nextId = 0;
+  /** 방 채팅(로비부터 끝까지 한 기록) */
+  readonly chat: ChatLog;
 
   constructor(catalog: ContentCatalog, opts: RoomOptions) {
     this.catalog = catalog;
     this.opts = opts;
     this.rng = Rng.forStream(opts.seed, 'setup');
+    this.chat = new ChatLog(() => opts.clock.now());
+  }
+
+  /** 플레이어 id의 채팅. 방에 없는 사람이면 거절 */
+  say(id: number, text: unknown): { ok: true; message: ChatMessage } | { ok: false; message: string } {
+    const p = this.players.find((x) => x.id === id);
+    if (!p) return { ok: false, message: '방에 없어요' };
+    return this.chat.say(id, p.name, text);
   }
 
   // ── 로비 ───────────────────────────────────────────────
@@ -93,6 +104,7 @@ export class Room {
     for (let k = 2; taken.has(n); k++) n = `${cleanName(name, seat)} ${k}`;
     const id = this.nextId++;
     this.players.push({ id, seat, name: n, connected: true, session: null, place: null, lastOpponent: null, lastOpponentName: null });
+    this.chat.system(`${n} 님이 들어왔어요`);
     this.lobbyChanged();
     return id;
   }
@@ -104,6 +116,7 @@ export class Room {
   disconnect(id: number): void {
     const p = this.players.find((x) => x.id === id);
     if (!p) return;
+    if (p.connected) this.chat.system(`${p.name} 님이 나갔어요`);
     if (!this.started) {
       this.players = this.players.filter((x) => x !== p);
       this.players.forEach((x, i) => { x.seat = i; });
@@ -213,6 +226,7 @@ export class Room {
   private leave(seat: number): void {
     const p = this.players[seat];
     if (!p || p.place !== null) return;
+    if (p.connected) this.chat.system(`${p.name} 님이 나갔어요`);
     p.connected = false;
     // 스스로 나가면 지금 남은 사람 중 꼴찌로 탈락
     p.place = this.alive().length;
@@ -335,7 +349,11 @@ export class Room {
       rest.forEach((p, i) => { p.place = i + 1; });
       this.clearDeadline();
     }
-    for (const p of this.players) if (p.place !== null && p.session && p.session.info().place === null) p.session.finish(p.place);
+    for (const p of this.players) {
+      if (p.place === null || !p.session || p.session.info().place !== null) continue;
+      this.chat.system(p.place === 1 ? `${p.name} 님 우승!` : `${p.name} 님 최종 ${p.place}위`);
+      p.session.finish(p.place);
+    }
   }
 
   /** 방장이 방을 닫을 때 */
