@@ -49,8 +49,10 @@ export function remainingCopies(
   shown: readonly (string | null)[] = [],
   awakenedFromIds: ReadonlySet<string> = new Set(),
   awakenedIntoIds: ReadonlySet<string> = new Set(),
+  /** 멀티플레이 공용 풀: 다른 플레이어가 가진 학생(장수만 빠지고, 3성 제외 규칙은 내 것만 본다) */
+  othersOwned: readonly OwnedCopy[] = [],
 ): Map<string, number> {
-  const held = heldCopies(pack, owned);
+  const held = heldCopies(pack, othersOwned.length ? [...owned, ...othersOwned] : owned);
   const excluded = shopExcluded(pack, owned, awakenedFromIds, awakenedIntoIds);
   const out = new Map<string, number>();
   for (const u of pack.units) {
@@ -73,6 +75,9 @@ export interface ShopRollInput {
   slots?: number;
   recommendedChanceBps?: number;
   topCostFirstSlot?: boolean;
+  /** 멀티플레이 공용 풀: 다른 플레이어가 가진 학생, 그들 상점에 떠 있는 칸 */
+  othersOwned?: readonly OwnedCopy[];
+  othersShown?: readonly (string | null)[];
 }
 
 /** 레벨의 코스트 확률(%) */
@@ -100,7 +105,7 @@ export function rollShopDetailed(pack: ContentPack, input: ShopRollInput, rng: R
   const { recommendedSlotIndex } = pack.rules.shop;
   const slots = input.slots ?? pack.rules.shop.slots;
   const recommendedModeChanceBps = input.recommendedChanceBps ?? pack.rules.shop.recommendedModeChanceBps;
-  const remaining = remainingCopies(pack, input.owned, [], input.awakenedFromIds, input.awakenedIntoIds);
+  const remaining = remainingCopies(pack, input.owned, input.othersShown ?? [], input.awakenedFromIds, input.awakenedIntoIds, input.othersOwned ?? []);
   const odds = costOdds(pack, input.level);
   // 등급별 후보는 ID순(5.2)
   const byCost = [1, 2, 3, 4, 5].map((c) => pack.units.filter((u) => u.cost === c && remaining.has(u.id)).map((u) => u.id).sort());

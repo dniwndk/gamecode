@@ -54,6 +54,7 @@ export function mountHome(ctx: Ctx, s: UiState): Screen {
       h('nav', { class: 'k-menu', 'aria-label': '메인 메뉴' },
         menuBtn('이어하기', s.savedRun ? `${s.savedRun.chapter}장 ${s.savedRun.battle}전투 · 런 체력 ${s.savedRun.runHp}/${s.savedRun.runHpMax}` : '진행 중인 작전이 없어요', 'play', resume, { primary: !!resume }),
         menuBtn('새 작전', '시드와 보스를 확인하고 출발', 'flag', () => void newGame(), { primary: !resume }),
+        menuBtn('멀티플레이', '친구와 같은 상점 풀로 PvP · 2~8명', 'users', () => ctx.go('multi')),
         menuBtn('주간 작전', isoWeek(new Date()), 'map', null, { hint: 'M5' }),
         menuBtn('학생 도감', `학생 ${ctx.driver.catalog.pack.units.length}명 · 시너지 ${ctx.driver.catalog.pack.synergies.length}종`, 'codex', () => ctx.go('codex')),
         menuBtn('기록 · 업무 일지', null, 'records', null, { hint: 'M5' }),

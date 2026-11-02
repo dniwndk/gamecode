@@ -20,6 +20,23 @@ export interface BattleEnemyInput {
   slot: number;
 }
 
+/**
+ * PvP 상대 진영(학생 편성). 있으면 enemies는 무시하고 이 편성이 적 진영이 된다.
+ * 아군 쪽 BattleInput 필드와 같은 뜻이며, 상대 진영 시점으로 계산된 값이다.
+ */
+export interface BattleTeamInput {
+  units: BattleAllyInput[];
+  activeTiers: Record<string, number>;
+  strategies: string[];
+  ooparts: string[];
+  runAtkBpsByUnit?: Record<string, number>;
+  fullEnergyUnitIds?: string[];
+  dessert?: boolean;
+  dessertHalf?: boolean;
+  gameDevBugs?: number[];
+  serikaWins?: number;
+}
+
 export interface BattleInput {
   /** 전투 RNG 씨앗(런 씨앗 + 노드 + 회차) */
   seed: string;
@@ -46,6 +63,8 @@ export interface BattleInput {
   gameDevBugs?: number[];
   /** 세리카 「아르바이트 수당」 누적 승리 수(런 스택) */
   serikaWins?: number;
+  /** PvP: 상대 학생 편성(있으면 enemies 대신) */
+  opponent?: BattleTeamInput;
 }
 
 export type BattleEvent =
@@ -93,4 +112,11 @@ export interface BattleOutput {
   survivingEnemyFront: number;
   /** 처리한 효과 ID(검증·측정용) */
   firedEffects: string[];
+  /** PvP: 상대 진영 시점의 기여·처치·정산 골드, 남은 아군(=상대가 본 적) 전방 수 */
+  opponent?: {
+    contributions: BattleContribution[];
+    kills: { unitId: string; eliteOrBoss: boolean }[];
+    settlementGold: { label: string; value: number }[];
+    survivingFront: number;
+  };
 }

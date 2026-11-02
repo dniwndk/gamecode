@@ -201,6 +201,17 @@ export class Battle {
   frontSkillCdBonus = 0;
   /** 아군 비치명 타격 피해 증감(암시장 탄약) */
   nonCritBps = 0;
+  /**
+   * 효과 코드가 보는 「우리 편」과 「상대 편」. 실제 Battle은 언제나 아군('ally') 시점이다.
+   * PvP(input.opponent)에서는 상대 학생 진영의 효과가 view('enemy')로 등록·실행되어, 같은 효과 코드가 반대 진영을 기준으로 돈다.
+   */
+  readonly me: Side = 'ally';
+  readonly them: Side = 'enemy';
+  /** PvP 상대 진영 상태(시너지 단계·오파츠·전략·자유 상태 g 등). PvE면 null */
+  foeState: SideState | null = null;
+  private enemyView: Battle | null = null;
+  enemyKills: BattleOutput['kills'] = [];
+  enemyContrib = new Map<string, BattleContribution>();
   private handlers = new Map<EvType, Handler[]>();
   private rootLim = new Map<string, number>();
   private pulseLim = new Map<string, number>();
@@ -238,7 +249,7 @@ export class Battle {
   byUid(uid: number | undefined): U | undefined { return uid === undefined ? undefined : this.units.find((x) => x.uid === uid); }
   tier(syn: string): number | undefined { return this.tiers[syn]; }
   has(oopId: string): boolean { return this.ooparts.has(oopId); }
-  members(syn: string, side: Side = 'ally'): U[] { return this.all(side).filter((u) => u.tags.has(syn)); }
+  members(syn: string, side: Side = this.me): U[] { return this.all(side).filter((u) => u.tags.has(syn)); }
   /** 성급별 수치 a/b/c */
   v<T>(u: U, xs: readonly T[]): T { return xs[Math.min(xs.length, u.star) - 1]; }
   hpRatio(u: U): number { return u.maxHp > 0 ? u.hp / u.maxHp : 0; }
@@ -353,9 +364,10 @@ export class Battle {
     this.log({ t: 'proc', av: this.av, cause: { kind, id }, label, unit: unit?.ref, ...(chain ? { chain } : {}) });
   }
   private c(u: U): BattleContribution | null {
-    if (u.side !== 'ally' || !u.unit) return null;
-    let x = this.contrib.get(u.unit.id);
-    if (!x) { x = { unitId: u.unit.id, damage: 0, healing: 0, shield: 0, rearSupport: 0 }; this.contrib.set(u.unit.id, x); }
+    if (!u.unit || (u.side !== 'ally' && !this.foeState)) return null;
+    const map = u.side === 'ally' ? this.contrib : this.enemyContrib;
+    let x = map.get(u.unit.id);
+    if (!x) { x = { unitId: u.unit.id, damage: 0, healing: 0, shield: 0, rearSupport: 0 }; map.set(u.unit.id, x); }
     return x;
   }
   private target(r: Ref): void {
@@ -406,7 +418,7 @@ export class Battle {
     const direct = DIRECT.has(kind);
     const aoe = o.aoe ?? list.length > 1;
     const canCrit = o.crit ?? direct;
-    const esc = escalationDamageBps(this.av, this.pack.rules.battle, src.side, this.input.chapter);
+    const esc = escalationDamageBps(this.av, this.pack.rules.battle, this.escSide(src.side), this.input.chapter);
     const res: HitRes[] = [];
     // 묶음: 피해를 먼저 모두 확정한다(7.6)
     const nextCrit = canCrit && this.stOf(src, 'st_next_crit');
@@ -427,7 +439,7 @@ export class Battle {
       const defMul = o.true ? 1 : 100 / (100 + this.def(tgt));
       let crit = false;
       if (canCrit) crit = h.forceCrit || this.rng.chance(clamp(this.crit(src) + h.crit, 0, 10000));
-      const critMul = crit ? 1 + (this.critDmg(src) + h.critDmg) / 10000 : 1 + (src.side === 'ally' ? this.nonCritBps : 0) / 10000;
+      const critMul = crit ? 1 + (this.critDmg(src) + h.critDmg) / 10000 : 1 + this.sideMods(src.side).nonCritBps / 10000;
       let dmg = raw > 0 ? Math.max(1, Math.floor(raw * out * inc * defMul * critMul * h.mul * (1 + esc / 10000))) : 0;
       // 보호막 먼저(먼저 만료할 것 → 먼저 생긴 것)
       let absorbed = 0;
@@ -482,6 +494,7 @@ export class Battle {
     u.shields = [];
     this.log({ t: 'defeated', av: this.av, target: u.ref, by: by?.ref });
     if (u.side === 'enemy' && by && by.side === 'ally' && by.unit) this.kills.push({ unitId: by.unit.id, eliteOrBoss: u.boss || this.input.nodeType !== 'normal' });
+    else if (this.foeState && u.side === 'ally' && by && by.side === 'enemy' && by.unit) this.enemyKills.push({ unitId: by.unit.id, eliteOrBoss: this.input.nodeType !== 'normal' });
     return true;
   }
   /** 반사·지속 피해처럼 묶음 밖에서 HP를 깎는다 */
@@ -549,7 +562,7 @@ export class Battle {
     if (!tgt || !tgt.alive || this.ended) return false;
     const debuff = DEBUFFS.has(id);
     let turns = o.turns ?? 2;
-    if (src && src.side === 'ally') for (const f of this.extraTurns) turns += f(src, tgt, id, debuff);
+    if (src && (src.side === 'ally' || this.foeState)) for (const f of this.extraTurns) turns += f(src, tgt, id, debuff);
     if (this.blockers.some((b) => b(tgt, id, debuff, src))) return false;
     if (tgt.boss && (id === 'st_stun' || id === 'st_silence')) {
       // 보스 제어 치환: 기절 → 25% 지연 + ATK -15%(1차례), 침묵 → 20% 지연
@@ -651,7 +664,7 @@ export class Battle {
     // 지속 피해·회복(대상 차례 시작에 틱)
     for (const s of [...u.st]) {
       if (!u.alive) break;
-      if (s.id === 'st_burn' && s.params.tick) this.rawDamage(s.src, u, Math.floor(s.params.tick * (100 / (100 + this.def(u))) * Math.max(0.1, 1 + (this.sum(u, 'dmgTaken') - this.sum(u, 'dmgRed')) / 10000) * (1 + escalationDamageBps(this.av, this.pack.rules.battle, s.src?.side ?? this.foe(u.side), this.input.chapter) / 10000)), { kind: 'dot' });
+      if (s.id === 'st_burn' && s.params.tick) this.rawDamage(s.src, u, Math.floor(s.params.tick * (100 / (100 + this.def(u))) * Math.max(0.1, 1 + (this.sum(u, 'dmgTaken') - this.sum(u, 'dmgRed')) / 10000) * (1 + escalationDamageBps(this.av, this.pack.rules.battle, this.escSide(s.src?.side ?? this.foe(u.side)), this.input.chapter) / 10000)), { kind: 'dot' });
       if (s.id === 'st_hot' && s.params.hot && s.src) this.heal(s.src, u, s.params.hot);
     }
     if (u.alive) this.emit({ type: 'turn_start', src: u, tgt: u });
@@ -677,7 +690,18 @@ export class Battle {
     u.delayBudget = Math.floor(base * (u.boss ? 0.5 : 1));
   }
 
-  private ultNeed(u: U): number { return u.side === 'ally' && u.zone === 'front' ? this.frontUltEnergy : 100; }
+  private ultNeed(u: U): number { return u.unit && u.zone === 'front' ? this.sideMods(u.side).frontUltEnergy : 100; }
+  /** 진영별 전투 보정(오파츠). PvE의 적 몬스터는 기본값 */
+  private sideMods(side: Side): { frontUltEnergy: number; frontSkillCdBonus: number; nonCritBps: number } {
+    return side === 'ally' ? this : this.foeState ?? NO_MODS;
+  }
+  /** 격화 비율 진영: PvP는 양쪽 모두 아군 비율(같은 조건) */
+  private escSide(side: Side): Side { return this.foeState ? 'ally' : side; }
+  /** 이 진영의 효과가 보는 Battle. 아군이거나 PvE면 자기 자신 */
+  view(side: Side): Battle {
+    if (side === 'ally' || !this.foeState) return this;
+    return (this.enemyView ??= sideView(this, this.foeState));
+  }
 
   private frontTurn(u: U): void {
     this.startTurn(u);
@@ -688,12 +712,13 @@ export class Battle {
       const ab = u.unit ? u.unit.abilityIds : null;
       const ultId = ab ? ab.ultimate : u.d.ult;
       const ult = this.activeOf(ultId);
-      if (ult && !silenced && u.energy >= this.ultNeed(u) && (!ult.auto || ult.auto(this, u)) && this.foes(u).length) {
+      const cv = this.view(u.side);
+      if (ult && !silenced && u.energy >= this.ultNeed(u) && (!ult.auto || ult.auto(cv, u)) && this.foes(u).length) {
         u.energy -= this.ultNeed(u);
         this.energyLog(u);
         this.emit({ type: 'ultimate_declared', src: u });
         this.beginAction(u, 'ultimate');
-        ult.run(this, u);
+        ult.run(cv, u);
         this.fire(ultId!.replace(/^eff_/, ''));
         this.endAction();
         if (u.alive) this.emit({ type: 'ultimate_resolved', src: u, kind: 'ultimate' });
@@ -701,14 +726,14 @@ export class Battle {
       if (!this.ended && u.alive) {
         const skillId = ab ? ab.skill : u.d.skill;
         const skill = this.activeOf(skillId);
-        const skillOk = !!skill && !silenced && this.sp[u.side] >= 1 && u.cd <= 0 && (skill.auto ? skill.auto(this, u) : this.foes(u).length > 0);
+        const skillOk = !!skill && !silenced && this.sp[u.side] >= 1 && u.cd <= 0 && (skill.auto ? skill.auto(cv, u) : this.foes(u).length > 0);
         if (skillOk) {
           this.gainSp(u.side, -1);
-          u.cd = Math.max(0, (skill!.cd ?? 2) + (u.side === 'ally' ? this.frontSkillCdBonus : 0) - (u.d.cdCut ?? 0));
+          u.cd = Math.max(0, (skill!.cd ?? 2) + (u.unit ? this.sideMods(u.side).frontSkillCdBonus : 0) - (u.d.cdCut ?? 0));
           u.d.cdCut = 0;
           u.cdFresh = true;
           this.beginAction(u, 'skill');
-          skill!.run(this, u);
+          skill!.run(cv, u);
           this.fire(skillId!.replace(/^eff_/, ''));
           this.endAction();
           if (u.alive) {
@@ -720,7 +745,7 @@ export class Battle {
           const basicId = ab ? ab.basic : u.d.basic ?? 'eff_common_basic_atk';
           const basic = this.activeOf(basicId) ?? this.activeOf('eff_common_basic_atk')!;
           this.beginAction(u, 'basic');
-          basic.run(this, u);
+          basic.run(cv, u);
           this.fire((basicId ?? 'common_basic_atk').replace(/^eff_/, ''));
           this.endAction();
           if (u.alive) {
@@ -742,7 +767,7 @@ export class Battle {
       const act = this.activeOf(id);
       if (act) {
         this.beginAction(u, 'rear');
-        act.run(this, u);
+        act.run(this.view(u.side), u);
         this.fire(id!.replace(/^eff_/, ''));
         this.endAction();
         this.emit({ type: 'rear_action_resolved', src: u, kind: 'rear' });
@@ -802,12 +827,18 @@ export class Battle {
       outcome, reason: this.ended, combatants: snapshot, startSp, events: this.events,
       contributions: [...this.contrib.values()], kills: this.kills, settlementGold: this.gold, aborted: this.aborted,
       survivingEnemyFront: this.front('enemy').length, firedEffects: [...this.fired].sort(),
+      ...(this.foeState ? {
+        opponent: {
+          contributions: [...this.enemyContrib.values()], kills: this.enemyKills, settlementGold: this.foeState.gold,
+          survivingFront: this.front('ally').length,
+        },
+      } : {}),
     };
   }
 
   private tickEscalation(): void {
     const e = escalationDamageBps(this.av, this.pack.rules.battle, 'ally', this.input.chapter);
-    if (e !== this.escBps) { this.escBps = e; this.log({ t: 'escalation', av: this.av, damageBps: e, enemyDamageBps: escalationDamageBps(this.av, this.pack.rules.battle, 'enemy', this.input.chapter) }); }
+    if (e !== this.escBps) { this.escBps = e; this.log({ t: 'escalation', av: this.av, damageBps: e, enemyDamageBps: escalationDamageBps(this.av, this.pack.rules.battle, this.escSide('enemy'), this.input.chapter) }); }
   }
 
   // ── 준비 ───────────────────────────────────────────────
@@ -833,6 +864,61 @@ export class Battle {
       u.hp = u.maxHp;
     }
   }
+}
+
+const NO_MODS = { frontUltEnergy: 100, frontSkillCdBonus: 0, nonCritBps: 0 } as const;
+
+/** PvP 상대 진영이 가진 전투 상태(Battle의 아군 쪽 필드와 같은 이름) */
+export interface SideState {
+  g: Record<string, any>;
+  tiers: Record<string, number>;
+  ooparts: Set<string>;
+  strategies: Set<string>;
+  frontUltEnergy: number;
+  frontSkillCdBonus: number;
+  nonCritBps: number;
+  gold: { label: string; value: number }[];
+  /** 이 진영 시점의 입력(전략·오파츠·디저트 등 팀 필드를 상대 것으로 바꾼 것) */
+  input: BattleInput;
+}
+
+const SIDE_FIELDS = new Set(['g', 'tiers', 'ooparts', 'strategies', 'frontUltEnergy', 'frontSkillCdBonus', 'nonCritBps', 'gold', 'input']);
+
+/**
+ * 상대 진영 시점의 Battle. 효과 코드는 c.me·c.them·c.tier·c.has·c.g 등을 이 시점으로 읽고,
+ * 나머지 메서드는 실제 Battle에 묶여(this = 실제 Battle) 엔진 내부 계산은 그대로다.
+ */
+function sideView(t: Battle, fs: SideState): Battle {
+  const bound = new Map<PropertyKey, unknown>();
+  const flip = (o: 'win' | 'loss'): 'win' | 'loss' => (o === 'win' ? 'loss' : 'win');
+  const own: Record<PropertyKey, unknown> = {
+    me: 'enemy',
+    them: 'ally',
+    tier: (syn: string) => fs.tiers[syn],
+    has: (id: string) => fs.ooparts.has(id),
+    members: (syn: string, side: Side = 'enemy') => t.members(syn, side),
+    // 한 전투 공용 한도 키는 진영별로 나눈다(양쪽이 같은 효과를 가질 수 있다)
+    battleOnce: (u: U | null, key: string, n = 1) => t.battleOnce(u, u ? key : `enemy:${key}`, n),
+    rootOnce: (key: string, n = 1) => t.rootOnce(`enemy:${key}`, n),
+    pulseOnce: (key: string, n = 1) => t.pulseOnce(`enemy:${key}`, n),
+    ends: { push: (...fns: ((o: 'win' | 'loss') => void)[]) => { for (const f of fns) t.ends.push((o) => f(flip(o))); return t.ends.length; } },
+    view: (side: Side) => t.view(side),
+  };
+  const view: Battle = new Proxy(t, {
+    get(target, p) {
+      if (p in own) return own[p as string];
+      if (SIDE_FIELDS.has(p as string)) return (fs as unknown as Record<PropertyKey, unknown>)[p];
+      const v = Reflect.get(target, p, target);
+      if (typeof v !== 'function') return v;
+      if (!bound.has(p)) bound.set(p, (v as (...a: unknown[]) => unknown).bind(target));
+      return bound.get(p);
+    },
+    set(target, p, v) {
+      if (SIDE_FIELDS.has(p as string)) { (fs as unknown as Record<PropertyKey, unknown>)[p] = v; return true; }
+      return Reflect.set(target, p, v, target);
+    },
+  });
+  return view;
 }
 
 export type { BattleEvent, Ref, Side, BattleZone };
