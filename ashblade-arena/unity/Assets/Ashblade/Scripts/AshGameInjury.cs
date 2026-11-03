@@ -177,10 +177,10 @@ namespace Ashblade
                 x -= 1;
             }
             DrawSetHud(Art.VW - 6, y - 18);
-            if (Aug.enabled && W.waveN > 0)
+            if (W.waveN > 0)
             {
-                int next = Mathf.CeilToInt((W.waveN + (W.waveState == "fight" ? 0 : 1)) / 5f) * 5;
-                HText("AUGMENT AT FLOOR " + next, C("#9a92b3"), 1, Art.VW - 6, y - 9, 2);
+                int next = Run.NextBossFloor(W.waveN + (W.waveState == "fight" ? 0 : 1));
+                HText((Run.StageOf(next) == Run.Stage.Mid ? "MID BOSS AT " : "FLOOR BOSS AT ") + next, C("#9a92b3"), 1, Art.VW - 6, y - 9, 2);
             }
         }
 

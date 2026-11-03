@@ -347,7 +347,7 @@ namespace Ashblade
             A("frenzy", "prism", "FRENZY", "Attack speed +35%", "ATTACK SPEED +35%"),
             A("hemomancy", "prism", "HEMOMANCY", "Bleeding heals you instead of hurting", "BLEEDING HEALS", "INSTEAD OF HURTING"),
             A("ashheart", "prism", "ASH HEART", "Burst gauge fills by itself, burst damage +50%", "GAUGE FILLS ITSELF", "BURST DAMAGE +50%"),
-            A("arcana", "prism", "ARCANA", "+1 level to 3 random enchants", "+1 LEVEL TO 3", "RANDOM ENCHANTS"),
+            A("arcana", "prism", "ARCANA", "+1 level to 3 random keywords", "+1 LEVEL TO 3", "RANDOM KEYWORDS"),
             A("unbreakable", "prism", "UNBREAKABLE", "Limbs can break but are never severed", "LIMBS CAN BREAK", "BUT NEVER SEVER"),
         };
         public static AugDef Get(string id) { foreach (var a in All) if (a.id == id) return a; return null; }

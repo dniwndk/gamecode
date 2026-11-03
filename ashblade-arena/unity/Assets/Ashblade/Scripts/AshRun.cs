@@ -32,7 +32,7 @@ namespace Ashblade
         public static Menu menu;
         public static RunResults results;
 
-        public static void Reset() { shards = bossKills = limbsLost = eliteLeft = 0; mod = "fight"; shardFlash = 0f; beams.Clear(); menu = null; results = null; }
+        public static void Reset() { shards = bossKills = limbsLost = eliteLeft = 0; eliteAll = false; mod = "fight"; shardFlash = 0f; beams.Clear(); menu = null; results = null; }
 
         public static void GainShards(int n, Vector2? at = null)
         {
@@ -41,10 +41,31 @@ namespace Ashblade
         }
 
         // ---------------------------------------------------------------- room modifiers
+        // every 10 floors: 1-4 normal foes, 5 mid boss, 6-9 elite foes, 10 floor boss
+        public enum Stage { Normal, Mid, Elite, Tier }
+        public static Stage StageOf(int n) { int r = (n - 1) % 10 + 1; return r <= 4 ? Stage.Normal : r == 5 ? Stage.Mid : r <= 9 ? Stage.Elite : Stage.Tier; }
+        public static int CycleOf(int n) => Mathf.Max(0, (n - 1) / 10);
+        public static bool IsBossFloor(int n) { var s = StageOf(n); return s == Stage.Mid || s == Stage.Tier; }
+        public static int NextBossFloor(int n) => (Mathf.Max(1, n) - 1) / 5 * 5 + 5;
+        public static bool eliteAll;
+
         public static void ApplyRoomMods(Enemy e)
         {
             e.dmgMul = 1f; e.spdMul = 1f; e.size = 1f;
-            if (e.kind == EnemyKind.Boss) { float m = 1f + Mathf.Max(0f, W.waveN / 5f - 1f) * 0.6f; e.maxHp = e.hp = e.hpGhost = Mathf.Round(e.K.hp * m); e.phase = 1; e.summonCd = 0; }
+            int cyc = CycleOf(Mathf.Max(1, W.waveN));
+            if (e.kind == EnemyKind.Boss)
+            {
+                bool mid = StageOf(W.waveN) == Stage.Mid;
+                e.midBoss = mid; e.title = mid ? "IRON TYRANT" : "ASH WARDEN"; e.maxPhase = mid ? 2 : 3;
+                if (mid) { e.spr = Art.Brute; e.size = 1.55f; e.tint = new Color(1f, 0.48f, 0.23f, 0.28f); }
+                e.maxHp = e.hp = e.hpGhost = Mathf.Round((mid ? 480f : e.K.hp) * (1f + 0.6f * cyc)); e.phase = 1; e.summonCd = 0;
+                e.dmgMul = 1f + 0.2f * cyc;
+            }
+            else if (cyc > 0) { e.maxHp = e.hp = e.hpGhost = Mathf.Round(e.hp * (1f + 0.35f * cyc)); e.dmgMul *= 1f + 0.15f * cyc; }
+            if (eliteAll && e.kind != EnemyKind.Boss)
+            {
+                e.elite = true; e.maxHp = e.hp = e.hpGhost = Mathf.Round(e.hp * 1.7f); e.dmgMul *= 1.25f; e.spdMul = 1.1f; e.size = 1.12f;
+            }
             if (mod == "cursed") { e.maxHp = e.hp = e.hpGhost = Mathf.Round(e.hp * 1.5f); e.dmgMul *= 1.3f; e.cursed = true; }
             if (eliteLeft > 0 && e.kind != EnemyKind.Boss)
             {
@@ -131,8 +152,8 @@ namespace Ashblade
             var opts = new List<string>();
             if (dist < 3.2f) { opts.Add("slam"); opts.Add("slam"); }
             opts.Add("charge");
-            if (e.phase >= 2) { opts.Add("volley"); opts.Add("volley"); }
-            if (e.phase >= 3 && e.summonCd <= 0) { opts.Add("summon"); opts.Add("summon"); }
+            if (!e.midBoss && e.phase >= 2) { opts.Add("volley"); opts.Add("volley"); }
+            if ((e.midBoss ? e.phase >= 2 : e.phase >= 3) && e.summonCd <= 0) { opts.Add("summon"); opts.Add("summon"); }
             e.move = opts[Random.Range(0, opts.Count)];
             if (e.move == "summon") e.summonCd = 3; else e.summonCd--;
             e.windF = (e.move == "volley" ? 40 : e.move == "summon" ? 36 : e.move == "charge" ? 38 : e.K.windup) * (e.phase >= 3 ? 0.72f : 1f);
@@ -159,10 +180,10 @@ namespace Ashblade
         }
         public static void BossPhaseCheck(Enemy e)
         {
-            float k = e.hp / e.maxHp; int ph = k > 0.66f ? 1 : k > 0.33f ? 2 : 3;
+            float k = e.hp / e.maxHp; int ph = Mathf.Min(e.maxPhase, e.midBoss ? (k > 0.5f ? 1 : 2) : k > 0.66f ? 1 : k > 0.33f ? 2 : 3);
             if (ph <= e.phase || e.dying) return;
             e.phase = ph; e.state = "Recover"; e.stateTime = 0f; e.broken = 0f; e.poise = e.K.poise;
-            W.Banner("PHASE " + ph, Col.H("#ff6a5a"), 1.3f, ph == 2 ? "THE WARDEN SPITS EMBERS" : "THE WARDEN CALLS ITS DEAD");
+            W.Banner("PHASE " + ph, Col.H("#ff6a5a"), 1.3f, e.midBoss ? "THE TYRANT CALLS ITS PACK" : ph == 2 ? "THE WARDEN SPITS EMBERS" : "THE WARDEN CALLS ITS DEAD");
             W.Slowmo(0.25f, 0.4f); W.ZoomPunch(0.1f); W.AddShake(0.8f, Vector2.down, 6); W.Chroma(1f, Vector2.right); W.ScreenFlash(new Color(1f, 0.42f, 0.25f), 0.3f, 0.2f);
             W.RingFx(e.pos, 4, 60, 3, 0.5f, "fire", 0.75f); W.Sparks(e.Center, Vector2.up, 40, 16, 360, "fire"); W.Sfx("burst", 0.6f);
             Vector2 to = W.player.pos - e.pos;
@@ -250,12 +271,11 @@ namespace Ashblade
         {
             switch (k)
             {
-                case "elite": return new MenuItem("ELITE", "#ffd166", 0, act, "ONE FOE IS EMPOWERED", "+15 SHARDS ON CLEAR");
-                case "cursed": return new MenuItem("CURSED", "#c08af0", 0, act, "FOES +50% HP +30% DMG", "TWO ENCHANT PICKS");
+                case "cursed": return new MenuItem("CURSED", "#c08af0", 0, act, "FOES +50% HP +30% DMG", "+20 SHARDS");
                 case "shop": return new MenuItem("SHOP", "#8be3a6", 0, act, "SPEND YOUR SHARDS");
                 case "sanct": return new MenuItem("SANCTUARY", "#8fdcff", 0, act, "MEND YOUR BODY");
                 case "boss": return new MenuItem("BOSS", "#ff6a5a", 0, act, "THE ASH WARDEN", "WAITS BELOW");
-                default: return new MenuItem("BATTLE", "#c8bcd8", 0, act, "A NORMAL FLOOR");
+                default: return new MenuItem("BATTLE", "#c8bcd8", 0, act, "A PLAIN FLOOR");
             }
         }
 
@@ -269,9 +289,15 @@ namespace Ashblade
         public static void OpenRoute()
         {
             int next = W.waveN + 1;
-            if (next % 5 == 0) { Open("route", "THE NEXT DOOR", "FLOOR " + next, new List<MenuItem> { Room("boss", () => GoNextFloor("boss")) }); return; }
-            var keys = new List<string> { "fight", "elite", "cursed", "shop", "sanct" };
-            var wts = new List<float> { 3f, next <= 2 ? 0.6f : 2f, next <= 2 ? 0f : 1.5f, 1.6f, 1.3f };
+            if (IsBossFloor(next))
+            {
+                bool mid = StageOf(next) == Stage.Mid;
+                var door = mid ? new MenuItem("MID BOSS", "#ff6a5a", 0, () => GoNextFloor("boss"), "THE IRON TYRANT", "AUGMENT")
+                               : new MenuItem("FLOOR BOSS", "#ff6a5a", 0, () => GoNextFloor("boss"), "THE ASH WARDEN", "AUGMENT + KEYWORD");
+                Open("route", "THE NEXT DOOR", "FLOOR " + next + (mid ? " MID BOSS" : " FLOOR BOSS"), new List<MenuItem> { door }); return;
+            }
+            var keys = new List<string> { "fight", "cursed", "shop", "sanct" };
+            var wts = new List<float> { 3f, next <= 2 ? 0f : 1.6f, 1.6f, 1.3f };
             var chosen = new List<string>();
             while (chosen.Count < 2)
             {
@@ -311,7 +337,7 @@ namespace Ashblade
             var p = W.player;
             var pool = new List<MenuItem>
             {
-                new MenuItem("ENCHANT UP", "#ffd166", 25, () => { string s = RandomEnchUp(); if (s != null) W.PopText(p.pos.x, p.pos.y + 1.8f, s, "#ffd166", 1, false, 26); }, "A RANDOM ENCHANT", "GAINS A LEVEL"),
+                new MenuItem("KEYWORD UP", "#ffd166", 25, () => { string s = RandomEnchUp(); if (s != null) W.PopText(p.pos.x, p.pos.y + 1.8f, s, "#ffd166", 1, false, 26); }, "A RANDOM KEYWORD", "GAINS A LEVEL"),
                 new MenuItem("SALVE", "#8be3a6", 12, () => p.hp = Mathf.Min(p.maxHp, p.hp + 40f), "HEAL 40 HP"),
                 new MenuItem("VIGOR", "#ff8a9a", 20, () => { p.maxHp += 15f; p.hp += 15f; }, "MAX HP +15"),
                 new MenuItem("EMBER FLASK", "#ff9a3c", 10, () => W.GainMeter(100f), "FILL THE", "BURST GAUGE"),
@@ -350,7 +376,7 @@ namespace Ashblade
                 new MenuItem("REST", "#8be3a6", 0, () => p.hp = p.maxHp, "HEAL TO FULL HP"),
                 new MenuItem("SURGEON", "#8fdcff", 0, () => MendWorst(9), "HEAL EVERY", "OPEN WOUND"),
                 AnyCut() ? new MenuItem("SMITH", "#c8d0dc", 0, () => Inj.FitIron(), "IRON FOR EVERY", "LOST LIMB")
-                         : new MenuItem("BLESSING", "#ffd166", 0, () => RandomEnchUp(), "A RANDOM ENCHANT", "GAINS A LEVEL"),
+                         : new MenuItem("BLESSING", "#ffd166", 0, () => RandomEnchUp(), "A RANDOM KEYWORD", "GAINS A LEVEL"),
             };
             foreach (var it in items) it.after = () => GoNextFloor("fight");
             Open("sanct", "SANCTUARY", "TAKE ONE BLESSING", items);
@@ -394,7 +420,7 @@ namespace Ashblade
 
         // ---------------------------------------------------------------- results + permanent unlocks
         public static readonly int[] UnlockAt = { 15, 40, 80, 150 };
-        public static readonly string[] UnlockName = { "START WITH 25 SHARDS", "START WITH A SILVER AUGMENT", "START WITH AN ENCHANT", "START WITH A GOLD AUGMENT" };
+        public static readonly string[] UnlockName = { "START WITH 25 SHARDS", "START WITH A SILVER AUGMENT", "START WITH A KEYWORD", "START WITH A GOLD AUGMENT" };
         public static int embers, best, runs;
         static bool metaLoaded;
         const string Key = "ashblade_meta_v1";

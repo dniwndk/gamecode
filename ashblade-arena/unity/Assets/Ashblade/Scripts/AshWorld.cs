@@ -324,7 +324,7 @@ namespace Ashblade
             kills++; killsThisSwing++;
             Run.GainShards(e.K.shards * (e.elite ? 3 : 1), e.pos);
             if (Run.SetOn("blood")) Run.BloodNova(e);
-            if (e.kind == EnemyKind.Boss) { Run.bossKills++; Banner("WARDEN FALLS", Col.H("#ffd166"), 2.2f, "+30 SHARDS"); }
+            if (e.kind == EnemyKind.Boss) { Run.bossKills++; Banner(e.title + " FALLS", Col.H("#ffd166"), 2.2f, "+30 SHARDS"); }
             if (Aug.Has("leech") && player.state != "Dead") { player.hp = Mathf.Min(player.maxHp, player.hp + 3f); PopText(player.pos.x, player.pos.y + 1.3f, "+3", "#8be3a6", 1, false, 16, 0, 70, 0.6f); }
             Ench.OnKill(e);
             e.dieDir = dir;
@@ -476,12 +476,13 @@ namespace Ashblade
         public static void StartWave(int n)
         {
             waveN = n; queue.Clear();
-            if (n % 5 == 0) Run.mod = "boss";
-            if (n - 1 < Waves.Length) queue.AddRange(Waves[n - 1]);
-            else if (n % 5 == 0) queue.Add(EnemyKind.Boss);
+            var stage = Run.StageOf(n); int cyc = Run.CycleOf(n), r10 = (n - 1) % 10;
+            if (Run.IsBossFloor(n)) Run.mod = "boss";
+            if (n <= 4 && n - 1 < Waves.Length) queue.AddRange(Waves[n - 1]);
+            else if (Run.IsBossFloor(n)) queue.Add(EnemyKind.Boss);
             else
             {
-                int count = 5 + Mathf.Min(6, n - 4), healers = 0;
+                int count = stage == Run.Stage.Elite ? 4 + Mathf.Min(4, cyc + r10 - 5) : 5 + Mathf.Min(5, cyc * 2 + r10), healers = 0;
                 for (int i = 0; i < count; i++)
                 {
                     float r = Random.value;
@@ -492,11 +493,11 @@ namespace Ashblade
                 }
             }
             if (Run.mod == "cursed") { queue.Add(EnemyKind.Grunt); queue.Add(Random.value < 0.5f ? EnemyKind.Bomber : EnemyKind.Shield); }
-            Run.eliteLeft = Run.mod == "elite" ? (n >= 8 ? 2 : 1) : 0;
+            Run.eliteLeft = 0; Run.eliteAll = stage == Run.Stage.Elite;
             spawnT = 0.5f; waveState = "fight";
-            if (n % 5 != 0)
-                Banner("FLOOR " + n, Col.H(Run.mod == "cursed" ? "#c08af0" : Run.mod == "elite" ? "#ffd166" : "#ff9a3c"), 1.4f,
-                    Run.mod == "elite" ? "ELITE FLOOR" : Run.mod == "cursed" ? "CURSED FLOOR" : null);
+            if (!Run.IsBossFloor(n))
+                Banner("FLOOR " + n, Col.H(Run.mod == "cursed" ? "#c08af0" : Run.eliteAll ? "#ffd166" : "#ff9a3c"), 1.4f,
+                    Run.mod == "cursed" ? "CURSED FLOOR" : Run.eliteAll ? (r10 == 5 ? "ELITE STAGE BEGINS" : "ELITE FOES") : r10 == 0 ? "STAGE " + (cyc + 1) : null);
             FadeDecals(0.35f);
         }
 
@@ -514,7 +515,7 @@ namespace Ashblade
             var en = new Enemy(kind, at);
             Run.ApplyRoomMods(en);
             enemies.Add(en);
-            if (kind == EnemyKind.Boss) { Banner("ASH WARDEN", Col.H("#ff6a5a"), 2f, "FLOOR " + waveN + " BOSS"); Slowmo(0.4f, 0.5f); AddShake(0.6f, Vector2.down, 4); Sfx("slam", 0.5f); }
+            if (kind == EnemyKind.Boss) { Banner(en.title, Col.H("#ff6a5a"), 2f, "FLOOR " + waveN + (en.midBoss ? " MID BOSS" : " FLOOR BOSS")); Slowmo(0.4f, 0.5f); AddShake(0.6f, Vector2.down, 4); Sfx("slam", 0.5f); }
         }
 
         public static void ResetAll()
@@ -566,12 +567,13 @@ namespace Ashblade
                         Sfx("clear"); player.hp = Mathf.Min(player.maxHp, player.hp + 20f);
                         PopText(player.pos.x, player.pos.y + 1.4f, "+20", "#8be3a6", 2, false, 20);
                         Inj.FloorHeal();
-                        if (Run.mod == "elite") Run.GainShards(15, player.pos);
+                        var stage = Run.StageOf(waveN);
+                        if (stage == Run.Stage.Elite) Run.GainShards(8, player.pos);
                         if (Run.mod == "boss") Run.GainShards(30, player.pos);
+                        if (Run.mod == "cursed") Run.GainShards(20, player.pos);
                         steps.Clear();
-                        if (Aug.enabled && waveN % 5 == 0) steps.Add("augment");
-                        if (Ench.cards) steps.Add("ench");
-                        if (Ench.cards && Run.mod == "cursed") steps.Add("ench");
+                        if (Aug.enabled && Run.IsBossFloor(waveN)) steps.Add("augment");   // every 5 floors
+                        if (Ench.cards && stage == Run.Stage.Tier) steps.Add("ench");        // every 10 floors: 1 keyword
                         bannerT = Mathf.Min(bannerT, 1.1f); bannerMax = 1.1f; rewardPending = true; waveT = 1f;
                     }
                 }

@@ -163,7 +163,7 @@ namespace Ashblade
             const int VW = Art.VW, VH = Art.VH;
             float t = Ench.offerT;
             HRect(0, 0, VW, VH, new Color(8 / 255f, 4 / 255f, 12 / 255f, 0.6f));
-            HText("CHOOSE AN ENCHANT", C("#ffd166"), 2, VW / 2f, 40, 1);
+            HText("CHOOSE A KEYWORD", C("#ffd166"), 2, VW / 2f, 40, 1);
             Vector2? hover = null;
             var ms = AshInput.MouseScreen();
             if (ms.HasValue) hover = new Vector2((ms.Value.x - ox) / sc, (Screen.height - ms.Value.y - oy) / sc);
@@ -197,7 +197,7 @@ namespace Ashblade
         static readonly string[] KoNames = { "Pierce", "Fire", "Frost", "Chain", "Split", "Echo" };
         void EnchPanel()
         {
-            GUILayout.Label("Enchants  (click = level 0-3)");
+            GUILayout.Label("Keywords  (click = level 0-3)");
             for (int slot = 0; slot < 2; slot++)
             {
                 GUILayout.BeginHorizontal();

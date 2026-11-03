@@ -52,9 +52,10 @@ namespace Ashblade
             var b = Run.Boss();
             if (b == null) return;
             const float w = 170f; float x = Art.VW / 2f - w / 2f, y = 29f;
-            HText("ASH WARDEN", C("#ff9a7a"), 1, Art.VW / 2f, y - 8, 1);
+            HText(b.title, C("#ff9a7a"), 1, Art.VW / 2f, y - 8, 1);
             Bar(x, y, w, 4, b.hp / b.maxHp, b.hpGhost / b.maxHp, b.broken > 0f ? (Color)C("#ffb43c") : (Color)C("#e8414f"));
-            HRect(Mathf.Round(x + w * 0.66f), y, 1, 4, (Color)Art.Outline); HRect(Mathf.Round(x + w * 0.33f), y, 1, 4, (Color)Art.Outline);
+            if (b.midBoss) HRect(Mathf.Round(x + w * 0.5f), y, 1, 4, (Color)Art.Outline);
+            else { HRect(Mathf.Round(x + w * 0.66f), y, 1, 4, (Color)Art.Outline); HRect(Mathf.Round(x + w * 0.33f), y, 1, 4, (Color)Art.Outline); }
             for (int i = 0; i < b.K.poise; i++) HRect(x + i * 5, y + 6, 4, 1, i < b.poise ? (Color)C("#c8d0e0") : (Color)C("#3a3450"));
         }
 
@@ -136,12 +137,12 @@ namespace Ashblade
 
         void RunPanel()
         {
-            GUILayout.Label("Run  (boss every 5 floors, doors, shop, sets)");
+            GUILayout.Label("Run  (10-floor cycle: 1-4 normal, 5 mid boss, 6-9 elite, 10 floor boss)");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Boss next"))
             {
                 foreach (var e in W.enemies) if (e.alive) { e.hp = 0f; e.dying = true; }
-                W.queue.Clear(); W.waveN = Mathf.CeilToInt((W.waveN + 1) / 5f) * 5 - 1; W.waveState = "clear"; W.waveT = 0.3f; Run.menu = null;
+                W.queue.Clear(); W.waveN = Run.NextBossFloor(W.waveN + 1) - 1; W.waveState = "clear"; W.waveT = 0.3f; Run.menu = null;
             }
             if (GUILayout.Button("Open doors")) { foreach (var e in W.enemies) if (e.alive) { e.hp = 0f; e.dying = true; } W.queue.Clear(); Run.OpenRoute(); }
             if (GUILayout.Button("+100 shards")) Run.GainShards(100, W.player.pos);

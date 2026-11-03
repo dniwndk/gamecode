@@ -523,6 +523,7 @@ namespace Ashblade
             int x = s.x + vib, y = s.y - Mathf.RoundToInt(e.z + e.Hover);
             if (e.elite) { pool.Draw(e.spr.white, x, y + 1, ord - 1, scx * 1.12f, scy * 1.08f, e.flip, new Color(1f, 0.82f, 0.4f, 0.45f + 0.2f * Mathf.Sin(W.realTime * 8f))); Glow(x, y - 8, 22, Rgb(255, 210, 90), 0.35f); }
             pool.Draw(e.spr.sprite, x, y, ord, scx, scy, e.flip);
+            if (e.tint.a > 0f) pool.Draw(e.spr.white, x, y, ord + 1, scx, scy, e.flip, e.tint);
             if (e.cursed) pool.Draw(e.spr.white, x, y, ord + 1, scx, scy, e.flip, new Color(0.54f, 0.29f, 0.82f, 0.22f + 0.1f * Mathf.Sin(W.realTime * 5f + e.seed)));
             if (e.elite) for (int i = -1; i <= 1; i++) front.Plot(x + i * 2, y - Mathf.RoundToInt(e.spr.h * scy) - 2 - (i != 0 ? 0 : 1), C("#ffd166"));
             float f = e.stateTime * 60f;
@@ -842,8 +843,8 @@ namespace Ashblade
             DrawBossBar();
             if (W.waveN > 0)
             {
-                HText("FLOOR " + W.waveN + (Run.mod == "cursed" ? " CURSED" : Run.mod == "elite" ? " ELITE" : ""),
-                    C(Run.mod == "cursed" ? "#c08af0" : Run.mod == "elite" ? "#ffd166" : "#c8bcd8"), 1, VW / 2f, 5, 1);
+                HText("FLOOR " + W.waveN + (Run.mod == "cursed" ? " CURSED" : Run.StageOf(W.waveN) == Run.Stage.Elite ? " ELITE" : ""),
+                    C(Run.mod == "cursed" ? "#c08af0" : Run.StageOf(W.waveN) == Run.Stage.Elite ? "#ffd166" : "#c8bcd8"), 1, VW / 2f, 5, 1);
                 int left = W.queue.Count; foreach (var e in W.enemies) if (e.alive) left++;
                 for (int i = 0; i < Mathf.Min(left, 14); i++)
                 {

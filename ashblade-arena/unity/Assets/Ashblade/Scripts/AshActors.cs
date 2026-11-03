@@ -486,7 +486,10 @@ namespace Ashblade
         public Spr spr;
         public float dmgMul = 1f, spdMul = 1f, size = 1f, windF; // room modifiers, boss wind-up override
         public bool shield, elite, cursed, selfBlown;
-        public int phase = 1, summonCd;
+        public int phase = 1, summonCd, maxPhase = 3;
+        public bool midBoss;               // floor 5/15/..: Iron Tyrant (2 phases), else Ash Warden (3 phases)
+        public string title = "ASH WARDEN";
+        public Color tint = Color.clear;   // overlay colour (alpha 0 = none)
         public string move; // boss: slam / charge / volley / summon
         public string state = "Spawn";
         public float stateTime, deadT, cool, telePop, broken, hpGhost, hpShowT, chainHit;

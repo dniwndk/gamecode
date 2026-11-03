@@ -136,16 +136,16 @@ details summary { cursor: pointer; color: var(--fg); }
     </section>
 
     <section class="card" aria-labelledby="h-ench">
-      <h2 id="h-ench">인챈트 <b>평타 · 스킬</b></h2>
-      <p class="hint">버튼을 누를 때마다 레벨이 0 → 1 → 2 → 3 → 0 으로 바뀌어요. 평타는 3타 콤보와 대시 찌르기, 스킬은 회전베기와 잿불 폭발이에요.</p>
+      <h2 id="h-ench">키워드 <b>평타 · 스킬</b></h2>
+      <p class="hint">버튼을 누를 때마다 레벨이 0 → 1 → 2 → 3 → 0 으로 바뀌어요. 평타는 3타 콤보와 대시 찌르기, 스킬은 회전베기와 잿불 폭발이에요. 증강은 5층마다(중간보스·계층보스), 키워드는 10층 계층보스에서 1개를 골라 얻어요(10층마다 반복).</p>
       <div class="ench" id="enchGrid"></div>
       <div class="row">
         <button type="button" id="enchAll3">전부 Lv3</button>
-        <button type="button" id="enchClear">인챈트 초기화</button>
-        <button type="button" id="enchCardsBtn">웨이브 보상 카드: ON</button>
+        <button type="button" id="enchClear">키워드 초기화</button>
+        <button type="button" id="enchCardsBtn">보스 키워드 보상: ON</button>
       </div>
       <ul class="new" id="enchDesc"></ul>
-      <details open><summary>시너지 15종 (같은 슬롯에 두 인챈트가 함께 있으면 발동)</summary><ul class="new" id="synList"></ul></details>
+      <details open><summary>시너지 15종 (같은 슬롯에 두 키워드가 함께 있으면 발동)</summary><ul class="new" id="synList"></ul></details>
     </section>
 
     <section class="card" aria-labelledby="h-inj">
@@ -1462,7 +1462,7 @@ function registerKill(e, dir, big, attacker) {
   kills++; killsThisSwing++;
   gainShards(Math.round((e.K.shards ?? 2) * (e.elite ? 3 : 1)), e.pos);
   if (setOn("blood")) bloodNova(e);
-  if (e.kind === "boss") { run.bossKills++; banner("WARDEN FALLS", "#ffd166", 2.2, "+30 SHARDS"); }
+  if (e.kind === "boss") { run.bossKills++; banner((e.title || "WARDEN") + " FALLS", "#ffd166", 2.2, "+30 SHARDS"); }
   if (hasAug("leech") && player.state !== "Dead") { player.hp = Math.min(player.maxHp, player.hp + 3); popText(player.pos.x, player.pos.y + 1.3, "+3", "#8be3a6", 1, { z: 16, life: 0.6 }); }
   if (e.st && e.st.burn > 0 && e.st.burnLv > 0) burnBlast(e);
   e.dieDir = dir;
@@ -2028,7 +2028,7 @@ function drawEnchCards() {
   const cards = enchReward.cards; if (!cards || enchReward.t < 0 || waves.state !== "reward") return;
   const t = enchReward.t;
   h.fillStyle = "rgba(8,4,12,0.6)"; h.fillRect(0, 0, VW, VH);
-  hudText("CHOOSE AN ENCHANT", "#ffd166", 2, VW / 2, 40, "center");
+  hudText("CHOOSE A KEYWORD", "#ffd166", 2, VW / 2, 40, "center");
   cards.forEach((c, i) => {
     const info = ENCH_INFO[c.key], lv = ench[c.slot][c.key];
     let [x, y, w, hh] = cardRect(i);
@@ -2375,7 +2375,7 @@ const AUGS = [
   { id: "frenzy", tier: "prism", name: "FRENZY", d: ["ATTACK SPEED +35%"], ko: "공격 속도 +35%" },
   { id: "hemomancy", tier: "prism", name: "HEMOMANCY", d: ["BLEEDING HEALS", "INSTEAD OF HURTING"], ko: "출혈이 체력을 깎는 대신 회복시킴" },
   { id: "ashheart", tier: "prism", name: "ASH HEART", d: ["GAUGE FILLS ITSELF", "BURST DAMAGE +50%"], ko: "잿불 게이지가 초당 6씩 자동 충전, 폭발 피해 +50%" },
-  { id: "arcana", tier: "prism", name: "ARCANA", d: ["+1 LEVEL TO 3", "RANDOM ENCHANTS"], ko: "무작위 인챈트 3개 +1레벨", on() { augArcana(); } },
+  { id: "arcana", tier: "prism", name: "ARCANA", d: ["+1 LEVEL TO 3", "RANDOM KEYWORDS"], ko: "무작위 키워드 3개 +1레벨", on() { augArcana(); } },
   { id: "unbreakable", tier: "prism", name: "UNBREAKABLE", d: ["LIMBS CAN BREAK", "BUT NEVER SEVER"], ko: "팔다리가 골절까지만 다치고 잘리지 않음" },
 ];
 const AUG_BY = Object.fromEntries(AUGS.map(a => [a.id, a]));
@@ -2506,9 +2506,9 @@ function drawAugHud() {
   }
   let sy = y - 18;
   for (const k in AUG_SETS) { const c = setCount(k); if (!c) continue; const S = AUG_SETS[k]; hudText(S.name + " " + Math.min(3, c) + "/3" + (c >= 3 ? " ON" : ""), c >= 3 ? S.col : "#7a7090", 1, VW - 6, sy, "right"); sy -= 7; }
-  if (T.augments && waves.n > 0) {
-    const next = Math.ceil((waves.n + (waves.state === "fight" ? 0 : 1)) / 5) * 5;
-    hudText("AUGMENT AT FLOOR " + next, "#9a92b3", 1, VW - 6, y - 9, "right");
+  if (waves.n > 0) {
+    const next = nextBossFloor(waves.n + (waves.state === "fight" ? 0 : 1));
+    hudText((stageOf(next) === "mid" ? "MID BOSS" : "FLOOR BOSS") + " AT " + next, "#9a92b3", 1, VW - 6, y - 9, "right");
   }
 }
 // Lab panel sync hook (defined by the UI code later)
@@ -2644,9 +2644,24 @@ function gainShards(n, at) {
 }
 
 // --- enemy modifiers for the room type ---
+// --- every 10 floors: 1-4 normal foes, 5 mid boss, 6-9 elite foes, 10 floor boss ---
+function stageOf(n) { const r = ((n - 1) % 10) + 1; return r <= 4 ? "normal" : r === 5 ? "mid" : r <= 9 ? "elite" : "tier"; }
+const cycleOf = n => Math.floor((n - 1) / 10);
+const STAGE_INFO = { normal: ["NORMAL", "#c8bcd8"], mid: ["MID BOSS", "#ff9a5a"], elite: ["ELITE", "#ffd166"], tier: ["FLOOR BOSS", "#ff6a5a"] };
+function nextBossFloor(n) { return Math.floor((n - 1) / 5) * 5 + 5; }
 function applyRoomMods(e) {
   e.dmgMul = 1; e.spdMul = 1; e.size = 1;
-  if (e.kind === "boss") { const m = 1 + Math.max(0, waves.n / 5 - 1) * 0.6; e.maxHp = e.hp = e.hpGhost = Math.round(e.K.hp * m); e.phase = 1; e.summonCd = 0; }
+  const cyc = cycleOf(Math.max(1, waves.n));
+  if (e.kind === "boss") {
+    const mid = stageOf(waves.n) === "mid";
+    e.bossTier = mid ? "mid" : "tier"; e.title = mid ? "IRON TYRANT" : "ASH WARDEN"; e.maxPhase = mid ? 2 : 3;
+    if (mid) { e.spr = KIND_SPR.brute; e.size = 1.55; e.tint = "#ff7a3a"; }
+    e.maxHp = e.hp = e.hpGhost = Math.round((mid ? 480 : 900) * (1 + 0.6 * cyc)); e.phase = 1; e.summonCd = 0;
+    e.dmgMul = 1 + 0.2 * cyc;
+  } else if (cyc > 0) { e.maxHp = e.hp = e.hpGhost = Math.round(e.hp * (1 + 0.35 * cyc)); e.dmgMul *= 1 + 0.15 * cyc; }
+  if (waves.eliteAll && e.kind !== "boss") { // elite stage: every foe is empowered
+    e.elite = true; e.maxHp = e.hp = e.hpGhost = Math.round(e.hp * 1.7); e.dmgMul *= 1.25; e.spdMul = 1.1; e.size = 1.12;
+  }
   if (run.mod === "cursed") { e.maxHp = e.hp = e.hpGhost = Math.round(e.hp * 1.5); e.dmgMul *= 1.3; e.cursed = true; }
   if (waves.eliteLeft > 0 && e.kind !== "boss") {
     waves.eliteLeft--;
@@ -2716,8 +2731,9 @@ function bossPickMove(e, dist) {
   const opts = [];
   if (dist < 3.2) opts.push("slam", "slam");
   opts.push("charge");
-  if (e.phase >= 2) opts.push("volley", "volley");
-  if (e.phase >= 3 && e.summonCd <= 0) opts.push("summon", "summon");
+  const mid = e.bossTier === "mid";
+  if (!mid && e.phase >= 2) opts.push("volley", "volley");
+  if ((mid ? e.phase >= 2 : e.phase >= 3) && e.summonCd <= 0) opts.push("summon", "summon");
   e.move = pick(opts);
   if (e.move === "summon") e.summonCd = 3;
   else e.summonCd--;
@@ -2740,10 +2756,10 @@ function bossSummon(e) {
   ring(e.center, 3, 34, 2, 0.4, "violet"); sfx("spawn", { rate: 0.7 }); popText(e.pos.x, e.pos.y + 2.2, "RISE", "#c08af0", 2, { z: 30, life: 0.8 });
 }
 function bossPhaseCheck(e) {
-  const k = e.hp / e.maxHp, ph = k > 0.66 ? 1 : k > 0.33 ? 2 : 3;
+  const k = e.hp / e.maxHp, mid = e.bossTier === "mid", ph = Math.min(e.maxPhase || 3, mid ? (k > 0.5 ? 1 : 2) : k > 0.66 ? 1 : k > 0.33 ? 2 : 3);
   if (ph <= e.phase || e.dying) return;
   e.phase = ph; e.state = "Recover"; e.stateTime = 0; e.broken = 0; e.poise = e.K.poise;
-  banner("PHASE " + ph, "#ff6a5a", 1.3, ph === 2 ? "THE WARDEN SPITS EMBERS" : "THE WARDEN CALLS ITS DEAD");
+  banner("PHASE " + ph, "#ff6a5a", 1.3, mid ? "THE TYRANT CALLS ITS PACK" : ph === 2 ? "THE WARDEN SPITS EMBERS" : "THE WARDEN CALLS ITS DEAD");
   slowmo(0.25, 0.4); zoomPunch(0.1); addShake(0.8, V(0, -1), 6); chroma(1, V(1, 0)); screenFlash("#ff6a40", 0.3, 0.2);
   ring(e.pos, 4, 60, 3, 0.5, "fire", 0.75); sparks(e.center, V(0, 1), 40, 16, 360, "fire"); sfx("burst", { rate: 0.6 });
   const to = sub(player.pos, e.pos);
@@ -2753,9 +2769,10 @@ function drawBossBar() {
   const b = enemies.find(e => e.kind === "boss" && e.alive && e.state !== "Spawn");
   if (!b) return;
   const w = 170, x = VW / 2 - w / 2, y = 29;
-  hudText("ASH WARDEN", "#ff9a7a", 1, VW / 2, y - 8, "center");
+  hudText(b.title || "ASH WARDEN", "#ff9a7a", 1, VW / 2, y - 8, "center");
   drawBar(x, y, w, 4, b.hp / b.maxHp, b.hpGhost / b.maxHp, b.broken > 0 ? "#ffb43c" : "#e8414f");
-  h.fillStyle = OUTLINE; h.fillRect(Math.round(x + w * 0.66), y, 1, 4); h.fillRect(Math.round(x + w * 0.33), y, 1, 4);
+  h.fillStyle = OUTLINE;
+  if (b.bossTier === "mid") h.fillRect(Math.round(x + w * 0.5), y, 1, 4); else { h.fillRect(Math.round(x + w * 0.66), y, 1, 4); h.fillRect(Math.round(x + w * 0.33), y, 1, 4); }
   for (let i = 0; i < b.K.poise; i++) { h.fillStyle = i < b.poise ? "#c8d0e0" : "#3a3450"; h.fillRect(x + i * 5, y + 6, 4, 1); }
 }
 
@@ -2818,9 +2835,9 @@ function slipstream(p) {
 
 // --- menus between floors: route doors, shop, sanctuary ---
 const ROOMS = {
-  fight: { name: "BATTLE", col: "#c8bcd8", d: ["A NORMAL FLOOR"] },
+  fight: { name: "BATTLE", col: "#c8bcd8", d: ["A PLAIN FLOOR"] },
   elite: { name: "ELITE", col: "#ffd166", d: ["ONE FOE IS EMPOWERED", "+15 SHARDS ON CLEAR"] },
-  cursed: { name: "CURSED", col: "#c08af0", d: ["FOES +50% HP +30% DMG", "TWO ENCHANT PICKS"] },
+  cursed: { name: "CURSED", col: "#c08af0", d: ["FOES +50% HP +30% DMG", "+20 SHARDS"] },
   shop: { name: "SHOP", col: "#8be3a6", d: ["SPEND YOUR SHARDS"] },
   sanct: { name: "SANCTUARY", col: "#8fdcff", d: ["MEND YOUR BODY"] },
   boss: { name: "BOSS", col: "#ff6a5a", d: ["THE ASH WARDEN", "WAITS BELOW"] },
@@ -2829,13 +2846,14 @@ function openMenu(kind, title, sub, items) { run.menu = { kind, title, sub, item
 const choosingMenu = () => waves.state === "menu" && run.menu && run.menu.picked < 0;
 function goNextFloor(mod) { run.mod = mod; run.menu = null; waves.state = "clear"; waves.t = 0.5; }
 function openRoute() {
-  const next = waves.n + 1;
-  if (next % 5 === 0) {
-    openMenu("route", "THE NEXT DOOR", "FLOOR " + next, [{ ...ROOMS.boss, act: () => goNextFloor("boss") }]);
+  const next = waves.n + 1, nst = stageOf(next);
+  if (nst === "mid" || nst === "tier") {
+    const mid = nst === "mid";
+    openMenu("route", "THE NEXT DOOR", "FLOOR " + next + (mid ? " MID BOSS" : " FLOOR BOSS"), [{ ...ROOMS.boss, name: mid ? "MID BOSS" : "FLOOR BOSS", d: mid ? ["THE IRON TYRANT", "AUGMENT"] : ["THE ASH WARDEN", "AUGMENT + KEYWORD"], act: () => goNextFloor("boss") }]);
     return;
   }
-  const W = { fight: 3, elite: 2, cursed: 1.5, shop: 1.6, sanct: 1.3 };
-  if (next <= 2) { W.cursed = 0; W.elite = 0.6; }
+  const W = { fight: 3, cursed: 1.6, shop: 1.6, sanct: 1.3 };
+  if (next <= 2) W.cursed = 0;
   const keys = [];
   while (keys.length < 2) {
     let tot = 0; for (const k in W) if (!keys.includes(k)) tot += W[k];
@@ -2855,7 +2873,7 @@ function randomEnchUp() {
 function openShop() {
   const p = player, anyOpen = PARTS.some(k => inj.lv[k] > 0 && inj.lv[k] < 3), anyCut = ["armS", "armO", "legs"].some(severed);
   const pool = [
-    { name: "ENCHANT UP", d: ["A RANDOM ENCHANT", "GAINS A LEVEL"], cost: 25, col: "#ffd166", act: () => { const s = randomEnchUp(); if (s) popText(p.pos.x, p.pos.y + 1.8, s, "#ffd166", 1, { z: 26 }); } },
+    { name: "KEYWORD UP", d: ["A RANDOM KEYWORD", "GAINS A LEVEL"], cost: 25, col: "#ffd166", act: () => { const s = randomEnchUp(); if (s) popText(p.pos.x, p.pos.y + 1.8, s, "#ffd166", 1, { z: 26 }); } },
     { name: "SALVE", d: ["HEAL 40 HP"], cost: 12, col: "#8be3a6", act: () => { p.hp = Math.min(p.maxHp, p.hp + 40); } },
     { name: "VIGOR", d: ["MAX HP +15"], cost: 20, col: "#ff8a9a", act: () => { p.maxHp += 15; p.hp += 15; } },
     { name: "EMBER FLASK", d: ["FILL THE", "BURST GAUGE"], cost: 10, col: "#ff9a3c", act: () => gainMeter(100) },
@@ -2885,7 +2903,7 @@ function openSanct() {
     { name: "REST", d: ["HEAL TO FULL HP"], col: "#8be3a6", act: () => { p.hp = p.maxHp; } },
     { name: "SURGEON", d: ["HEAL EVERY", "OPEN WOUND"], col: "#8fdcff", act: () => mendWorst(9) },
     anyCut ? { name: "SMITH", d: ["IRON FOR EVERY", "LOST LIMB"], col: "#c8d0dc", act: () => fitIron() }
-      : { name: "BLESSING", d: ["A RANDOM ENCHANT", "GAINS A LEVEL"], col: "#ffd166", act: () => randomEnchUp() },
+      : { name: "BLESSING", d: ["A RANDOM KEYWORD", "GAINS A LEVEL"], col: "#ffd166", act: () => randomEnchUp() },
   ];
   openMenu("sanct", "SANCTUARY", "TAKE ONE BLESSING", items.map(it => ({ ...it, after: () => goNextFloor("fight") })));
 }
@@ -2958,7 +2976,7 @@ const META_KEY = "ashblade_meta_v1";
 const UNLOCKS = [
   [15, "START WITH 25 SHARDS", "시작할 때 파편 25개"],
   [40, "START WITH A SILVER AUGMENT", "시작할 때 무작위 실버 증강 1개"],
-  [80, "START WITH AN ENCHANT", "시작할 때 무작위 평타 인챈트 Lv1"],
+  [80, "START WITH A KEYWORD", "시작할 때 무작위 평타 키워드 Lv1"],
   [150, "START WITH A GOLD AUGMENT", "시작할 때 무작위 골드 증강 1개"],
 ];
 const meta = (() => { try { return Object.assign({ embers: 0, best: 0, runs: 0 }, JSON.parse(localStorage.getItem(META_KEY) || "{}")); } catch (e) { return { embers: 0, best: 0, runs: 0 }; } })();
@@ -3009,12 +3027,14 @@ const player = new Player();
 M = calcMods();
 function startWave(n) {
   waves.n = n;
-  if (n % 5 === 0) run.mod = "boss";
-  let list = WAVES[n - 1] ? WAVES[n - 1].slice() : null;
+  const st = stageOf(n), cyc = cycleOf(n);
+  run.stage = st;
+  if (st === "mid" || st === "tier") run.mod = "boss";
+  let list = n <= 4 && WAVES[n - 1] ? WAVES[n - 1].slice() : null;
   if (!list) {
-    if (n % 5 === 0) list = ["boss"];
+    if (st === "mid" || st === "tier") list = ["boss"];
     else {
-      const count = 5 + Math.min(6, n - 4);
+      const count = st === "elite" ? 4 + Math.min(4, cyc + ((n - 1) % 10) - 5) : 5 + Math.min(5, cyc * 2 + ((n - 1) % 10));
       list = []; let healers = 0;
       for (let i = 0; i < count; i++) {
         const r = Math.random();
@@ -3025,10 +3045,10 @@ function startWave(n) {
     }
   }
   if (run.mod === "cursed") list.push("grunt", Math.random() < 0.5 ? "bomber" : "shield");
-  waves.eliteLeft = run.mod === "elite" ? (n >= 8 ? 2 : 1) : 0;
+  waves.eliteLeft = 0; waves.eliteAll = st === "elite";
   waves.queue = list.slice(); waves.spawnT = 0.5; waves.state = "fight";
-  const modTxt = { elite: "ELITE FLOOR", cursed: "CURSED FLOOR" }[run.mod];
-  if (n % 5 !== 0) banner("FLOOR " + n, run.mod === "cursed" ? "#c08af0" : run.mod === "elite" ? "#ffd166" : "#ff9a3c", 1.4, modTxt);
+  const modTxt = run.mod === "cursed" ? "CURSED FLOOR" : st === "elite" ? (((n - 1) % 10) === 5 ? "ELITE STAGE BEGINS" : "ELITE FOES") : (((n - 1) % 10) === 0 ? "STAGE " + (cyc + 1) : null);
+  if (st !== "mid" && st !== "tier") banner("FLOOR " + n, run.mod === "cursed" ? "#c08af0" : st === "elite" ? "#ffd166" : "#ff9a3c", 1.4, modTxt);
   fadeDecals(0.35);
 }
 function spawnEnemy(kind) {
@@ -3041,7 +3061,7 @@ function spawnEnemy(kind) {
   const e = new Enemy(kind, at);
   applyRoomMods(e);
   enemies.push(e);
-  if (kind === "boss") { banner("ASH WARDEN", "#ff6a5a", 2, "FLOOR " + waves.n + " BOSS"); slowmo(0.4, 0.5); addShake(0.6, V(0, -1), 4); sfx("slam", { rate: 0.5 }); }
+  if (kind === "boss") { banner(e.title, "#ff6a5a", 2, "FLOOR " + waves.n + (e.bossTier === "mid" ? " MID BOSS" : " FLOOR BOSS")); slowmo(0.4, 0.5); addShake(0.6, V(0, -1), 4); sfx("slam", { rate: 0.5 }); }
 }
 function resetAll() {
   player.reset(); enemies = []; projectiles.length = 0; pickups.length = 0; parts.length = 0; enchReset(); injReset(); augReset(); runReset(); waves.pending = false; M = calcMods(); syncInjUi(); applyMetaStart();
@@ -3073,12 +3093,13 @@ function updateWaves(dt, rdt) {
       sfx("clear"); player.hp = Math.min(player.maxHp, player.hp + 20);
       popText(player.pos.x, player.pos.y + 1.4, "+20", "#8be3a6", 2, { z: 20 });
       injFloorHeal();
-      if (run.mod === "elite") gainShards(15, player.pos);
+      const st = stageOf(waves.n);
+      if (st === "elite") gainShards(8, player.pos);
       if (run.mod === "boss") gainShards(30, player.pos);
       waves.steps = [];
-      if (T.augments && waves.n % 5 === 0) waves.steps.push("augment");
-      if (T.enchCards) waves.steps.push("ench");
-      if (T.enchCards && run.mod === "cursed") waves.steps.push("ench");
+      if (T.augments && (st === "mid" || st === "tier")) waves.steps.push("augment");
+      if (T.enchCards && st === "tier") waves.steps.push("ench");         // floor boss (every 10): 1 keyword
+      if (run.mod === "cursed") gainShards(20, player.pos);              // cursed door: extra shards
       fxs.bannerT = Math.min(fxs.bannerT, 1.1); fxs.bannerMax = 1.1; waves.pending = true; waves.t = 1.0;
     }
   } else if (waves.state === "clear") { waves.t -= rdt; if (waves.t <= 0) { if (waves.pending) { waves.pending = false; nextReward(); } else startWave(waves.n + 1); } }
@@ -3455,6 +3476,7 @@ function drawEnemy(e) {
   if (e.elite) { drawSpr(tinted(e.spr, "#ffd166"), x, y + 1, e.flip, scx * 1.12, scy * 1.08, 0.45 + 0.2 * Math.sin(realTime * 8)); glow(x, y - 8, 22, GLOW_COL.gold, 0.35); }
   drawSpr(e.spr.c, x, y, e.flip, scx, scy);
   if (e.cursed) drawSpr(tinted(e.spr, "#8a4ad0"), x, y, e.flip, scx, scy, 0.22 + 0.1 * Math.sin(realTime * 5 + e.seed));
+  if (e.tint) drawSpr(tinted(e.spr, e.tint), x, y, e.flip, scx, scy, 0.28);
   if (e.elite) for (let i = -1; i <= 1; i++) plot(x + i * 2, y - Math.round(e.spr.h * scy) - 2 - (i ? 0 : 1), "#ffd166");
   const f = e.stateTime * 60;
   if (e.state === "Windup") {
@@ -3687,7 +3709,8 @@ function drawHud() {
   hudText("SHARDS " + run.shards, run.shardFlash > 0 ? "#ffffff" : "#ffe066", 1, 6, VH - 30 > 0 ? 70 : 70);
   drawBossBar();
   if (waves.n > 0) {
-    hudText("FLOOR " + waves.n + (run.mod === "cursed" ? " CURSED" : run.mod === "elite" ? " ELITE" : ""), run.mod === "cursed" ? "#c08af0" : run.mod === "elite" ? "#ffd166" : "#c8bcd8", 1, VW / 2, 5, "center");
+    const stI = STAGE_INFO[stageOf(waves.n)];
+    hudText("FLOOR " + waves.n + (run.mod === "cursed" ? " CURSED" : stI[0] === "ELITE" ? " ELITE" : ""), run.mod === "cursed" ? "#c08af0" : stI[1], 1, VW / 2, 5, "center");
     const left = enemies.filter(e => e.alive).length + waves.queue.length;
     for (let i = 0; i < Math.min(left, 14); i++) { h.fillStyle = OUTLINE; h.fillRect(VW / 2 - left * 2 + i * 4 - 1, 13, 4, 4); h.fillStyle = "#ff6a5a"; h.fillRect(VW / 2 - left * 2 + i * 4, 14, 2, 2); }
   }
@@ -3857,7 +3880,7 @@ function syncSynUi() {
 function syncEnchUi() {
   syncSynUi();
   for (const slot of ["basic", "skill"]) for (const k of ENCH_KEYS) { const b = enchBtns[slot + k], lv = ench[slot][k]; b.dataset.lv = lv; b.innerHTML = `${ENCH_INFO[k].name}<b>${lv ? "Lv" + lv : "–"}</b>`; b.setAttribute("aria-label", (slot === "basic" ? "평타 " : "스킬 ") + ENCH_INFO[k].name + " 레벨 " + lv); }
-  document.getElementById("enchCardsBtn").textContent = "웨이브 보상 카드: " + (T.enchCards ? "ON" : "OFF");
+  document.getElementById("enchCardsBtn").textContent = "보스 키워드 보상: " + (T.enchCards ? "ON" : "OFF");
 }
 document.getElementById("enchAll3").addEventListener("click", () => { for (const s of ["basic", "skill"]) for (const k of ENCH_KEYS) ench[s][k] = 3; syncEnchUi(); screenCanvas.focus(); });
 document.getElementById("enchClear").addEventListener("click", () => { for (const s of ["basic", "skill"]) for (const k of ENCH_KEYS) ench[s][k] = 0; syncEnchUi(); screenCanvas.focus(); });
@@ -4003,7 +4026,7 @@ document.getElementById("startBtn").addEventListener("click", () => {
   screenCanvas.focus();
 });
 
-window.__ash = { SYN, synList, enchFx, applyElements, hitEnemy, registerKill, run, meta, openRoute, openShop, openSanct, menuPick, setCount, inj, aug, augPick, augReroll, augOpenNow, injForce, injHit, AUGS, get M() { return M; }, ench, enchFx, enchReward, enchPick, T, player, get enemies() { return enemies; }, waves, pressed, held, keys, mouse, parts, projectiles, pickups, cam, slow, fxs, startWave, spawnEnemy, resetAll, get combo() { return combo; }, get kills() { return kills; } };
+window.__ash = { SYN, synList, enchFx, applyElements, hitEnemy, registerKill, run, meta, openRoute, openShop, openSanct, menuPick, setCount, inj, aug, augPick, augReroll, augOpenNow, injForce, injHit, AUGS, get M() { return M; }, ench, enchFx, enchReward, enchPick, T, player, get enemies() { return enemies; }, waves, pressed, held, keys, mouse, parts, projectiles, pickups, cam, slow, fxs, startWave, spawnEnemy, resetAll, stageOf, get combo() { return combo; }, get kills() { return kills; } };
 cam.x = player.pos.x; cam.y = player.pos.y;
 requestAnimationFrame(frame);
 })();
