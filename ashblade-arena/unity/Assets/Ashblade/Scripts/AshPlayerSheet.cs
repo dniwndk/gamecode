@@ -14,6 +14,8 @@ namespace Ashblade
         static readonly string[] Names = { "idle", "run", "slash1", "slash2", "finisher", "dash", "dash_strike", "charge", "spin", "burst", "hurt", "death", "charge_walk", "dash_end", "perfect", "spawn", "victory" };
         static readonly int[] Counts = { 4, 6, 6, 6, 8, 4, 5, 6, 8, 7, 3, 7, 4, 2, 2, 6, 6 };
         static readonly Dictionary<string, Spr[]> anims = new Dictionary<string, Spr[]>();
+        static readonly Dictionary<Spr, PixBuf> source = new Dictionary<Spr, PixBuf>();
+        static readonly Dictionary<Spr, Dictionary<string, Spr>> masked = new Dictionary<Spr, Dictionary<string, Spr>>();
         public static bool Ready;
 
         public static void Init()
@@ -40,6 +42,7 @@ namespace Ashblade
                             c.a = 255; b.Set(x, y, c); wb.Set(x, y, new Color32(255, 255, 255, 255));
                         }
                     arr[i] = new Spr { sprite = Art.Make(b.MakeTexture(), pivot), white = Art.Make(wb.MakeTexture(), pivot), w = CW, h = CH };
+                    source[arr[i]] = b;
                 }
                 anims[Names[a]] = arr;
             }
@@ -74,6 +77,58 @@ namespace Ashblade
         }
 
         static readonly int[] BurstDur = { 4, 6, 8, 4, 6, 5, 4 }, DashDur = { 2, 3, 3, 2 }, HurtDur = { 4, 4, 4 };
+
+        static readonly Color32[] Steel = { M.Hex("#5a6478"), M.Hex("#8a94a8"), M.Hex("#c8d0dc"), M.Hex("#eef2f8") };
+        static readonly Color32 StumpA = M.Hex("#e8303c"), StumpB = M.Hex("#b0141e"), StumpC = M.Hex("#7a0a14");
+
+        /// <summary>
+        /// The frame with severed limbs cut away (and a bloody stump) or rebuilt in iron. Key is one char per limb
+        /// (sword arm, off arm, leg): '-' intact, 'x' severed, 'i' iron. Results are cached per frame and key.
+        /// </summary>
+        public static Spr Masked(Spr spr)
+        {
+            string key = "";
+            for (int k = Inj.ArmS; k <= Inj.Legs; k++) key += Inj.lv[k] >= 3 ? (Inj.iron[k] ? "i" : "x") : "-";
+            PixBuf src;
+            if (key == "---" || spr == null || !source.TryGetValue(spr, out src)) return spr;
+            Dictionary<string, Spr> cache;
+            if (!masked.TryGetValue(spr, out cache)) { cache = new Dictionary<string, Spr>(); masked[spr] = cache; }
+            Spr done;
+            if (cache.TryGetValue(key, out done)) return done;
+            int Wd = src.w, Hd = src.h;
+            var b = new PixBuf(Wd, Hd);
+            for (int y = 0; y < Hd; y++) for (int x = 0; x < Wd; x++) b.Set(x, y, src.Get(x, y));
+            System.Func<int, int, bool> solid = (x, y) => x >= 0 && y >= 0 && x < Wd && y < Hd && b.Get(x, y).a > 0;
+            int hs = 0, hn = 0;
+            for (int y = 12; y <= 18; y++) for (int x = 0; x < Wd; x++) if (solid(x, y)) { hs += x; hn++; }
+            int cx = hn > 0 ? Mathf.RoundToInt((float)hs / hn) : 16;
+            System.Action<int, int, int, int, char, int[]> zone = (x0, x1, y0, y1, mode, stump) =>
+            {
+                for (int y = y0; y <= y1; y++)
+                    for (int x = Mathf.Max(0, x0); x <= Mathf.Min(Wd - 1, x1); x++)
+                    {
+                        if (!solid(x, y)) continue;
+                        if (mode == 'x') { b.Set(x, y, new Color32(0, 0, 0, 0)); continue; }
+                        var c = b.Get(x, y); float l = (c.r * 0.3f + c.g * 0.55f + c.b * 0.15f) / 255f;
+                        b.Set(x, y, l < 0.12f ? Art.Outline : Steel[Mathf.Min(3, Mathf.FloorToInt(l * 4.2f))]);
+                    }
+                if (mode != 'x') return;
+                for (int i = 0; i < stump.Length; i += 2)
+                {
+                    int x = stump[i], y = stump[i + 1];
+                    if (solid(x, y) || solid(x - 1, y) || solid(x + 1, y)) b.Set(x, y, i == 0 ? StumpA : i == 2 ? StumpB : StumpC);
+                }
+            };
+            if (key[0] != '-') zone(cx + 4, Wd - 1, 19, 26, key[0], new[] { cx + 3, 21, cx + 3, 22, cx + 3, 23 });
+            if (key[1] != '-') zone(0, cx - 5, 19, 26, key[1], new[] { cx - 4, 21, cx - 4, 22, cx - 4, 23 });
+            if (key[2] != '-') zone(0, cx - 1, 27, Hd - 1, key[2], new[] { cx - 3, 26, cx - 2, 26, cx - 1, 26 });
+            var wb = new PixBuf(Wd, Hd);
+            for (int y = 0; y < Hd; y++) for (int x = 0; x < Wd; x++) if (b.Get(x, y).a > 0) wb.Set(x, y, new Color32(255, 255, 255, 255));
+            var pivot = new Vector2(16f / Wd, 1f / Hd);
+            done = new Spr { sprite = Art.Make(b.MakeTexture(), pivot), white = Art.Make(wb.MakeTexture(), pivot), w = Wd, h = Hd };
+            cache[key] = done;
+            return done;
+        }
 
         /// <summary>Current frame of the player, or null if the sheet failed to load.</summary>
         public static Spr Pick(Player p)

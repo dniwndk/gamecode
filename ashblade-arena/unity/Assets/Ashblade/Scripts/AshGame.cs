@@ -136,8 +136,9 @@ namespace Ashblade
             {
                 W.realTime += raw;
                 W.UpdateFx(raw);
-                float dt = raw * W.labSlow * W.slowScale;
+                float dt = Aug.Choosing ? 0f : raw * W.labSlow * W.slowScale; // time stops while an augment is being chosen
                 W.time += dt;
+                Inj.Update(dt);
                 W.player.Update(dt);
                 Ench.Update(dt);
                 foreach (var e in W.enemies.ToArray()) e.Update(dt * Ench.TimeScale(e));
@@ -174,9 +175,12 @@ namespace Ashblade
             if (AshInput.ResetDown()) W.ResetAll();
             if (AshInput.SlowMoDown()) W.labSlow = W.labSlow < 1f ? 1f : 0.25f;
             if (AshInput.ToggleAimDown()) In.aimWithMouse = !In.aimWithMouse;
+            bool augScreen = W.waveState == "augment" && Aug.Offering;
+            if (augScreen) for (int i = 0; i < 3; i++) if (AshInput.RerollDown(i)) Aug.Reroll(i);
             for (int d = 0; d <= 9; d++)
             {
                 if (!AshInput.DigitDown(d)) continue;
+                if (augScreen) { if (d >= 1 && d <= 3) Aug.Pick(d - 1); continue; }
                 if (W.waveState == "reward" && Ench.Offering && d >= 1 && d <= 3) { Ench.Pick(d - 1); continue; }
                 if (d == 0)
                 {
@@ -210,6 +214,7 @@ namespace Ashblade
             In.mouseWorld = mouseBuf.HasValue ? (Vector2?)(Vector2)View.ScreenToWorld(mouseBuf.Value.x, mouseBuf.Value.y) : null;
             bool atk = AshInput.AttackPressed(), dash = AshInput.DashPressed(), burst = AshInput.BurstPressed();
             if (overPanel) atk = false;
+            if (atk && ms.HasValue && AugClick(new Vector2((ms.Value.x - ox) / sc, (Screen.height - ms.Value.y - oy) / sc))) atk = false;
             if (atk && ms.HasValue && W.waveState == "reward" && Ench.Offering && Ench.picked < 0)
             {
                 Vector2 hud = new Vector2((ms.Value.x - ox) / sc, (Screen.height - ms.Value.y - oy) / sc);
@@ -249,11 +254,13 @@ namespace Ashblade
             DrawPlayer();
             foreach (var e in W.enemies) DrawEnemy(e);
             DrawPickups();
+            DrawLimbs();
             DrawProjectiles();
             DrawEnchFx();
             DrawFrontParts();
             DrawSmear();
             pool.Draw(Art.Vignette, 0, 0, ORD_VIG);
+            DrawHeadFxWorld();
             var p = W.player;
             if (p.hp / p.maxHp < 0.3f && p.state != "Dead")
                 pool.Draw(Art.RedVignette, 0, 0, ORD_VIG + 1, 1, 1, false, new Color(1, 1, 1, 0.25f + 0.2f * Mathf.Max(0f, Mathf.Sin(W.realTime * 7f))));
@@ -374,6 +381,7 @@ namespace Ashblade
             plBack.Order = ord - 1; plFront.Order = ord + 3;
             DrawShadow(p, 10);
             Spr sheet = PlayerSheet.Pick(p);
+            if (sheet != null) sheet = PlayerSheet.Masked(sheet);
             if (p.state == "Dead" && sheet != null) { pool.Draw(sheet.sprite, s.x, s.y, ord, 1f, 1f, p.flip); return; }
             if (p.state == "Dead")
             {
@@ -391,7 +399,7 @@ namespace Ashblade
             int bob = moving && sheet == null ? Mathf.FloorToInt(p.runT * 10f) % 2 : 0;
             int vib = p.freeze > 0f && p.vibrate ? p.vibSign : 0;
             float scx = 1f + p.sq, scy = 1f - p.sq * 0.9f;
-            int bx = s.x + vib, by = s.y - Mathf.RoundToInt(p.z) - bob;
+            int bx = s.x + vib, by = s.y - Mathf.RoundToInt(p.z) - bob + LimpOffset(p, moving);
             bool bladeUp = Mathf.Sin(p.blade) > 0.35f;
             if (sheet == null) DrawScarf(p);
             DrawBlade(p, bx, by, bladeUp ? plBack : plFront);
@@ -405,6 +413,7 @@ namespace Ashblade
                         pool.Draw(spr.white, bx, by, ord + 1, scx, scy, p.flip, new Color(1f, 0.88f, 0.5f, 0.6f));
                 }
                 if (p.flashT > 0f && T.hitFlash) pool.Draw(spr.white, bx, by, ord + 2, scx, scy, p.flip, (Color)p.flashColor);
+                DrawWounds(bx, by, p.flip);
             }
             if (p.state == "Charge") Glow(bx, by - 8, 12 + Mathf.Min(1f, p.chargeT / T.chargeTime) * 16f, Rgb(255, 170, 60), 0.4f);
             if (p.empowered > 0f) Glow(bx, by - 8, 18, Rgb(255, 210, 90), 0.25f + Mathf.Sin(W.realTime * 12f) * 0.08f);
@@ -425,7 +434,8 @@ namespace Ashblade
         void DrawBlade(Player p, int bx, int by, Overlay o)
         {
             if (p.state == "Burst" && p.stateTime < 0.3f) return;
-            float hx = bx + (p.flip ? -2 : 2), hy = by - 6;
+            int grip = Inj.Mod.grip, side = (p.flip ? -1 : 1) * (grip == 1 ? -1 : 1);
+            float hx = bx + side * (grip == 2 ? 3 : 2), hy = by - (grip == 2 ? 13 : 6);
             float ca = Mathf.Cos(p.blade), sa = -Mathf.Sin(p.blade);
             bool active = p.state == "Attack" && p.stateTime * 60f >= p.cur.startup && p.stateTime * 60f < p.cur.startup + p.cur.active;
             float L = 12 + Mathf.Round(p.bladeExt) + (active ? 2 : 0);
@@ -764,6 +774,7 @@ namespace Ashblade
                     Graphics.DrawTexture(view, rt, src, 0, 0, 0, 0, Mats.Present);
                 }
                 else GUI.DrawTextureWithTexCoords(view, rt, src);
+                DrawDoubleVision(view, src);
                 DrawHud();
             }
             if (showPanel) DrawPanel();
@@ -815,9 +826,10 @@ namespace Ashblade
             }
             if (full) HText(AshInput.PadActive ? "Y BURST" : "Q BURST", Mathf.FloorToInt(rtm * 4f) % 2 == 1 ? C("#ffd166") : WhiteC, 1, 92, 15);
             if (p.empowered > 0f) HText("CRIT READY", Mathf.FloorToInt(rtm * 8f) % 2 == 1 ? C("#ffe066") : WhiteC, 1, 6, 24);
+            DrawInjHud(8, 34);
             if (W.waveN > 0)
             {
-                HText("WAVE " + W.waveN, C("#c8bcd8"), 1, VW / 2f, 5, 1);
+                HText("FLOOR " + W.waveN, C("#c8bcd8"), 1, VW / 2f, 5, 1);
                 int left = W.queue.Count; foreach (var e in W.enemies) if (e.alive) left++;
                 for (int i = 0; i < Mathf.Min(left, 14); i++)
                 {
@@ -852,6 +864,8 @@ namespace Ashblade
             }
             DrawEnchHud();
             DrawEnchCards();
+            DrawAugHud();
+            DrawAugCards();
             if (W.labSlow < 1f) HText("SLOW X0.25", C("#8fdcff"), 1, 6, VH - 10);
             if (W.paused) { HRect(0, 0, VW, VH, new Color(8 / 255f, 4 / 255f, 12 / 255f, 0.6f)); HText("PAUSED", WhiteC, 3, VW / 2f, VH / 2f - 10, 1); }
             if (W.flashT > 0f) { var fc = W.flashColor; fc.a = W.flashA * (W.flashT / W.flashMax); HRect(0, 0, VW, VH, fc); }
@@ -880,6 +894,7 @@ namespace Ashblade
                 if (nv != v) T.SetJuice(i, nv);
             }
             EnchPanel();
+            InjPanel();
             GUILayout.Space(4);
             T.hitstopScale = Slider("Hitstop x", T.hitstopScale, 0f, 3f);
             T.shakeScale = Slider("Shake x", T.shakeScale, 0f, 3f);

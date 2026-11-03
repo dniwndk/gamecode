@@ -105,6 +105,7 @@ namespace Ashblade
         public int hitsTaken;
         public float blade = -110f * M.D2R, bladeStart, bladeExt, empowered, meter, chargeT, hpGhost = 100f;
         public float hurtAnim, spawnAnim, dashEndT, perfectT, victoryAnim; // timers that pick one-shot sprite motions
+        public int dashCharges = 2; public float dashRecharge; // Twin Dash augment
         public Smear smear;
         public Vector2[] scarf = new Vector2[5], scarfPrev = new Vector2[5];
 
@@ -120,7 +121,7 @@ namespace Ashblade
             attackPressT = dashPressT = burstPressT = -99f; holdStart = 0f; wasHeld = false;
             hitThisSwing.Clear(); hitsTaken = 0; blade = -110f * M.D2R; bladeStart = bladeExt = 0f;
             smear = null; empowered = 0f; swingCrit = false; meter = 0f; chargeT = 0f; charged = perfectUsed = slamDone = burstDone = false; deadT = 0f;
-            hurtAnim = dashEndT = perfectT = victoryAnim = 0f; spawnAnim = 30f / 60f;
+            hurtAnim = dashEndT = perfectT = victoryAnim = 0f; spawnAnim = 30f / 60f; dashCharges = 2; dashRecharge = 0f;
             for (int i = 0; i < scarf.Length; i++) { scarf[i] = pos + new Vector2(0, 0.55f); scarfPrev[i] = scarf[i]; }
         }
 
@@ -159,7 +160,7 @@ namespace Ashblade
 
         bool Consume(ref float pressT)
         {
-            if (clock - pressT <= (T.inputBuffer ? T.bufferWindow : 1f / 60f + 1e-4f)) { pressT = -99f; return true; }
+            if (clock - pressT <= (T.inputBuffer ? T.bufferWindow * Inj.Mod.buffer : 1f / 60f + 1e-4f)) { pressT = -99f; return true; }
             return false;
         }
 
@@ -173,6 +174,7 @@ namespace Ashblade
         {
             if (hurtInvuln > 0f) hurtInvuln -= dt;
             if (dashCd > 0f) dashCd -= dt;
+            if (dashCharges < 2) { dashRecharge -= dt; if (dashRecharge <= 0f) { dashCharges++; dashRecharge = dashCharges < 2 ? DashCdFull() + 0.35f : 0f; } }
             if (empowered > 0f)
             {
                 empowered -= dt;
@@ -181,12 +183,13 @@ namespace Ashblade
             if (smear != null) { smear.life -= dt; if (smear.life <= 0f && !smear.live) smear = null; }
             hurtAnim = Mathf.Max(0f, hurtAnim - dt); spawnAnim = Mathf.Max(0f, spawnAnim - dt); dashEndT = Mathf.Max(0f, dashEndT - dt);
             perfectT = Mathf.Max(0f, perfectT - dt); victoryAnim = Mathf.Max(0f, victoryAnim - dt);
-            stateTime += dt;
+            float sdt = state == "Attack" ? dt * Inj.Mod.atk : dt; // wounds and augments change attack speed
+            stateTime += sdt;
             float f = stateTime * 60f;
             switch (state)
             {
                 case "Free": TickFree(dt); break;
-                case "Attack": TickAttack(f, dt); break;
+                case "Attack": TickAttack(f, sdt); break;
                 case "Dash": TickDash(f, dt); break;
                 case "Charge": TickCharge(dt); break;
                 case "Burst": TickBurst(); break;
@@ -203,7 +206,7 @@ namespace Ashblade
 
         void TickFree(float dt)
         {
-            Vector2 target = moveInput * T.moveSpeed;
+            Vector2 target = moveInput * (T.moveSpeed * Inj.Mod.move);
             float k = 1f - Mathf.Exp(-(moveInput.sqrMagnitude > 0.01f ? 28f : 22f) * dt);
             vel += (target - vel) * k;
             pos += vel * dt;
@@ -220,14 +223,14 @@ namespace Ashblade
                 if (clock - lastAttackEnd > T.comboResetTime) nextCombo = 0;
                 StartAttack(T.combo[nextCombo], nextCombo); return;
             }
-            if (In.attackHeld && clock - holdStart > 0.22f) StartCharge();
+            if (!Inj.Mod.noSpin && In.attackHeld && clock - holdStart > 0.22f) StartCharge();
         }
 
         public void StartAttack(Attack a, int index)
         {
             cur = a; comboIndex = index; state = "Attack"; stateTime = 0f;
             atkDir = aimDir;
-            if (T.aimAssist) atkDir = W.AimAssist(Center, atkDir, T.aimAssistAngle, a.range + T.aimAssistRange);
+            if (T.aimAssist && Inj.Mod.assist > 0f) atkDir = W.AimAssist(Center, atkDir, T.aimAssistAngle * Inj.Mod.assist, a.range + T.aimAssistRange);
             hitThisSwing.Clear(); W.killsThisSwing = 0;
             flip = atkDir.x < 0f; bladeStart = blade; slamDone = false;
             swingCrit = false;
@@ -294,7 +297,7 @@ namespace Ashblade
             if (f >= end)
             {
                 EndAttack(); state = "Free"; stateTime = 0f;
-                if (In.attackHeld && clock - holdStart > 0.22f) StartCharge();
+                if (!Inj.Mod.noSpin && In.attackHeld && clock - holdStart > 0.22f) StartCharge();
             }
         }
 
@@ -335,15 +338,24 @@ namespace Ashblade
             if (state == "Charge" && AshAudio.I != null) AshAudio.I.Charge(false);
             state = "Dash"; stateTime = 0f; ghostCounter = 0; perfectUsed = false;
             dashDir = moveInput.sqrMagnitude > 0.01f ? moveInput.normalized : aimDir;
-            dashCd = T.dashFrames / 60f + T.dashCooldown; smear = null; bladeExt = 0f;
+            if (Aug.Has("twindash"))
+            {
+                dashCharges = Mathf.Max(0, dashCharges - 1);
+                if (dashRecharge <= 0f) dashRecharge = DashCdFull() + 0.35f;
+                dashCd = dashCharges > 0 ? T.dashFrames / 60f + 0.04f : dashRecharge;
+            }
+            else dashCd = DashCdFull();
+            smear = null; bladeExt = 0f;
             Punch(Mathf.Abs(dashDir.x) > 0.6f ? 0.32f : -0.28f);
             W.Dust(pos, -dashDir, 5, 1.1f);
             W.Sfx("dash", 1f, 0.1f, 0.8f);
         }
 
+        float DashCdFull() { return T.dashFrames / 60f + T.dashCooldown * Inj.Mod.dashCdMul + Inj.Mod.dashCd; }
+
         void TickDash(float f, float dt)
         {
-            pos += dashDir * (T.dashSpeed * dt);
+            pos += dashDir * (T.dashSpeed * Inj.Mod.dash * dt);
             vel = dashDir * T.moveSpeed;
             int g = Mathf.FloorToInt(f / 1.5f);
             if (g >= ghostCounter && T.trails)
@@ -364,8 +376,8 @@ namespace Ashblade
 
         void TickCharge(float dt)
         {
-            chargeT += dt;
-            Vector2 target = moveInput * (T.moveSpeed * 0.35f);
+            chargeT += dt / Inj.Mod.charge;
+            Vector2 target = moveInput * (T.moveSpeed * Inj.Mod.move * 0.35f);
             vel += (target - vel) * (1f - Mathf.Exp(-20f * dt));
             pos += vel * dt;
             float k = Mathf.Min(1f, chargeT / T.chargeTime);
@@ -442,6 +454,9 @@ namespace Ashblade
             if (dmg > 0f) W.PopText(pos.x, pos.y + 1.2f, "-" + Mathf.RoundToInt(dmg), "#ff6a6a", 2, true, 16, dir.x * 1.5f);
             if (W.combo >= 5) W.PopText(pos.x, pos.y + 1.6f, "COMBO LOST", "#ff9aa0", 1, false, 22, 0, 70, 0.9f);
             W.combo = 0; W.comboTimer = 0f;
+            if (dmg > 0f) Inj.Hit(src, dir, dmg);
+            if (dmg > 0f && Aug.Has("spite")) Aug.SpiteBlast(this, dir);
+            if (hp <= 0f && Aug.Has("undying") && !Aug.undyingUsed) Aug.UndyingSave(this);
             if (hp <= 0f) Die();
             return true;
         }

@@ -84,6 +84,14 @@ table.keys td:first-child { font-family: var(--font-mono); font-size: 12px; colo
 .note { color: var(--muted); font-size: 12.5px; margin: 0; max-width: 65ch; }
 ul.new { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; display: grid; gap: 3px; }
 ul.new b { color: var(--fg); font-weight: 600; }
+.inj { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; gap: 5px 8px; align-items: center; font-size: 12.5px; }
+.inj .pn { color: var(--muted); }
+.inj .ps { font-weight: 600; }
+.inj .pe { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
+.inj button { padding: 4px 8px; background: var(--bg); border: 1px solid var(--line); color: var(--fg); font: inherit; font-size: 12px; cursor: pointer; }
+details { font-size: 12.5px; color: var(--muted); }
+details summary { cursor: pointer; color: var(--fg); }
+.tier-silver { color: #d8e0ec; } .tier-gold { color: #ffd166; } .tier-prism { color: #ff9af0; }
 </style>
 
 <div class="wrap">
@@ -139,6 +147,23 @@ ul.new b { color: var(--fg); font-weight: 600; }
       <ul class="new" id="enchDesc"></ul>
     </section>
 
+    <section class="card" aria-labelledby="h-inj">
+      <h2 id="h-inj">부위 손상 <b>· 5층 증강</b></h2>
+      <p class="hint">맞은 부위에 상처가 쌓여요. 베임, 골절, 절단 순으로 나빠지고, 층을 깰 때마다 가장 심한 상처 하나가 한 단계 낫습니다. 잘린 팔다리는 돌아오지 않아요. 5층을 깰 때마다 같은 등급의 증강 3장 중 하나를 고르고, 카드마다 한 번씩 다시 뽑을 수 있어요.</p>
+      <div class="inj" id="injGrid"></div>
+      <div class="row">
+        <button type="button" id="injHeal">부상 전부 치료</button>
+        <button type="button" id="injToggle">부위 손상: ON</button>
+      </div>
+      <div class="row">
+        <button type="button" class="preset" id="augNow">증강 지금 고르기</button>
+        <button type="button" id="augClear">증강 초기화</button>
+        <button type="button" id="augToggle">5층 증강: ON</button>
+      </div>
+      <ul class="new" id="augOwned"></ul>
+      <details><summary>증강 전체 목록 (20종)</summary><ul class="new" id="augList"></ul></details>
+    </section>
+
     <section class="card" aria-labelledby="h-keys">
       <h2 id="h-keys">CONTROLS</h2>
       <table class="keys">
@@ -147,6 +172,7 @@ ul.new b { color: var(--fg); font-weight: 600; }
         <tr><td>공격 꾹 누르기</td><td>차지 → 놓으면 회전베기</td></tr>
         <tr><td>Space / 우클릭 / K</td><td>대시 (무적, 대시 중 공격은 찌르기)</td></tr>
         <tr><td>Q / E / L</td><td>게이지가 차면 잿불 폭발</td></tr>
+        <tr><td>증강 카드</td><td>클릭 또는 1 2 3으로 선택, Z X C로 카드별 리롤 1회</td></tr>
         <tr><td>P · Tab · M</td><td>일시정지 · 상태창 · 조준 방식</td></tr>
         <tr><td>게임패드</td><td>왼스틱 이동, 오른스틱 조준, X 공격, A 대시, Y/RB 폭발</td></tr>
       </table>
@@ -174,7 +200,7 @@ const FLOOR_X0 = -16, FLOOR_Y0 = 11.5, FLOOR_W = 32 * PPU, FLOOR_H = 21 * PPU;
 const TORCHES = [-11, -4, 4, 11];
 
 const T = {
-  enchCards: true,
+  enchCards: true, injury: true, augments: true,
   hitstop: true, shake: true, knockback: true, hitFlash: true, inputBuffer: true,
   dashCancel: true, aimAssist: true, particles: true, sound: true,
   zoom: true, impactFrame: true, slowmo: true, squash: true, numbers: true,
@@ -293,7 +319,7 @@ const GLYPH = {
   Y: [5, 5, 2, 2, 2], Z: [7, 1, 2, 4, 7],
   0: [7, 5, 5, 5, 7], 1: [2, 6, 2, 2, 7], 2: [6, 1, 2, 4, 7], 3: [6, 1, 2, 1, 6], 4: [5, 5, 7, 1, 1], 5: [7, 4, 6, 1, 6],
   6: [3, 4, 6, 5, 2], 7: [7, 1, 1, 2, 2], 8: [2, 5, 2, 5, 2], 9: [2, 5, 3, 1, 6],
-  "!": [2, 2, 2, 0, 2], "+": [0, 2, 7, 2, 0], "-": [0, 0, 7, 0, 0], ".": [0, 0, 0, 0, 2], ":": [0, 2, 0, 2, 0], "/": [1, 1, 2, 4, 4], " ": [0, 0, 0, 0, 0],
+  "!": [2, 2, 2, 0, 2], "+": [0, 2, 7, 2, 0], "-": [0, 0, 7, 0, 0], ".": [0, 0, 0, 0, 2], ":": [0, 2, 0, 2, 0], "/": [1, 1, 2, 4, 4], "%": [5, 1, 2, 4, 5], " ": [0, 0, 0, 0, 0],
 };
 const textCache = new Map();
 function textImg(str, color, s = 1, outline = OUTLINE) {
@@ -716,8 +742,9 @@ const SPARK_RAMPS = {
   violet: ["#ffffff", "#f2dcff", "#c08af0", "#8a4ad0", "#4e2a8a"],
   steel: ["#ffffff", "#e8eef8", "#b8c4d8", "#7884a0", "#444c66"],
   acid: ["#ffffff", "#e8ffd0", "#a8f070", "#5cc04a", "#2a6a30"],
+  blood: ["#ff9a9a", "#e8303c", "#b0141e", "#7a0a14", "#4a0610"],
 };
-const GLOW_COL = { fire: "rgba(255,150,60,1)", gold: "rgba(255,210,90,1)", ice: "rgba(120,210,255,1)", violet: "rgba(180,110,255,1)", steel: "rgba(200,220,255,1)", red: "rgba(255,60,60,1)", acid: "rgba(150,240,110,1)" };
+const GLOW_COL = { fire: "rgba(255,150,60,1)", gold: "rgba(255,210,90,1)", ice: "rgba(120,210,255,1)", violet: "rgba(180,110,255,1)", steel: "rgba(200,220,255,1)", red: "rgba(255,60,60,1)", blood: "rgba(220,30,40,1)", acid: "rgba(150,240,110,1)" };
 function sparks(pt, dir, n, speed, spread, ramp = "fire", o = {}) {
   const base = angOf(dir);
   for (let i = 0; i < n; i++) {
@@ -866,6 +893,7 @@ class Player extends Combatant {
     this.hitThisSwing = new Set(); this.hitsTaken = 0; this.blade = -110 * D2R; this.bladeStart = 0; this.bladeExt = 0;
     this.smear = null; this.empowered = 0; this.swingCrit = false; this.meter = 0; this.meterFullShown = false;
     this.chargeT = 0; this.charged = false; this.perfectUsed = false; this.slamDone = false; this.burstDone = false; this.deadT = 0;
+    this.dashCharges = 2; this.dashRecharge = 0;
     this.hurtAnim = 0; this.spawnAnim = 30 / 60; this.dashEndT = 0; this.perfectT = 0; this.victoryAnim = 0;
     this.scarf = Array.from({ length: 5 }, () => V(this.pos.x, this.pos.y + 0.55));
     this.scarfPrev = this.scarf.map(p => V(p.x, p.y));
@@ -908,7 +936,7 @@ class Player extends Combatant {
   }
   consume(which) {
     const key = which + "PressT";
-    if (this.clock - this[key] <= (T.inputBuffer ? T.bufferWindow : 1 / 60 + 1e-4)) { this[key] = -99; return true; }
+    if (this.clock - this[key] <= (T.inputBuffer ? T.bufferWindow * M.buffer : 1 / 60 + 1e-4)) { this[key] = -99; return true; }
     return false;
   }
   tick(dt) {
@@ -918,14 +946,16 @@ class Player extends Combatant {
   tickInner(dt) {
     if (this.hurtInvuln > 0) this.hurtInvuln -= dt;
     if (this.dashCd > 0) this.dashCd -= dt;
+    if (this.dashCharges < 2) { this.dashRecharge -= dt; if (this.dashRecharge <= 0) { this.dashCharges++; this.dashRecharge = this.dashCharges < 2 ? this.dashCdFull() + 0.35 : 0; } }
     if (this.empowered > 0) { this.empowered -= dt; if (Math.random() < 0.3) P({ type: "spark", x: this.pos.x + rand(-0.4, 0.4), y: this.pos.y + rand(0.2, 1), vx: 0, vy: rand(1, 2.5), life: 0.3, max: 0.3, drag: 2, g: 0, ramp: "gold" }); }
     if (this.smear) { this.smear.life -= dt; if (this.smear.life <= 0 && !this.smear.live) this.smear = null; }
     for (const k of ["hurtAnim", "spawnAnim", "dashEndT", "perfectT", "victoryAnim"]) if (this[k] > 0) this[k] = Math.max(0, this[k] - dt);
-    this.stateTime += dt;
+    const sdt = this.state === "Attack" ? dt * M.atk : dt; // wounds and augments change attack speed
+    this.stateTime += sdt;
     const f = this.stateTime * 60;
     switch (this.state) {
       case "Free": this.tickFree(dt); break;
-      case "Attack": this.tickAttack(f, dt); break;
+      case "Attack": this.tickAttack(f, sdt); break;
       case "Dash": this.tickDash(f, dt); break;
       case "Charge": this.tickCharge(dt); break;
       case "Burst": this.tickBurst(dt); break;
@@ -939,7 +969,7 @@ class Player extends Combatant {
     this.updateScarf(dt);
   }
   tickFree(dt) {
-    const target = mul(this.moveInput, T.moveSpeed);
+    const target = mul(this.moveInput, T.moveSpeed * M.move);
     const k = 1 - Math.exp(-(len(this.moveInput) > 0.1 ? 28 : 22) * dt);
     this.vel = add(this.vel, mul(sub(target, this.vel), k));
     this.pos = add(this.pos, mul(this.vel, dt));
@@ -954,12 +984,12 @@ class Player extends Combatant {
       if (this.clock - this.lastAttackEnd > T.comboResetTime) this.nextCombo = 0;
       this.startAttack(COMBO[this.nextCombo], this.nextCombo); return;
     }
-    if (attackHeld() && this.clock - this.holdStart > 0.22) this.startCharge();
+    if (!M.noSpin && attackHeld() && this.clock - this.holdStart > 0.22) this.startCharge();
   }
   startAttack(a, index) {
     this.cur = a; this.comboIndex = index; this.state = "Attack"; this.stateTime = 0;
     this.atkDir = this.aimDir;
-    if (T.aimAssist) this.atkDir = aimAssist(this.center, this.atkDir, T.aimAssistAngle, a.range + T.aimAssistRange);
+    if (T.aimAssist && M.assist > 0) this.atkDir = aimAssist(this.center, this.atkDir, T.aimAssistAngle * M.assist, a.range + T.aimAssistRange);
     this.hitThisSwing.clear(); killsThisSwing = 0;
     this.flip = this.atkDir.x < 0; this.bladeStart = this.blade; this.slamDone = false;
     this.swingCrit = false;
@@ -1010,7 +1040,7 @@ class Player extends Combatant {
     if (inRecovery && this.comboIndex >= 0 && this.comboIndex + 1 < COMBO.length && this.consume("attack")) { this.endAttack(); this.startAttack(COMBO[this.comboIndex + 1], this.comboIndex + 1); return; }
     if (f >= end) {
       this.endAttack(); this.state = "Free"; this.stateTime = 0;
-      if (attackHeld() && this.clock - this.holdStart > 0.22) this.startCharge();
+      if (!M.noSpin && attackHeld() && this.clock - this.holdStart > 0.22) this.startCharge();
     }
   }
   doHits() {
@@ -1043,13 +1073,19 @@ class Player extends Combatant {
     if (this.state === "Charge") chargeSound(false);
     this.state = "Dash"; this.stateTime = 0; this.ghostCounter = 0; this.perfectUsed = false;
     this.dashDir = len(this.moveInput) > 0.1 ? norm(this.moveInput) : this.aimDir;
-    this.dashCd = T.dashFrames / 60 + T.dashCooldown; this.smear = null; this.bladeExt = 0;
+    if (hasAug("twindash")) {
+      this.dashCharges = Math.max(0, this.dashCharges - 1);
+      if (this.dashRecharge <= 0) this.dashRecharge = this.dashCdFull() + 0.35;
+      this.dashCd = this.dashCharges > 0 ? T.dashFrames / 60 + 0.04 : this.dashRecharge;
+    } else this.dashCd = this.dashCdFull();
+    this.smear = null; this.bladeExt = 0;
     this.punch(Math.abs(this.dashDir.x) > 0.6 ? 0.32 : -0.28);
     dust(this.pos, mul(this.dashDir, -1), 5, 1.1);
     sfx("dash", { vary: 0.1, vol: 0.8 });
   }
+  dashCdFull() { return T.dashFrames / 60 + T.dashCooldown * M.dashCdMul + M.dashCd; }
   tickDash(f, dt) {
-    this.pos = add(this.pos, mul(this.dashDir, T.dashSpeed * dt));
+    this.pos = add(this.pos, mul(this.dashDir, T.dashSpeed * M.dash * dt));
     this.vel = mul(this.dashDir, T.moveSpeed);
     const g = Math.floor(f / 1.5);
     if (g >= this.ghostCounter && T.trails) {
@@ -1065,8 +1101,8 @@ class Player extends Combatant {
   }
   startCharge() { this.state = "Charge"; this.stateTime = 0; this.chargeT = 0; this.charged = false; chargeSound(true); }
   tickCharge(dt) {
-    this.chargeT += dt;
-    const target = mul(this.moveInput, T.moveSpeed * 0.35);
+    this.chargeT += dt / M.charge;
+    const target = mul(this.moveInput, T.moveSpeed * M.move * 0.35);
     this.vel = add(this.vel, mul(sub(target, this.vel), 1 - Math.exp(-20 * dt)));
     this.pos = add(this.pos, mul(this.vel, dt));
     const k = Math.min(1, this.chargeT / T.chargeTime);
@@ -1128,6 +1164,9 @@ class Player extends Combatant {
     if (dmg > 0) popText(this.pos.x, this.pos.y + 1.2, "-" + dmg, "#ff6a6a", 2, { number: true, vx: dir.x * 1.5 });
     if (combo >= 5) popText(this.pos.x, this.pos.y + 1.6, "COMBO LOST", "#ff9aa0", 1, { z: 22, life: 0.9 });
     combo = 0; comboTimer = 0;
+    if (dmg > 0) injHit(src, dir, dmg);
+    if (dmg > 0 && hasAug("spite")) spiteBlast(this, dir);
+    if (this.hp <= 0 && hasAug("undying") && !aug.undyingUsed) undyingSave(this);
     if (this.hp <= 0) this.die();
     return true;
   }
@@ -1334,8 +1373,12 @@ function hitEnemy(e, atk, dir, o = {}) {
   const attacker = o.attacker || null;
   const crit = !!o.crit || Math.random() < 0.1;
   const armored = e.superArmor;
-  let dmg = atk.damage * (crit ? 1.75 : 1) * (e.broken > 0 ? 1.5 : 1) * (armored ? 0.8 : 1);
+  let dmg = atk.damage * M.dmg * (atk === BURST && hasAug("ashheart") ? 1.5 : 1) * (crit ? 1.75 : 1) * (e.broken > 0 ? 1.5 : 1) * (armored ? 0.8 : 1);
   dmg = Math.max(1, Math.round(dmg * rand(0.92, 1.08)));
+  if (hasAug("executioner") && e.hp - dmg > 0 && e.hp - dmg < e.maxHp * 0.15) {
+    dmg = Math.ceil(e.hp);
+    popText(e.pos.x, e.pos.y + 1.6, "EXECUTE", "#ffd166", 1, { z: 24, life: 0.8 }); sparks(e.center, dir, 12, 12, 80, "gold");
+  }
   const killed = e.takeDamage(dmg);
   let stagger = !armored;
   if (armored && !killed) {
@@ -1374,6 +1417,7 @@ function hitEnemy(e, atk, dir, o = {}) {
 }
 function registerKill(e, dir, big, attacker) {
   kills++; killsThisSwing++;
+  if (hasAug("leech") && player.state !== "Dead") { player.hp = Math.min(player.maxHp, player.hp + 3); popText(player.pos.x, player.pos.y + 1.3, "+3", "#8be3a6", 1, { z: 16, life: 0.6 }); }
   if (e.st && e.st.burn > 0 && e.st.burnLv > 0) burnBlast(e);
   e.dieDir = dir;
   sfx("kill", { vol: 0.8, vary: 0.08 });
@@ -1421,7 +1465,7 @@ function deflect(pr, p) {
 }
 function gainMeter(n) {
   const p = player, before = p.meter;
-  p.meter = Math.min(100, p.meter + n);
+  p.meter = Math.min(100, p.meter + n * M.meter);
   if (before < 100 && p.meter >= 100) { sfx("ready"); popText(p.pos.x, p.pos.y + 1.8, "BURST READY", "#ff9a3c", 1, { z: 22, life: 1.1 }); }
 }
 function ashBurst(p) {
@@ -1798,7 +1842,7 @@ function enchPick(i) {
 const CARD_W = 82, CARD_H = 70;
 function cardRect(i) { return [VW / 2 - CARD_W * 1.5 - 8 + i * (CARD_W + 8), 62, CARD_W, CARD_H]; }
 function drawEnchCards() {
-  const cards = enchReward.cards; if (!cards || enchReward.t < 0) return;
+  const cards = enchReward.cards; if (!cards || enchReward.t < 0 || waves.state !== "reward") return;
   const t = enchReward.t;
   h.fillStyle = "rgba(8,4,12,0.6)"; h.fillRect(0, 0, VW, VH);
   hudText("CHOOSE AN ENCHANT", "#ffd166", 2, VW / 2, 40, "center");
@@ -1839,9 +1883,487 @@ function drawEnchHud() {
 }
 
 // ======================================================================
+//  injuries (body-part damage) + augments (every 5 floors)
+// ======================================================================
+const PARTS = ["head", "torso", "armS", "armO", "legs"];
+const PART_INFO = {
+  head: { name: "HEAD", ko: "머리", max: 2, th: [10, 26], st: ["", "DAZED", "CONCUSSED"], stKo: ["멀쩡", "어지러움", "뇌진탕"] },
+  torso: { name: "BODY", ko: "몸통", max: 2, th: [12, 30], st: ["", "GASHED", "PIERCED"], stKo: ["멀쩡", "베임", "관통상"] },
+  armS: { name: "SWORD ARM", ko: "검 든 팔", max: 3, th: [10, 24, 40], st: ["", "CUT", "BROKEN", "SEVERED"], stKo: ["멀쩡", "베임", "골절", "절단"] },
+  armO: { name: "OFF ARM", ko: "반대 팔", max: 3, th: [10, 24, 40], st: ["", "CUT", "BROKEN", "SEVERED"], stKo: ["멀쩡", "베임", "골절", "절단"] },
+  legs: { name: "LEG", ko: "다리", max: 3, th: [10, 24, 40], st: ["", "CUT", "BROKEN", "SEVERED"], stKo: ["멀쩡", "베임", "골절", "절단"] },
+};
+// where each attacker tends to land its hits
+const HIT_W = {
+  grunt: { head: 10, torso: 20, armS: 30, armO: 25, legs: 15 },
+  wisp: { head: 30, torso: 35, armS: 12, armO: 13, legs: 10 },
+  brute: { head: 15, torso: 25, armS: 10, armO: 10, legs: 40 },
+};
+// sprite-space anchors (32x30 cell, feet at row 29) for blood, stumps and particles
+const PART_AT = { head: [19, 15], torso: [16, 23], armS: [21, 22], armO: [11, 22], legs: [14, 28] };
+const inj = { lv: {}, pts: {}, iron: {}, flash: {}, bleedT: 0, dripT: 0, trailT: 0, hpAcc: 0 };
+function injReset() { for (const k of PARTS) { inj.lv[k] = 0; inj.pts[k] = 0; inj.iron[k] = false; inj.flash[k] = 0; } inj.bleedT = 0; inj.hpAcc = 0; }
+injReset();
+const severed = k => inj.lv[k] >= 3 && !inj.iron[k];
+const effLv = k => inj.iron[k] ? 1 : inj.lv[k];
+function woundTotal() { let n = 0; for (const k of PARTS) n += effLv(k); return n; }
+
+// all gameplay modifiers from wounds and augments, refreshed every frame
+let M = null;
+function calcMods() {
+  const m = { atk: 1, dmg: 1, charge: 1, noSpin: false, meter: 1, move: 1, dash: 1, dashCdMul: 1, dashCd: 0, assist: 1, buffer: 1, bleed: 0, grip: "main" };
+  if (T.injury) {
+    const s = effLv("armS"), o = effLv("armO"), l = effLv("legs"), hd = effLv("head"), t = effLv("torso");
+    m.atk *= [1, 0.88, 0.76, 0.62][s]; m.dmg *= [1, 1, 0.85, 0.7][s];
+    m.charge *= [1, 1.25, 1.6, 1][o]; m.meter *= [1, 1, 0.8, 0.6][o];
+    if (severed("armO")) m.noSpin = true;
+    if (severed("armS") && severed("armO")) { m.grip = "mouth"; m.atk = 0.55; m.dmg = 0.45; m.noSpin = true; }
+    else if (severed("armS")) m.grip = "off";
+    m.move *= [1, 0.88, 0.72, 0.5][l]; m.dash *= [1, 1, 0.8, 0.55][l]; m.dashCd += [0, 0, 0.12, 0.35][l];
+    m.assist = [1, 0.5, 0][hd]; m.buffer = [1, 1, 0.5][hd];
+    m.bleed = [0, 0.6, 1.4][t] + (inj.bleedT > 0 ? 2.5 : 0);
+  }
+  if (hasAug("whetstone")) m.dmg *= 1.15;
+  if (hasAug("bloodrage")) m.dmg *= 1 + 0.06 * woundTotal();
+  if (hasAug("fleet")) { m.move *= 1.12; m.dashCdMul *= 0.6; }
+  if (hasAug("emberhoard")) m.meter *= 1.4;
+  if (hasAug("frenzy")) m.atk *= 1.35;
+  if (hasAug("adrenaline") && player.hp / player.maxHp < 0.4) m.atk *= 1.3;
+  if (hasAug("tourniquet")) m.bleed = 0;
+  return m;
+}
+function injPenaltyLines() {
+  const m = M, out = [];
+  const pct = v => Math.round((v - 1) * 100);
+  if (m.atk < 0.995) out.push(["ATK SPD " + pct(m.atk) + "%", "#ffb070"]);
+  if (m.dmg < 0.995) out.push(["DMG " + pct(m.dmg) + "%", "#ffb070"]);
+  if (m.grip === "off") out.push(["OFF HAND GRIP", "#ff8a7a"]);
+  if (m.grip === "mouth") out.push(["BLADE IN TEETH", "#ff6a6a"]);
+  if (m.noSpin) out.push(["NO SPIN", "#ff8a7a"]);
+  else if (m.charge > 1.01) out.push(["CHARGE +" + pct(m.charge) + "%", "#ffb070"]);
+  if (m.move < 0.995) out.push(["MOVE " + pct(m.move) + "%", "#ffb070"]);
+  if (m.assist < 1) out.push([m.assist > 0 ? "AIM BLUR" : "NO AIM ASSIST", "#c8a0ff"]);
+  if (m.bleed > 0) out.push([hasAug("hemomancy") ? "BLOOD HEALS" : "BLEEDING", hasAug("hemomancy") ? "#ff8af0" : "#ff4a5a"]);
+  return out;
+}
+
+// world position of a body part (for particles)
+function partWorld(k) {
+  const p = player, [ax, ay] = PART_AT[k], dx = (ax - 16) * (p.flip ? -1 : 1);
+  return V(p.pos.x + dx / PPU, p.pos.y + (29 - ay) / PPU + p.z / PPU);
+}
+function bloodSpray(pt, dir, n, speed = 7) { sparks(pt, dir, n, speed, 110, "blood", { g: 16, drag: 4, lifeMul: 1.3 }); }
+
+function injHit(src, dir, dmg) {
+  if (!T.injury || dmg <= 0) return;
+  const W = HIT_W[src && src.kind] || HIT_W.wisp;
+  let tot = 0; for (const k of PARTS) tot += W[k];
+  let r = Math.random() * tot, k = PARTS[0];
+  for (const q of PARTS) { r -= W[q]; if (r <= 0) { k = q; break; } }
+  if (inj.iron[k]) { // iron limbs ring off instead of wounding
+    sparks(partWorld(k), mul(dir, -1), 10, 9, 140, "steel"); sfx("deflect", { rate: 0.7, vol: 0.6 });
+    popText(player.pos.x, player.pos.y + 1.5, "CLANG", "#c8d0dc", 1, { z: 20, life: 0.6 });
+    return;
+  }
+  const capOf = q => (hasAug("unbreakable") && PART_INFO[q].max === 3 ? 2 : PART_INFO[q].max);
+  if (inj.lv[k] >= capOf(k)) { // already maxed: the blow lands somewhere else that can still be hurt
+    const open = PARTS.filter(q => !inj.iron[q] && inj.lv[q] < capOf(q));
+    if (!open.length) return;
+    k = pick(open);
+  }
+  const info = PART_INFO[k];
+  inj.pts[k] += dmg * (hasAug("thickskin") ? 0.65 : 1) * rand(0.85, 1.2);
+  let lv = 0; for (const t of info.th) if (inj.pts[k] >= t) lv++;
+  lv = Math.min(lv, capOf(k));
+  if (lv >= capOf(k)) inj.pts[k] = Math.min(inj.pts[k], info.th[capOf(k) - 1] + 0.01);
+  bloodSpray(partWorld(k), mul(dir, -1), 6);
+  if (lv > inj.lv[k]) injLevelUp(k, lv, dir);
+}
+function injLevelUp(k, lv, dir) {
+  const info = PART_INFO[k], p = player;
+  inj.lv[k] = lv; inj.flash[k] = 0.8; M = calcMods();
+  const at = partWorld(k);
+  if (lv >= 3) { injSever(k, dir); syncInjUi(); return; }
+  const heavy = lv >= 2;
+  bloodSpray(at, mul(dir, -1), heavy ? 22 : 10, heavy ? 10 : 7);
+  splat(p.pos, ["#7a0a14", "#b0141e", "#4a0610"], heavy ? 1 : 0.6);
+  popText(p.pos.x, p.pos.y + 1.9, info.name + " " + info.st[lv], heavy ? "#ff6a5a" : "#ffb070", heavy ? 2 : 1, { z: 28, life: 1.3, pop: 1.6, grav: 90 });
+  if (heavy) {
+    sfx("break", { rate: 0.75, vol: 0.9 }); slowmo(0.3, 0.2); addShake(0.4, dir, 4); chroma(0.8, dir);
+    if (k === "head") { ring(at, 2, 18, 1, 0.4, "steel"); screenFlash("#ffffff", 0.4, 0.3); }
+  } else sfx("slam", { rate: 1.8, vol: 0.45 });
+  syncInjUi();
+}
+function injSever(k, dir) {
+  const p = player, info = PART_INFO[k], at = partWorld(k);
+  slowmo(0.18, 0.7); zoomPunch(0.12); cam.hold = 0.5; cam.holdAt = at;
+  impactFrame(p.center, 0.09, [p]); chroma(1.4, dir); screenFlash("#b00018", 0.5, 0.3); addShake(0.9, dir, 6); rumble(1, 1, 400);
+  sfx("break", { rate: 0.55, vol: 1 }); sfx("kill", { rate: 0.6, vol: 0.9 });
+  bloodSpray(at, mul(dir, -1), 40, 13); bloodSpray(at, V(0, 1), 16, 9);
+  for (let i = 0; i < 3; i++) splat(add(p.pos, V(rand(-0.6, 0.6), rand(-0.4, 0.4))), ["#7a0a14", "#b0141e", "#4a0610", "#e8303c"], 1.2);
+  const away = norm(add(mul(dir, -1), V(rand(-0.4, 0.4), rand(-0.2, 0.4))));
+  PF({ type: "limb", spr: k === "legs" ? LIMB_SPR.leg : LIMB_SPR.arm, x: at.x, y: at.y - 0.5, z: 10, vx: away.x * 6, vy: away.y * 6, vz: 150, rot: 0, spin: rand(10, 18) * (Math.random() < 0.5 ? -1 : 1), life: 30, max: 30, bloodT: 0 });
+  inj.bleedT = 6;
+  const subText = k === "armS" ? (severed("armO") ? "NO ARMS LEFT: BLADE IN TEETH" : "SWORD SWAPS TO OFF HAND")
+    : k === "armO" ? "NO MORE SPIN SLASH" : "MOVE SPEED HALVED";
+  banner(info.name + " SEVERED", "#ff3a4a", 1.8, subText);
+  if (hasAug("ironlimbs")) popText(p.pos.x, p.pos.y + 2.2, "IRON LIMB AT FLOOR CLEAR", "#c8d0dc", 1, { z: 34, life: 1.6, grav: 40 });
+}
+function injForce(k) { // lab panel: push one part to its next level
+  const info = PART_INFO[k];
+  if (inj.lv[k] >= info.max) return;
+  inj.pts[k] = info.th[inj.lv[k]] + 0.01;
+  injLevelUp(k, inj.lv[k] + 1, V(player.flip ? 1 : -1, 0));
+}
+function fitIron() {
+  let n = 0;
+  for (const k of ["armS", "armO", "legs"]) if (severed(k)) { inj.iron[k] = true; inj.flash[k] = 1; n++; }
+  if (n) {
+    const p = player;
+    ring(p.center, 3, 28, 2, 0.35, "steel"); sparks(p.center, V(0, 1), 24, 11, 360, "steel");
+    sfx("break", { rate: 1.6, vol: 0.7 }); sfx("chargeFull", { rate: 0.7 });
+    popText(p.pos.x, p.pos.y + 1.9, n > 1 ? "IRON LIMBS FITTED" : "IRON LIMB FITTED", "#e8eef8", 1, { z: 30, life: 1.4, grav: 60 });
+  }
+  return n;
+}
+function injFloorHeal() { // floor clear: patch up the worst open wound (field medic heals all)
+  let healed = 0;
+  const open = PARTS.filter(k => inj.lv[k] > 0 && !(inj.lv[k] >= 3)).sort((a, b) => inj.lv[b] - inj.lv[a]);
+  for (const k of hasAug("medic") ? open : open.slice(0, 1)) {
+    const to = hasAug("medic") ? 0 : inj.lv[k] - 1;
+    inj.lv[k] = to; inj.pts[k] = to ? PART_INFO[k].th[to - 1] : 0; inj.flash[k] = 0.6; healed++;
+  }
+  inj.bleedT = 0;
+  if (hasAug("ironlimbs")) fitIron();
+  if (healed) popText(player.pos.x, player.pos.y + 2.2, hasAug("medic") ? "WOUNDS TENDED" : "WOUND TENDED", "#8be3a6", 1, { z: 30, life: 1.2 });
+  M = calcMods(); syncInjUi();
+}
+function injUpdate(dt) {
+  const p = player;
+  M = calcMods();
+  for (const k of PARTS) if (inj.flash[k] > 0) inj.flash[k] -= dt;
+  if (inj.bleedT > 0) inj.bleedT -= dt;
+  if (p.state === "Dead") return;
+  if (hasAug("ashheart") && p.meter < 100) gainMeter(6 * dt / M.meter);
+  if (M.bleed > 0) {
+    inj.hpAcc += M.bleed * dt;
+    if (inj.hpAcc >= 1) {
+      const n = Math.floor(inj.hpAcc); inj.hpAcc -= n;
+      if (hasAug("hemomancy")) p.hp = Math.min(p.maxHp, p.hp + n);
+      else if (!T.god) p.hp = Math.max(1, p.hp - n);
+    }
+  }
+  // drips from open wounds, spurts from fresh stumps
+  inj.dripT -= dt;
+  if (inj.dripT <= 0) {
+    inj.dripT = 0.12;
+    for (const k of PARTS) {
+      const lv = inj.lv[k]; if (!lv || inj.iron[k]) continue;
+      const chance = lv >= 3 ? (inj.bleedT > 0 ? 1 : 0.35) : lv * 0.12;
+      if (Math.random() < chance) {
+        const at = partWorld(k);
+        if (lv >= 3 && inj.bleedT > 0) sparks(at, V(p.flip ? 1 : -1, 0.6), 3, 5, 60, "blood", { g: 18, drag: 2 });
+        else P({ type: "spark", x: at.x + rand(-0.05, 0.05), y: at.y, vx: 0, vy: -0.4, life: 0.35, max: 0.35, drag: 1, g: 8, ramp: "blood" });
+      }
+    }
+  }
+  const moving = len(p.vel) > 1 && p.state !== "Dash";
+  inj.trailT -= dt;
+  if (moving && inj.trailT <= 0 && (inj.lv.legs >= 2 && !inj.iron.legs || M.bleed > 0 && !hasAug("hemomancy"))) {
+    inj.trailT = 0.22;
+    if (T.decals) { const [x, y] = dPos(p.pos.x + rand(-0.1, 0.1), p.pos.y); dctx.fillStyle = Math.random() < 0.5 ? "#7a0a14" : "#4a0610"; dctx.globalAlpha = 0.7; dctx.fillRect(Math.round(x), Math.round(y), Math.random() < 0.4 ? 2 : 1, 1); dctx.globalAlpha = 1; }
+  }
+}
+
+// --- sprite treatment: cut away severed limbs, rebuild iron ones ---
+const LIMB_SPR = {
+  arm: sprite(["bBcccCh", "bBcCccc"], { b: "#7a0a14", B: "#e8303c", c: "#2a2436", C: "#c8323c", h: "#f0c8a0" }),
+  leg: sprite(["bBccgg..", "bBccgggg"], { b: "#7a0a14", B: "#e8303c", c: "#2a2436", g: "#8a8aa0" }),
+};
+function injMaskKey() { return ["armS", "armO", "legs"].map(k => inj.lv[k] >= 3 ? (inj.iron[k] ? "i" : "x") : "-").join(""); }
+function injSprite(spr) {
+  const key = injMaskKey();
+  if (key === "---" || !T.injury && !hasAug("ironlimbs")) return spr;
+  const cache = spr.inj || (spr.inj = {});
+  if (cache[key]) return cache[key];
+  const W = spr.w, H = spr.h, c = makeCanvas(W, H), cg = c.getContext("2d");
+  cg.drawImage(spr.c, 0, 0);
+  const id = cg.getImageData(0, 0, W, H), d = id.data;
+  const I = (x, y) => (y * W + x) * 4;
+  const solid = (x, y) => x >= 0 && y >= 0 && x < W && y < H && d[I(x, y) + 3] > 0;
+  const put = (x, y, hex) => { if (x < 0 || y < 0 || x >= W || y >= H) return; const i = I(x, y); d[i] = parseInt(hex.slice(1, 3), 16); d[i + 1] = parseInt(hex.slice(3, 5), 16); d[i + 2] = parseInt(hex.slice(5, 7), 16); d[i + 3] = 255; };
+  // head centre is the stable reference column
+  let hs = 0, hn = 0;
+  for (let y = 12; y <= 18; y++) for (let x = 0; x < W; x++) if (solid(x, y)) { hs += x; hn++; }
+  const cx = hn ? Math.round(hs / hn) : 16;
+  const STEEL = ["#2a2e3a", "#5a6478", "#8a94a8", "#c8d0dc", "#eef2f8"];
+  const zone = (x0, x1, y0, y1, mode, stump) => {
+    for (let y = y0; y <= y1; y++) for (let x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) {
+      if (!solid(x, y)) continue;
+      const i = I(x, y);
+      if (mode === "x") d[i + 3] = 0;
+      else { const l = (d[i] * 0.3 + d[i + 1] * 0.55 + d[i + 2] * 0.15) / 255; put(x, y, l < 0.12 ? OUTLINE : STEEL[1 + Math.min(3, Math.floor(l * 4.2))]); }
+    }
+    if (mode === "x") for (const [x, y, col] of stump) if (solid(x, y) || solid(x - 1, y) || solid(x + 1, y)) put(x, y, col);
+  };
+  if (key[0] !== "-") zone(cx + 4, W - 1, 19, 26, key[0], [[cx + 3, 21, "#e8303c"], [cx + 3, 22, "#b0141e"], [cx + 3, 23, "#7a0a14"]]);
+  if (key[1] !== "-") zone(0, cx - 5, 19, 26, key[1], [[cx - 4, 21, "#e8303c"], [cx - 4, 22, "#b0141e"], [cx - 4, 23, "#7a0a14"]]);
+  if (key[2] !== "-") zone(0, cx - 1, 27, H - 1, key[2], [[cx - 3, 26, "#e8303c"], [cx - 2, 26, "#b0141e"], [cx - 1, 26, "#7a0a14"]]);
+  cg.putImageData(id, 0, 0);
+  return (cache[key] = { c, w: W, h: H, tints: {} });
+}
+const WOUND_PIX = { 1: [[0, 0], [1, 1]], 2: [[0, 0], [1, 1], [-1, 1], [0, 2], [1, -1]] };
+function drawWounds(bx, by, flip) {
+  if (!T.injury) return;
+  const X = x => flip ? bx - (x - 16) - 1 : bx + (x - 16), Y = y => by - 29 + y;
+  for (const k of PARTS) {
+    const lv = inj.lv[k]; if (!lv || lv >= 3) continue;
+    const [ax, ay] = PART_AT[k];
+    WOUND_PIX[lv].forEach(([ox, oy], i) => plot(X(ax + ox), Y(ay + oy), i % 2 ? "#7a0a14" : "#d4202e"));
+  }
+  if (effLv("head") >= 2) for (let i = 0; i < 3; i++) {
+    const a = realTime * 5 + i * TAU / 3;
+    plot(Math.round(bx + Math.cos(a) * 6), Math.round(by - 31 + Math.sin(a) * 2), i ? "#ffe066" : "#ffffff");
+  }
+}
+function drawHeadFx() { // concussion: double vision + dark edges
+  if (!T.injury || player.state === "Dead") return;
+  const hd = effLv("head");
+  if (hd >= 1) { g.globalAlpha = hd >= 2 ? 0.75 : 0.4; g.drawImage(VIGNETTE, 0, 0); g.globalAlpha = 1; }
+  if (hd >= 2) {
+    const ox = Math.round(Math.sin(realTime * 1.6) * 3 + Math.sin(realTime * 4.1) * 1);
+    g.globalAlpha = 0.22; g.drawImage(buf, ox, Math.round(Math.sin(realTime * 2.3))); g.globalAlpha = 1;
+  }
+}
+
+// --- HUD paper doll + penalty list ---
+const DOLL = { head: [[3, 0, 3, 3]], torso: [[3, 3, 3, 4]], armO: [[1, 3, 2, 4]], armS: [[6, 3, 2, 4]], legs: [[3, 7, 1, 4], [5, 7, 1, 4]] };
+function drawInjHud(x0, y0) {
+  if (!T.injury) return;
+  const S = 2;
+  h.fillStyle = "rgba(8,4,12,0.55)"; h.fillRect(x0 - 2, y0 - 2, 9 * S + 4, 11 * S + 4);
+  for (const k of PARTS) {
+    const lv = inj.lv[k], fl = inj.flash[k] > 0 && Math.floor(realTime * 16) % 2;
+    let col = ["#d8d0e8", "#ffd166", "#ff8a3a", "#e8303c"][lv];
+    if (inj.iron[k]) col = "#8a94a8";
+    if (fl) col = "#ffffff";
+    for (const [x, y, w, hh] of DOLL[k]) {
+      if (lv >= 3 && !inj.iron[k] && !fl) { // severed: hollow, blinking outline
+        h.fillStyle = Math.floor(realTime * 3) % 2 ? "#e8303c" : "#5a0a14";
+        h.fillRect(x0 + x * S, y0 + y * S, w * S, 1); h.fillRect(x0 + x * S, y0 + (y + hh) * S - 1, w * S, 1);
+        continue;
+      }
+      h.fillStyle = col; h.fillRect(x0 + x * S, y0 + y * S, w * S, hh * S);
+    }
+  }
+  const lines = injPenaltyLines();
+  lines.slice(0, 5).forEach(([s, col], i) => hudText(s, col, 1, x0 + 9 * S + 5, y0 - 1 + i * 6));
+}
+
+// --- augments ---
+const AUG_TIERS = {
+  silver: { name: "SILVER", col: "#d8e0ec", deep: "#5a6478", ramp: "steel" },
+  gold: { name: "GOLD", col: "#ffd166", deep: "#8a5a10", ramp: "gold" },
+  prism: { name: "PRISMATIC", col: "#ff9af0", deep: "#4a2a6a", ramp: "violet" },
+};
+const AUGS = [
+  { id: "ironhide", tier: "silver", name: "IRON HIDE", d: ["MAX HP +30", "AND HEAL 30"], ko: "최대 체력 +30, 즉시 30 회복", on() { player.maxHp += 30; player.hp = Math.min(player.maxHp, player.hp + 30); } },
+  { id: "whetstone", tier: "silver", name: "WHETSTONE", d: ["ALL DAMAGE +15%"], ko: "모든 피해 +15%" },
+  { id: "fleet", tier: "silver", name: "FLEET FOOT", d: ["MOVE SPEED +12%", "DASH COOLDOWN -40%"], ko: "이동 속도 +12%, 대시 쿨다운 -40%" },
+  { id: "tourniquet", tier: "silver", name: "TOURNIQUET", d: ["YOU NO LONGER", "LOSE HP TO BLEEDING"], ko: "출혈로 체력이 줄지 않음" },
+  { id: "thickskin", tier: "silver", name: "THICK SKIN", d: ["WOUNDS BUILD UP", "35% SLOWER"], ko: "부위 손상이 35% 덜 쌓임" },
+  { id: "emberhoard", tier: "silver", name: "EMBER HOARD", d: ["BURST GAUGE", "FILLS 40% FASTER"], ko: "잿불 게이지 획득 +40%" },
+  { id: "medic", tier: "silver", name: "FIELD MEDIC", d: ["FLOOR CLEAR HEALS", "EVERY OPEN WOUND"], ko: "층을 깰 때마다 절단을 뺀 모든 부상 완치 (지금 바로도 치료)", on() { injFloorHeal(); } },
+  { id: "ironlimbs", tier: "gold", name: "IRON LIMBS", d: ["LOST LIMBS COME", "BACK AS IRON"], ko: "잘린 팔다리를 쇠 의수·의족으로 교체해 가벼운 부상 수준으로 회복. 이후 잘리는 부위도 층 클리어 때 교체", on() { fitIron(); } },
+  { id: "bloodrage", tier: "gold", name: "BLOOD RAGE", d: ["+6% DAMAGE PER", "WOUND LEVEL"], ko: "부상 단계 하나당 피해 +6%" },
+  { id: "executioner", tier: "gold", name: "EXECUTIONER", d: ["HITS FINISH FOES", "UNDER 15% HP"], ko: "체력 15% 미만인 적은 맞으면 즉사" },
+  { id: "leech", tier: "gold", name: "LEECH EDGE", d: ["EVERY KILL", "HEALS 3 HP"], ko: "적 처치마다 체력 3 회복" },
+  { id: "twindash", tier: "gold", name: "TWIN DASH", d: ["DASH TWICE", "IN A ROW"], ko: "대시 2회 충전" },
+  { id: "spite", tier: "gold", name: "SPITE", d: ["GETTING HIT", "BLASTS FOES AWAY"], ko: "피격당하면 주변에 충격파 (피해 20, 넉백)" },
+  { id: "adrenaline", tier: "gold", name: "ADRENALINE", d: ["UNDER 40% HP", "ATTACK SPEED +30%"], ko: "체력 40% 미만이면 공격 속도 +30%" },
+  { id: "undying", tier: "prism", name: "UNDYING", d: ["CHEAT DEATH ONCE", "EVERY 5 FLOORS"], ko: "치명상을 입어도 체력 1로 버팀 (5층마다 1회)" },
+  { id: "frenzy", tier: "prism", name: "FRENZY", d: ["ATTACK SPEED +35%"], ko: "공격 속도 +35%" },
+  { id: "hemomancy", tier: "prism", name: "HEMOMANCY", d: ["BLEEDING HEALS", "INSTEAD OF HURTING"], ko: "출혈이 체력을 깎는 대신 회복시킴" },
+  { id: "ashheart", tier: "prism", name: "ASH HEART", d: ["GAUGE FILLS ITSELF", "BURST DAMAGE +50%"], ko: "잿불 게이지가 초당 6씩 자동 충전, 폭발 피해 +50%" },
+  { id: "arcana", tier: "prism", name: "ARCANA", d: ["+1 LEVEL TO 3", "RANDOM ENCHANTS"], ko: "무작위 인챈트 3개 +1레벨", on() { augArcana(); } },
+  { id: "unbreakable", tier: "prism", name: "UNBREAKABLE", d: ["LIMBS CAN BREAK", "BUT NEVER SEVER"], ko: "팔다리가 골절까지만 다치고 잘리지 않음" },
+];
+const AUG_BY = Object.fromEntries(AUGS.map(a => [a.id, a]));
+const aug = { owned: [], offer: null, tier: "silver", t: 0, picked: -1, rerolls: [true, true, true], spin: [0, 0, 0], undyingUsed: false, resume: null };
+function hasAug(id) { return aug.owned.includes(id); }
+function augReset() { aug.owned.length = 0; aug.offer = null; aug.undyingUsed = false; aug.resume = null; }
+function augArcana() {
+  const pool = [];
+  for (const slot of ["basic", "skill"]) for (const k of ENCH_KEYS) if (ench[slot][k] < 3) pool.push([slot, k]);
+  for (let i = 0; i < 3 && pool.length; i++) { const [s, k] = pool.splice(Math.floor(Math.random() * pool.length), 1)[0]; ench[s][k]++; }
+  if (typeof syncEnchUi === "function") syncEnchUi();
+}
+function augRollTier() {
+  const f = waves.n, r = Math.random();
+  const [s, gd] = f <= 5 ? [0.55, 0.92] : f <= 10 ? [0.3, 0.8] : [0.15, 0.65];
+  return r < s ? "silver" : r < gd ? "gold" : "prism";
+}
+function augRollOne(tier, exclude) {
+  const ok = a => !hasAug(a.id) && !exclude.includes(a.id);
+  let pool = AUGS.filter(a => a.tier === tier && ok(a));
+  if (!pool.length) pool = AUGS.filter(ok);
+  return pool.length ? pick(pool) : null;
+}
+function augOffer(resume) {
+  const tier = augRollTier(), cards = [];
+  for (let i = 0; i < 3; i++) { const a = augRollOne(tier, cards.map(c => c.id)); if (a) cards.push(a); }
+  if (!cards.length) return false;
+  Object.assign(aug, { offer: cards, tier, t: -1.1, picked: -1, rerolls: [true, true, true], spin: [0, 0, 0], undyingUsed: false, resume: resume || null });
+  sfx("grade", { rate: tier === "prism" ? 1.3 : tier === "gold" ? 1 : 0.8, vol: 0.9 });
+  return true;
+}
+function augPick(i) {
+  const a = aug.offer && aug.offer[i];
+  if (!a || aug.picked >= 0 || aug.t < 0.2) return;
+  aug.owned.push(a.id); aug.picked = i; aug.t = 0;
+  if (a.on) a.on();
+  const p = player, tr = AUG_TIERS[a.tier];
+  sfx("chargeFull"); sfx("clear", { rate: 1.1, vol: 0.6 }); rumble(0.6, 0.8, 200);
+  ring(p.center, 3, 40, 3, 0.45, tr.ramp); ring(p.center, 2, 26, 2, 0.35, "gold"); sparks(p.center, V(0, 1), 30, 14, 360, tr.ramp);
+  screenFlash(tr.col, 0.25, 0.18);
+  popText(p.pos.x, p.pos.y + 2, a.name, tr.col, 2, { z: 30, life: 1.4, pop: 1.8, grav: 80 });
+  M = calcMods(); syncInjUi();
+}
+function augReroll(i) {
+  if (!aug.offer || aug.picked >= 0 || aug.t < 0.2 || !aug.rerolls[i]) return;
+  const a = augRollOne(aug.tier, aug.offer.map(c => c.id));
+  if (!a) return;
+  aug.offer[i] = a; aug.rerolls[i] = false; aug.spin[i] = 0.25;
+  sfx("dash", { rate: 1.6, vol: 0.6 }); sfx("pickup", { rate: 0.8, vol: 0.5 });
+}
+function augOpenNow() { // lab button: offer augments right now (time stops while choosing)
+  if (aug.offer || player.state === "Dead") return;
+  const prev = waves.state;
+  if (augOffer(prev)) { waves.state = "augment"; aug.t = 0; }
+}
+function augUpdate(rdt) {
+  for (let i = 0; i < 3; i++) if (aug.spin[i] > 0) aug.spin[i] -= rdt;
+  aug.t += rdt;
+  if (aug.picked >= 0 && aug.t > 0.8) {
+    aug.offer = null;
+    if (aug.resume) { waves.state = aug.resume; aug.resume = null; } else nextReward();
+  }
+}
+// time is frozen while the player is still choosing
+const choosingAug = () => waves.state === "augment" && aug.offer && aug.picked < 0;
+
+const AUG_W = 96, AUG_H = 84;
+function augRect(i) { return [VW / 2 - AUG_W * 1.5 - 8 + i * (AUG_W + 8), 44, AUG_W, AUG_H]; }
+function augRerollRect(i) { const [x, y, w, hh] = augRect(i); return [x, y + hh + 5, w, 11]; }
+function drawAugCards() {
+  if (!aug.offer || aug.t < 0) return;
+  const t = aug.t, tr = AUG_TIERS[aug.tier];
+  h.fillStyle = "rgba(8,4,12,0.7)"; h.fillRect(0, 0, VW, VH);
+  hudText("CHOOSE AN AUGMENT", "#ffffff", 2, VW / 2, 16, "center");
+  hudText(tr.name + " TIER", tr.col, 1, VW / 2, 32, "center");
+  aug.offer.forEach((a, i) => {
+    const at = AUG_TIERS[a.tier];
+    let [x, y, w, hh] = augRect(i);
+    const appear = clamp((t - i * 0.1) / 0.22, 0, 1); y += (1 - easeOut(appear)) * 40;
+    const chosen = aug.picked === i, other = aug.picked >= 0 && !chosen;
+    const hover = mouse.has && mouse.x >= x && mouse.x < x + w && mouse.y >= y && mouse.y < y + hh && aug.picked < 0;
+    const spin = aug.spin[i] > 0 ? Math.abs(Math.cos((1 - aug.spin[i] / 0.25) * Math.PI)) : 1;
+    const cw = Math.max(2, Math.round(w * spin)), cx = x + (w - cw) / 2;
+    h.globalAlpha = appear * (other ? 0.3 : 1);
+    const edge = a.tier === "prism" ? `hsl(${Math.floor((realTime * 140 + i * 50) % 360)},90%,72%)` : at.col;
+    h.fillStyle = OUTLINE; h.fillRect(cx - 2, y - 2, cw + 4, hh + 4);
+    h.fillStyle = edge; h.fillRect(cx - 1, y - 1, cw + 2, hh + 2);
+    h.fillStyle = chosen ? at.deep : hover ? "#2c2238" : "#1a1424"; h.fillRect(cx, y, cw, hh);
+    if (chosen) { h.globalAlpha = 0.35 + 0.25 * Math.sin(realTime * 20); h.fillStyle = "#ffffff"; h.fillRect(cx, y, cw, hh); h.globalAlpha = appear; }
+    h.fillStyle = at.deep; h.fillRect(cx, y, cw, 12);
+    if (spin > 0.6) {
+      hudText(String(i + 1), "#ffffff", 1, x + 4, y + 3);
+      // tier gem
+      const gx = x + w / 2, gy = y + 6;
+      h.fillStyle = OUTLINE; h.fillRect(gx - 3, gy - 2, 7, 5); h.fillRect(gx - 2, gy - 3, 5, 7);
+      h.fillStyle = edge; h.fillRect(gx - 2, gy - 1, 5, 3); h.fillRect(gx - 1, gy - 2, 3, 5); h.fillStyle = "#ffffff"; h.fillRect(gx - 1, gy - 1, 1, 1);
+      hudText(a.name, chosen ? "#ffffff" : at.col, 2, x + w / 2, y + 20, "center");
+      a.d.forEach((line, j) => hudText(line, "#e8e0f0", 1, x + w / 2, y + 42 + j * 9, "center"));
+      if (a.tier === "prism" && !chosen) for (let s = 0; s < 3; s++) { const sx = x + 6 + ((realTime * 30 + s * 33) % (w - 12)), sy = y + hh - 8 + Math.sin(realTime * 4 + s) * 2; h.fillStyle = "#ffffff"; h.fillRect(Math.round(sx), Math.round(sy), 1, 1); }
+    }
+    h.globalAlpha = 1;
+    if (aug.picked < 0 && appear >= 1) {
+      const [rx, ry, rw, rh] = augRerollRect(i), can = aug.rerolls[i];
+      const rhov = can && mouse.has && mouse.x >= rx && mouse.x < rx + rw && mouse.y >= ry && mouse.y < ry + rh;
+      h.fillStyle = OUTLINE; h.fillRect(rx - 1, ry - 1, rw + 2, rh + 2);
+      h.fillStyle = can ? (rhov ? "#3a2a48" : "#241c30") : "#141018"; h.fillRect(rx, ry, rw, rh);
+      hudText(can ? "REROLL " + "ZXC"[i] : "REROLLED", can ? "#c8bcd8" : "#5a5068", 1, rx + rw / 2, ry + 2, "center");
+    }
+  });
+  if (aug.picked < 0) hudText("CLICK OR PRESS 1 2 3", "#9a92b3", 1, VW / 2, 158, "center");
+}
+function drawAugHud() {
+  if (!aug.owned.length && !T.augments) return;
+  let x = VW - 6;
+  const y = VH - 12;
+  for (let i = aug.owned.length - 1; i >= 0; i--) {
+    const a = AUG_BY[aug.owned[i]], tr = AUG_TIERS[a.tier];
+    const ab = a.name.split(" ").map(w => w[0]).join("").slice(0, 2).padEnd(2, a.name[1]);
+    x -= 12;
+    h.fillStyle = OUTLINE; h.fillRect(x - 1, y - 1, 12, 10);
+    h.fillStyle = a.tier === "prism" ? `hsl(${Math.floor((realTime * 90 + i * 40) % 360)},80%,62%)` : tr.deep; h.fillRect(x, y, 10, 8);
+    h.fillStyle = tr.col; h.fillRect(x, y, 10, 1);
+    hudText(ab, "#ffffff", 1, x + 5, y + 1, "center");
+    x -= 1;
+  }
+  if (T.augments && waves.n > 0) {
+    const next = Math.ceil((waves.n + (waves.state === "fight" ? 0 : 1)) / 5) * 5;
+    hudText("AUGMENT AT FLOOR " + next, "#9a92b3", 1, VW - 6, y - 9, "right");
+  }
+}
+// Lab panel sync hook (defined by the UI code later)
+function syncInjUi() { if (typeof syncInjPanel === "function") syncInjPanel(); }
+
+const SPITE = ATK({ name: "Spite", damage: 20, knockback: 16, hitstop: 5, shake: 0.3, heavy: true });
+function spiteBlast(p, dir) {
+  ring(p.pos, 3, 2.6 * PPU, 3, 0.35, "blood", 0.75); sparks(p.center, V(0, 1), 18, 12, 360, "blood");
+  sfx("slam", { rate: 0.9, vol: 0.7 });
+  for (const e of enemies) {
+    if (!e.hittable) continue;
+    const to = sub(e.pos, p.pos), d = len(to);
+    if (d > 2.6 + e.radius) continue;
+    hitEnemy(e, SPITE, d > 0.05 ? mul(to, 1 / d) : dir, { byPlayer: true, point: e.center });
+  }
+}
+function undyingSave(p) {
+  aug.undyingUsed = true; p.hp = 1; p.hurtInvuln = 2;
+  slowmo(0.15, 0.9); zoomPunch(0.12); impactFrame(p.center, 0.1, [p]); screenFlash("#ff9af0", 0.5, 0.3);
+  ring(p.center, 3, 46, 3, 0.6, "violet"); sparks(p.center, V(0, 1), 36, 14, 360, "violet");
+  sfx("perfect", { rate: 0.7 }); sfx("spawn", { rate: 1.2 }); rumble(1, 1, 400);
+  banner("UNDYING", "#ff9af0", 1.6, "DEATH REFUSED. NEXT SAVE IN 5 FLOORS");
+}
+function updateLimb(p, dt) {
+  if (!p.landed) {
+    p.vz -= 520 * dt; p.z += p.vz * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.spin * dt;
+    p.bloodT -= dt;
+    if (p.bloodT <= 0) { p.bloodT = 0.03; P({ type: "spark", x: p.x, y: p.y + p.z / PPU, vx: rand(-0.5, 0.5), vy: rand(-0.5, 0.5), life: 0.4, max: 0.4, drag: 2, g: 10, ramp: "blood" }); }
+    if (p.z <= 0) {
+      p.z = 0;
+      if (p.vz < -60) { p.vz *= -0.35; p.vx *= 0.55; p.vy *= 0.55; p.spin *= 0.5; splat(V(p.x, p.y), ["#7a0a14", "#b0141e", "#4a0610"], 0.7); sfx("step", { rate: 0.6, vol: 0.6 }); }
+      else {
+        p.landed = true; p.rot = Math.round(p.rot / (Math.PI / 4)) * (Math.PI / 4);
+        splat(V(p.x, p.y), ["#7a0a14", "#b0141e", "#4a0610"], 1);
+        if (T.decals) { const [x, y] = dPos(p.x, p.y); dctx.save(); dctx.translate(Math.round(x), Math.round(y)); dctx.rotate(p.rot); dctx.drawImage(p.spr.c, -Math.floor(p.spr.w / 2), -Math.floor(p.spr.h / 2)); dctx.restore(); p.life = 0; }
+      }
+    }
+  }
+}
+function drawLimb(p) {
+  const [sx, sy] = toScreen(p.x, p.y);
+  g.save(); g.translate(sx, sy - Math.round(p.z)); g.rotate(Math.round(p.rot / (Math.PI / 4)) * (Math.PI / 4));
+  g.drawImage(p.spr.c, -Math.floor(p.spr.w / 2), -Math.floor(p.spr.h / 2)); g.restore();
+}
+
+// ======================================================================
 //  setup / waves
 // ======================================================================
 const player = new Player();
+M = calcMods();
 function startWave(n) {
   waves.n = n;
   let list = WAVES[n - 1];
@@ -1851,7 +2373,7 @@ function startWave(n) {
     for (let i = 0; i < count; i++) list.push(Math.random() < 0.18 + n * 0.015 ? "brute" : Math.random() < 0.35 ? "wisp" : "grunt");
   }
   waves.queue = list.slice(); waves.spawnT = 0.5; waves.state = "fight";
-  banner("WAVE " + n, "#ff9a3c", 1.4);
+  banner("FLOOR " + n, "#ff9a3c", 1.4, n % 5 === 0 && T.augments ? "AUGMENT ON CLEAR" : undefined);
   fadeDecals(0.35);
 }
 function spawnEnemy(kind) {
@@ -1863,27 +2385,41 @@ function spawnEnemy(kind) {
   enemies.push(new Enemy(kind, at));
 }
 function resetAll() {
-  player.reset(); enemies = []; projectiles.length = 0; pickups.length = 0; parts.length = 0; enchReset();
+  player.reset(); enemies = []; projectiles.length = 0; pickups.length = 0; parts.length = 0; enchReset(); injReset(); augReset(); M = calcMods(); syncInjUi();
   kills = combo = bestCombo = 0; comboTimer = 0; gradeIdx = -1;
   dctx.clearRect(0, 0, FLOOR_W, FLOOR_H);
   waves.n = 0; waves.queue = []; waves.state = "intro"; waves.t = 0.8;
   fxs.banner = null; fxs.impact = null; slow.t = 0; slow.target = 1; cam.hold = 0;
   cam.x = player.pos.x; cam.y = player.pos.y; setMuffle(false); chargeSound(false);
 }
+// floor-clear rewards run in order: augment (every 5th floor), then enchant cards
+function nextReward() {
+  while (waves.steps && waves.steps.length) {
+    const st = waves.steps.shift();
+    if (st === "augment" && augOffer()) { waves.state = "augment"; return; }
+    if (st === "ench") { enchOfferCards(); if (enchReward.cards) { waves.state = "reward"; if (aug.owned.length && enchReward.t < 0) enchReward.t = -0.3; return; } }
+  }
+  waves.state = "clear"; waves.t = Math.min(waves.t, 0.9);
+}
 function updateWaves(dt, rdt) {
+  if (waves.state === "augment") { augUpdate(rdt); return; }
   if (player.state === "Dead") return;
   if (waves.state === "intro") { waves.t -= rdt; if (waves.t <= 0) startWave(1); return; }
   if (waves.state === "fight") {
     if (waves.queue.length) { waves.spawnT -= dt; if (waves.spawnT <= 0) { spawnEnemy(waves.queue.shift()); waves.spawnT = 0.38; } }
     else if (!enemies.some(e => e.alive)) {
       waves.state = "clear"; waves.t = 2.8; player.victoryAnim = 36 / 60;
-      banner("WAVE CLEAR", "#8be3a6", 2.2, "HP +20");
-      if (T.enchCards) { enchOfferCards(); if (enchReward.cards) { waves.state = "reward"; fxs.bannerT = Math.min(fxs.bannerT, 1.1); fxs.bannerMax = 1.1; } }
+      banner("FLOOR CLEAR", "#8be3a6", 2.2, "HP +20");
       sfx("clear"); player.hp = Math.min(player.maxHp, player.hp + 20);
       popText(player.pos.x, player.pos.y + 1.4, "+20", "#8be3a6", 2, { z: 20 });
+      injFloorHeal();
+      waves.steps = [];
+      if (T.augments && waves.n % 5 === 0) waves.steps.push("augment");
+      if (T.enchCards) waves.steps.push("ench");
+      if (waves.steps.length) { fxs.bannerT = Math.min(fxs.bannerT, 1.1); fxs.bannerMax = 1.1; nextReward(); }
     }
   } else if (waves.state === "clear") { waves.t -= rdt; if (waves.t <= 0) startWave(waves.n + 1); }
-  else if (waves.state === "reward") { enchReward.t += rdt; if (enchReward.picked >= 0 && enchReward.t > 0.7) { enchReward.cards = null; waves.state = "clear"; waves.t = 0.9; } }
+  else if (waves.state === "reward") { enchReward.t += rdt; if (enchReward.picked >= 0 && enchReward.t > 0.7) { enchReward.cards = null; nextReward(); } }
 }
 
 // ======================================================================
@@ -1958,6 +2494,7 @@ function updateParts(dt) {
         }
         break;
       case "smoke": { const k = Math.exp(-4 * dt); p.vx *= k; p.vy *= k; p.x += p.vx * dt; p.y += p.vy * dt + p.rise * dt / PPU; break; }
+      case "limb": updateLimb(p, dt); break;
       case "ember": p.x += (p.vx + Math.sin(realTime * 3 + p.seed) * 0.6) * dt; p.y += p.vy * dt; break;
       case "line": case "text":
         p.x += p.vx * dt; if (p.type === "line") p.y += p.vy * dt;
@@ -2136,7 +2673,7 @@ function drawPlayer() {
   drawShadow(p, 10);
   const sheet = playerSpr(p);
   if (p.state === "Dead") {
-    if (sheet) { drawSpr(sheet.c, sx, sy, p.flip); return; }
+    if (sheet) { drawSpr(injSprite(sheet).c, sx, sy, p.flip); return; }
     const k = clamp(p.deadT / 0.4, 0, 1);
     drawSpr(tinted(PLAYER_SPR.stand, "#6a4050"), sx, sy, p.flip, 1 + k * 0.5, 1 - k * 0.6);
     return;
@@ -2147,11 +2684,12 @@ function drawPlayer() {
   if (p.state === "Dash") spr = PLAYER_SPR.runA;
   else if (moving) spr = Math.floor(p.runT * 10) % 2 ? PLAYER_SPR.runA : PLAYER_SPR.runB;
   else if (p.state === "Attack") spr = p.stateTime * 60 < p.cur.startup ? PLAYER_SPR.runB : PLAYER_SPR.runA;
-  if (sheet) spr = sheet;
+  if (sheet) spr = injSprite(sheet);
   const bob = moving && !sheet ? (Math.floor(p.runT * 10) % 2) : 0;
   const vib = p.freeze > 0 && p.vibrate ? p.vibSign : 0;
   let scx = 1 + p.sq, scy = 1 - p.sq * 0.9;
-  const bx = sx + vib, by = sy - Math.round(p.z) - bob;
+  const limp = moving && T.injury && severed("legs") ? (Math.sin(p.runT * 11) > 0.2 ? 2 : 0) : moving && T.injury && effLv("legs") >= 2 ? (Math.sin(p.runT * 11) > 0.6 ? 1 : 0) : 0;
+  const bx = sx + vib, by = sy - Math.round(p.z) - bob + limp;
   const scarfBehind = !sheet;
   const bladeUp = Math.sin(p.blade) > 0.35;
   if (scarfBehind) drawScarf();
@@ -2160,6 +2698,7 @@ function drawPlayer() {
     drawSpr(spr.c, bx, by, p.flip, scx, scy);
     if (p.state === "Charge") { const k = Math.min(1, p.chargeT / T.chargeTime); if (p.charged ? Math.floor(realTime * 20) % 2 : Math.random() < k * 0.4) drawSpr(tinted(spr, "#ffe080"), bx, by, p.flip, scx, scy, 0.6); }
     if (p.flashT > 0 && T.hitFlash) drawSpr(tinted(spr, p.flashColor), bx, by, p.flip, scx, scy);
+    drawWounds(bx, by, p.flip);
   }
   if (!bladeUp) drawBlade(bx, by);
   if (p.state === "Charge") glow(bx, by - 8, 12 + Math.min(1, p.chargeT / T.chargeTime) * 16, "rgba(255,170,60,1)", 0.4);
@@ -2177,7 +2716,8 @@ function drawScarf() {
 function drawBlade(bx, by) {
   const p = player;
   if (p.state === "Burst" && p.stateTime < 0.3) return;
-  const hx = bx + (p.flip ? -2 : 2), hy = by - 6;
+  const grip = M ? M.grip : "main", side = (p.flip ? -1 : 1) * (grip === "off" ? -1 : 1);
+  const hx = bx + side * (grip === "mouth" ? 3 : 2), hy = by - (grip === "mouth" ? 13 : 6);
   const a = p.blade, ca = Math.cos(a), sa = -Math.sin(a);
   const active = p.state === "Attack" && p.stateTime * 60 >= p.cur.startup && p.stateTime * 60 < p.cur.startup + p.cur.active;
   const L = 12 + Math.round(p.bladeExt) + (active ? 2 : 0);
@@ -2350,6 +2890,7 @@ function drawParts(layer) {
         pline(sx, sy, sx + p.vx / sp * p.len, sy - p.vy / sp * p.len, k > 0.5 ? "#ffffff" : "#9ab0d0");
         break;
       }
+      case "limb": drawLimb(p); break;
       case "ghost": {
         const [sx, sy] = toScreen(p.x, p.y);
         drawSpr(tinted(p.spr, p.col), sx, sy, p.flip, 1, 1, 0.6 * k);
@@ -2387,6 +2928,7 @@ function drawWorld() {
   drawParts("front");
   drawSmear();
   g.drawImage(VIGNETTE, 0, 0);
+  drawHeadFx();
   if (player.hp / player.maxHp < 0.3 && player.state !== "Dead") { g.globalAlpha = 0.25 + 0.2 * Math.max(0, Math.sin(realTime * 7)); g.drawImage(RED_VIG, 0, 0); g.globalAlpha = 1; }
   drawGlows();
   drawParts("text");
@@ -2463,8 +3005,9 @@ function drawHud() {
   }
   if (full) hudText(pad.active ? "Y BURST" : "Q BURST", Math.floor(realTime * 4) % 2 ? "#ffd166" : "#ffffff", 1, 92, 15);
   if (p.empowered > 0) hudText("CRIT READY", Math.floor(realTime * 8) % 2 ? "#ffe066" : "#ffffff", 1, 6, 24);
+  drawInjHud(8, 34);
   if (waves.n > 0) {
-    hudText("WAVE " + waves.n, "#c8bcd8", 1, VW / 2, 5, "center");
+    hudText("FLOOR " + waves.n, "#c8bcd8", 1, VW / 2, 5, "center");
     const left = enemies.filter(e => e.alive).length + waves.queue.length;
     for (let i = 0; i < Math.min(left, 14); i++) { h.fillStyle = OUTLINE; h.fillRect(VW / 2 - left * 2 + i * 4 - 1, 13, 4, 4); h.fillStyle = "#ff6a5a"; h.fillRect(VW / 2 - left * 2 + i * 4, 14, 2, 2); }
   }
@@ -2498,6 +3041,8 @@ function drawHud() {
   }
   drawEnchHud();
   drawEnchCards();
+  drawAugHud();
+  drawAugCards();
   if (labSlow < 1) hudText("SLOW X0.25", "#8fdcff", 1, 6, VH - 10);
   if (paused) { h.fillStyle = "rgba(8,4,12,0.6)"; h.fillRect(0, 0, VW, VH); hudText("PAUSED", "#ffffff", 3, VW / 2, VH / 2 - 10, "center"); }
   if (fxs.flash) { h.globalAlpha = fxs.flash.a * (fxs.flash.t / fxs.flash.max); h.fillStyle = fxs.flash.color; h.fillRect(0, 0, VW, VH); h.globalAlpha = 1; }
@@ -2528,8 +3073,9 @@ function frame(now) {
   if (running && !paused) {
     realTime += rawDt;
     updateFx(rawDt);
-    const dt = rawDt * labSlow * slow.scale;
+    const dt = choosingAug() ? 0 : rawDt * labSlow * slow.scale;
     time += dt;
+    injUpdate(dt);
     player.update(dt);
     enchUpdate(dt);
     for (const e of enemies) e.update(dt * enchTimeScale(e));
@@ -2620,6 +3166,46 @@ document.getElementById("enchClear").addEventListener("click", () => { for (cons
 document.getElementById("enchCardsBtn").addEventListener("click", () => { T.enchCards = !T.enchCards; syncEnchUi(); screenCanvas.focus(); });
 syncEnchUi();
 
+const INJ_EFFECT = {
+  head: ["", "화면 가장자리가 어두워지고 조준 보정 절반", "이중 시야, 조준 보정 없음, 입력 버퍼 절반"],
+  torso: ["", "출혈 초당 0.6", "출혈 초당 1.4"],
+  armS: ["", "공격 속도 -12%", "공격 속도 -24%, 피해 -15%", "검을 반대 손으로: 공격 속도 -38%, 피해 -30%"],
+  armO: ["", "차지 시간 +25%", "차지 시간 +60%, 게이지 획득 -20%", "회전베기 불가, 게이지 획득 -40%"],
+  legs: ["", "이동 속도 -12%", "이동 -28%, 대시 거리 -20%, 절뚝임", "이동 -50%, 대시 거리 -45%, 핏자국"],
+};
+const INJ_COL = ["#d8d0e8", "#ffd166", "#ff8a3a", "#ff4a5a"];
+const injGrid = document.getElementById("injGrid"), injRows = {};
+for (const k of PARTS) {
+  const n = document.createElement("span"); n.className = "pn"; n.textContent = PART_INFO[k].ko;
+  const st = document.createElement("span"); st.className = "ps";
+  const b = document.createElement("button"); b.type = "button"; b.textContent = "다치기";
+  b.addEventListener("click", () => { injForce(k); syncInjPanel(); screenCanvas.focus(); });
+  injGrid.append(n, st, b); injRows[k] = { st, b };
+}
+function syncInjPanel() {
+  for (const k of PARTS) {
+    const lv = inj.lv[k], r = injRows[k], iron = inj.iron[k];
+    const label = iron ? "쇠 의수·의족" : PART_INFO[k].stKo[lv];
+    const eff = iron ? "가벼운 부상 수준의 패널티만, 맞으면 튕겨냄" : INJ_EFFECT[k][lv];
+    r.st.style.color = iron ? "#8a94a8" : INJ_COL[lv];
+    r.st.innerHTML = label + (eff ? `<span class="pe">${eff}</span>` : "");
+    r.b.disabled = lv >= PART_INFO[k].max;
+  }
+  document.getElementById("injToggle").textContent = "부위 손상: " + (T.injury ? "ON" : "OFF");
+  document.getElementById("augToggle").textContent = "5층 증강: " + (T.augments ? "ON" : "OFF");
+  const tierKo = { silver: "실버", gold: "골드", prism: "프리즘" };
+  document.getElementById("augOwned").innerHTML = aug.owned.length
+    ? aug.owned.map(id => { const a = AUG_BY[id]; return `<li><b class="tier-${a.tier}">${a.name}</b> <span class="tier-${a.tier}">${tierKo[a.tier]}</span> · ${a.ko}</li>`; }).join("")
+    : "<li>아직 고른 증강이 없어요</li>";
+}
+document.getElementById("augList").innerHTML = AUGS.map(a => `<li><b class="tier-${a.tier}">${a.name}</b> ${a.ko}</li>`).join("");
+document.getElementById("injHeal").addEventListener("click", () => { injReset(); M = calcMods(); syncInjPanel(); screenCanvas.focus(); });
+document.getElementById("injToggle").addEventListener("click", () => { T.injury = !T.injury; syncInjPanel(); screenCanvas.focus(); });
+document.getElementById("augToggle").addEventListener("click", () => { T.augments = !T.augments; syncInjPanel(); screenCanvas.focus(); });
+document.getElementById("augNow").addEventListener("click", () => { augOpenNow(); screenCanvas.focus(); });
+document.getElementById("augClear").addEventListener("click", () => { augReset(); M = calcMods(); syncInjPanel(); screenCanvas.focus(); });
+syncInjPanel();
+
 const GAME_KEYS = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"]);
 window.addEventListener("keydown", e => {
   const tag = (e.target && e.target.tagName) || "";
@@ -2638,6 +3224,12 @@ window.addEventListener("keydown", e => {
   if (e.code === "Tab") statusEl.hidden = !statusEl.hidden;
   if (e.code === "KeyR") resetAll();
   const m = /^Digit(\d)$/.exec(e.code);
+  if (waves.state === "augment" && aug.offer) {
+    if (m && +m[1] >= 1 && +m[1] <= 3) { augPick(+m[1] - 1); return; }
+    const ri = { KeyZ: 0, KeyX: 1, KeyC: 2 }[e.code];
+    if (ri != null) { augReroll(ri); return; }
+    if (m) return;
+  }
   if (m && enchReward.cards && waves.state === "reward" && +m[1] >= 1 && +m[1] <= 3) { enchPick(+m[1] - 1); return; }
   if (m) {
     const d = +m[1];
@@ -2648,6 +3240,15 @@ window.addEventListener("keydown", e => {
 window.addEventListener("keyup", e => { keys.delete(e.code); if (e.code === "KeyJ") held.key = false; });
 window.addEventListener("blur", () => { keys.clear(); held.mouse = held.key = held.touch = false; });
 
+function augClick(px, py) {
+  if (waves.state !== "augment" || !aug.offer || aug.picked >= 0) return false;
+  const inR = ([x, y, w, hh]) => px >= x && px < x + w && py >= y && py < y + hh;
+  for (let i = 0; i < aug.offer.length; i++) {
+    if (inR(augRerollRect(i))) { augReroll(i); return true; }
+    if (inR(augRect(i))) { augPick(i); return true; }
+  }
+  return true; // swallow clicks while choosing
+}
 function canvasPoint(e) {
   const r = screenCanvas.getBoundingClientRect();
   return [(e.clientX - r.left) * VW / r.width, (e.clientY - r.top) * VH / r.height];
@@ -2663,6 +3264,7 @@ screenCanvas.addEventListener("pointerdown", e => {
   if (player.state === "Dead" && player.deadT > 0.8) { resetAll(); return; }
   if (e.pointerType === "touch") {
     const [px, py] = canvasPoint(e);
+    if (augClick(px, py)) return;
     if (enchReward.cards && waves.state === "reward" && enchReward.picked < 0) for (let i = 0; i < enchReward.cards.length; i++) { const [x, y, w, hh] = cardRect(i); if (px >= x && px < x + w && py >= y && py < y + hh) { enchPick(i); return; } }
     if (px < VW / 2 && touchStick.id === null) {
       touchStick.id = e.pointerId; touchStick.ox = touchStick.x = e.clientX; touchStick.oy = touchStick.y = e.clientY;
@@ -2671,6 +3273,7 @@ screenCanvas.addEventListener("pointerdown", e => {
     return;
   }
   [mouse.x, mouse.y] = canvasPoint(e); mouse.has = true;
+  if (e.button === 0 && augClick(mouse.x, mouse.y)) return;
   if (e.button === 0 && enchReward.cards && waves.state === "reward" && enchReward.picked < 0) {
     for (let i = 0; i < enchReward.cards.length; i++) { const [x, y, w, hh] = cardRect(i); if (mouse.x >= x && mouse.x < x + w && mouse.y >= y && mouse.y < y + hh) { enchPick(i); return; } }
   }
@@ -2698,7 +3301,7 @@ document.getElementById("startBtn").addEventListener("click", () => {
   screenCanvas.focus();
 });
 
-window.__ash = { ench, enchFx, enchReward, enchPick, T, player, get enemies() { return enemies; }, waves, pressed, held, keys, mouse, parts, projectiles, pickups, cam, slow, fxs, startWave, spawnEnemy, resetAll, get combo() { return combo; }, get kills() { return kills; } };
+window.__ash = { inj, aug, augPick, augReroll, augOpenNow, injForce, injHit, AUGS, get M() { return M; }, ench, enchFx, enchReward, enchPick, T, player, get enemies() { return enemies; }, waves, pressed, held, keys, mouse, parts, projectiles, pickups, cam, slow, fxs, startWave, spawnEnemy, resetAll, get combo() { return combo; }, get kills() { return kills; } };
 cam.x = player.pos.x; cam.y = player.pos.y;
 requestAnimationFrame(frame);
 })();

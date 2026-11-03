@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Ashblade
 {
-    public enum PT { Spark, Debris, Smoke, Ember, Ring, Star, Line, Ghost, Text }
+    public enum PT { Spark, Debris, Smoke, Ember, Ring, Star, Line, Ghost, Text, Limb }
 
     public class Part
     {
@@ -15,6 +15,9 @@ namespace Ashblade
         public bool inward, stamp, stamped, flip;
         public Spr spr;
         public Sprite img;
+        public float rot, spin, bloodT; // severed limbs
+        public bool landed;
+        public Inj.LimbArt limb;
     }
 
     public class Impact { public float t, max, x, y, seed; public List<Combatant> silh = new List<Combatant>(); }
@@ -72,11 +75,12 @@ namespace Ashblade
             { "violet", new[] { Col.H("#ffffff"), Col.H("#f2dcff"), Col.H("#c08af0"), Col.H("#8a4ad0"), Col.H("#4e2a8a") } },
             { "steel", new[] { Col.H("#ffffff"), Col.H("#e8eef8"), Col.H("#b8c4d8"), Col.H("#7884a0"), Col.H("#444c66") } },
             { "acid", new[] { Col.H("#ffffff"), Col.H("#e8ffd0"), Col.H("#a8f070"), Col.H("#5cc04a"), Col.H("#2a6a30") } },
+            { "blood", new[] { Col.H("#ff9a9a"), Col.H("#e8303c"), Col.H("#b0141e"), Col.H("#7a0a14"), Col.H("#4a0610") } },
         };
         public static readonly Dictionary<string, Color> GlowCol = new Dictionary<string, Color>
         {
             { "fire", new Color(1f, 0.59f, 0.24f) }, { "gold", new Color(1f, 0.82f, 0.35f) }, { "ice", new Color(0.47f, 0.82f, 1f) },
-            { "violet", new Color(0.7f, 0.43f, 1f) }, { "steel", new Color(0.78f, 0.86f, 1f) }, { "red", new Color(1f, 0.24f, 0.24f) }, { "acid", new Color(0.59f, 0.94f, 0.43f) },
+            { "violet", new Color(0.7f, 0.43f, 1f) }, { "steel", new Color(0.78f, 0.86f, 1f) }, { "red", new Color(1f, 0.24f, 0.24f) }, { "acid", new Color(0.59f, 0.94f, 0.43f) }, { "blood", new Color(0.86f, 0.12f, 0.16f) },
         };
         public static Color32 RampCol(string ramp, float k)
         {
@@ -269,8 +273,13 @@ namespace Ashblade
         {
             bool crit = forceCrit || Random.value < 0.1f;
             bool armored = e.SuperArmor;
-            float dmgF = atk.damage * (crit ? 1.75f : 1f) * (e.broken > 0 ? 1.5f : 1f) * (armored ? 0.8f : 1f);
+            float dmgF = atk.damage * Inj.Mod.dmg * (atk == T.burst && Aug.Has("ashheart") ? 1.5f : 1f) * (crit ? 1.75f : 1f) * (e.broken > 0 ? 1.5f : 1f) * (armored ? 0.8f : 1f);
             int dmg = Mathf.Max(1, Mathf.RoundToInt(dmgF * M.Rand(0.92f, 1.08f)));
+            if (Aug.Has("executioner") && e.hp - dmg > 0f && e.hp - dmg < e.maxHp * 0.15f)
+            {
+                dmg = Mathf.CeilToInt(e.hp);
+                PopText(e.pos.x, e.pos.y + 1.6f, "EXECUTE", "#ffd166", 1, false, 24, 0, 70, 0.8f); Sparks(e.Center, dir, 12, 12, 80, "gold");
+            }
             bool killed = e.TakeDamage(dmg);
             bool stagger = !armored;
             if (armored && !killed)
@@ -312,6 +321,7 @@ namespace Ashblade
         public static void RegisterKill(Enemy e, Vector2 dir, bool big, Combatant attacker)
         {
             kills++; killsThisSwing++;
+            if (Aug.Has("leech") && player.state != "Dead") { player.hp = Mathf.Min(player.maxHp, player.hp + 3f); PopText(player.pos.x, player.pos.y + 1.3f, "+3", "#8be3a6", 1, false, 16, 0, 70, 0.6f); }
             Ench.OnKill(e);
             e.dieDir = dir;
             Sfx("kill", 1f, 0.08f, 0.8f);
@@ -374,7 +384,7 @@ namespace Ashblade
         {
             var p = player;
             float before = p.meter;
-            p.meter = Mathf.Min(100f, p.meter + n);
+            p.meter = Mathf.Min(100f, p.meter + n * Inj.Mod.meter);
             if (before < 100f && p.meter >= 100f) { Sfx("ready"); PopText(p.pos.x, p.pos.y + 1.8f, "BURST READY", "#ff9a3c", 1, false, 22, 0, 70, 1.1f); }
         }
 
@@ -464,7 +474,7 @@ namespace Ashblade
                 for (int i = 0; i < count; i++) queue.Add(Random.value < 0.18f + n * 0.015f ? EnemyKind.Brute : Random.value < 0.35f ? EnemyKind.Wisp : EnemyKind.Grunt);
             }
             spawnT = 0.5f; waveState = "fight";
-            Banner("WAVE " + n, Col.H("#ff9a3c"), 1.4f);
+            Banner("FLOOR " + n, Col.H("#ff9a3c"), 1.4f, n % 5 == 0 && Aug.enabled ? "AUGMENT ON CLEAR" : null);
             FadeDecals(0.35f);
         }
 
@@ -487,13 +497,31 @@ namespace Ashblade
             enemies.Clear(); projectiles.Clear(); pickups.Clear(); parts.Clear();
             kills = combo = bestCombo = 0; comboTimer = 0f; gradeIdx = -1;
             Art.Decals.Clear(new Color32(0, 0, 0, 0)); Art.DecalsDirty = true;
-            waveN = 0; queue.Clear(); waveState = "intro"; waveT = 0.8f; Ench.ResetFx();
+            waveN = 0; queue.Clear(); waveState = "intro"; waveT = 0.8f; Ench.ResetFx(); Inj.Reset(); Aug.Reset(); steps.Clear();
             bannerText = null; impact = null; slowT = 0f; slowTarget = 1f; hold = 0f;
             camX = player.pos.x; camY = player.pos.y; Muffle(false); if (AshAudio.I != null) AshAudio.I.Charge(false);
         }
 
+        // floor-clear rewards run in order: augment (every 5th floor), then enchant cards
+        static readonly List<string> steps = new List<string>();
+        static void NextReward()
+        {
+            while (steps.Count > 0)
+            {
+                string st = steps[0]; steps.RemoveAt(0);
+                if (st == "augment" && Aug.Offer()) { waveState = "augment"; return; }
+                if (st == "ench" && Ench.OfferCards()) { waveState = "reward"; return; }
+            }
+            waveState = "clear"; waveT = Mathf.Min(waveT, 0.9f);
+        }
+
         public static void UpdateWaves(float dt, float rdt)
         {
+            if (waveState == "augment")
+            {
+                if (Aug.Update(rdt)) { if (Aug.resume != null) { waveState = Aug.resume; Aug.resume = null; } else NextReward(); }
+                return;
+            }
             if (player.state == "Dead") return;
             if (waveState == "intro") { waveT -= rdt; if (waveT <= 0f) StartWave(1); return; }
             if (waveState == "fight")
@@ -506,10 +534,14 @@ namespace Ashblade
                     if (!any)
                     {
                         waveState = "clear"; waveT = 2.8f; player.victoryAnim = 36f / 60f;
-                        Banner("WAVE CLEAR", Col.H("#8be3a6"), 2.2f, "HP +20");
-                        if (Ench.cards && Ench.OfferCards()) { waveState = "reward"; bannerT = Mathf.Min(bannerT, 1.1f); bannerMax = 1.1f; }
+                        Banner("FLOOR CLEAR", Col.H("#8be3a6"), 2.2f, "HP +20");
                         Sfx("clear"); player.hp = Mathf.Min(player.maxHp, player.hp + 20f);
                         PopText(player.pos.x, player.pos.y + 1.4f, "+20", "#8be3a6", 2, false, 20);
+                        Inj.FloorHeal();
+                        steps.Clear();
+                        if (Aug.enabled && waveN % 5 == 0) steps.Add("augment");
+                        if (Ench.cards) steps.Add("ench");
+                        if (steps.Count > 0) { bannerT = Mathf.Min(bannerT, 1.1f); bannerMax = 1.1f; NextReward(); }
                     }
                 }
             }
@@ -517,7 +549,7 @@ namespace Ashblade
             else if (waveState == "reward")
             {
                 Ench.offerT += rdt;
-                if (Ench.picked >= 0 && Ench.offerT > 0.7f) { Ench.offer.Clear(); waveState = "clear"; waveT = 0.9f; }
+                if (Ench.picked >= 0 && Ench.offerT > 0.7f) { Ench.offer.Clear(); NextReward(); }
             }
         }
 
@@ -624,6 +656,7 @@ namespace Ashblade
                     case PT.Smoke: { float k = Mathf.Exp(-4f * dt); p.vx *= k; p.vy *= k; p.x += p.vx * dt; p.y += p.vy * dt + p.rise * dt / Art.PPU; break; }
                     case PT.Ember: p.x += (p.vx + Mathf.Sin(realTime * 3f + p.seed) * 0.6f) * dt; p.y += p.vy * dt; break;
                     case PT.Line: p.x += p.vx * dt; p.y += p.vy * dt; break;
+                    case PT.Limb: Inj.UpdateLimb(p, dt); break;
                     case PT.Text: p.x += p.vx * dt; p.vz -= p.grav * dt; p.z = Mathf.Max(4f, p.z + p.vz * dt); p.vx *= Mathf.Exp(-4f * dt); break;
                 }
             }

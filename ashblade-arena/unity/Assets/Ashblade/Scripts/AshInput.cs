@@ -61,6 +61,7 @@ namespace Ashblade
             return Down(Key.Q) || Down(Key.E) || Down(Key.L) || (g != null && (g.buttonNorth.wasPressedThisFrame || g.rightShoulder.wasPressedThisFrame));
         }
         public static bool DigitDown(int d) { return Down(Digits[d]); }
+        public static bool RerollDown(int i) { return Down(i == 0 ? Key.Z : i == 1 ? Key.X : Key.C); }
         public static bool ToggleAimDown() { return Down(Key.M); }
         public static bool SlowMoDown() { return Down(Key.T); }
         public static bool ResetDown() { var g = Gamepad.current; return Down(Key.R) || (g != null && g.selectButton.wasPressedThisFrame); }
@@ -122,6 +123,7 @@ namespace Ashblade
                 || Input.GetKeyDown(KeyCode.JoystickButton3) || Input.GetKeyDown(KeyCode.JoystickButton5);
         }
         public static bool DigitDown(int d) { return Input.GetKeyDown((KeyCode)((int)KeyCode.Alpha0 + d)); }
+        public static bool RerollDown(int i) { return Input.GetKeyDown(i == 0 ? KeyCode.Z : i == 1 ? KeyCode.X : KeyCode.C); }
         public static bool ToggleAimDown() { return Input.GetKeyDown(KeyCode.M); }
         public static bool SlowMoDown() { return Input.GetKeyDown(KeyCode.T); }
         public static bool ResetDown() { return Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.JoystickButton6); }
