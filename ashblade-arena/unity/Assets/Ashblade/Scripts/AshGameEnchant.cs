@@ -35,14 +35,15 @@ namespace Ashblade
             }
             foreach (var sh in Ench.shards)
             {
+                string[] sc = sh.kind == "ice" ? new[] { "#dff8ff", "#8fdcff", "#3a9ee8", "ice" } : sh.kind == "violet" ? new[] { "#f2dcff", "#c08af0", "#8a4ad0", "violet" } : new[] { "#e8ffd0", "#a8f070", "#5cc04a", "acid" };
                 for (int i = 1; i < sh.trail.Count; i++)
                 {
                     var a = View.ToScreen(sh.trail[i - 1]); var b = View.ToScreen(sh.trail[i]);
-                    o.Line(a.x, a.y, b.x, b.y, i > 3 ? C("#a8f070") : C("#5cc04a"));
+                    o.Line(a.x, a.y, b.x, b.y, i > 3 ? C(sc[1]) : C(sc[2]));
                 }
                 var s = View.ToScreen(sh.pos);
-                o.Rect(s.x - 2, s.y - 2, 4, 4, Art.Outline); o.Rect(s.x - 1, s.y - 1, 2, 2, C("#e8ffd0"));
-                Glow(s.x, s.y, 9, GlowOf("acid"), 0.6f);
+                o.Rect(s.x - 2, s.y - 2, 4, 4, Art.Outline); o.Rect(s.x - 1, s.y - 1, 2, 2, C(sc[0]));
+                Glow(s.x, s.y, 9, GlowOf(sc[3]), 0.6f);
             }
             foreach (var bo in Ench.bolts)
             {
@@ -56,10 +57,11 @@ namespace Ashblade
                     sd = (sd * 9301f + 49297f + tick) % 233280f;
                     float t = i / 6f, j = i == 6 ? 0f : (sd / 233280f - 0.5f) * 10f;
                     float x = a.x + dx * t + nx * j, y = a.y + dy * t + ny * j;
-                    o.Line(px, py - 1, x, y - 1, Art.Outline); o.Line(px, py, x, y, k > 0.5f ? WhiteC : C("#ffe066")); o.Line(px + 1, py, x + 1, y, C("#ffe066"));
+                    Color32 bc = bo.ramp == "fire" ? C("#ff9a3c") : bo.ramp == "ice" ? C("#8fdcff") : C("#ffe066");
+                    o.Line(px, py - 1, x, y - 1, Art.Outline); o.Line(px, py, x, y, k > 0.5f ? WhiteC : bc); o.Line(px + 1, py, x + 1, y, bc);
                     px = x; py = y;
                 }
-                Glow(a.x, a.y, 14, GlowOf("gold"), 0.6f * k); Glow(b.x, b.y, 16, GlowOf("gold"), 0.7f * k);
+                Glow(a.x, a.y, 14, GlowOf(bo.ramp), 0.6f * k); Glow(b.x, b.y, 16, GlowOf(bo.ramp), 0.7f * k);
             }
             foreach (var q in Ench.echoes)
             {
@@ -78,6 +80,29 @@ namespace Ashblade
                     for (int r = 0; r < 3; r++) o.Plot(Mathf.Round(s.x + Mathf.Cos(a) * (q.r - r)), Mathf.Round(cy - Mathf.Sin(a) * (q.r - r)), r == 0 ? C("#f2dcff") : r == 1 ? C("#c08af0") : C("#8a4ad0"));
                 }
                 Glow(s.x, cy, 24, GlowOf("violet"), 0.4f * k);
+            }
+        }
+
+        /// <summary>Burning / icy ground left by Flame Trail and Frost Trail.</summary>
+        void DrawEnchGround()
+        {
+            var o = ground;
+            foreach (var pt in Ench.patches)
+            {
+                var s = View.ToScreen(pt.pos); float k = pt.life / pt.max, R = pt.r * Art.PPU;
+                int n = Mathf.RoundToInt(10f * Mathf.Min(1f, k * 2f));
+                for (int i = 0; i < n; i++)
+                {
+                    float a = pt.seed + i * 2.4f + W.realTime * (pt.fire > 0 ? 3f : 0.6f), r = R * ((i * 0.37f + pt.seed) % 1f);
+                    float x = s.x + Mathf.Cos(a) * r, y = s.y + Mathf.Sin(a) * r * 0.5f;
+                    if (pt.fire > 0)
+                    {
+                        int hgt = 1 + ((i + Mathf.FloorToInt(W.realTime * 12f)) % 3);
+                        o.Plot(x, y, C("#ff7a2a")); if (hgt > 1) o.Plot(x, y - 1, C("#ffb43c")); if (hgt > 2) o.Plot(x, y - 2, C("#fff3a0"));
+                    }
+                    if (pt.frost > 0) o.Plot(x + 1, y, (i + Mathf.FloorToInt(W.realTime * 4f)) % 4 != 0 ? C("#8fdcff") : WhiteC);
+                }
+                Glow(s.x, s.y, R + 6, GlowOf(pt.fire > 0 ? "fire" : "ice"), 0.3f * k);
             }
         }
 
@@ -122,6 +147,12 @@ namespace Ashblade
                 }
                 if (!any) continue;
                 HText(slot == 0 ? "B" : "S", slot == 0 ? C("#8fdcff") : C("#ff9a3c"), 1, x + 1, y);
+                var syn = Ench.Active(slot);
+                if (syn.Count > 0)
+                {
+                    string t = syn[0].tag + (syn.Count > 1 ? " " + syn[1].tag : "") + (syn.Count > 2 ? " +" + (syn.Count - 2) : "");
+                    HText(t, C("#ffd166"), 1, x + 9, y);
+                }
                 y -= 10;
             }
         }
@@ -154,7 +185,9 @@ namespace Ashblade
                 HText(c.x == 0 ? "BASIC" : "SKILL", c.x == 0 ? C("#8fdcff") : C("#ff9a3c"), 1, r.x + r.width - 4, r.y + 5, 2, 1f, a);
                 HText(Ench.Tag[k], chosen ? ink : C(Ench.Hex[k]), 2, r.x + r.width / 2f, r.y + 18, 1, 1f, a);
                 HText(Ench.Desc[k], chosen ? ink : C("#e8e0f0"), 1, r.x + r.width / 2f, r.y + 38, 1, 1f, a);
-                HText(l > 0 ? "LV " + l + " + 1" : "NEW", chosen ? ink : C("#ffd166"), 1, r.x + r.width / 2f, r.y + 52, 1, 1f, a);
+                HText(l > 0 ? "LV " + l + " + 1" : "NEW", chosen ? ink : C("#ffd166"), 1, r.x + r.width / 2f, r.y + 50, 1, 1f, a);
+                var fr = Ench.NewIf(c.x, k);
+                if (fr.Count > 0) HText(fr.Count > 1 ? fr.Count + " SYNERGIES" : fr[0].tag, chosen ? ink : Mathf.FloorToInt(W.realTime * 4f) % 2 == 1 ? WhiteC : C("#ffd166"), 1, r.x + r.width / 2f, r.y + 60, 1, 1f, a);
             }
             HText("CLICK OR PRESS 1 2 3", C("#c8bcd8"), 1, VW / 2f, 142, 1);
         }
@@ -183,6 +216,14 @@ namespace Ashblade
             if (GUILayout.Button("Clear")) Ench.SetAll(0);
             Ench.cards = GUILayout.Toggle(Ench.cards, "Wave cards");
             GUILayout.EndHorizontal();
+            GUILayout.Label("Synergies  (two keywords in one slot)");
+            foreach (var x in Ench.Syn)
+            {
+                bool b = Ench.On(Ench.Basic, x.a, x.b), sk = Ench.On(Ench.Skill, x.a, x.b);
+                GUI.color = b || sk ? (Color)C("#ffd166") : new Color(0.7f, 0.68f, 0.78f);
+                GUILayout.Label(KoNames[(int)x.a] + "+" + KoNames[(int)x.b] + "  " + x.tag + (b || sk ? "  [" + (b ? "B" : "") + (sk ? "S" : "") + "]" : "") + "\n   " + x.ko);
+            }
+            GUI.color = Color.white;
         }
     }
 }

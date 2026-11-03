@@ -253,6 +253,7 @@ namespace Ashblade
 
             DrawTorches();
             DrawTelegraphs();
+            DrawEnchGround();
             DrawBackParts();
             DrawPlayer();
             foreach (var e in W.enemies) DrawEnemy(e);
