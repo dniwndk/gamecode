@@ -1,0 +1,781 @@
+<title>Combat Feel Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=IBM+Plex+Sans+KR:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: arcade cabinet — the game screen on top, a tuning console of toggles and sliders below. Single dark look by choice. */
+:root {
+  color-scheme: dark;
+  --bg: #120f1a;
+  --panel: #1b1726;
+  --line: #2e2840;
+  --fg: #e6e1f2;
+  --muted: #9a92b3;
+  --accent: #7cc4ff;
+  --on: #7ce0a0;
+  --off: #ff7a7a;
+  --warn: #ffd166;
+  --font-display: "Silkscreen", "IBM Plex Mono", monospace;
+  --font-body: "IBM Plex Sans KR", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--fg); }
+body {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 32px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: 22px; letter-spacing: 0.04em; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); font-size: 13px; }
+.screen { position: relative; border: 2px solid var(--line); background: #000; line-height: 0; }
+canvas#game { width: 100%; height: auto; aspect-ratio: 16 / 9; image-rendering: pixelated; image-rendering: crisp-edges; display: block; cursor: crosshair; touch-action: none; outline: none; }
+canvas#game:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(10, 8, 16, 0.78); line-height: 1.5; }
+.overlay button { font-family: var(--font-display); font-size: 18px; padding: 12px 22px; background: var(--accent); color: #0b1020; border: 0; cursor: pointer; }
+.overlay button:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+.overlay small { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; text-align: center; }
+.status { position: absolute; left: 8px; top: 8px; font-family: var(--font-mono); font-size: 12px; line-height: 1.45; color: var(--fg); background: rgba(12, 10, 20, 0.7); padding: 6px 9px; pointer-events: none; font-variant-numeric: tabular-nums; white-space: pre; }
+@media (max-width: 600px) { .status { font-size: 9.5px; padding: 3px 6px; left: 4px; top: 4px; } }
+.touch { position: absolute; right: 10px; bottom: 10px; display: none; gap: 10px; line-height: 1; }
+.touch button { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--line); background: rgba(27, 23, 38, 0.8); color: var(--fg); font-family: var(--font-body); font-weight: 600; font-size: 13px; touch-action: none; }
+@media (pointer: coarse) { .touch { display: flex; } }
+.console { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 720px) { .console { grid-template-columns: minmax(0, 1fr); } }
+section.card { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+h2 { font-family: var(--font-display); font-weight: 400; font-size: 13px; letter-spacing: 0.08em; margin: 0; color: var(--muted); }
+.toggles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.toggle { display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: var(--bg); border: 1px solid var(--line); color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.toggle:focus-visible, .row button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.toggle kbd { font-family: var(--font-mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line); padding: 0 5px; }
+.toggle .name { flex: 1; }
+.toggle .st { font-family: var(--font-display); font-size: 11px; color: var(--off); }
+.toggle[aria-pressed="true"] .st { color: var(--on); }
+.toggle[aria-pressed="false"] .name { color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 6px; }
+.row button { padding: 6px 10px; background: var(--bg); border: 1px solid var(--line); color: var(--fg); font: inherit; font-size: 13px; cursor: pointer; }
+.sliders { display: grid; gap: 8px; }
+.slider { display: grid; grid-template-columns: 112px minmax(0, 1fr) 52px; align-items: center; gap: 8px; }
+.slider label { font-size: 13px; }
+.slider output { font-family: var(--font-mono); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; color: var(--accent); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+table.keys { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.keys td { padding: 3px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.keys td:first-child { font-family: var(--font-mono); font-size: 12px; color: var(--accent); width: 46%; padding-right: 8px; }
+.note { color: var(--muted); font-size: 12.5px; margin: 0; max-width: 65ch; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>COMBAT FEEL LAB</h1>
+    <p>탑뷰 도트 액션 손맛 테스트 · 숫자 키로 요소를 하나씩 껐다 켜 보세요</p>
+  </header>
+
+  <div class="screen">
+    <canvas id="game" width="320" height="180" tabindex="0" aria-label="전투 테스트 화면"></canvas>
+    <div class="status" id="status"></div>
+    <div class="touch" aria-hidden="true">
+      <button id="tDash" type="button">대시</button>
+      <button id="tAtk" type="button">공격</button>
+    </div>
+    <div class="overlay" id="overlay">
+      <div>
+        <button id="startBtn" type="button">PRESS START</button>
+        <small>클릭하면 소리와 함께 시작해요 · WASD 이동 · 클릭 공격 · Space 대시</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="console">
+    <section class="card" aria-labelledby="h-toggles">
+      <h2 id="h-toggles">FEEL TOGGLES</h2>
+      <div class="toggles" id="toggles"></div>
+      <div class="row">
+        <button id="allBtn" type="button">전체 켜기/끄기 (0)</button>
+        <button id="slowBtn" type="button">슬로모션 x0.25 (T)</button>
+        <button id="resetBtn" type="button">리셋 (R)</button>
+      </div>
+      <h2>STRENGTH</h2>
+      <div class="sliders" id="sliders"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-keys">
+      <h2 id="h-keys">CONTROLS</h2>
+      <table class="keys">
+        <tr><td>WASD / 방향키</td><td>이동</td></tr>
+        <tr><td>마우스 왼쪽 / J</td><td>공격 (3타 콤보, 3타는 강타)</td></tr>
+        <tr><td>Space / Shift / 우클릭 / K</td><td>대시 (무적 + 잔상)</td></tr>
+        <tr><td>대시 중 공격</td><td>대시 공격</td></tr>
+        <tr><td>M</td><td>조준: 마우스 ↔ 이동 방향</td></tr>
+        <tr><td>모바일</td><td>왼쪽 절반 드래그 이동, 버튼으로 공격·대시</td></tr>
+      </table>
+      <p class="note">허수아비는 공격하지 않고 죽지 않아요. 빨간 적은 빨갛게 깜빡여 예고한 뒤 돌진하니 대시 무적으로 피해 보세요. 프레임 수치는 유니티 버전(CombatTuning)과 같아요.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const PPU = 16, VW = 320, VH = 180;
+const ARENA = { xMin: -11, xMax: 11, yMin: -6, yMax: 6 };
+
+// ---------- tuning (same defaults as the Unity CombatTuning) ----------
+const A = (name, startup, active, recovery, damage, range, arc, knockback, hitstop, shakePx, shakeFrames, lunge, heavy) =>
+  ({ name, startup, active, recovery, damage, range, arc, knockback, hitstop, shakePx, shakeFrames, lunge, heavy });
+const T = {
+  hitstop: true, shake: true, knockback: true, hitFlash: true, inputBuffer: true,
+  dashCancel: true, aimAssist: true, sparks: true, sound: true,
+  hitstopScale: 1, shakeScale: 1, knockbackScale: 1,
+  moveSpeed: 6.5, dashSpeed: 19, dashFrames: 10, dashInvulnFrames: 8, dashCooldown: 0.2,
+  bufferWindow: 0.15, comboResetTime: 0.4, aimAssistAngle: 35, aimAssistRange: 1.2, lookAhead: 0.6,
+  combo: [
+    A("Slash 1", 4, 3, 12, 10, 1.3, 140, 6, 3, 1.5, 5, 0.25, false),
+    A("Slash 2", 4, 3, 12, 10, 1.3, 140, 6, 3, 1.5, 5, 0.25, false),
+    A("Finisher", 7, 4, 22, 25, 1.6, 200, 15, 8, 4, 10, 0.5, true),
+  ],
+  dashStrike: A("Dash Strike", 3, 3, 14, 15, 1.4, 120, 9, 5, 2.5, 7, 0.6, false),
+  chaserCount: 3, enemyHp: 60, enemySpeed: 2.4, enemyWindup: 34, enemyStagger: 18,
+};
+const TOGGLES = [
+  ["hitstop", "히트스톱"], ["shake", "화면 흔들림"], ["knockback", "넉백"], ["hitFlash", "히트 플래시"],
+  ["inputBuffer", "입력 버퍼"], ["dashCancel", "대시 캔슬"], ["aimAssist", "에임 보정"], ["sparks", "스파크"], ["sound", "사운드"],
+];
+const SLIDERS = [
+  ["hitstopScale", "히트스톱 배율", 0, 3, 0.1, v => "x" + v.toFixed(1)],
+  ["shakeScale", "흔들림 배율", 0, 3, 0.1, v => "x" + v.toFixed(1)],
+  ["knockbackScale", "넉백 배율", 0, 3, 0.1, v => "x" + v.toFixed(1)],
+  ["bufferWindow", "입력 버퍼", 0.05, 0.4, 0.01, v => Math.round(v * 1000) + "ms"],
+  ["moveSpeed", "이동 속도", 3, 10, 0.5, v => v.toFixed(1)],
+];
+
+// ---------- vectors ----------
+const V = (x, y) => ({ x, y });
+const add = (a, b) => V(a.x + b.x, a.y + b.y);
+const sub = (a, b) => V(a.x - b.x, a.y - b.y);
+const mul = (a, s) => V(a.x * s, a.y * s);
+const len = a => Math.hypot(a.x, a.y);
+const norm = a => { const l = len(a); return l > 1e-6 ? V(a.x / l, a.y / l) : V(0, 0); };
+const angleBetween = (a, b) => {
+  const la = len(a), lb = len(b);
+  if (la < 1e-6 || lb < 1e-6) return 0;
+  return Math.acos(Math.max(-1, Math.min(1, (a.x * b.x + a.y * b.y) / (la * lb)))) * 180 / Math.PI;
+};
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+// ---------- pixel art ----------
+function makeCanvas(w, h) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
+function spriteFromRows(rows, pal) {
+  const h = rows.length, w = Math.max(...rows.map(r => r.length));
+  const img = makeCanvas(w, h), g = img.getContext("2d");
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const c = rows[y][x];
+    if (c && c !== "." && pal[c]) { g.fillStyle = pal[c]; g.fillRect(x, y, 1, 1); }
+  }
+  return { img, w, h, tints: {} };
+}
+function tinted(spr, color) {
+  if (spr.tints[color]) return spr.tints[color];
+  const c = makeCanvas(spr.w, spr.h), g = c.getContext("2d");
+  g.drawImage(spr.img, 0, 0);
+  g.globalCompositeOperation = "source-in";
+  g.fillStyle = color; g.fillRect(0, 0, spr.w, spr.h);
+  return (spr.tints[color] = c);
+}
+const PLAYER = spriteFromRows([
+  "....kkkk....", "...kllllk...", "..kllbbllk..", "..klsssslk..", "..kbswswbk..", "...kbbbbk...", "..kbbllbbk..",
+  ".kbbbllbbbk.", ".ksbbbbbbsk.", ".kkbbbbbbkk.", "..kbbkkbbk..", "..kbk..kbk..", "..kkk..kkk..",
+], { k: "#181425", b: "#3a6ec8", l: "#78b4f0", s: "#fad6ac", w: "#181425" });
+const ENEMY = spriteFromRows([
+  ".....kkkk.....", "...kkoorrkk...", "..korrrrrrrk..", ".krrwkrrwkrrk.", ".krrkkrrkkrrk.", "krrrrrrrrrrrrk",
+  "krrrrddddrrrrk", "krrrrrrrrrrrrk", ".krrrrrrrrrrk.", "..kkrrrrrrkk..", "....kkkkkk....",
+], { k: "#1e0c14", r: "#c83c46", o: "#ff8c78", d: "#6e1928", w: "#fff0f0" });
+const DUMMY = spriteFromRows([
+  "....kkkk....", "...kyyyyk...", "..kyrrrryk..", "..kyrccryk..", "..kyrrrryk..", "...kyyyyk...", "....kttk....",
+  "..kkkttkkk..", "..kttttttk..", "...kkttkk...", ".....tt.....", ".....tt.....", "...kkttkk...", "...kkkkkk...",
+], { k: "#281a14", t: "#a06e3c", y: "#d6b068", r: "#be3c32", c: "#f0dcaa" });
+
+function ellipse(w, h, color) {
+  const c = makeCanvas(w, h), g = c.getContext("2d"); g.fillStyle = color;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const dx = (x + 0.5 - w / 2) / (w / 2), dy = (y + 0.5 - h / 2) / (h / 2);
+    if (dx * dx + dy * dy <= 1) g.fillRect(x, y, 1, 1);
+  }
+  return c;
+}
+const SHADOW_P = ellipse(10, 5, "rgba(0,0,0,0.35)"), SHADOW_E = ellipse(12, 5, "rgba(0,0,0,0.35)");
+
+const SLASH_OUTER = 19;
+const SLASH = (() => {
+  const s = 40, inner = 10, half = 75, c = makeCanvas(s, s), g = c.getContext("2d");
+  for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
+    const dx = x + 0.5 - s / 2, dy = -(y + 0.5 - s / 2);
+    const r = Math.hypot(dx, dy), ang = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+    const edge = 1 - ang / half;
+    const innerHere = (SLASH_OUTER - 2) + (inner - (SLASH_OUTER - 2)) * clamp(edge * 1.6, 0, 1);
+    if (ang > half || r > SLASH_OUTER || r < innerHere) continue;
+    const k = (r - innerHere) / Math.max(1, SLASH_OUTER - innerHere);
+    g.fillStyle = k > 0.66 ? "rgba(255,255,255,1)" : k > 0.33 ? "rgba(190,235,255,0.8)" : "rgba(115,180,255,0.45)";
+    g.fillRect(x, y, 1, 1);
+  }
+  return c;
+})();
+
+const ARENA_IMG = (() => {
+  const tw = 24, th = 14, ts = 16, c = makeCanvas(tw * ts, th * ts), g = c.getContext("2d");
+  for (let ty = 0; ty < th; ty++) for (let tx = 0; tx < tw; tx++) {
+    const wall = tx === 0 || ty === 0 || tx === tw - 1 || ty === th - 1;
+    g.fillStyle = wall ? "#1e1b28" : ((tx + ty) & 1) ? "#393548" : "#343042";
+    g.fillRect(tx * ts, ty * ts, ts, ts);
+  }
+  g.fillStyle = "#544c68";
+  g.fillRect(ts, ts - 1, (tw - 2) * ts, 1); g.fillRect(ts, (th - 1) * ts, (tw - 2) * ts, 1);
+  g.fillRect(ts - 1, ts, 1, (th - 2) * ts); g.fillRect((tw - 1) * ts, ts, 1, (th - 2) * ts);
+  g.fillStyle = "#443f55";
+  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 1300; i++) { const x = Math.floor(rnd() * (tw - 2) * ts) + ts, y = Math.floor(rnd() * (th - 2) * ts) + ts; g.fillRect(x, y, 1, 1); }
+  return c;
+})();
+
+// ---------- sound (synthesized, same recipes as SfxGen.cs) ----------
+let actx = null;
+const buffers = {};
+function synth(name, dur, f) {
+  const rate = actx.sampleRate, n = Math.ceil(dur * rate), buf = actx.createBuffer(1, n, rate), d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = clamp(f(i / rate, rate), -1, 1);
+  buffers[name] = buf;
+}
+const noise = () => Math.random() * 2 - 1;
+function initAudio() {
+  if (actx) return;
+  try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; return; }
+  for (const heavy of [false, true]) {
+    const dur = heavy ? 0.3 : 0.16, nd = heavy ? 18 : 32, td = heavy ? 11 : 22, fr = heavy ? 62 : 96; let ph = 0;
+    synth(heavy ? "hitHeavy" : "hit", dur, (t, r) => { ph += fr * (1 - t * 1.5) / r; return (noise() * Math.exp(-t * nd) * 0.55 + Math.sin(2 * Math.PI * ph) * Math.exp(-t * td) * 0.95) * 0.8; });
+    let lp = 0; const sd = heavy ? 0.22 : 0.13;
+    synth(heavy ? "swingHeavy" : "swing", sd, t => { const e = Math.sin(Math.PI * t / sd); lp += (noise() - lp) * (0.04 + 0.3 * e); return lp * e * 0.9; });
+  }
+  { let lp = 0; synth("dash", 0.12, t => { const e = Math.exp(-t * 22) * clamp(t * 400, 0, 1); lp += (noise() - lp) * 0.45; return lp * e * 0.7; }); }
+  { let ph = 0; synth("hurt", 0.2, (t, r) => { ph += (320 + (110 - 320) * t / 0.2) / r; return (Math.sin(2 * Math.PI * ph) > 0 ? 1 : -1) * Math.exp(-t * 12) * 0.35; }); }
+  { let ph = 0; synth("kill", 0.45, (t, r) => { ph += (220 + (45 - 220) * t / 0.45) / r; return (Math.sin(2 * Math.PI * ph) * Math.exp(-t * 7) * 0.7 + noise() * Math.exp(-t * 14) * 0.4) * 0.8; }); }
+  { let lp = 0; synth("lunge", 0.16, t => { const e = Math.sin(Math.PI * t / 0.16); lp += (noise() - lp) * 0.08; return lp * e * 0.8; }); }
+}
+function sfx(name, pitchVar, vol) {
+  if (!T.sound || !actx || !buffers[name]) return;
+  const src = actx.createBufferSource(), gain = actx.createGain();
+  src.buffer = buffers[name];
+  src.playbackRate.value = 1 + rand(-pitchVar, pitchVar);
+  gain.gain.value = vol * 0.6;
+  src.connect(gain).connect(actx.destination);
+  src.start();
+}
+
+// ---------- input ----------
+const keys = new Set();
+const pressed = { attack: false, dash: false };
+const mouse = { x: 0, y: 0, has: false };
+const touchStick = { id: null, ox: 0, oy: 0, x: 0, y: 0 };
+let aimWithMouse = true;
+
+// ---------- world state ----------
+let time = 0, timeScale = 1;
+let kills = 0, combo = 0, bestCombo = 0, comboTimer = 0;
+const particles = [], ghosts = [];
+const cam = { x: 0, y: 0, shakeDir: V(1, 0), amp: 0, t: 0, dur: 0 };
+
+class Combatant {
+  constructor() {
+    this.pos = V(0, 0); this.radius = 0.35; this.bodyHeight = 0.45; this.hp = 100; this.maxHp = 100; this.alive = true;
+    this.knock = V(0, 0); this.pendingKnock = null; this.freeze = 0; this.flashT = 0; this.flashColor = "#ffffff";
+    this.vibrate = false; this.vibSign = 1; this.flipX = false; this.visible = true; this.bodyVisible = true;
+  }
+  get center() { return V(this.pos.x, this.pos.y + this.bodyHeight); }
+  doFreeze(s, shake) { if (s <= 0) return; if (s > this.freeze) this.freeze = s; if (shake) this.vibrate = true; }
+  doFlash(s, color) { if (s <= 0) return; this.flashColor = color; if (s > this.flashT) this.flashT = s; }
+  doKnock(v) { if (this.freeze > 0) this.pendingKnock = v; else this.knock = v; }
+  clearMotion() { this.knock = V(0, 0); this.pendingKnock = null; this.freeze = 0; this.flashT = 0; this.vibrate = false; }
+  preTick() {}
+  tick() {}
+  update(dt) {
+    this.preTick();
+    if (this.flashT > 0) this.flashT -= dt;
+    if (this.freeze > 0) {
+      this.freeze -= dt;
+      if (this.vibrate) this.vibSign = -this.vibSign;
+      if (this.freeze <= 0) { this.vibrate = false; if (this.pendingKnock) this.knock = this.pendingKnock; this.pendingKnock = null; }
+      return;
+    }
+    if (this.knock.x * this.knock.x + this.knock.y * this.knock.y > 0.0004) {
+      this.pos = add(this.pos, mul(this.knock, dt));
+      this.knock = mul(this.knock, Math.exp(-14 * dt));
+    } else this.knock = V(0, 0);
+    this.tick(dt);
+    this.pos.x = clamp(this.pos.x, ARENA.xMin + this.radius, ARENA.xMax - this.radius);
+    this.pos.y = clamp(this.pos.y, ARENA.yMin + this.radius * 0.5, ARENA.yMax - 0.6);
+  }
+}
+
+class Player extends Combatant {
+  constructor() {
+    super();
+    this.pos = V(-4, 0); this.radius = 0.3; this.bodyHeight = 0.45;
+    this.state = "Free"; this.stateTime = 0; this.cur = null; this.comboIndex = 0; this.nextCombo = 0; this.lastAttackEnd = -99;
+    this.atkDir = V(1, 0); this.aimDir = V(1, 0); this.moveInput = V(0, 0); this.dashDir = V(1, 0);
+    this.dashCd = 0; this.hurtInvuln = 0; this.slashTimer = 0; this.ghostCounter = 0;
+    this.attackPressT = -99; this.dashPressT = -99; this.hitThisSwing = new Set(); this.hitsTaken = 0;
+  }
+  get invulnerable() { return this.hurtInvuln > 0 || (this.state === "Dash" && this.stateTime * 60 < T.dashInvulnFrames); }
+  get stateName() {
+    if (this.state !== "Attack") return this.state;
+    const f = this.stateTime * 60, c = this.cur;
+    return c.name + " / " + (f < c.startup ? "startup" : f < c.startup + c.active ? "ACTIVE" : "recovery");
+  }
+  reset() { this.clearMotion(); this.state = "Free"; this.stateTime = 0; this.hurtInvuln = 0; this.hitsTaken = 0; this.slashTimer = 0; this.bodyVisible = true; }
+  preTick() {
+    let m = V(0, 0);
+    if (keys.has("KeyA") || keys.has("ArrowLeft")) m.x -= 1;
+    if (keys.has("KeyD") || keys.has("ArrowRight")) m.x += 1;
+    if (keys.has("KeyS") || keys.has("ArrowDown")) m.y -= 1;
+    if (keys.has("KeyW") || keys.has("ArrowUp")) m.y += 1;
+    if (touchStick.id !== null) {
+      const d = V((touchStick.x - touchStick.ox) / 40, -(touchStick.y - touchStick.oy) / 40);
+      if (len(d) > 0.15) m = len(d) > 1 ? norm(d) : d;
+    }
+    this.moveInput = len(m) > 1 ? norm(m) : m;
+    if (pressed.attack) this.attackPressT = time;
+    if (pressed.dash) this.dashPressT = time;
+    let aim = V(0, 0);
+    if (aimWithMouse && mouse.has) aim = sub(screenToWorld(mouse.x, mouse.y), this.center);
+    if ((!aimWithMouse || !mouse.has) && len(this.moveInput) > 0.1) aim = this.moveInput;
+    if (len(aim) > 0.1) this.aimDir = norm(aim);
+    if (this.state === "Free") this.flipX = this.aimDir.x < 0;
+    else if (this.state === "Dash") this.flipX = this.dashDir.x < 0;
+  }
+  consume(which) {
+    const key = which + "PressT";
+    if (time - this[key] <= (T.inputBuffer ? T.bufferWindow : 0)) { this[key] = -99; return true; }
+    return false;
+  }
+  tick(dt) {
+    if (this.hurtInvuln > 0) this.hurtInvuln -= dt;
+    if (this.dashCd > 0) this.dashCd -= dt;
+    this.bodyVisible = !(this.hurtInvuln > 0 && Math.floor(this.hurtInvuln * 20) % 2 === 0);
+    if (this.slashTimer > 0) this.slashTimer -= dt;
+    this.stateTime += dt;
+    const f = this.stateTime * 60;
+    if (this.state === "Free") {
+      this.pos = add(this.pos, mul(this.moveInput, T.moveSpeed * dt));
+      if (this.dashCd <= 0 && this.consume("dash")) { this.startDash(); return; }
+      if (this.consume("attack")) {
+        if (time - this.lastAttackEnd > T.comboResetTime) this.nextCombo = 0;
+        this.startAttack(T.combo[this.nextCombo], this.nextCombo);
+      }
+    } else if (this.state === "Attack") this.tickAttack(f, dt);
+    else this.tickDash(f, dt);
+  }
+  startAttack(a, index) {
+    this.cur = a; this.comboIndex = index; this.state = "Attack"; this.stateTime = 0;
+    this.atkDir = this.aimDir;
+    if (T.aimAssist) this.atkDir = aimAssist(this.center, this.atkDir, T.aimAssistAngle, a.range + T.aimAssistRange);
+    this.hitThisSwing.clear();
+    this.flipX = this.atkDir.x < 0;
+    sfx(a.heavy ? "swingHeavy" : "swing", 0.08, 0.8);
+  }
+  endAttack() { this.lastAttackEnd = time; this.nextCombo = this.comboIndex + 1 < T.combo.length ? this.comboIndex + 1 : 0; }
+  tickAttack(f, dt) {
+    const c = this.cur, s = c.startup, a = s + c.active, end = a + c.recovery;
+    if (f < a) this.pos = add(this.pos, mul(this.atkDir, c.lunge / (a / 60) * dt));
+    if (f >= s && f < a) { this.slashTimer = 4 / 60; this.doHits(); }
+    const inRecovery = f >= a;
+    if (T.dashCancel && (f < s || inRecovery) && this.dashCd <= 0 && this.consume("dash")) { this.endAttack(); this.startDash(); return; }
+    if (inRecovery && this.comboIndex + 1 < T.combo.length && this.consume("attack")) { this.startAttack(T.combo[this.comboIndex + 1], this.comboIndex + 1); return; }
+    if (f >= end) { this.endAttack(); this.state = "Free"; this.stateTime = 0; }
+  }
+  doHits() {
+    const c = this.cur;
+    for (const e of enemies) {
+      if (!e.hittable || this.hitThisSwing.has(e)) continue;
+      const to = sub(e.center, this.center), d = len(to);
+      if (d - e.radius > c.range) continue;
+      if (d > 0.25 && angleBetween(this.atkDir, to) > c.arc / 2) continue;
+      this.hitThisSwing.add(e);
+      const dir = d > 0.01 ? mul(to, 1 / d) : this.atkDir;
+      let kb = norm(add(this.atkDir, dir)); if (len(kb) < 0.5) kb = this.atkDir;
+      hit(this, e, c, kb);
+    }
+  }
+  startDash() {
+    this.state = "Dash"; this.stateTime = 0; this.ghostCounter = 0;
+    this.dashDir = len(this.moveInput) > 0.1 ? norm(this.moveInput) : this.aimDir;
+    this.dashCd = T.dashFrames / 60 + T.dashCooldown; this.slashTimer = 0;
+    sfx("dash", 0.1, 0.7);
+  }
+  tickDash(f, dt) {
+    this.pos = add(this.pos, mul(this.dashDir, T.dashSpeed * dt));
+    const g = Math.floor(f / 2);
+    if (g >= this.ghostCounter) { this.ghostCounter = g + 1; ghosts.push({ x: this.pos.x, y: this.pos.y, flip: this.flipX, life: 0.18, max: 0.18 }); }
+    if (f >= 3 && this.consume("attack")) { this.startAttack(T.dashStrike, -1); return; }
+    if (f >= T.dashFrames) { this.state = "Free"; this.stateTime = 0; }
+  }
+  hurtBy(src, dir) {
+    if (this.invulnerable) return;
+    this.hitsTaken++; this.hurtInvuln = 0.6;
+    if (this.state === "Attack") this.endAttack();
+    this.state = "Free"; this.stateTime = 0; this.slashTimer = 0;
+    const hs = T.hitstop ? 6 / 60 * T.hitstopScale : 0;
+    this.doFreeze(hs, true); src.doFreeze(hs, false);
+    if (T.hitFlash) this.doFlash(hs + 4 / 60, "#ff4d4d");
+    if (T.knockback) this.doKnock(mul(dir, 9 * T.knockbackScale));
+    shake(dir, 3, 10); sfx("hurt", 0.05, 0.9); combo = 0;
+  }
+}
+
+class Enemy extends Combatant {
+  constructor(passive, at) {
+    super();
+    this.passive = passive; this.pos = at; this.radius = 0.35; this.bodyHeight = 0.4;
+    this.maxHp = this.hp = passive ? 9999 : T.enemyHp;
+    this.state = "Chase"; this.stateTime = 0; this.lungeDir = V(1, 0); this.lungeHit = false; this.dying = false; this.telegraph = false;
+    this.spr = passive ? DUMMY : ENEMY;
+  }
+  get hittable() { return this.alive && !this.dying; }
+  receiveDamage(dmg) {
+    if (!this.hittable) return false;
+    if (!this.passive) this.hp -= dmg;
+    if (this.hp <= 0) { this.dying = true; return true; }
+    this.state = "Stagger"; this.stateTime = 0;
+    return false;
+  }
+  tick(dt) {
+    this.stateTime += dt;
+    const f = this.stateTime * 60, p = player;
+    if (this.dying) {
+      this.dying = false; this.alive = false; this.state = "Dead"; this.stateTime = 0; this.visible = false;
+      sparks(this.center, V(0, 1), 18, 1.5, 360); shake(V(Math.random() - 0.5, Math.random() - 0.5), 2, 6);
+      return;
+    }
+    this.telegraph = false;
+    switch (this.state) {
+      case "Dead": if (this.stateTime > 1.5) this.respawn(); return;
+      case "Chase": {
+        if (this.passive) break;
+        const to = sub(p.pos, this.pos);
+        if (len(to) < 1.5) { this.state = "Windup"; this.stateTime = 0; }
+        else this.pos = add(this.pos, mul(norm(to), T.enemySpeed * dt));
+        break;
+      }
+      case "Windup":
+        this.telegraph = Math.floor(f / 4) % 2 === 0;
+        if (f >= T.enemyWindup) {
+          this.state = "Lunge"; this.stateTime = 0;
+          this.lungeDir = norm(sub(p.pos, this.pos)); if (len(this.lungeDir) < 0.5) this.lungeDir = V(1, 0);
+          this.lungeHit = false; sfx("lunge", 0.1, 0.6);
+        }
+        break;
+      case "Lunge":
+        this.pos = add(this.pos, mul(this.lungeDir, 9 * dt));
+        if (!this.lungeHit && len(sub(p.pos, this.pos)) < this.radius + p.radius + 0.25) { this.lungeHit = true; p.hurtBy(this, this.lungeDir); }
+        if (f >= 10) { this.state = "Recover"; this.stateTime = 0; }
+        break;
+      case "Recover": if (f >= 40) { this.state = "Chase"; this.stateTime = 0; } break;
+      case "Stagger":
+        if (f >= T.enemyStagger) { this.state = this.passive ? "Chase" : "Recover"; this.stateTime = this.passive ? 0 : 0.4; }
+        break;
+    }
+    for (const o of enemies) {
+      if (o === this || !o.alive) continue;
+      const d = sub(this.pos, o.pos), m = len(d), min = this.radius + o.radius;
+      if (m < min && m > 1e-4) this.pos = add(this.pos, mul(d, (min - m) * 0.5 / m));
+    }
+    const d = sub(this.pos, p.pos), m = len(d), min = this.radius + p.radius;
+    if (m < min && m > 1e-4) this.pos = add(this.pos, mul(d, (min - m) / m));
+    if (!this.passive) this.flipX = p.pos.x < this.pos.x;
+  }
+  respawn() {
+    let at = this.pos;
+    for (let i = 0; i < 30; i++) {
+      at = V(rand(ARENA.xMin + 1, ARENA.xMax - 1), rand(ARENA.yMin + 1, ARENA.yMax - 1));
+      if (len(sub(at, player.pos)) > 4.5) break;
+    }
+    if (!this.passive) this.pos = at;
+    this.clearMotion(); this.hp = this.maxHp; this.alive = true; this.dying = false; this.state = "Chase"; this.stateTime = 0; this.visible = true;
+  }
+}
+
+// ---------- feel ----------
+function hit(attacker, victim, atk, dir) {
+  const killed = victim.receiveDamage(atk.damage);
+  let hs = T.hitstop ? atk.hitstop / 60 * T.hitstopScale : 0;
+  if (killed) hs *= 1.6;
+  victim.doFreeze(hs, true); attacker.doFreeze(hs, false);
+  if (T.hitFlash) victim.doFlash(hs + 3 / 60, "#ffffff");
+  if (T.knockback) victim.doKnock(mul(dir, atk.knockback * T.knockbackScale * (killed ? 1.5 : 1)));
+  shake(dir, atk.shakePx * (killed ? 1.6 : 1), atk.shakeFrames + (killed ? 4 : 0));
+  const big = atk.heavy || killed;
+  sparks(sub(victim.center, mul(dir, victim.radius * 0.6)), dir, big ? 12 : 6, big ? 1.4 : 1, 70);
+  sfx(big ? "hitHeavy" : "hit", 0.12, 1);
+  if (killed) { kills++; sfx("kill", 0.05, 0.8); }
+  combo++; comboTimer = 2; bestCombo = Math.max(bestCombo, combo);
+}
+function aimAssist(from, dir, maxAngle, range) {
+  let best = null, bestScore = Infinity;
+  for (const e of enemies) {
+    if (!e.hittable) continue;
+    const to = sub(e.center, from), d = len(to);
+    if (d > range || d < 0.001) continue;
+    const ang = angleBetween(dir, to);
+    if (ang > maxAngle) continue;
+    const score = ang + d * 10;
+    if (score < bestScore) { bestScore = score; best = e; }
+  }
+  return best ? norm(sub(best.center, from)) : dir;
+}
+function shake(dir, px, frames) {
+  if (!T.shake || px <= 0) return;
+  px *= T.shakeScale;
+  const remaining = cam.t < cam.dur ? cam.amp * (1 - cam.t / cam.dur) : 0;
+  if (px < remaining) return;
+  cam.shakeDir = len(dir) > 1e-4 ? norm(dir) : V(1, 0);
+  cam.amp = px; cam.dur = frames / 60; cam.t = 0;
+}
+function sparks(point, dir, count, speedMul, spread) {
+  if (!T.sparks) return;
+  const base = Math.atan2(dir.y, dir.x) * 180 / Math.PI;
+  for (let i = 0; i < count; i++) {
+    const a = (base + rand(-spread / 2, spread / 2)) * Math.PI / 180, sp = rand(4, 11) * speedMul;
+    const life = rand(0.12, 0.26);
+    particles.push({ x: point.x, y: point.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life, max: life });
+  }
+}
+
+// ---------- setup ----------
+const player = new Player();
+const enemies = [];
+function spawnAll() {
+  enemies.length = 0;
+  enemies.push(new Enemy(true, V(-1, 2.5)));
+  for (let i = 0; i < T.chaserCount; i++) enemies.push(new Enemy(false, V(rand(2, 9), rand(-4.5, 4.5))));
+}
+spawnAll();
+function resetAll() { player.reset(); player.pos = V(-4, 0); for (const e of enemies) e.respawn(); kills = combo = bestCombo = 0; }
+
+// ---------- rendering ----------
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+let camPx = { x: 0, y: 0 };
+function toScreen(wx, wy) { return [Math.round(VW / 2 + wx * PPU - camPx.x), Math.round(VH / 2 - wy * PPU + camPx.y)]; }
+function screenToWorld(sx, sy) { return V((sx - VW / 2 + camPx.x) / PPU, -(sy - VH / 2 - camPx.y) / PPU); }
+function drawImg(img, x, y, flip) {
+  if (!flip) { ctx.drawImage(img, x, y); return; }
+  ctx.save(); ctx.translate(x + img.width, y); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0); ctx.restore();
+}
+
+function render() {
+  ctx.fillStyle = "#120f1a"; ctx.fillRect(0, 0, VW, VH);
+  let [ax, ay] = toScreen(-12, 7); ctx.drawImage(ARENA_IMG, ax, ay);
+
+  for (const g of ghosts) {
+    const [sx, sy] = toScreen(g.x, g.y);
+    ctx.globalAlpha = 0.55 * g.life / g.max;
+    drawImg(tinted(PLAYER, "#73ccff"), sx - (PLAYER.w >> 1), sy - PLAYER.h + 1, g.flip);
+  }
+  ctx.globalAlpha = 1;
+
+  const list = [player, ...enemies.filter(e => e.visible)].sort((a, b) => b.pos.y - a.pos.y);
+  for (const c of list) {
+    const spr = c === player ? PLAYER : c.spr;
+    const [sx, sy] = toScreen(c.pos.x, c.pos.y);
+    const sh = c === player ? SHADOW_P : SHADOW_E;
+    ctx.drawImage(sh, sx - (sh.width >> 1), sy - 2);
+    if (c === player && !c.bodyVisible) continue;
+    const vib = c.freeze > 0 && c.vibrate ? c.vibSign : 0;
+    const x = sx - (spr.w >> 1) + vib, y = sy - spr.h + 1;
+    drawImg(spr.img, x, y, c.flipX);
+    if (c.telegraph) { ctx.globalAlpha = 0.55; drawImg(tinted(spr, "#ff5a5a"), x, y, c.flipX); ctx.globalAlpha = 1; }
+    if (c.flashT > 0) drawImg(tinted(spr, c.flashColor), x, y, c.flipX);
+    if (c === player && c.slashTimer > 0 && c.cur) {
+      const [cx, cy] = toScreen(c.center.x, c.center.y);
+      const sc = c.cur.range * PPU / SLASH_OUTER;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(-Math.atan2(c.atkDir.y, c.atkDir.x));
+      ctx.scale(sc, c.comboIndex === 1 ? -sc : sc);
+      if (c.cur.heavy) ctx.filter = "sepia(0.6) saturate(2)";
+      ctx.drawImage(SLASH, -20, -20); ctx.restore();
+    }
+    if (c !== player && !c.passive) {
+      const w = 14, fill = Math.max(0, Math.round(w * c.hp / c.maxHp));
+      ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(sx - 7, sy - 18, w, 2);
+      ctx.fillStyle = "#f24d4d"; ctx.fillRect(sx - 7, sy - 18, fill, 2);
+    }
+  }
+
+  for (const p of particles) {
+    const [sx, sy] = toScreen(p.x, p.y);
+    const k = p.life / p.max, sp = Math.hypot(p.vx, p.vy), n = Math.round(clamp(sp * 0.5, 1, 5));
+    const dx = sp > 0 ? p.vx / sp : 0, dy = sp > 0 ? -p.vy / sp : 0;
+    ctx.fillStyle = `rgb(255,${Math.round(140 + 115 * k)},${Math.round(40 + 190 * k)})`;
+    for (let i = 0; i < n; i++) ctx.fillRect(Math.round(sx - dx * i), Math.round(sy - dy * i), 1, k > 0.5 ? 2 : 1);
+  }
+
+  if (aimWithMouse && mouse.has) {
+    ctx.fillStyle = "rgba(124,196,255,0.8)";
+    const mx = Math.round(mouse.x), my = Math.round(mouse.y);
+    ctx.fillRect(mx - 3, my, 2, 1); ctx.fillRect(mx + 2, my, 2, 1); ctx.fillRect(mx, my - 3, 1, 2); ctx.fillRect(mx, my + 2, 1, 2);
+  }
+}
+
+// ---------- loop ----------
+let last = performance.now(), running = false;
+const statusEl = document.getElementById("status");
+let statusTimer = 0;
+function frame(now) {
+  const rawDt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (running) {
+    const dt = rawDt * timeScale;
+    time += dt;
+    player.update(dt);
+    for (const e of enemies) e.update(dt);
+    pressed.attack = pressed.dash = false;
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i]; p.life -= dt;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      const k = Math.exp(-7 * dt); p.vx *= k; p.vy *= k; p.x += p.vx * dt; p.y += p.vy * dt;
+    }
+    for (let i = ghosts.length - 1; i >= 0; i--) { ghosts[i].life -= dt; if (ghosts[i].life <= 0) ghosts.splice(i, 1); }
+    if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) combo = 0; }
+
+    const target = add(add(player.pos, V(0, 0.4)), mul(player.aimDir, T.lookAhead));
+    const kf = 1 - Math.exp(-8 * dt);
+    cam.x += (target.x - cam.x) * kf; cam.y += (target.y - cam.y) * kf;
+    let off = V(0, 0);
+    if (cam.t < cam.dur) {
+      const k = 1 - cam.t / cam.dur, amp = cam.amp * k * k / PPU;
+      const sign = Math.floor(cam.t * 60) % 2 === 0 ? 1 : -0.6;
+      off = add(mul(cam.shakeDir, amp * sign), V((Math.random() - 0.5) * amp * 0.6, (Math.random() - 0.5) * amp * 0.6));
+      cam.t += dt;
+    }
+    camPx = { x: Math.round((cam.x + off.x) * PPU), y: Math.round((cam.y + off.y) * PPU) };
+
+    statusTimer -= rawDt;
+    if (statusTimer <= 0) {
+      statusTimer = 0.08;
+      statusEl.textContent =
+        "상태  " + player.stateName + "\n" +
+        "콤보  " + combo + "  (최고 " + bestCombo + ")\n" +
+        "처치  " + kills + "   피격 " + player.hitsTaken + "\n" +
+        "조준  " + (aimWithMouse ? "마우스" : "이동 방향") + (timeScale < 1 ? "\n슬로모션 x0.25" : "");
+    }
+  } else {
+    pressed.attack = pressed.dash = false;
+  }
+  render();
+  requestAnimationFrame(frame);
+}
+
+// ---------- UI ----------
+const togglesEl = document.getElementById("toggles");
+const toggleButtons = {};
+TOGGLES.forEach(([key, label], i) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "toggle"; b.id = "tg-" + key;
+  b.innerHTML = `<kbd>${i + 1}</kbd><span class="name">${label}</span><span class="st"></span>`;
+  b.addEventListener("click", () => { T[key] = !T[key]; syncToggles(); canvas.focus(); });
+  togglesEl.appendChild(b); toggleButtons[key] = b;
+});
+function syncToggles() {
+  for (const [key] of TOGGLES) {
+    const b = toggleButtons[key];
+    b.setAttribute("aria-pressed", String(T[key]));
+    b.querySelector(".st").textContent = T[key] ? "ON" : "OFF";
+  }
+  document.getElementById("slowBtn").textContent = timeScale < 1 ? "슬로모션 끄기 (T)" : "슬로모션 x0.25 (T)";
+}
+function toggleAll() { const allOn = TOGGLES.every(([k]) => T[k]); for (const [k] of TOGGLES) T[k] = !allOn; syncToggles(); }
+function toggleSlow() { timeScale = timeScale < 1 ? 1 : 0.25; syncToggles(); }
+document.getElementById("allBtn").addEventListener("click", () => { toggleAll(); canvas.focus(); });
+document.getElementById("slowBtn").addEventListener("click", () => { toggleSlow(); canvas.focus(); });
+document.getElementById("resetBtn").addEventListener("click", () => { resetAll(); canvas.focus(); });
+
+const slidersEl = document.getElementById("sliders");
+for (const [key, label, min, max, step, fmt] of SLIDERS) {
+  const row = document.createElement("div"); row.className = "slider";
+  row.innerHTML = `<label for="sl-${key}">${label}</label><input type="range" id="sl-${key}" min="${min}" max="${max}" step="${step}" value="${T[key]}"><output for="sl-${key}">${fmt(T[key])}</output>`;
+  const input = row.querySelector("input"), out = row.querySelector("output");
+  input.addEventListener("input", () => { T[key] = parseFloat(input.value); out.textContent = fmt(T[key]); });
+  slidersEl.appendChild(row);
+}
+syncToggles();
+
+const GAME_KEYS = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"]);
+window.addEventListener("keydown", e => {
+  const tag = (e.target && e.target.tagName) || "";
+  if (tag === "INPUT") return;
+  if (running && GAME_KEYS.has(e.code)) e.preventDefault();
+  if (e.repeat) return;
+  keys.add(e.code);
+  if (!running) return;
+  if (e.code === "KeyJ") pressed.attack = true;
+  if (e.code === "Space" || e.code === "ShiftLeft" || e.code === "KeyK") pressed.dash = true;
+  if (e.code === "KeyM") aimWithMouse = !aimWithMouse;
+  if (e.code === "KeyT") toggleSlow();
+  if (e.code === "KeyR") resetAll();
+  const m = /^Digit(\d)$/.exec(e.code);
+  if (m) {
+    const d = +m[1];
+    if (d === 0) toggleAll(); else { const k = TOGGLES[d - 1][0]; T[k] = !T[k]; syncToggles(); }
+  }
+});
+window.addEventListener("keyup", e => keys.delete(e.code));
+window.addEventListener("blur", () => keys.clear());
+
+function canvasPoint(e) {
+  const r = canvas.getBoundingClientRect();
+  return [(e.clientX - r.left) * VW / r.width, (e.clientY - r.top) * VH / r.height];
+}
+canvas.addEventListener("pointermove", e => {
+  if (e.pointerType === "touch") {
+    if (e.pointerId === touchStick.id) [touchStick.x, touchStick.y] = [e.clientX, e.clientY];
+    return;
+  }
+  [mouse.x, mouse.y] = canvasPoint(e); mouse.has = true;
+});
+canvas.addEventListener("pointerleave", e => { if (e.pointerType !== "touch") mouse.has = false; });
+canvas.addEventListener("pointerdown", e => {
+  if (!running) return;
+  canvas.focus();
+  if (e.pointerType === "touch") {
+    const [px] = canvasPoint(e);
+    if (px < VW / 2 && touchStick.id === null) {
+      touchStick.id = e.pointerId; touchStick.ox = touchStick.x = e.clientX; touchStick.oy = touchStick.y = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    } else pressed.attack = true;
+    return;
+  }
+  if (e.button === 0) pressed.attack = true;
+  if (e.button === 2) pressed.dash = true;
+});
+const endTouch = e => { if (e.pointerId === touchStick.id) touchStick.id = null; };
+canvas.addEventListener("pointerup", endTouch);
+canvas.addEventListener("pointercancel", endTouch);
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+document.getElementById("tAtk").addEventListener("pointerdown", e => { e.preventDefault(); pressed.attack = true; });
+document.getElementById("tDash").addEventListener("pointerdown", e => { e.preventDefault(); pressed.dash = true; });
+
+document.getElementById("startBtn").addEventListener("click", () => {
+  initAudio();
+  if (actx && actx.state === "suspended") actx.resume();
+  document.getElementById("overlay").hidden = true;
+  running = true; last = performance.now();
+  canvas.focus();
+});
+
+requestAnimationFrame(frame);
+})();
+</script>

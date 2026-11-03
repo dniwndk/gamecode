@@ -72,6 +72,7 @@
 | 스킬 | 하는 일 | 출처 |
 |---|---|---|
 | `game-feel` | 화면 흔들림, 히트스톱, 이징, 찌그러짐, 넉백 — "타격감" | awesome-gamedev |
+| `topdown-action-combat` | 하데스식 탑뷰 도트 액션 전투 키트: 유니티·웹 프로토타입, 프레임 수치표, 레퍼런스, 로그라이크 발전 로드맵, 추천 스킬·MCP | 이 저장소 |
 | `game-ui-ux` | HUD·메뉴, 해상도·비율·안전 영역, 포커스 이동, 이벤트 기반 HUD 갱신 | awesome-gamedev |
 | `audio-design` | 버스·믹서, 더킹, 적응형 음악, 효과음 변주 | awesome-gamedev |
 | `create-game-assets` | 아트 디렉션·스타일 문서, 스프라이트·타일셋·아이콘 제작과 검증 | awesome-gamedev |
