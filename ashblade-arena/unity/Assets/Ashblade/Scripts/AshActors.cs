@@ -102,6 +102,7 @@ namespace Ashblade
         public int comboIndex, nextCombo, ghostCounter;
         public Vector2 atkDir = Vector2.right, aimDir = Vector2.right, moveInput, vel, dashDir = Vector2.right;
         public readonly HashSet<Enemy> hitThisSwing = new HashSet<Enemy>();
+        public readonly HashSet<Enemy> dashHit = new HashSet<Enemy>(); // Swift set: foes already cut by this dash
         public int hitsTaken;
         public float blade = -110f * M.D2R, bladeStart, bladeExt, empowered, meter, chargeT, hpGhost = 100f;
         public float hurtAnim, spawnAnim, dashEndT, perfectT, victoryAnim; // timers that pick one-shot sprite motions
@@ -336,7 +337,7 @@ namespace Ashblade
         void StartDash()
         {
             if (state == "Charge" && AshAudio.I != null) AshAudio.I.Charge(false);
-            state = "Dash"; stateTime = 0f; ghostCounter = 0; perfectUsed = false;
+            state = "Dash"; stateTime = 0f; ghostCounter = 0; perfectUsed = false; dashHit.Clear();
             dashDir = moveInput.sqrMagnitude > 0.01f ? moveInput.normalized : aimDir;
             if (Aug.Has("twindash"))
             {
@@ -364,9 +365,11 @@ namespace Ashblade
                 W.PF(new Part { type = PT.Ghost, spr = PlayerSheet.Pick(this) ?? Art.PlayerRunA, x = pos.x, y = pos.y, flip = flip, life = 0.22f, max = 0.22f, col = g % 2 == 1 ? Col.H("#6fd0ff") : Col.H("#b08aff") });
             }
             if (Random.value < 0.6f) W.SpeedLines(Center, dashDir, 1);
-            if (f >= 3f && Consume(ref attackPressT)) { StartAttack(T.dashStrike, -1); return; }
+            if (Run.SetOn("swift")) Run.Slipstream(this);
+            if (f >= 3f && Consume(ref attackPressT)) { StartAttack(Run.StumpArm ? Run.Shoulder : T.dashStrike, -1); return; }
             if (f >= T.dashFrames)
             {
+                if (Run.StumpLeg) Run.HopSlam(this);
                 state = "Free"; stateTime = 0f; dashEndT = 6f / 60f; Punch(Mathf.Abs(dashDir.x) > 0.6f ? -0.15f : 0.15f);
                 W.Dust(pos, dashDir, 3, 0.8f);
             }
@@ -438,6 +441,8 @@ namespace Ashblade
         public bool HurtBy(Combatant src, Vector2 dir, float dmg)
         {
             if (Invulnerable) return false;
+            if (Run.SetOn("iron")) dmg *= 0.75f;
+            dmg = Mathf.Round(dmg);
             if (T.god) dmg = 0f;
             hp = Mathf.Max(0f, hp - dmg); hitsTaken++; hurtInvuln = 0.8f; hurtAnim = 12f / 60f; spawnAnim = victoryAnim = dashEndT = perfectT = 0f;
             if (state == "Attack") EndAttack();
@@ -467,7 +472,8 @@ namespace Ashblade
             if (AshAudio.I != null) AshAudio.I.Charge(false);
             W.Slowmo(0.2f, 1.2f); W.ZoomPunch(0.12f); W.hold = 1.2f; W.holdAt = null; W.ImpactFrame(Center, 0.1f, this);
             W.Sfx("fell"); W.Muffle(true);
-            W.Banner("YOU FELL", Col.H("#ff6a6a"), 99f, "PRESS R TO RETRY");
+            W.Banner("YOU FELL", Col.H("#ff6a6a"), 1.1f);
+            Run.EndRun();
         }
     }
 
@@ -477,7 +483,11 @@ namespace Ashblade
         static int seedCounter;
         public readonly EnemyKind kind;
         public readonly KindStats K;
-        public readonly Spr spr;
+        public Spr spr;
+        public float dmgMul = 1f, spdMul = 1f, size = 1f, windF; // room modifiers, boss wind-up override
+        public bool shield, elite, cursed, selfBlown;
+        public int phase = 1, summonCd;
+        public string move; // boss: slam / charge / volley / summon
         public string state = "Spawn";
         public float stateTime, deadT, cool, telePop, broken, hpGhost, hpShowT, chainHit;
         public int staggerF = 16, poise;
@@ -492,13 +502,22 @@ namespace Ashblade
             this.kind = kind; K = T.Kind(kind); pos = at; radius = K.radius; bodyH = K.bodyH;
             maxHp = hp = hpGhost = K.hp;
             cool = M.Rand(0.6f, 1.4f); poise = K.poise; seed = seedCounter++;
-            strafe = Random.value < 0.5f ? -1f : 1f; friction = kind == EnemyKind.Brute ? 16f : 12f;
-            spr = kind == EnemyKind.Grunt ? Art.Grunt : kind == EnemyKind.Wisp ? Art.Wisp : Art.Brute;
+            strafe = Random.value < 0.5f ? -1f : 1f; friction = kind == EnemyKind.Brute || kind == EnemyKind.Boss ? 16f : 12f;
+            switch (kind)
+            {
+                case EnemyKind.Grunt: spr = Art.Grunt; break; case EnemyKind.Wisp: spr = Art.Wisp; break; case EnemyKind.Shield: spr = Art.Shield; break;
+                case EnemyKind.Bomber: spr = Art.Bomber; break; case EnemyKind.Healer: spr = Art.Healer; break; case EnemyKind.Boss: spr = Art.Boss; break;
+                default: spr = Art.Brute; break;
+            }
+            shield = kind == EnemyKind.Shield;
             W.Sfx("spawn", 1f, 0.1f, 0.5f);
         }
 
         public bool Hittable { get { return alive && !dying && state != "Spawn" && state != "Dead"; } }
-        public bool SuperArmor { get { return K.armor && (state == "Windup" || state == "Attack") && broken <= 0f; } }
+        public bool SuperArmor { get { return K.armor && (kind == EnemyKind.Boss || state == "Windup" || state == "Attack") && broken <= 0f; } }
+        public float Windup { get { return windF > 0f ? windF : K.windup; } }
+        public bool Lunger { get { return kind == EnemyKind.Grunt || kind == EnemyKind.Shield || move == "charge"; } }
+        public bool Slammer { get { return kind == EnemyKind.Brute || move == "slam"; } }
         public override float Hover { get { return kind == EnemyKind.Wisp ? 6f + Mathf.Sin(W.realTime * 4f + seed) * 2f : 0f; } }
         public override Vector2 Center { get { return new Vector2(pos.x, pos.y + bodyH + Hover / Art.PPU); } }
 
@@ -552,6 +571,7 @@ namespace Ashblade
                 state = "Dead"; stateTime = 0f; deadT = 0f; vz = 150f; z = Mathf.Max(z, 0.01f); flashT = 0.25f; flashColor = new Color32(255, 255, 255, 255);
                 return;
             }
+            if (kind == EnemyKind.Boss) Run.BossPhaseCheck(this);
             Vector2 toP = p.pos - pos; float dist = toP.magnitude; Vector2 nP = M.Norm(toP);
             bool playerDown = p.state == "Dead";
             switch (state)
@@ -581,6 +601,22 @@ namespace Ashblade
                         mv = nP * want + new Vector2(-nP.y, nP.x) * (strafe * 0.7f);
                         if (cool <= 0f && dist < 10f) BeginWindup();
                     }
+                    else if (kind == EnemyKind.Bomber)
+                    {
+                        mv = nP;
+                        if (dist < 1.4f && cool <= 0f) BeginWindup();
+                    }
+                    else if (kind == EnemyKind.Healer)
+                    {
+                        float want = dist > 8f ? 1f : dist < 5.5f ? -1f : 0f;
+                        mv = nP * want + new Vector2(-nP.y, nP.x) * (strafe * 0.6f);
+                        if (cool <= 0f && Run.AnyHurtAlly(this)) BeginWindup();
+                    }
+                    else if (kind == EnemyKind.Boss)
+                    {
+                        mv = nP;
+                        if (cool <= 0f) BeginWindup();
+                    }
                     else
                     {
                         mv = nP + new Vector2(-nP.y, nP.x) * (strafe * (dist > 3f ? 0.35f : 0f));
@@ -589,39 +625,47 @@ namespace Ashblade
                     }
                     if (state == "Chase")
                     {
-                        float sp = K.speed * (broken > 0f ? 0.5f : 1f);
+                        float sp = K.speed * spdMul * (broken > 0f ? 0.5f : 1f);
                         pos += M.Norm(mv) * (sp * dt * Mathf.Min(1f, mv.magnitude * 2f));
                     }
                     break;
                 }
                 case "Windup":
                 {
-                    float k = f / K.windup;
+                    float k = f / Windup;
                     if (k < 0.72f && !playerDown && toP.sqrMagnitude > 0.0001f) aimDir = nP;
-                    if (kind == EnemyKind.Grunt) { sq = 0.22f * M.EaseOut(k * 1.5f); vibSign = Mathf.FloorToInt(f / 2f) % 2 == 1 ? 1 : -1; }
-                    if (kind == EnemyKind.Brute) { sq = -0.18f * M.EaseOut(k); z = 5f * M.EaseOut(k); }
+                    if (Lunger) { sq = 0.22f * M.EaseOut(k * 1.5f); vibSign = Mathf.FloorToInt(f / 2f) % 2 == 1 ? 1 : -1; }
+                    if (Slammer) { sq = -0.18f * M.EaseOut(k); z = 5f * M.EaseOut(k); }
+                    if (kind == EnemyKind.Bomber) { sq = 0.15f * Mathf.Sin(f * 0.8f) * k; if (Random.value < 0.5f) W.Sparks(Center + new Vector2(0, 0.4f), Vector2.up, 1, 4, 90, "fire"); }
+                    if (kind == EnemyKind.Healer && Random.value < 0.6f) W.Converge(Center, 1, 1.1f, "acid", 0.18f);
+                    if (move == "volley" && Random.value < 0.7f) W.Converge(Center, 1, 2f, "fire", 0.2f);
                     if (kind == EnemyKind.Wisp && Random.value < 0.6f) W.Converge(Center + aimDir * 0.4f, 1, 0.9f, "violet", 0.16f);
-                    if (f >= K.windup) BeginAttack();
+                    if (f >= Windup) BeginAttack();
                     break;
                 }
                 case "Attack":
-                    if (kind == EnemyKind.Grunt)
+                    if (Lunger)
                     {
-                        pos += aimDir * (11f * dt);
+                        bool chg = move == "charge";
+                        pos += aimDir * ((chg ? 14f : 11f) * dt);
                         if (Random.value < 0.7f) W.SpeedLines(Center, aimDir, 1);
                         if (!lungeHit && (p.pos - pos).magnitude < radius + p.radius + 0.28f)
                         {
                             lungeHit = true;
                             if (p.state == "Dash" && p.Invulnerable) W.PerfectDodge(this);
-                            else p.HurtBy(this, aimDir, K.dmg);
+                            else p.HurtBy(this, aimDir, K.dmg * dmgMul * (chg ? 0.85f : 1f));
                         }
-                        if (f >= 11f) { state = "Recover"; stateTime = 0f; Punch(0.25f); W.Dust(pos, -aimDir, 3); }
+                        if (f >= (chg ? 20f : 11f)) { state = "Recover"; stateTime = 0f; Punch(0.25f); W.Dust(pos, -aimDir, 3); }
                     }
                     else if (f >= 8f) { state = "Recover"; stateTime = 0f; }
                     break;
                 case "Recover":
-                    if (kind == EnemyKind.Brute) z = 0f;
-                    if (f >= K.recover) { state = "Chase"; stateTime = 0f; cool = kind == EnemyKind.Wisp ? M.Rand(1.2f, 2.2f) : M.Rand(0.2f, 0.7f); }
+                    if (kind == EnemyKind.Brute || kind == EnemyKind.Boss) z = 0f;
+                    if (f >= K.recover * (kind == EnemyKind.Boss && phase >= 3 ? 0.72f : 1f))
+                    {
+                        state = "Chase"; stateTime = 0f;
+                        cool = kind == EnemyKind.Wisp ? M.Rand(1.2f, 2.2f) : kind == EnemyKind.Healer ? M.Rand(2.5f, 3.5f) : kind == EnemyKind.Boss ? M.Rand(0.3f, 0.8f) : M.Rand(0.2f, 0.7f);
+                    }
                     break;
                 case "Stagger":
                     if (f >= staggerF) { state = "Chase"; stateTime = 0f; cool = Mathf.Max(cool, 0.35f); }
@@ -662,18 +706,28 @@ namespace Ashblade
         {
             state = "Windup"; stateTime = 0f; telePop = 0.3f;
             aimDir = M.Norm(W.player.pos - pos); if (aimDir.sqrMagnitude < 0.25f) aimDir = Vector2.right;
-            W.Sfx("tele", kind == EnemyKind.Brute ? 0.7f : kind == EnemyKind.Wisp ? 1.3f : 1f, 0.05f, kind == EnemyKind.Brute ? 0.9f : 0.6f);
+            if (kind == EnemyKind.Boss) Run.BossPickMove(this, (W.player.pos - pos).magnitude);
+            bool deep = kind == EnemyKind.Brute || kind == EnemyKind.Boss;
+            W.Sfx("tele", deep ? 0.7f : kind == EnemyKind.Wisp ? 1.3f : 1f, 0.05f, deep ? 0.9f : 0.6f);
         }
 
         void BeginAttack()
         {
             state = "Attack"; stateTime = 0f; lungeHit = false; sq = 0f;
             var p = W.player;
-            if (kind == EnemyKind.Grunt) { Punch(-0.35f); W.Sfx("dash", 1.3f, 0.05f, 0.5f); }
+            if (Lunger)
+            {
+                Punch(-0.35f); W.Sfx("dash", move == "charge" ? 0.8f : 1.3f, 0.05f, 0.5f);
+                if (move == "charge") W.AddShake(0.2f, aimDir, 2);
+            }
+            else if (kind == EnemyKind.Bomber) { Run.BomberBlast(this, true); selfBlown = true; hp = 0f; dying = true; }
+            else if (kind == EnemyKind.Healer) Run.HealerPulse(this);
+            else if (move == "volley") Run.BossVolley(this);
+            else if (move == "summon") Run.BossSummon(this);
             else if (kind == EnemyKind.Wisp)
             {
                 Vector2 c = Center;
-                W.projectiles.Add(new Projectile { pos = pos + aimDir * 0.5f, h = 8f + Hover, vel = aimDir * 5.5f, owner = Owner.Enemy, dmg = K.dmg, life = 4f, src = this });
+                W.projectiles.Add(new Projectile { pos = pos + aimDir * 0.5f, h = 8f + Hover, vel = aimDir * 5.5f, owner = Owner.Enemy, dmg = Mathf.Round(K.dmg * dmgMul), life = 4f, src = this });
                 Punch(0.3f); knock = aimDir * -3f;
                 W.Sparks(c + aimDir * 0.4f, aimDir, 6, 6, 70, "violet"); W.Sfx("shoot", 1f, 0.05f, 0.8f);
             }
@@ -691,7 +745,7 @@ namespace Ashblade
                 if (dp < R + p.radius && p.state != "Dead")
                 {
                     if (p.state == "Dash" && p.Invulnerable) W.PerfectDodge(this);
-                    else p.HurtBy(this, dp > 0.1f ? (p.pos - c) / dp : Vector2.right, K.dmg);
+                    else p.HurtBy(this, dp > 0.1f ? (p.pos - c) / dp : Vector2.right, K.dmg * dmgMul);
                 }
             }
         }

@@ -145,6 +145,8 @@ namespace Ashblade
                     HRect(gx - 2, gy - 1, 5, 3, WithA(edge, al)); HRect(gx - 1, gy - 2, 3, 5, WithA(edge, al)); HRect(gx - 1, gy - 1, 1, 1, WithA(Color.white, al));
                     HText(a.name, chosen ? WhiteC : C(Aug.TierHex(a.tier)), 2, r.x + r.width / 2f, r.y + 20, 1, 1f, al);
                     for (int j = 0; j < a.d.Length; j++) HText(a.d[j], C("#e8e0f0"), 1, r.x + r.width / 2f, r.y + 42 + j * 9, 1, 1f, al);
+                    var set = Run.SetOf(a.id);
+                    if (set != null) HText(set.name + " " + Mathf.Min(3, Run.SetCount(set) + (chosen ? 0 : 1)) + "/3", C(set.col), 1, r.x + r.width / 2f, r.y + r.height - 10, 1, 1f, al);
                 }
                 if (Aug.picked < 0 && appear >= 1f)
                 {
@@ -174,6 +176,7 @@ namespace Ashblade
                 HText(ab, WhiteC, 1, x + 5, y + 1, 1);
                 x -= 1;
             }
+            DrawSetHud(Art.VW - 6, y - 18);
             if (Aug.enabled && W.waveN > 0)
             {
                 int next = Mathf.CeilToInt((W.waveN + (W.waveState == "fight" ? 0 : 1)) / 5f) * 5;

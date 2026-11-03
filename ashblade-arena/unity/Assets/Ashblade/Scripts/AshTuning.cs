@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Ashblade
 {
     public enum AttackKind { Slash, Thrust, Spin, Burst }
-    public enum EnemyKind { Grunt, Wisp, Brute }
+    public enum EnemyKind { Grunt, Wisp, Brute, Shield, Bomber, Healer, Boss }
 
     /// <summary>One attack. Frame counts are at 60 fps; from/to are the blade angles (degrees) relative to the attack direction.</summary>
     [Serializable]
@@ -40,7 +40,9 @@ namespace Ashblade
         public float mass = 1f, dmg = 12f;
         public bool armor;
         public int poise;
-        public float slamR = 2.3f;
+        public float slamR = 2.3f, blastR = 1.9f;
+        [Tooltip("Shards dropped on kill")] public int shards = 2;
+        [Tooltip("Its hits always break bone")] public bool fracture;
         [HideInInspector] public Color32[] ichor;
     }
 
@@ -106,7 +108,11 @@ namespace Ashblade
         [Header("Enemies")]
         public KindStats grunt = new KindStats { hp = 42, speed = 2.7f, radius = 0.38f, bodyH = 0.3f, windup = 30, recover = 34, mass = 1f, dmg = 12 };
         public KindStats wisp = new KindStats { hp = 30, speed = 2.2f, radius = 0.34f, bodyH = 0.45f, windup = 42, recover = 46, mass = 0.8f, dmg = 10 };
-        public KindStats brute = new KindStats { hp = 150, speed = 1.5f, radius = 0.62f, bodyH = 0.5f, windup = 50, recover = 62, mass = 2.4f, dmg = 22, armor = true, poise = 4, slamR = 2.3f };
+        public KindStats brute = new KindStats { hp = 150, speed = 1.5f, radius = 0.62f, bodyH = 0.5f, windup = 50, recover = 62, mass = 2.4f, dmg = 22, armor = true, poise = 4, slamR = 2.3f, shards = 6 };
+        public KindStats shield = new KindStats { hp = 64, speed = 2.1f, radius = 0.4f, bodyH = 0.35f, windup = 34, recover = 44, mass = 1.6f, dmg = 14, shards = 3 };
+        public KindStats bomber = new KindStats { hp = 22, speed = 3.6f, radius = 0.32f, bodyH = 0.28f, windup = 40, recover = 10, mass = 0.7f, dmg = 20, blastR = 1.9f, shards = 1 };
+        public KindStats healer = new KindStats { hp = 40, speed = 2.0f, radius = 0.34f, bodyH = 0.42f, windup = 50, recover = 40, mass = 0.8f, dmg = 0, shards = 3 };
+        public KindStats boss = new KindStats { hp = 900, speed = 1.7f, radius = 0.9f, bodyH = 0.7f, windup = 44, recover = 40, mass = 6f, dmg = 26, armor = true, poise = 10, slamR = 2.9f, fracture = true, shards = 30 };
 
         void Awake()
         {
@@ -114,9 +120,20 @@ namespace Ashblade
             grunt.ichor = new[] { M.Hex("#ff8a4a"), M.Hex("#c8323c"), M.Hex("#6a1424") };
             wisp.ichor = new[] { M.Hex("#e0b0ff"), M.Hex("#8a4ad0"), M.Hex("#3e1e70") };
             brute.ichor = new[] { M.Hex("#ffb070"), M.Hex("#8a5a3a"), M.Hex("#3a2418") };
+            shield.ichor = new[] { M.Hex("#a0c8ff"), M.Hex("#3a6ab0"), M.Hex("#1a2a50") };
+            bomber.ichor = new[] { M.Hex("#ffe066"), M.Hex("#ff7a2a"), M.Hex("#6a2a10") };
+            healer.ichor = new[] { M.Hex("#c0ffb0"), M.Hex("#4ac04a"), M.Hex("#1a501a") };
+            boss.ichor = new[] { M.Hex("#ffb070"), M.Hex("#8a3a2a"), M.Hex("#3a1418") };
         }
 
-        public KindStats Kind(EnemyKind k) { return k == EnemyKind.Grunt ? grunt : k == EnemyKind.Wisp ? wisp : brute; }
+        public KindStats Kind(EnemyKind k)
+        {
+            switch (k)
+            {
+                case EnemyKind.Grunt: return grunt; case EnemyKind.Wisp: return wisp; case EnemyKind.Shield: return shield;
+                case EnemyKind.Bomber: return bomber; case EnemyKind.Healer: return healer; case EnemyKind.Boss: return boss; default: return brute;
+            }
+        }
 
         public static readonly string[] BasicNames = { "Hitstop", "Shake", "Knockback", "Hit flash", "Input buffer", "Dash cancel", "Aim assist", "Particles", "Sound" };
         public static readonly string[] JuiceNames = { "Impact frame", "Zoom / kill cam", "Slow-mo", "Squash", "Numbers", "Trails", "Glow", "Decals", "Chroma", "Rumble", "God mode" };

@@ -20,7 +20,7 @@ namespace Ashblade
         public static readonly float[] Torches = { -11f, -4f, 4f, 11f };
         public static readonly Color32 Outline = new Color32(13, 8, 20, 255);
 
-        public static Spr PlayerStand, PlayerRunA, PlayerRunB, Grunt, Wisp, Brute;
+        public static Spr PlayerStand, PlayerRunA, PlayerRunB, Grunt, Wisp, Brute, Shield, ShieldBroken, Bomber, Healer, Boss;
         public static Sprite Floor, Glow, Vignette, RedVignette;
         public static PixBuf Decals;
         public static Texture2D DecalTex;
@@ -152,6 +152,35 @@ namespace Ashblade
                 ".....ddd...ddd....",
             }, Pal("h", "#4a4a5a", "H", "#7a7a8c", "e", "#ff7a2a", "g", "#5a3a2a", "G", "#8a5a3a", "s", "#6a4a3a", "S", "#a07050", "d", "#2a1a14"));
 
+            var shp = Pal("b", "#2a4a8a", "B", "#4a7ad0", "w", "#fff4e0", "k", "#0a1430", "m", "#102040", "S", "#c8d0dc", "s", "#7884a0");
+            Shield = FromRows(new[] { "...bbbbbb...", "..bBBBBBBbSS", ".bBBwBBwBbSs", ".bBBkBBkBbSs", ".bBBBBBBBbSs", ".bBBmmmmBbSs", "..bBBBBBBbSS", "...bb..bb..." }, shp);
+            ShieldBroken = FromRows(new[] { "...bbbbbb...", "..bBBBBBBb..", ".bBBwBBwBb..", ".bBBkBBkBb..", ".bBBBBBBBbs.", ".bBBmmmmBb..", "..bBBBBBBb..", "...bb..bb..." }, shp);
+            Bomber = FromRows(new[] { "....f.....", "....y.....", "...rrrr...", "..rRRRRr..", ".rRwRRwRr.", ".rRkRRkRr.", ".rRRRRRRr.", "..rRRRRr..", "...r..r..." },
+                Pal("f", "#ffffff", "y", "#ffe066", "r", "#8a3a10", "R", "#e87a2a", "w", "#fff4e0", "k", "#2a0a04"));
+            Healer = FromRows(new[] { "....gg....", "...gGGg...", "..gGwwGg..", "..GGGGGG..", ".GGwGGwGG.", ".GGkGGkGG.", ".GGGGGGGG.", "..GG++GG..", "..gG++Gg..", "...g..g..." },
+                Pal("g", "#2a7a3a", "G", "#5ad06a", "w", "#e0ffd0", "k", "#0a2a10", "+", "#ffffff"));
+            Boss = FromRows(new[]
+            {
+                "......hh..........hh......",
+                ".....hHh..........hHh.....",
+                ".....hHHh........hHHh.....",
+                "......hHHhhhhhhhhHHh......",
+                ".......hHHHHHHHHHHh.......",
+                "......hHHeeHHHHeeHHh......",
+                "......hHHHHHHHHHHHHh......",
+                "....ggghhhhhhhhhhhhggg....",
+                "...gGGGGGGGGGGGGGGGGGGg...",
+                "..gGGGGGGGgooooGGGGGGGGg..",
+                ".sSSgGGGGGgoOOogGGGGGgSSs.",
+                "sSSSsgGGGGgoOOogGGGGgsSSSs",
+                "sSSSsgGGGGGgoogGGGGGgsSSSs",
+                ".sSs.gGGGGGGGGGGGGGGg.sSs.",
+                ".kk..gGGGGGGGGGGGGGGg..kk.",
+                ".....gGGGGg....gGGGGg.....",
+                ".....gGGGGg....gGGGGg.....",
+                ".....dddddd....dddddd.....",
+            }, Pal("h", "#4a4a5a", "H", "#8a8a9c", "e", "#ff5a2a", "g", "#3a2a2a", "G", "#6a3a2a", "o", "#c8321e", "O", "#ffb43c", "s", "#5a4a3a", "S", "#8a6a4a", "k", "#c8c8d8", "d", "#1a1014"));
+            Shadows[28] = Ellipse(28, 9, new Color32(0, 0, 0, 115));
             Shadows[10] = Ellipse(10, 4, new Color32(0, 0, 0, 102));
             Shadows[12] = Ellipse(12, 5, new Color32(0, 0, 0, 102));
             Shadows[20] = Ellipse(20, 7, new Color32(0, 0, 0, 115));

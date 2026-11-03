@@ -271,7 +271,8 @@ namespace Ashblade
 
         public static void HitEnemy(Enemy e, Attack atk, Vector2 dir, Combatant attacker = null, bool forceCrit = false, Vector2? point = null, bool byPlayer = false)
         {
-            bool crit = forceCrit || Random.value < 0.1f;
+            if (Run.ShieldCheck(e, atk, dir, attacker)) return;
+            bool crit = forceCrit || Random.value < (Run.SetOn("fate") ? 0.3f : 0.1f);
             bool armored = e.SuperArmor;
             float dmgF = atk.damage * Inj.Mod.dmg * (atk == T.burst && Aug.Has("ashheart") ? 1.5f : 1f) * (crit ? 1.75f : 1f) * (e.broken > 0 ? 1.5f : 1f) * (armored ? 0.8f : 1f);
             int dmg = Mathf.Max(1, Mathf.RoundToInt(dmgF * M.Rand(0.92f, 1.08f)));
@@ -321,6 +322,9 @@ namespace Ashblade
         public static void RegisterKill(Enemy e, Vector2 dir, bool big, Combatant attacker)
         {
             kills++; killsThisSwing++;
+            Run.GainShards(e.K.shards * (e.elite ? 3 : 1), e.pos);
+            if (Run.SetOn("blood")) Run.BloodNova(e);
+            if (e.kind == EnemyKind.Boss) { Run.bossKills++; Banner("WARDEN FALLS", Col.H("#ffd166"), 2.2f, "+30 SHARDS"); }
             if (Aug.Has("leech") && player.state != "Dead") { player.hp = Mathf.Min(player.maxHp, player.hp + 3f); PopText(player.pos.x, player.pos.y + 1.3f, "+3", "#8be3a6", 1, false, 16, 0, 70, 0.6f); }
             Ench.OnKill(e);
             e.dieDir = dir;
@@ -396,6 +400,7 @@ namespace Ashblade
         {
             Vector2 c = p.pos; float R = T.burst.range;
             Ench.OnBurst(p, false);
+            if (Run.SetOn("ash")) { p.dashCd = 0f; p.empowered = 3f; PopText(p.pos.x, p.pos.y + 2f, "KINDLED", "#ff9a3c", 1, false, 30, 0, 70, 0.9f); }
             Muffle(true);
             var silh = new List<Combatant> { p };
             foreach (var e in enemies) if (e.Hittable && (e.pos - c).magnitude < R + 1f) silh.Add(e);
@@ -422,13 +427,17 @@ namespace Ashblade
         public static void ExplodeEnemy(Enemy e)
         {
             e.alive = false;
-            Vector2 c = e.Center; var cols = e.K.ichor; bool big = e.kind == EnemyKind.Brute;
-            string ramp = e.kind == EnemyKind.Wisp ? "violet" : "fire";
+            if (e.kind == EnemyKind.Bomber && !e.selfBlown) Run.BomberBlast(e, false);
+            Vector2 c = e.Center; var cols = e.K.ichor; bool big = e.kind == EnemyKind.Brute || e.kind == EnemyKind.Boss;
+            string ramp = e.kind == EnemyKind.Wisp ? "violet" : e.kind == EnemyKind.Healer ? "acid" : e.kind == EnemyKind.Shield ? "steel" : "fire";
             RingFx(c, 2, big ? 30 : 20, 2, 0.24f, ramp, 0.8f);
             StarFlash(c, Vector2.right, big ? 16 : 11, ramp, 0.1f);
             Smoke(e.pos, big ? 12 : 7, 1.6f, big ? 1.5f : 1f, "#3a2c40");
             Color32[] sprCols = e.kind == EnemyKind.Grunt ? new[] { Col.H("#d4404a"), Col.H("#8a1e2e"), Col.H("#f0d0a0") }
                 : e.kind == EnemyKind.Wisp ? new[] { Col.H("#8a4ad0"), Col.H("#c08af0"), Col.H("#4e2a8a") }
+                : e.kind == EnemyKind.Shield ? new[] { Col.H("#4a7ad0"), Col.H("#2a4a8a"), Col.H("#c8d0dc") }
+                : e.kind == EnemyKind.Bomber ? new[] { Col.H("#e87a2a"), Col.H("#8a3a10"), Col.H("#ffe066") }
+                : e.kind == EnemyKind.Healer ? new[] { Col.H("#5ad06a"), Col.H("#2a7a3a"), Col.H("#e0ffd0") }
                 : new[] { Col.H("#8a5a3a"), Col.H("#7a7a8c"), Col.H("#5a3a2a"), Col.H("#a07050") };
             Debris(c, big ? 22 : 12, sprCols, null, 1.2f, 1.3f, 1.3f, false, 6);
             Debris(c, big ? 10 : 6, cols, null, 1.2f, 1.4f, 1f, true, 6);
@@ -436,7 +445,7 @@ namespace Ashblade
             Embers(e.pos, 8, ramp);
             Splat(e.pos, cols, big ? 2f : 1.3f); Scorch(e.pos, big ? 9 : 6);
             Sfx("pop", big ? 0.6f : 1f, 0.05f, 0.8f); AddShake(big ? 0.3f : 0.12f, e.dieDir, 2);
-            int souls = big ? 7 : 3 + Random.Range(0, 2);
+            int souls = e.selfBlown ? 0 : e.kind == EnemyKind.Boss ? 16 : big ? 7 : 3 + Random.Range(0, 2);
             for (int i = 0; i < souls; i++) SpawnPickup(false, c);
             if (Random.value < (big ? 0.6f : 0.16f)) SpawnPickup(true, c);
         }
@@ -458,23 +467,36 @@ namespace Ashblade
         static readonly EnemyKind[][] Waves =
         {
             new[] { EnemyKind.Grunt, EnemyKind.Grunt, EnemyKind.Grunt },
-            new[] { EnemyKind.Grunt, EnemyKind.Wisp, EnemyKind.Grunt, EnemyKind.Grunt, EnemyKind.Wisp },
-            new[] { EnemyKind.Brute, EnemyKind.Grunt, EnemyKind.Grunt, EnemyKind.Wisp },
-            new[] { EnemyKind.Grunt, EnemyKind.Grunt, EnemyKind.Wisp, EnemyKind.Grunt, EnemyKind.Wisp, EnemyKind.Grunt },
-            new[] { EnemyKind.Brute, EnemyKind.Grunt, EnemyKind.Wisp, EnemyKind.Brute, EnemyKind.Grunt, EnemyKind.Wisp },
+            new[] { EnemyKind.Grunt, EnemyKind.Bomber, EnemyKind.Grunt, EnemyKind.Wisp, EnemyKind.Bomber },
+            new[] { EnemyKind.Brute, EnemyKind.Shield, EnemyKind.Grunt, EnemyKind.Wisp },
+            new[] { EnemyKind.Grunt, EnemyKind.Healer, EnemyKind.Shield, EnemyKind.Bomber, EnemyKind.Wisp, EnemyKind.Grunt },
+            new[] { EnemyKind.Boss },
         };
 
         public static void StartWave(int n)
         {
             waveN = n; queue.Clear();
+            if (n % 5 == 0) Run.mod = "boss";
             if (n - 1 < Waves.Length) queue.AddRange(Waves[n - 1]);
+            else if (n % 5 == 0) queue.Add(EnemyKind.Boss);
             else
             {
-                int count = 5 + Mathf.Min(6, n - 4);
-                for (int i = 0; i < count; i++) queue.Add(Random.value < 0.18f + n * 0.015f ? EnemyKind.Brute : Random.value < 0.35f ? EnemyKind.Wisp : EnemyKind.Grunt);
+                int count = 5 + Mathf.Min(6, n - 4), healers = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    float r = Random.value;
+                    var k = r < 0.12f + n * 0.01f ? EnemyKind.Brute : r < 0.3f ? EnemyKind.Wisp : r < 0.45f ? EnemyKind.Shield : r < 0.6f ? EnemyKind.Bomber
+                        : r < 0.68f && healers < 1 ? EnemyKind.Healer : EnemyKind.Grunt;
+                    if (k == EnemyKind.Healer) healers++;
+                    queue.Add(k);
+                }
             }
+            if (Run.mod == "cursed") { queue.Add(EnemyKind.Grunt); queue.Add(Random.value < 0.5f ? EnemyKind.Bomber : EnemyKind.Shield); }
+            Run.eliteLeft = Run.mod == "elite" ? (n >= 8 ? 2 : 1) : 0;
             spawnT = 0.5f; waveState = "fight";
-            Banner("FLOOR " + n, Col.H("#ff9a3c"), 1.4f, n % 5 == 0 && Aug.enabled ? "AUGMENT ON CLEAR" : null);
+            if (n % 5 != 0)
+                Banner("FLOOR " + n, Col.H(Run.mod == "cursed" ? "#c08af0" : Run.mod == "elite" ? "#ffd166" : "#ff9a3c"), 1.4f,
+                    Run.mod == "elite" ? "ELITE FLOOR" : Run.mod == "cursed" ? "CURSED FLOOR" : null);
             FadeDecals(0.35f);
         }
 
@@ -488,7 +510,11 @@ namespace Ashblade
                 foreach (var e in enemies) if (e.alive && (e.pos - at).magnitude <= 2f) ok = false;
                 if (ok) break;
             }
-            enemies.Add(new Enemy(kind, at));
+            if (kind == EnemyKind.Boss) at = new Vector2(0f, 3f);
+            var en = new Enemy(kind, at);
+            Run.ApplyRoomMods(en);
+            enemies.Add(en);
+            if (kind == EnemyKind.Boss) { Banner("ASH WARDEN", Col.H("#ff6a5a"), 2f, "FLOOR " + waveN + " BOSS"); Slowmo(0.4f, 0.5f); AddShake(0.6f, Vector2.down, 4); Sfx("slam", 0.5f); }
         }
 
         public static void ResetAll()
@@ -497,13 +523,14 @@ namespace Ashblade
             enemies.Clear(); projectiles.Clear(); pickups.Clear(); parts.Clear();
             kills = combo = bestCombo = 0; comboTimer = 0f; gradeIdx = -1;
             Art.Decals.Clear(new Color32(0, 0, 0, 0)); Art.DecalsDirty = true;
-            waveN = 0; queue.Clear(); waveState = "intro"; waveT = 0.8f; Ench.ResetFx(); Inj.Reset(); Aug.Reset(); steps.Clear();
+            waveN = 0; queue.Clear(); waveState = "intro"; waveT = 0.8f; Ench.ResetFx(); Inj.Reset(); Aug.Reset(); steps.Clear(); Run.Reset(); rewardPending = false; Run.ApplyMetaStart();
             bannerText = null; impact = null; slowT = 0f; slowTarget = 1f; hold = 0f;
             camX = player.pos.x; camY = player.pos.y; Muffle(false); if (AshAudio.I != null) AshAudio.I.Charge(false);
         }
 
         // floor-clear rewards run in order: augment (every 5th floor), then enchant cards
         static readonly List<string> steps = new List<string>();
+        static bool rewardPending;
         static void NextReward()
         {
             while (steps.Count > 0)
@@ -512,7 +539,7 @@ namespace Ashblade
                 if (st == "augment" && Aug.Offer()) { waveState = "augment"; return; }
                 if (st == "ench" && Ench.OfferCards()) { waveState = "reward"; return; }
             }
-            waveState = "clear"; waveT = Mathf.Min(waveT, 0.9f);
+            Run.OpenRoute(); // then the fork: pick the next floor's door
         }
 
         public static void UpdateWaves(float dt, float rdt)
@@ -522,6 +549,7 @@ namespace Ashblade
                 if (Aug.Update(rdt)) { if (Aug.resume != null) { waveState = Aug.resume; Aug.resume = null; } else NextReward(); }
                 return;
             }
+            if (waveState == "menu") { Run.UpdateMenu(rdt); return; }
             if (player.state == "Dead") return;
             if (waveState == "intro") { waveT -= rdt; if (waveT <= 0f) StartWave(1); return; }
             if (waveState == "fight")
@@ -538,14 +566,21 @@ namespace Ashblade
                         Sfx("clear"); player.hp = Mathf.Min(player.maxHp, player.hp + 20f);
                         PopText(player.pos.x, player.pos.y + 1.4f, "+20", "#8be3a6", 2, false, 20);
                         Inj.FloorHeal();
+                        if (Run.mod == "elite") Run.GainShards(15, player.pos);
+                        if (Run.mod == "boss") Run.GainShards(30, player.pos);
                         steps.Clear();
                         if (Aug.enabled && waveN % 5 == 0) steps.Add("augment");
                         if (Ench.cards) steps.Add("ench");
-                        if (steps.Count > 0) { bannerT = Mathf.Min(bannerT, 1.1f); bannerMax = 1.1f; NextReward(); }
+                        if (Ench.cards && Run.mod == "cursed") steps.Add("ench");
+                        bannerT = Mathf.Min(bannerT, 1.1f); bannerMax = 1.1f; rewardPending = true; waveT = 1f;
                     }
                 }
             }
-            else if (waveState == "clear") { waveT -= rdt; if (waveT <= 0f) StartWave(waveN + 1); }
+            else if (waveState == "clear")
+            {
+                waveT -= rdt;
+                if (waveT <= 0f) { if (rewardPending) { rewardPending = false; NextReward(); } else StartWave(waveN + 1); }
+            }
             else if (waveState == "reward")
             {
                 Ench.offerT += rdt;

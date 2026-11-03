@@ -95,6 +95,8 @@ namespace Ashblade
             else if (Mod.charge > 1.01f) add("CHARGE +" + pct(Mod.charge) + "%", "#ffb070");
             if (Mod.move < 0.995f) add("MOVE " + pct(Mod.move) + "%", "#ffb070");
             if (Mod.assist < 1f) add(Mod.assist > 0f ? "AIM BLUR" : "NO AIM ASSIST", "#c8a0ff");
+            if (Run.StumpArm) add("+SHOULDER CHARGE", "#8be3a6");
+            if (Run.StumpLeg) add("+HOP SLAM", "#8be3a6");
             if (Mod.bleed > 0f) add(Aug.Has("hemomancy") ? "BLOOD HEALS" : "BLEEDING", Aug.Has("hemomancy") ? "#ff8af0" : "#ff4a5a");
             return o;
         }
@@ -113,7 +115,7 @@ namespace Ashblade
         {
             if (!enabled || dmg <= 0f) return;
             var en = src as Enemy;
-            float[] w = en == null ? WWisp : en.kind == EnemyKind.Brute ? WBrute : en.kind == EnemyKind.Wisp ? WWisp : WGrunt;
+            float[] w = en == null ? WWisp : en.kind == EnemyKind.Brute || en.kind == EnemyKind.Boss || en.kind == EnemyKind.Bomber ? WBrute : en.kind == EnemyKind.Wisp ? WWisp : WGrunt;
             float tot = 0f; foreach (float x in w) tot += x;
             float r = Random.value * tot; int k = 0;
             for (int i = 0; i < Count; i++) { r -= w[i]; if (r <= 0f) { k = i; break; } }
@@ -131,12 +133,15 @@ namespace Ashblade
                 k = open[Random.Range(0, open.Count)];
             }
             pts[k] += dmg * (Aug.Has("thickskin") ? 0.65f : 1f) * M.Rand(0.85f, 1.2f);
+            if (en != null && en.K.fracture && Cap(k) >= 2) pts[k] = Mathf.Max(pts[k], Th[k][1] + 0.01f); // boss blows always break bone
             int nl = 0; foreach (float t in Th[k]) if (pts[k] >= t) nl++;
             nl = Mathf.Min(nl, Cap(k));
             if (nl >= Cap(k)) pts[k] = Mathf.Min(pts[k], Th[k][Cap(k) - 1] + 0.01f);
             Spray(PartWorld(k), -dir, 6);
             if (nl > lv[k]) LevelUp(k, nl, dir);
         }
+
+        public static void SetPtsToLevel(int k) { pts[k] = lv[k] > 0 ? Th[k][lv[k] - 1] : 0f; }
 
         public static void Force(int k)
         {
@@ -174,7 +179,8 @@ namespace Ashblade
             Vector2 away = M.Norm(-dir + new Vector2(M.Rand(-0.4f, 0.4f), M.Rand(-0.2f, 0.4f)));
             W.PF(new Part { type = PT.Limb, spr = k == Legs ? LimbLeg.spr : LimbArm.spr, limb = k == Legs ? LimbLeg : LimbArm, x = at.x, y = at.y - 0.5f, z = 10f, vx = away.x * 6f, vy = away.y * 6f, vz = 150f, spin = M.Rand(10f, 18f) * (Random.value < 0.5f ? -1f : 1f), life = 30f, max = 30f });
             bleedT = 6f;
-            string sub = k == ArmS ? (Severed(ArmO) ? "NO ARMS LEFT: BLADE IN TEETH" : "SWORD SWAPS TO OFF HAND") : k == ArmO ? "NO MORE SPIN SLASH" : "MOVE SPEED HALVED";
+            Run.limbsLost++;
+            string sub = k == ArmS ? (Severed(ArmO) ? "NO ARMS LEFT: BLADE IN TEETH" : "OFF HAND GRIP. NEW: SHOULDER CHARGE") : k == ArmO ? "NO SPIN. NEW: SHOULDER CHARGE" : "MOVE HALVED. NEW: HOP SLAM AFTER DASH";
             W.Banner(Name[k] + " SEVERED", Col.H("#ff3a4a"), 1.8f, sub);
             if (Aug.Has("ironlimbs")) W.PopText(p.pos.x, p.pos.y + 2.2f, "IRON LIMB AT FLOOR CLEAR", "#c8d0dc", 1, false, 34, 0, 70, 1.6f, 40);
         }
@@ -362,7 +368,7 @@ namespace Ashblade
             float s = f <= 5 ? 0.55f : f <= 10 ? 0.3f : 0.15f, g = f <= 5 ? 0.92f : f <= 10 ? 0.8f : 0.65f;
             return r < s ? "silver" : r < g ? "gold" : "prism";
         }
-        static AugDef RollOne(string tr, List<AugDef> exclude)
+        public static AugDef RollOne(string tr, List<AugDef> exclude)
         {
             var pool = new List<AugDef>();
             foreach (var a in All) if (a.tier == tr && !Has(a.id) && !exclude.Contains(a)) pool.Add(a);
@@ -388,6 +394,7 @@ namespace Ashblade
             var a = offer[i];
             owned.Add(a.id); picked = i; t = 0f;
             Apply(a.id);
+            Run.CheckSetUnlock(a.id);
             var p = W.player; string ramp = TierRamp(a.tier);
             W.Sfx("chargeFull"); W.Sfx("clear", 1.1f, 0.05f, 0.6f); W.Rumble(0.6f, 0.8f, 200);
             W.RingFx(p.Center, 3, 40, 3, 0.45f, ramp); W.RingFx(p.Center, 2, 26, 2, 0.35f, "gold"); W.Sparks(p.Center, Vector2.up, 30, 14, 360, ramp);
@@ -396,7 +403,7 @@ namespace Ashblade
             Inj.Mod = Inj.Calc();
         }
 
-        static void Apply(string id)
+        public static void Apply(string id)
         {
             var p = W.player;
             switch (id)
