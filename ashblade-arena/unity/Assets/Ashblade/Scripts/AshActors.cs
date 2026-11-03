@@ -104,6 +104,7 @@ namespace Ashblade
         public readonly HashSet<Enemy> hitThisSwing = new HashSet<Enemy>();
         public int hitsTaken;
         public float blade = -110f * M.D2R, bladeStart, bladeExt, empowered, meter, chargeT, hpGhost = 100f;
+        public float hurtAnim, spawnAnim, dashEndT, perfectT, victoryAnim; // timers that pick one-shot sprite motions
         public Smear smear;
         public Vector2[] scarf = new Vector2[5], scarfPrev = new Vector2[5];
 
@@ -119,6 +120,7 @@ namespace Ashblade
             attackPressT = dashPressT = burstPressT = -99f; holdStart = 0f; wasHeld = false;
             hitThisSwing.Clear(); hitsTaken = 0; blade = -110f * M.D2R; bladeStart = bladeExt = 0f;
             smear = null; empowered = 0f; swingCrit = false; meter = 0f; chargeT = 0f; charged = perfectUsed = slamDone = burstDone = false; deadT = 0f;
+            hurtAnim = dashEndT = perfectT = victoryAnim = 0f; spawnAnim = 30f / 60f;
             for (int i = 0; i < scarf.Length; i++) { scarf[i] = pos + new Vector2(0, 0.55f); scarfPrev[i] = scarf[i]; }
         }
 
@@ -177,6 +179,8 @@ namespace Ashblade
                 if (Random.value < 0.3f) W.P(new Part { type = PT.Spark, x = pos.x + M.Rand(-0.4f, 0.4f), y = pos.y + M.Rand(0.2f, 1f), vy = M.Rand(1f, 2.5f), life = 0.3f, max = 0.3f, drag = 2, ramp = "gold" });
             }
             if (smear != null) { smear.life -= dt; if (smear.life <= 0f && !smear.live) smear = null; }
+            hurtAnim = Mathf.Max(0f, hurtAnim - dt); spawnAnim = Mathf.Max(0f, spawnAnim - dt); dashEndT = Mathf.Max(0f, dashEndT - dt);
+            perfectT = Mathf.Max(0f, perfectT - dt); victoryAnim = Mathf.Max(0f, victoryAnim - dt);
             stateTime += dt;
             float f = stateTime * 60f;
             switch (state)
@@ -343,13 +347,13 @@ namespace Ashblade
             if (g >= ghostCounter && T.trails)
             {
                 ghostCounter = g + 1;
-                W.PF(new Part { type = PT.Ghost, spr = Art.PlayerRunA, x = pos.x, y = pos.y, flip = flip, life = 0.22f, max = 0.22f, col = g % 2 == 1 ? Col.H("#6fd0ff") : Col.H("#b08aff") });
+                W.PF(new Part { type = PT.Ghost, spr = PlayerSheet.Pick(this) ?? Art.PlayerRunA, x = pos.x, y = pos.y, flip = flip, life = 0.22f, max = 0.22f, col = g % 2 == 1 ? Col.H("#6fd0ff") : Col.H("#b08aff") });
             }
             if (Random.value < 0.6f) W.SpeedLines(Center, dashDir, 1);
             if (f >= 3f && Consume(ref attackPressT)) { StartAttack(T.dashStrike, -1); return; }
             if (f >= T.dashFrames)
             {
-                state = "Free"; stateTime = 0f; Punch(Mathf.Abs(dashDir.x) > 0.6f ? -0.15f : 0.15f);
+                state = "Free"; stateTime = 0f; dashEndT = 6f / 60f; Punch(Mathf.Abs(dashDir.x) > 0.6f ? -0.15f : 0.15f);
                 W.Dust(pos, dashDir, 3, 0.8f);
             }
         }
@@ -421,7 +425,7 @@ namespace Ashblade
         {
             if (Invulnerable) return false;
             if (T.god) dmg = 0f;
-            hp = Mathf.Max(0f, hp - dmg); hitsTaken++; hurtInvuln = 0.8f;
+            hp = Mathf.Max(0f, hp - dmg); hitsTaken++; hurtInvuln = 0.8f; hurtAnim = 12f / 60f; spawnAnim = victoryAnim = dashEndT = perfectT = 0f;
             if (state == "Attack") EndAttack();
             if (state == "Charge" && AshAudio.I != null) AshAudio.I.Charge(false);
             state = "Free"; stateTime = 0f; smear = null;

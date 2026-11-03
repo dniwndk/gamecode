@@ -339,7 +339,7 @@ namespace Ashblade
         {
             var p = player;
             if (p.perfectUsed) return;
-            p.perfectUsed = true;
+            p.perfectUsed = true; p.perfectT = 10f / 60f;
             Slowmo(0.22f, 0.55f); Muffle(true);
             ScreenFlash(new Color(0.62f, 0.91f, 1f), 0.3f, 0.15f); RingFx(p.Center, 3, 34, 2, 0.35f, "ice"); Sparks(p.Center, Vector2.up, 18, 10, 360, "ice");
             PopText(p.pos.x, p.pos.y + 1.6f, "PERFECT", "#8fdcff", 2, false, 24, 0, 70, 1.1f, 120, 1.8f);
@@ -501,7 +501,7 @@ namespace Ashblade
                     foreach (var e in enemies) if (e.alive) any = true;
                     if (!any)
                     {
-                        waveState = "clear"; waveT = 2.8f;
+                        waveState = "clear"; waveT = 2.8f; player.victoryAnim = 36f / 60f;
                         Banner("WAVE CLEAR", Col.H("#8be3a6"), 2.2f, "HP +20");
                         Sfx("clear"); player.hp = Mathf.Min(player.maxHp, player.hp + 20f);
                         PopText(player.pos.x, player.pos.y + 1.4f, "+20", "#8be3a6", 2, false, 20);

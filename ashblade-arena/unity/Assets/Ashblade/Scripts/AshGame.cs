@@ -50,6 +50,7 @@ namespace Ashblade
             AshTuning.I = tuning;
 
             Art.Init();
+            PlayerSheet.Init();
             Mats.Sprite = MakeMat("AshSprite");
             Mats.Additive = MakeMat("AshAdditive");
             Mats.Present = MakeMat("AshPresent");
@@ -364,6 +365,8 @@ namespace Ashblade
             int ord = EntityOrder(p.pos);
             plBack.Order = ord - 1; plFront.Order = ord + 3;
             DrawShadow(p, 10);
+            Spr sheet = PlayerSheet.Pick(p);
+            if (p.state == "Dead" && sheet != null) { pool.Draw(sheet.sprite, s.x, s.y, ord, 1f, 1f, p.flip); return; }
             if (p.state == "Dead")
             {
                 float k = Mathf.Clamp01(p.deadT / 0.4f);
@@ -376,12 +379,13 @@ namespace Ashblade
             if (p.state == "Dash") spr = Art.PlayerRunA;
             else if (moving) spr = Mathf.FloorToInt(p.runT * 10f) % 2 == 1 ? Art.PlayerRunA : Art.PlayerRunB;
             else if (p.state == "Attack") spr = p.stateTime * 60f < p.cur.startup ? Art.PlayerRunB : Art.PlayerRunA;
-            int bob = moving ? Mathf.FloorToInt(p.runT * 10f) % 2 : 0;
+            if (sheet != null) spr = sheet;
+            int bob = moving && sheet == null ? Mathf.FloorToInt(p.runT * 10f) % 2 : 0;
             int vib = p.freeze > 0f && p.vibrate ? p.vibSign : 0;
             float scx = 1f + p.sq, scy = 1f - p.sq * 0.9f;
             int bx = s.x + vib, by = s.y - Mathf.RoundToInt(p.z) - bob;
             bool bladeUp = Mathf.Sin(p.blade) > 0.35f;
-            DrawScarf(p);
+            if (sheet == null) DrawScarf(p);
             DrawBlade(p, bx, by, bladeUp ? plBack : plFront);
             if (!blinkOff)
             {
@@ -706,7 +710,7 @@ namespace Ashblade
             {
                 if (cb == null) continue;
                 var s = View.ToScreen(cb.pos);
-                Spr spr = cb is Enemy ? ((Enemy)cb).spr : Art.PlayerRunA;
+                Spr spr = cb is Enemy ? ((Enemy)cb).spr : (PlayerSheet.Pick(W.player) ?? Art.PlayerRunA);
                 pool.Draw(spr.white, s.x, s.y - Mathf.Round(cb.z + cb.Hover), ORD_TOP + 1, 1f + cb.sq, 1f - cb.sq * 0.9f, cb.flip, (Color)fg);
             }
         }
