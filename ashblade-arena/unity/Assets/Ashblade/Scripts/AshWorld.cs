@@ -71,11 +71,12 @@ namespace Ashblade
             { "ice", new[] { Col.H("#ffffff"), Col.H("#dff8ff"), Col.H("#8fdcff"), Col.H("#3a9ee8"), Col.H("#24508a") } },
             { "violet", new[] { Col.H("#ffffff"), Col.H("#f2dcff"), Col.H("#c08af0"), Col.H("#8a4ad0"), Col.H("#4e2a8a") } },
             { "steel", new[] { Col.H("#ffffff"), Col.H("#e8eef8"), Col.H("#b8c4d8"), Col.H("#7884a0"), Col.H("#444c66") } },
+            { "acid", new[] { Col.H("#ffffff"), Col.H("#e8ffd0"), Col.H("#a8f070"), Col.H("#5cc04a"), Col.H("#2a6a30") } },
         };
         public static readonly Dictionary<string, Color> GlowCol = new Dictionary<string, Color>
         {
             { "fire", new Color(1f, 0.59f, 0.24f) }, { "gold", new Color(1f, 0.82f, 0.35f) }, { "ice", new Color(0.47f, 0.82f, 1f) },
-            { "violet", new Color(0.7f, 0.43f, 1f) }, { "steel", new Color(0.78f, 0.86f, 1f) }, { "red", new Color(1f, 0.24f, 0.24f) },
+            { "violet", new Color(0.7f, 0.43f, 1f) }, { "steel", new Color(0.78f, 0.86f, 1f) }, { "red", new Color(1f, 0.24f, 0.24f) }, { "acid", new Color(0.59f, 0.94f, 0.43f) },
         };
         public static Color32 RampCol(string ramp, float k)
         {
@@ -311,6 +312,7 @@ namespace Ashblade
         public static void RegisterKill(Enemy e, Vector2 dir, bool big, Combatant attacker)
         {
             kills++; killsThisSwing++;
+            Ench.OnKill(e);
             e.dieDir = dir;
             Sfx("kill", 1f, 0.08f, 0.8f);
             int remaining = 0;
@@ -383,6 +385,7 @@ namespace Ashblade
         public static void AshBurst(Player p)
         {
             Vector2 c = p.pos; float R = T.burst.range;
+            Ench.OnBurst(p, false);
             Muffle(true);
             var silh = new List<Combatant> { p };
             foreach (var e in enemies) if (e.Hittable && (e.pos - c).magnitude < R + 1f) silh.Add(e);
@@ -401,6 +404,7 @@ namespace Ashblade
                 Vector2 to = e.pos - c; float d = to.magnitude;
                 if (d > R + e.radius) continue;
                 HitEnemy(e, T.burst, d > 0.05f ? to / d : Vector2.right, null, false, e.Center, true);
+                Ench.OnHit(e, T.burst, d > 0.05f ? to / d : Vector2.right, Ench.Skill, 0);
             }
             foreach (var pr in projectiles) if (pr.owner == Owner.Enemy && (pr.pos - c).magnitude < R) PopProjectile(pr);
         }
@@ -483,7 +487,7 @@ namespace Ashblade
             enemies.Clear(); projectiles.Clear(); pickups.Clear(); parts.Clear();
             kills = combo = bestCombo = 0; comboTimer = 0f; gradeIdx = -1;
             Art.Decals.Clear(new Color32(0, 0, 0, 0)); Art.DecalsDirty = true;
-            waveN = 0; queue.Clear(); waveState = "intro"; waveT = 0.8f;
+            waveN = 0; queue.Clear(); waveState = "intro"; waveT = 0.8f; Ench.ResetFx();
             bannerText = null; impact = null; slowT = 0f; slowTarget = 1f; hold = 0f;
             camX = player.pos.x; camY = player.pos.y; Muffle(false); if (AshAudio.I != null) AshAudio.I.Charge(false);
         }
@@ -503,12 +507,18 @@ namespace Ashblade
                     {
                         waveState = "clear"; waveT = 2.8f; player.victoryAnim = 36f / 60f;
                         Banner("WAVE CLEAR", Col.H("#8be3a6"), 2.2f, "HP +20");
+                        if (Ench.cards && Ench.OfferCards()) { waveState = "reward"; bannerT = Mathf.Min(bannerT, 1.1f); bannerMax = 1.1f; }
                         Sfx("clear"); player.hp = Mathf.Min(player.maxHp, player.hp + 20f);
                         PopText(player.pos.x, player.pos.y + 1.4f, "+20", "#8be3a6", 2, false, 20);
                     }
                 }
             }
             else if (waveState == "clear") { waveT -= rdt; if (waveT <= 0f) StartWave(waveN + 1); }
+            else if (waveState == "reward")
+            {
+                Ench.offerT += rdt;
+                if (Ench.picked >= 0 && Ench.offerT > 0.7f) { Ench.offer.Clear(); waveState = "clear"; waveT = 0.9f; }
+            }
         }
 
         // ================================================================== updates

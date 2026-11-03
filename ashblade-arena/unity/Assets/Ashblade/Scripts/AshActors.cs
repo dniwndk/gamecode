@@ -272,6 +272,7 @@ namespace Ashblade
                     smear = new Smear { a0 = from, a1 = from, r = c.range * Art.PPU, life = 0.13f, max = 0.13f, live = true, kind = c.kind, heavy = c.heavy, crit = swingCrit, dir = atkDir };
                     W.Sfx(c.kind == AttackKind.Spin ? "spin" : c.kind == AttackKind.Thrust ? "thrust" : c.heavy ? "swingHeavy" : "swing", 1f, 0.08f, 0.9f);
                     if (c.kind == AttackKind.Thrust) W.SpeedLines(Center, atkDir, 6);
+                    Ench.OnSwing(this, c, Ench.SlotOf(comboIndex), pos, atkDir, false);
                     Punch(c.heavy ? -0.18f : -0.1f);
                 }
                 smear.a1 = blade; smear.life = smear.max;
@@ -317,6 +318,7 @@ namespace Ashblade
                 Vector2 kb = c.kind == AttackKind.Spin ? dir : M.Norm(atkDir + dir);
                 if (kb.sqrMagnitude < 0.25f) kb = atkDir;
                 W.HitEnemy(e, c, kb, this, swingCrit);
+                Ench.OnHit(e, c, kb, Ench.SlotOf(comboIndex), 0);
             }
             foreach (var pr in W.projectiles)
             {
@@ -467,6 +469,7 @@ namespace Ashblade
         public readonly int seed;
         public readonly float strafe;
         public bool dying, lungeHit;
+        public EnchStatus st; // burn / chill / freeze from enchants
         public Vector2 aimDir = Vector2.right, dieDir = Vector2.right;
 
         public Enemy(EnemyKind kind, Vector2 at)

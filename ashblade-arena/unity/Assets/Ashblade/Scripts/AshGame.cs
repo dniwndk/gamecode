@@ -9,7 +9,7 @@ namespace Ashblade
     /// The world renders at 320x180 and is upscaled with point filtering; zoom punch and chromatic aberration happen
     /// when the image is presented, the HUD and the lab panel are drawn on top with OnGUI.
     /// </summary>
-    public class AshGame : MonoBehaviour
+    public partial class AshGame : MonoBehaviour
     {
         [Tooltip("Show the lab panel (toggle with F1)")] public bool showPanel = true;
         [Tooltip("Show the state readout inside the panel (toggle with Tab)")] public bool showStatus = true;
@@ -139,7 +139,8 @@ namespace Ashblade
                 float dt = raw * W.labSlow * W.slowScale;
                 W.time += dt;
                 W.player.Update(dt);
-                foreach (var e in W.enemies.ToArray()) e.Update(dt);
+                Ench.Update(dt);
+                foreach (var e in W.enemies.ToArray()) e.Update(dt * Ench.TimeScale(e));
                 W.enemies.RemoveAll(e => !e.alive);
                 W.UpdateProjectiles(dt);
                 W.UpdatePickups(dt);
@@ -176,6 +177,7 @@ namespace Ashblade
             for (int d = 0; d <= 9; d++)
             {
                 if (!AshInput.DigitDown(d)) continue;
+                if (W.waveState == "reward" && Ench.Offering && d >= 1 && d <= 3) { Ench.Pick(d - 1); continue; }
                 if (d == 0)
                 {
                     bool anyOn = false;
@@ -208,6 +210,11 @@ namespace Ashblade
             In.mouseWorld = mouseBuf.HasValue ? (Vector2?)(Vector2)View.ScreenToWorld(mouseBuf.Value.x, mouseBuf.Value.y) : null;
             bool atk = AshInput.AttackPressed(), dash = AshInput.DashPressed(), burst = AshInput.BurstPressed();
             if (overPanel) atk = false;
+            if (atk && ms.HasValue && W.waveState == "reward" && Ench.Offering && Ench.picked < 0)
+            {
+                Vector2 hud = new Vector2((ms.Value.x - ox) / sc, (Screen.height - ms.Value.y - oy) / sc);
+                for (int i = 0; i < Ench.offer.Count; i++) if (Ench.CardRect(i).Contains(hud)) { Ench.Pick(i); atk = false; }
+            }
             In.attack |= atk; In.dash |= dash; In.burst |= burst;
             In.attackHeld = AshInput.AttackHeld() && !(overPanel && !W.player.wasHeld);
         }
@@ -243,6 +250,7 @@ namespace Ashblade
             foreach (var e in W.enemies) DrawEnemy(e);
             DrawPickups();
             DrawProjectiles();
+            DrawEnchFx();
             DrawFrontParts();
             DrawSmear();
             pool.Draw(Art.Vignette, 0, 0, ORD_VIG);
@@ -445,6 +453,8 @@ namespace Ashblade
             var cc = View.ToScreen(p.Center.x, p.Center.y + p.z / Art.PPU);
             float cx = cc.x, cy = cc.y;
             var pal = s.crit ? PalCrit : s.kind == AttackKind.Spin ? PalSpin : s.heavy ? PalHeavy : PalLight;
+            var enchPal = EnchSmearPalette(s.kind == AttackKind.Spin ? Ench.Skill : Ench.Basic);
+            if (!s.crit && enchPal != null) pal = enchPal;
             if (s.kind == AttackKind.Thrust)
             {
                 float L = s.r * (1f - age * 0.3f), dx = s.dir.x, dy = -s.dir.y;
@@ -514,6 +524,7 @@ namespace Ashblade
                 }
             }
             if (e.flashT > 0f && T.hitFlash) pool.Draw(e.spr.white, x, y, ord + 2, scx, scy, e.flip, (Color)e.flashColor);
+            DrawEnemyStatus(e, x, y, ord);
             if (e.broken > 0f)
                 for (int i = 0; i < 3; i++) { float a = W.realTime * 6f + i / 3f * M.TAU; front.Plot(x + Mathf.Cos(a) * 8f, y - e.spr.h - 2 + Mathf.Sin(a) * 2f, i > 0 ? C("#ffe066") : WhiteC); }
             if (e.kind == EnemyKind.Brute) Glow(x + (e.flip ? -1 : 1), y - e.spr.h + 5, 8, Rgb(255, 120, 40), 0.5f);
@@ -740,7 +751,7 @@ namespace Ashblade
             sc = Mathf.Min(Screen.width / (float)Art.VW, Screen.height / (float)Art.VH);
             if (sc >= 2f) sc = Mathf.Floor(sc);
             ox = Mathf.Round((Screen.width - Art.VW * sc) / 2f); oy = Mathf.Round((Screen.height - Art.VH * sc) / 2f);
-            panelRect = new Rect(Screen.width - 290, 10, 280, Mathf.Min(Screen.height - 20, 620));
+            panelRect = new Rect(Screen.width - 290, 10, 280, Mathf.Min(Screen.height - 20, 780));
             if (Event.current.type == EventType.Repaint)
             {
                 var view = new Rect(ox, oy, Art.VW * sc, Art.VH * sc);
@@ -839,6 +850,8 @@ namespace Ashblade
                 HText(W.bannerText, W.bannerColor, 4, VW / 2f - img.width * s / 2f, VH * 0.38f - (img.height * s - img.height) / 2f, 0, s, outA);
                 if (W.bannerSub != null && age > 0.2f) HText(W.bannerSub, C("#c8bcd8"), 1, VW / 2f, VH * 0.38f + 33, 1, 1f, outA);
             }
+            DrawEnchHud();
+            DrawEnchCards();
             if (W.labSlow < 1f) HText("SLOW X0.25", C("#8fdcff"), 1, 6, VH - 10);
             if (W.paused) { HRect(0, 0, VW, VH, new Color(8 / 255f, 4 / 255f, 12 / 255f, 0.6f)); HText("PAUSED", WhiteC, 3, VW / 2f, VH / 2f - 10, 1); }
             if (W.flashT > 0f) { var fc = W.flashColor; fc.a = W.flashA * (W.flashT / W.flashMax); HRect(0, 0, VW, VH, fc); }
@@ -866,6 +879,7 @@ namespace Ashblade
                 bool v = T.GetJuice(i), nv = GUILayout.Toggle(v, AshTuning.JuiceNames[i]);
                 if (nv != v) T.SetJuice(i, nv);
             }
+            EnchPanel();
             GUILayout.Space(4);
             T.hitstopScale = Slider("Hitstop x", T.hitstopScale, 0f, 3f);
             T.shakeScale = Slider("Shake x", T.shakeScale, 0f, 3f);

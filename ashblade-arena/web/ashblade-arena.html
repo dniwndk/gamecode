@@ -67,6 +67,12 @@ h2 b { font-weight: 400; color: var(--ember); }
 .row { display: flex; flex-wrap: wrap; gap: 6px; }
 .row button { padding: 6px 10px; background: var(--bg); border: 1px solid var(--line); color: var(--fg); font: inherit; font-size: 13px; cursor: pointer; }
 .row button.preset { border-color: var(--ember); }
+.hint { margin: 0; font-size: 12px; color: var(--muted); }
+.ench { display: grid; grid-template-columns: 44px repeat(6, minmax(0, 1fr)); gap: 4px; align-items: center; font-size: 12px; }
+.ench .slot { color: var(--muted); font-family: var(--font-mono); }
+.ench button { padding: 6px 2px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; line-height: 1.25; }
+.ench button[data-lv="1"], .ench button[data-lv="2"], .ench button[data-lv="3"] { color: var(--fg); border-color: var(--kc); box-shadow: inset 0 -3px 0 var(--kc); }
+.ench button b { display: block; font-family: var(--font-display); font-size: 11px; }
 .sliders { display: grid; gap: 8px; }
 .slider { display: grid; grid-template-columns: 104px minmax(0, 1fr) 52px; align-items: center; gap: 8px; }
 .slider label { font-size: 13px; }
@@ -121,6 +127,18 @@ ul.new b { color: var(--fg); font-weight: 600; }
       <div class="sliders" id="sliders"></div>
     </section>
 
+    <section class="card" aria-labelledby="h-ench">
+      <h2 id="h-ench">인챈트 <b>평타 · 스킬</b></h2>
+      <p class="hint">버튼을 누를 때마다 레벨이 0 → 1 → 2 → 3 → 0 으로 바뀌어요. 평타는 3타 콤보와 대시 찌르기, 스킬은 회전베기와 잿불 폭발이에요.</p>
+      <div class="ench" id="enchGrid"></div>
+      <div class="row">
+        <button type="button" id="enchAll3">전부 Lv3</button>
+        <button type="button" id="enchClear">인챈트 초기화</button>
+        <button type="button" id="enchCardsBtn">웨이브 보상 카드: ON</button>
+      </div>
+      <ul class="new" id="enchDesc"></ul>
+    </section>
+
     <section class="card" aria-labelledby="h-keys">
       <h2 id="h-keys">CONTROLS</h2>
       <table class="keys">
@@ -156,6 +174,7 @@ const FLOOR_X0 = -16, FLOOR_Y0 = 11.5, FLOOR_W = 32 * PPU, FLOOR_H = 21 * PPU;
 const TORCHES = [-11, -4, 4, 11];
 
 const T = {
+  enchCards: true,
   hitstop: true, shake: true, knockback: true, hitFlash: true, inputBuffer: true,
   dashCancel: true, aimAssist: true, particles: true, sound: true,
   zoom: true, impactFrame: true, slowmo: true, squash: true, numbers: true,
@@ -696,8 +715,9 @@ const SPARK_RAMPS = {
   ice: ["#ffffff", "#dff8ff", "#8fdcff", "#3a9ee8", "#24508a"],
   violet: ["#ffffff", "#f2dcff", "#c08af0", "#8a4ad0", "#4e2a8a"],
   steel: ["#ffffff", "#e8eef8", "#b8c4d8", "#7884a0", "#444c66"],
+  acid: ["#ffffff", "#e8ffd0", "#a8f070", "#5cc04a", "#2a6a30"],
 };
-const GLOW_COL = { fire: "rgba(255,150,60,1)", gold: "rgba(255,210,90,1)", ice: "rgba(120,210,255,1)", violet: "rgba(180,110,255,1)", steel: "rgba(200,220,255,1)", red: "rgba(255,60,60,1)" };
+const GLOW_COL = { fire: "rgba(255,150,60,1)", gold: "rgba(255,210,90,1)", ice: "rgba(120,210,255,1)", violet: "rgba(180,110,255,1)", steel: "rgba(200,220,255,1)", red: "rgba(255,60,60,1)", acid: "rgba(150,240,110,1)" };
 function sparks(pt, dir, n, speed, spread, ramp = "fire", o = {}) {
   const base = angOf(dir);
   for (let i = 0; i < n; i++) {
@@ -969,6 +989,7 @@ class Player extends Combatant {
       if (!this.smear || !this.smear.live) {
         const from = this.bladeAt(s);
         this.smear = { a0: from, a1: from, r: c.range * PPU, life: 0.13, max: 0.13, live: true, kind: c.kind, heavy: c.heavy, crit: this.swingCrit, dir: this.atkDir, idx: this.comboIndex };
+        enchOnSwing(this, c, enchSlotOf(this.comboIndex), this.pos, this.atkDir, false);
         sfx(c.kind === "spin" ? "spin" : c.kind === "thrust" ? "thrust" : c.heavy ? "swingHeavy" : "swing", { vary: 0.08, vol: 0.9 });
         if (c.kind === "thrust") speedLines(this.center, this.atkDir, 6);
         this.punch(c.heavy ? -0.18 : -0.1);
@@ -1008,6 +1029,7 @@ class Player extends Combatant {
       const dir = d > 0.01 ? mul(to, 1 / d) : this.atkDir;
       let kb = c.kind === "spin" ? dir : norm(add(this.atkDir, dir)); if (len(kb) < 0.5) kb = this.atkDir;
       hitEnemy(e, c, kb, { attacker: this, crit: this.swingCrit });
+      enchOnHit(e, c, kb, enchSlotOf(this.comboIndex), 0);
     }
     for (const pr of projectiles) {
       if (pr.owner !== "enemy" || pr.dead) continue;
@@ -1352,6 +1374,7 @@ function hitEnemy(e, atk, dir, o = {}) {
 }
 function registerKill(e, dir, big, attacker) {
   kills++; killsThisSwing++;
+  if (e.st && e.st.burn > 0 && e.st.burnLv > 0) burnBlast(e);
   e.dieDir = dir;
   sfx("kill", { vol: 0.8, vary: 0.08 });
   const remaining = enemies.filter(o => o.alive && !o.dying).length;
@@ -1403,6 +1426,7 @@ function gainMeter(n) {
 }
 function ashBurst(p) {
   const c = p.pos, R = BURST.range;
+  enchOnBurst(p, false);
   setMuffle(true);
   impactFrame(p.center, 0.1, [p, ...enemies.filter(e => e.hittable && len(sub(e.pos, c)) < R + 1)]);
   ring(c, 6, R * PPU, 4, 0.45, "fire", 0.75); ring(c, 3, R * PPU * 0.7, 2, 0.35, "gold", 0.75); ring(c, 2, R * PPU * 1.15, 1, 0.55, "steel", 0.75);
@@ -1418,6 +1442,7 @@ function ashBurst(p) {
     const to = sub(e.pos, c), d = len(to);
     if (d > R + e.radius) continue;
     hitEnemy(e, BURST, d > 0.05 ? mul(to, 1 / d) : V(1, 0), { byPlayer: true, point: e.center });
+    enchOnHit(e, BURST, d > 0.05 ? mul(to, 1 / d) : V(1, 0), "skill", 0);
   }
   for (const pr of projectiles) if (pr.owner === "enemy" && len(sub(pr.pos, c)) < R) popProjectile(pr);
 }
@@ -1449,6 +1474,370 @@ function popProjectile(pr) {
   sparks(pr.pos, V(0, 1), 10, 8, 360, ramp); ring(pr.pos, 2, 10, 1, 0.15, ramp); sfx("pop", { vol: 0.5, rate: 1.4 });
 }
 
+
+// ======================================================================
+//  enchants: keyword upgrades on the basic attack slot and the skill slot
+// ======================================================================
+// basic = 3-hit combo + dash strike, skill = spin slash + ash burst. Each keyword has level 0..3.
+const ENCH_KEYS = ["pierce", "fire", "frost", "chain", "split", "echo"];
+const ENCH_INFO = {
+  pierce: { name: "관통", tag: "PIERCE", col: "#e8f4ff", ramp: "steel", desc: "SLASH WAVE", ko: "베면 적을 꿰뚫는 검기가 날아감" },
+  fire:   { name: "화염", tag: "FIRE", col: "#ff8a3a", ramp: "fire", desc: "BURN + BLAST", ko: "화상 누적, 불탄 적은 죽을 때 폭발" },
+  frost:  { name: "냉기", tag: "FROST", col: "#8fdcff", ramp: "ice", desc: "SLOW + FREEZE", ko: "둔화 누적, 4중첩이면 빙결, 빙결 적을 치면 파쇄" },
+  chain:  { name: "연쇄", tag: "CHAIN", col: "#ffe066", ramp: "gold", desc: "ARC LIGHTNING", ko: "맞은 적에서 주변 적으로 번개가 튐" },
+  split:  { name: "증식", tag: "SPLIT", col: "#a8f070", ramp: "acid", desc: "SEEKER SHARDS", ko: "맞은 적에서 다른 적을 쫓는 파편이 갈라져 나감" },
+  echo:   { name: "복제", tag: "ECHO", col: "#c08af0", ramp: "violet", desc: "SHADOW REPEAT", ko: "잠시 뒤 그림자 분신이 같은 공격을 한 번 더" },
+};
+const ench = { basic: {}, skill: {} };
+for (const k of ENCH_KEYS) { ench.basic[k] = 0; ench.skill[k] = 0; }
+const enchFx = { waves: [], shards: [], bolts: [], echoes: [], pending: [] };
+let enchSwingSplits = 0;
+const enchSlotOf = idx => (idx === -2 ? "skill" : "basic");
+function enchElementRamp(L) { return L.fire ? "fire" : L.frost ? "ice" : L.chain ? "gold" : L.split ? "acid" : "steel"; }
+function enchAtk(dmg, o = {}) { return { damage: dmg, knockback: o.kb ?? 3, hitstop: o.hs ?? 2, shake: o.shake ?? 0.08, heavy: false, kind: "slash", ench: true }; }
+
+// --- statuses on enemies ---
+function enchStatus(e) { if (!e.st) e.st = { burn: 0, burnT: 0, burnTick: 0, burnLv: 0, chill: 0, chillT: 0, frozen: 0, frozenMax: 0, frostLv: 0 }; return e.st; }
+function enchTimeScale(e) {
+  const s = e.st; if (!s) return 1;
+  if (e.dying || e.state === "Dead") return 1;
+  if (s.frozen > 0) return 0;
+  return 1 - 0.12 * s.chill;
+}
+function applyElements(e, L, dir) {
+  if (!e.hittable && !e.dying) return;
+  const s = enchStatus(e);
+  if (L.fire) {
+    s.burn = Math.min(2 + L.fire * 2, s.burn + L.fire); s.burnT = 3; s.burnLv = Math.max(s.burnLv, L.fire);
+    if (s.burnTick <= 0) s.burnTick = 0.45;
+    embers(e.center, 3, "fire", { spread: 0.6 });
+  }
+  if (L.frost && s.frozen <= 0 && !e.dying) {
+    s.chill = Math.min(4, s.chill + 1); s.chillT = 2.5; s.frostLv = Math.max(s.frostLv, L.frost);
+    sparks(e.center, V(0, 1), 4, 5, 360, "ice", { g: 4 });
+    if (s.chill >= 4) {
+      s.chill = 0; s.frozen = s.frozenMax = 0.9 + 0.4 * L.frost;
+      e.knock = V(0, 0); e.pendingKnock = null;
+      if (e.state === "Windup" || e.state === "Attack") { e.state = "Stagger"; e.stateTime = 0; e.staggerF = 1; }
+      ring(e.center, 2, 16, 2, 0.25, "ice", 0.8); sparks(e.center, V(0, 1), 14, 9, 360, "ice");
+      popText(e.pos.x, e.pos.y + 1.5, "FROZEN", "#8fdcff", 1, { z: 30, life: 0.8 });
+      sfx("deflect", { rate: 1.4, vol: 0.7 }); addShake(0.12, dir || V(1, 0), 2);
+    }
+  }
+}
+function enchDot(e, dmg, color, ramp) {
+  if (!e.hittable) return;
+  const killed = e.takeDamage(dmg);
+  e.doFlash(0.05, color);
+  popText(e.pos.x + rand(-0.3, 0.3), e.pos.y + 0.9, String(dmg), color, 1, { number: true, vz: 50, life: 0.5, pop: 1.1 });
+  sparks(e.center, V(0, 1), 4, 5, 90, ramp, { g: -6 });
+  if (killed) registerKill(e, V(0, 1), false, null);
+}
+function enchUpdateStatus(e, dt) {
+  const s = e.st; if (!s) return;
+  if (s.burn > 0) {
+    s.burnT -= dt; s.burnTick -= dt;
+    if (Math.random() < 0.5 + s.burn * 0.06) P({ type: "spark", x: e.pos.x + rand(-0.3, 0.3), y: e.center.y + rand(-0.3, 0.2), vx: rand(-0.4, 0.4), vy: rand(1.5, 3), life: 0.3, max: 0.3, drag: 2, g: -2, ramp: "fire" });
+    if (s.burnTick <= 0 && e.hittable) { s.burnTick = 0.45; enchDot(e, 1 + s.burn, "#ff9a4a", "fire"); sfx("hit", { rate: 1.9, vary: 0.1, vol: 0.25 }); }
+    if (s.burnT <= 0) s.burn = 0;
+  }
+  if (s.chill > 0) { s.chillT -= dt; if (s.chillT <= 0) s.chill = 0; if (Math.random() < 0.15 * s.chill) P({ type: "ember", x: e.pos.x + rand(-0.4, 0.4), y: e.center.y + rand(-0.2, 0.4), vx: 0, vy: -0.3, life: 0.5, max: 0.5, ramp: "ice", seed: rand(0, 9) }); }
+  if (s.frozen > 0) { s.frozen -= dt; if (s.frozen <= 0) { sparks(e.center, V(0, 1), 8, 6, 360, "ice"); sfx("pop", { rate: 1.6, vol: 0.4 }); } }
+}
+function enchShatter(e, lv, dir) {
+  const s = e.st; s.frozen = 0;
+  const dmg = 10 + 8 * lv;
+  hitEnemy(e, enchAtk(dmg, { kb: 9, hs: 6, shake: 0.3 }), dir, { byPlayer: true, crit: true, point: e.center });
+  for (let i = 0; i < 10; i++) { const a = rand(0, TAU); P({ type: "debris", x: e.center.x, y: e.pos.y, z: 10, vx: Math.cos(a) * rand(2, 5), vy: Math.sin(a) * rand(1, 3), vz: rand(80, 160), life: 0.7, max: 0.7, size: Math.random() < 0.4 ? 2 : 1, col: Math.random() < 0.5 ? "#dff8ff" : "#8fdcff" }); }
+  ring(e.center, 3, 22, 2, 0.25, "ice", 0.8); starFlash(e.center, dir, 14, "ice", 0.12);
+  popText(e.pos.x, e.pos.y + 1.7, "SHATTER", "#dff8ff", 2, { z: 34, life: 0.9, pop: 1.6 });
+  sfx("crit", { rate: 1.3 }); sfx("deflect", { rate: 0.8, vol: 0.7 }); chroma(0.5, dir);
+}
+function burnBlast(e) {
+  const s = e.st, lv = s.burnLv, c = e.center, R = 1.5 + 0.3 * lv;
+  s.burn = 0;
+  ring(e.pos, 2, R * PPU, 3, 0.3, "fire", 0.75); sparks(c, V(0, 1), 18, 12, 360, "fire"); smoke(e.pos, 5, { col: "#3a2422" });
+  scorch(e.pos, 8 + lv * 2); addShake(0.25, V(0, -1), 3); sfx("slam", { rate: 1.5, vol: 0.6 });
+  popText(e.pos.x, e.pos.y + 1.6, "BLAST", "#ff8a3a", 1, { z: 30, life: 0.7 });
+  for (const o of enemies) {
+    if (o === e || !o.hittable) continue;
+    const to = sub(o.pos, e.pos), d = len(to);
+    if (d > R + o.radius) continue;
+    const dir = d > 0.05 ? mul(to, 1 / d) : V(1, 0);
+    hitEnemy(o, enchAtk(6 + 6 * lv, { kb: 8, hs: 3 }), dir, { byPlayer: true, point: o.center });
+    applyElements(o, { fire: lv }, dir);
+  }
+  s.burn = 0;
+}
+
+// --- hooks ---
+function enchOnHit(e, atk, dir, slot, gen) {
+  const L = ench[slot];
+  const s = e.st;
+  if (s && s.frozen > 0 && L.frost && gen === 0 && !e.dying) enchShatter(e, L.frost, dir);
+  applyElements(e, L, dir);
+  if (gen > 0) return;
+  if (L.chain) enchChain(e, atk, L, slot);
+  if (L.split && enchSwingSplits < 4) { enchSwingSplits++; enchSplit(e, atk, L, slot); }
+}
+function enchOnSwing(p, atk, slot, origin, dir, isEcho) {
+  const L = ench[slot]; enchSwingSplits = 0;
+  if (L.pierce) {
+    const n = atk.kind === "spin" ? 4 + 2 * (L.pierce - 1) : 1 + (L.pierce >= 3 ? 2 : 0);
+    const base = angOf(dir);
+    for (let i = 0; i < n; i++) {
+      const a = atk.kind === "spin" ? base + (i / n) * TAU : base + (i - (n - 1) / 2) * 0.28;
+      enchFx.waves.push({ pos: V(origin.x, origin.y), dir: V(Math.cos(a), Math.sin(a)), speed: 14, dist: 0, max: 4 + 1.5 * L.pierce, dmg: Math.round(atk.damage * (0.35 + 0.15 * L.pierce) * (isEcho ? 0.6 : 1)), hit: new Set(), slot, t: 0, ramp: enchElementRamp(L), big: atk.heavy });
+    }
+    sfx("thrust", { rate: 1.4, vol: 0.6 });
+  }
+  if (L.echo && !isEcho) {
+    const mult = 0.4 + 0.15 * L.echo;
+    enchFx.pending.push({ t: 0.22, atk, slot, origin: V(origin.x, origin.y), dir: V(dir.x, dir.y), mult, flip: p.flip, spr: playerSpr(p) || PLAYER_SPR.runA });
+    if (L.echo >= 3) enchFx.pending.push({ t: 0.44, atk, slot, origin: V(origin.x, origin.y), dir: V(dir.x, dir.y), mult: 0.4, flip: p.flip, spr: playerSpr(p) || PLAYER_SPR.runA });
+  }
+}
+function enchOnBurst(p, isEcho) {
+  const L = ench.skill; enchSwingSplits = 0;
+  if (L.pierce) {
+    const n = 6 + 2 * L.pierce;
+    for (let i = 0; i < n; i++) { const a = i / n * TAU; enchFx.waves.push({ pos: V(p.pos.x, p.pos.y), dir: V(Math.cos(a), Math.sin(a)), speed: 13, dist: 0, max: 6 + 1.5 * L.pierce, dmg: 12 + 6 * L.pierce, hit: new Set(), slot: "skill", t: 0, ramp: enchElementRamp(L), big: true }); }
+  }
+  if (L.echo && !isEcho) enchFx.pending.push({ t: 0.35, burst: true, slot: "skill", origin: V(p.pos.x, p.pos.y), dir: V(1, 0), mult: 0.35 + 0.15 * L.echo, flip: p.flip, spr: playerSpr(p) || PLAYER_SPR.runA });
+}
+function enchChain(src, atk, L, slot) {
+  const jumps = 1 + L.chain, seen = new Set([src]);
+  let from = src;
+  for (let j = 0; j < jumps; j++) {
+    let best = null, bd = 3.6;
+    for (const o of enemies) { if (!o.hittable || seen.has(o)) continue; const d = len(sub(o.center, from.center)); if (d < bd) { bd = d; best = o; } }
+    if (!best) break;
+    seen.add(best);
+    enchFx.bolts.push({ a: V(from.center.x, from.center.y), b: V(best.center.x, best.center.y), life: 0.16, max: 0.16, seed: Math.random() * 1000 });
+    const dir = norm(sub(best.center, from.center));
+    hitEnemy(best, enchAtk(Math.max(2, Math.round(atk.damage * (0.25 + 0.1 * L.chain))), { kb: 2, hs: 3 }), dir, { byPlayer: true, point: best.center });
+    if (best.hittable && !best.superArmor && best.state !== "Stagger") best.stagger(10);
+    applyElements(best, { fire: L.fire, frost: L.frost }, dir);
+    sparks(best.center, V(0, 1), 6, 9, 360, "gold"); glowBurst(best.center, "gold");
+    from = best;
+  }
+  if (seen.size > 1) { sfx("shoot", { rate: 2.2, vol: 0.7 }); sfx("hit", { rate: 2.4, vol: 0.4 }); }
+}
+function glowBurst(pt, ramp) { starFlash(pt, V(1, 0), 6, ramp, 0.07); }
+function enchSplit(src, atk, L, slot) {
+  const n = 1 + L.split, c = src.center;
+  const others = enemies.filter(o => o !== src && o.hittable).sort((a, b) => len(sub(a.pos, src.pos)) - len(sub(b.pos, src.pos)));
+  for (let i = 0; i < n; i++) {
+    const tgt = others.length ? others[i % others.length] : null;
+    const a = rand(0, TAU);
+    enchFx.shards.push({ pos: V(c.x, c.y), vel: V(Math.cos(a) * 7, Math.sin(a) * 7), target: tgt, life: 1.6, t: 0, dmg: Math.max(2, Math.round(atk.damage * (0.2 + 0.08 * L.split))), slot, trail: [] });
+  }
+  sparks(c, V(0, 1), 8, 8, 360, "acid"); sfx("pickup", { rate: 1.6, vol: 0.5 });
+}
+function enchEchoStrike(q) {
+  const p = player;
+  enchFx.echoes.push({ pos: V(q.origin.x, q.origin.y), dir: q.dir, flip: q.flip, spr: q.spr, life: 0.28, max: 0.28, r: q.burst ? 4.6 * PPU * q.mult * 1.6 : q.atk.range * PPU, kind: q.burst ? "burst" : q.atk.kind, arc: q.burst ? 360 : q.atk.arc });
+  sfx("swing", { rate: 0.7, vol: 0.6 }); sfx("perfect", { rate: 1.6, vol: 0.25 });
+  if (q.burst) {
+    const R = 4.6 * 0.8;
+    ring(q.origin, 4, R * PPU, 3, 0.35, "violet", 0.75); sparks(V(q.origin.x, q.origin.y + 0.5), V(0, 1), 24, 16, 360, "violet");
+    addShake(0.5, V(0, -1), 4);
+    for (const e of enemies) {
+      if (!e.hittable) continue; const to = sub(e.pos, q.origin), d = len(to); if (d > R + e.radius) continue;
+      const dir = d > 0.05 ? mul(to, 1 / d) : V(1, 0);
+      hitEnemy(e, enchAtk(Math.round(BURST.damage * q.mult), { kb: 12, hs: 5, shake: 0.3 }), dir, { byPlayer: true, point: e.center });
+      enchOnHit(e, BURST, dir, "skill", 1);
+    }
+    enchOnBurst(p, true);
+    return;
+  }
+  const c = V(q.origin.x, q.origin.y + p.bodyH), atk = q.atk;
+  enchSwingSplits = 0;
+  for (const e of enemies) {
+    if (!e.hittable) continue;
+    const to = sub(e.center, c), d = len(to);
+    if (d - e.radius > atk.range) continue;
+    if (atk.arc < 360 && d > 0.3 && angleBetween(q.dir, to) > atk.arc / 2) continue;
+    const dir = d > 0.01 ? mul(to, 1 / d) : q.dir;
+    hitEnemy(e, enchAtk(Math.max(2, Math.round(atk.damage * q.mult)), { kb: atk.knockback * 0.7, hs: 3, shake: atk.shake * 0.6 }), norm(add(q.dir, dir)), { byPlayer: true, point: e.center });
+    sparks(e.center, dir, 8, 10, 70, "violet");
+    enchOnHit(e, atk, dir, q.slot, 0);
+  }
+  enchOnSwing(p, atk, q.slot, q.origin, q.dir, true);
+}
+
+function enchUpdate(dt) {
+  for (const e of enemies) enchUpdateStatus(e, dt);
+  for (let i = enchFx.pending.length - 1; i >= 0; i--) { const q = enchFx.pending[i]; q.t -= dt; if (q.t <= 0) { enchFx.pending.splice(i, 1); if (player.state !== "Dead") enchEchoStrike(q); } }
+  for (const w of enchFx.waves) {
+    const step = w.speed * dt; w.pos = add(w.pos, mul(w.dir, step)); w.dist += step; w.t += dt;
+    if (Math.random() < 0.7) P({ type: "spark", x: w.pos.x + rand(-0.2, 0.2), y: w.pos.y + rand(-0.2, 0.2), vx: -w.dir.x * 2, vy: -w.dir.y * 2, life: 0.18, max: 0.18, drag: 4, g: 0, ramp: w.ramp });
+    for (const e of enemies) {
+      if (!e.hittable || w.hit.has(e)) continue;
+      if (len(sub(e.center, w.pos)) > e.radius + 0.55 && len(sub(e.pos, w.pos)) > e.radius + 0.55) continue;
+      w.hit.add(e);
+      hitEnemy(e, enchAtk(w.dmg, { kb: 5, hs: 3, shake: 0.12 }), w.dir, { byPlayer: true, point: e.center });
+      enchOnHit(e, { damage: w.dmg }, w.dir, w.slot, 1);
+    }
+    for (const pr of projectiles) if (pr.owner === "enemy" && !pr.dead && len(sub(pr.pos, w.pos)) < 0.6) popProjectile(pr);
+    if (w.dist >= w.max || w.pos.x < ARENA.xMin || w.pos.x > ARENA.xMax || w.pos.y < ARENA.yMin || w.pos.y > ARENA.yMax) { w.dead = true; sparks(w.pos, w.dir, 6, 6, 120, w.ramp); }
+  }
+  enchFx.waves = enchFx.waves.filter(w => !w.dead);
+  for (const s of enchFx.shards) {
+    s.t += dt; s.life -= dt;
+    if (s.target && !s.target.hittable) s.target = enemies.find(o => o.hittable && len(sub(o.pos, s.pos)) < 6) || null;
+    if (s.target && s.t > 0.12) { const want = mul(norm(sub(s.target.center, s.pos)), 13); s.vel = add(s.vel, mul(sub(want, s.vel), 1 - Math.exp(-8 * dt))); }
+    else s.vel = mul(s.vel, Math.exp(-2 * dt));
+    s.trail.push(V(s.pos.x, s.pos.y)); if (s.trail.length > 5) s.trail.shift();
+    s.pos = add(s.pos, mul(s.vel, dt));
+    for (const e of enemies) {
+      if (!e.hittable || s.t < 0.12) continue;
+      if (len(sub(e.center, s.pos)) > e.radius + 0.25) continue;
+      const dir = norm(s.vel);
+      hitEnemy(e, enchAtk(s.dmg, { kb: 2, hs: 2, shake: 0.05 }), dir, { byPlayer: true, point: s.pos });
+      enchOnHit(e, { damage: s.dmg }, dir, s.slot, 1);
+      sparks(s.pos, dir, 6, 8, 90, "acid"); s.dead = true; break;
+    }
+    if (s.life <= 0 && !s.dead) { s.dead = true; sparks(s.pos, V(0, 1), 4, 4, 360, "acid"); }
+  }
+  enchFx.shards = enchFx.shards.filter(s => !s.dead);
+  for (const b of enchFx.bolts) b.life -= dt;
+  enchFx.bolts = enchFx.bolts.filter(b => b.life > 0);
+  for (const g of enchFx.echoes) g.life -= dt;
+  enchFx.echoes = enchFx.echoes.filter(g => g.life > 0);
+}
+function enchReset() { enchFx.waves = []; enchFx.shards = []; enchFx.bolts = []; enchFx.echoes = []; enchFx.pending = []; enchReward.cards = null; }
+
+// --- drawing ---
+function drawEnchFx() {
+  const RAMP = r => SPARK_RAMPS[r] || SPARK_RAMPS.steel;
+  for (const w of enchFx.waves) {
+    const [sx, sy] = toScreen(w.pos.x, w.pos.y + 0.4), pal = RAMP(w.ramp), a0 = angOf(w.dir), R = w.big ? 9 : 7;
+    const fade = Math.min(1, (w.max - w.dist) / 1.2);
+    for (let k = -10; k <= 10; k++) {
+      const a = a0 + k / 10 * 1.1, ca = Math.cos(a), sa = -Math.sin(a);
+      const thick = Math.round((1 - Math.abs(k) / 10) * 3 * fade);
+      for (let r = 0; r <= thick; r++) plot(sx + ca * (R - r), sy + sa * (R - r) * 0.85, r === 0 ? pal[0] : r === 1 ? pal[1] : pal[2]);
+    }
+    glow(sx + Math.cos(a0) * R * 0.5, sy - Math.sin(a0) * R * 0.5, 18, GLOW_COL[w.ramp] || GLOW_COL.steel, 0.5 * fade);
+  }
+  for (const s of enchFx.shards) {
+    for (let i = 1; i < s.trail.length; i++) { const [x0, y0] = toScreen(s.trail[i - 1].x, s.trail[i - 1].y), [x1, y1] = toScreen(s.trail[i].x, s.trail[i].y); pline(x0, y0, x1, y1, i > 3 ? "#a8f070" : "#5cc04a"); }
+    const [sx, sy] = toScreen(s.pos.x, s.pos.y);
+    g.fillStyle = "#0d0814"; g.fillRect(sx - 2, sy - 2, 4, 4); g.fillStyle = "#e8ffd0"; g.fillRect(sx - 1, sy - 1, 2, 2);
+    glow(sx, sy, 9, GLOW_COL.acid, 0.6);
+  }
+  for (const b of enchFx.bolts) {
+    const [ax, ay] = toScreen(b.a.x, b.a.y), [bx, by] = toScreen(b.b.x, b.b.y), k = b.life / b.max;
+    let s = b.seed; const rnd = () => (s = (s * 9301 + 49297 + Math.floor(realTime * 40)) % 233280) / 233280;
+    const n = 6, dx = bx - ax, dy = by - ay, nx = -dy, ny = dx, l = Math.hypot(dx, dy) || 1;
+    let px = ax, py = ay;
+    for (let i = 1; i <= n; i++) {
+      const t = i / n, j = i === n ? 0 : (rnd() - 0.5) * 10;
+      const x = ax + dx * t + nx / l * j, y = ay + dy * t + ny / l * j;
+      pline(px, py - 1, x, y - 1, "#0d0814"); pline(px, py, x, y, k > 0.5 ? "#ffffff" : "#ffe066"); pline(px + 1, py, x + 1, y, "#ffe066");
+      px = x; py = y;
+    }
+    glow(ax, ay, 14, GLOW_COL.gold, 0.6 * k); glow(bx, by, 16, GLOW_COL.gold, 0.7 * k);
+  }
+  for (const q of enchFx.echoes) {
+    const k = q.life / q.max, [sx, sy] = toScreen(q.pos.x, q.pos.y);
+    drawSpr(tinted(q.spr, "#8a4ad0"), sx, sy, q.flip, 1, 1, 0.75 * k);
+    drawSpr(tinted(q.spr, "#f2dcff"), sx, sy, q.flip, 1, 1, 0.35 * k);
+    const cy = sy - 8, a0 = angOf(q.dir), span = q.arc >= 360 ? TAU : q.arc * D2R, prog = 1 - k;
+    if (q.kind === "burst") { pixelRing(sx, cy + 8, q.r * (0.4 + prog * 0.6), 2, k > 0.5 ? "#f2dcff" : "#c08af0", k < 0.4, 0.75); continue; }
+    const steps = 18;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps; if (t > 0.3 + prog * 1.2) break;
+      const a = a0 + span / 2 - t * span, R = q.r;
+      for (let r = 0; r < 3; r++) plot(sx + Math.cos(a) * (R - r), cy - Math.sin(a) * (R - r), r === 0 ? "#f2dcff" : r === 1 ? "#c08af0" : "#8a4ad0");
+    }
+    glow(sx, cy, 24, GLOW_COL.violet, 0.4 * k);
+  }
+}
+function drawEnemyStatus(e, x, y) {
+  const s = e.st; if (!s || e.state === "Dead") return;
+  if (s.frozen > 0) {
+    const w = e.spr.w + 2, hh = e.spr.h + 2, x0 = Math.round(x - w / 2), y0 = y - hh + 1;
+    drawSpr(tinted(e.spr, "#bfe8ff"), x, y, e.flip, 1, 1, 0.7);
+    g.globalAlpha = 0.25; g.fillStyle = "#dff8ff"; g.fillRect(x0, y0, w, hh); g.globalAlpha = 1;
+    g.fillStyle = "#e8fbff"; g.fillRect(x0, y0, w, 1); g.fillRect(x0, y0, 1, hh);
+    g.fillStyle = "#3a9ee8"; g.fillRect(x0, y0 + hh - 1, w, 1); g.fillRect(x0 + w - 1, y0, 1, hh);
+    const k = s.frozen / s.frozenMax; g.fillStyle = "#dff8ff"; g.fillRect(x0, y0 - 3, Math.round(w * k), 1);
+    if (Math.floor(realTime * 6) % 3 === 0) plot(x0 + 2 + Math.floor(rand(0, w - 4)), y0 + 2 + Math.floor(rand(0, hh - 4)), "#ffffff");
+  } else if (s.chill > 0) {
+    drawSpr(tinted(e.spr, "#8fdcff"), x, y, e.flip, 1, 1, 0.12 * s.chill + 0.1);
+  }
+  if (s.burn > 0 && Math.floor(realTime * 15) % 2) drawSpr(tinted(e.spr, "#ff7a2a"), x, y, e.flip, 1, 1, 0.25);
+  const pips = [];
+  if (s.burn > 0) pips.push(["#ff8a3a", s.burn]);
+  if (s.chill > 0) pips.push(["#8fdcff", s.chill]);
+  let px = Math.round(x - 7), py = y - e.spr.h - 7;
+  for (const [col, n] of pips) { for (let i = 0; i < Math.min(n, 8); i++) { g.fillStyle = "#0d0814"; g.fillRect(px + i * 2 - 1, py - 1, 3, 3); g.fillStyle = col; g.fillRect(px + i * 2, py, 1, 1); } py -= 3; }
+}
+
+// --- wave reward: pick 1 of 3 enchant cards ---
+const enchReward = { cards: null, t: 0, picked: -1 };
+function enchRollCards() {
+  const pool = [];
+  for (const slot of ["basic", "skill"]) for (const k of ENCH_KEYS) if (ench[slot][k] < 3) pool.push({ slot, key: k });
+  const cards = [];
+  while (cards.length < 3 && pool.length) cards.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  return cards;
+}
+function enchOfferCards() { enchReward.cards = enchRollCards(); enchReward.t = -1; enchReward.picked = -1; if (!enchReward.cards.length) enchReward.cards = null; else sfx("grade", { rate: 0.8, vol: 0.7 }); }
+function enchPick(i) {
+  const cards = enchReward.cards; if (!cards || !cards[i] || enchReward.picked >= 0 || enchReward.t < 0.15) return;
+  const c = cards[i]; ench[c.slot][c.key] = Math.min(3, ench[c.slot][c.key] + 1); enchReward.picked = i; enchReward.t = 0;
+  const info = ENCH_INFO[c.key];
+  sfx("chargeFull"); sfx("clear", { rate: 1.3, vol: 0.5 });
+  ring(player.center, 3, 30, 2, 0.35, info.ramp === "acid" ? "gold" : info.ramp); sparks(player.center, V(0, 1), 20, 12, 360, info.ramp);
+  popText(player.pos.x, player.pos.y + 1.8, info.tag + " " + ench[c.slot][c.key], info.col, 2, { z: 26, life: 1.1, pop: 1.8 });
+  if (typeof syncEnchUi === "function") syncEnchUi();
+}
+const CARD_W = 82, CARD_H = 70;
+function cardRect(i) { return [VW / 2 - CARD_W * 1.5 - 8 + i * (CARD_W + 8), 62, CARD_W, CARD_H]; }
+function drawEnchCards() {
+  const cards = enchReward.cards; if (!cards || enchReward.t < 0) return;
+  const t = enchReward.t;
+  h.fillStyle = "rgba(8,4,12,0.6)"; h.fillRect(0, 0, VW, VH);
+  hudText("CHOOSE AN ENCHANT", "#ffd166", 2, VW / 2, 40, "center");
+  cards.forEach((c, i) => {
+    const info = ENCH_INFO[c.key], lv = ench[c.slot][c.key];
+    let [x, y, w, hh] = cardRect(i);
+    const appear = clamp((t - i * 0.08) / 0.18, 0, 1); y += (1 - easeOut(appear)) * 30;
+    const chosen = enchReward.picked === i, other = enchReward.picked >= 0 && !chosen;
+    const hover = mouse.has && mouse.x >= x && mouse.x < x + w && mouse.y >= y && mouse.y < y + hh && enchReward.picked < 0;
+    h.globalAlpha = appear * (other ? 0.35 : 1);
+    h.fillStyle = "#0d0814"; h.fillRect(x - 2, y - 2, w + 4, hh + 4);
+    h.fillStyle = chosen ? info.col : hover ? "#2a2036" : "#1a1424"; h.fillRect(x, y, w, hh);
+    h.fillStyle = info.col; h.fillRect(x, y, w, 2); h.fillRect(x, y + hh - 2, w, 2);
+    hudText(String(i + 1), "#9a92b3", 1, x + 4, y + 5);
+    hudText(c.slot === "basic" ? "BASIC" : "SKILL", c.slot === "basic" ? "#8fdcff" : "#ff9a3c", 1, x + w - 4, y + 5, "right");
+    hudText(info.tag, chosen ? "#0d0814" : info.col, 2, x + w / 2, y + 18, "center");
+    hudText(info.desc, chosen ? "#0d0814" : "#e8e0f0", 1, x + w / 2, y + 38, "center");
+    hudText(lv ? "LV " + lv + " + 1" : "NEW", chosen ? "#0d0814" : "#ffd166", 1, x + w / 2, y + 52, "center");
+    h.globalAlpha = 1;
+  });
+  hudText("CLICK OR PRESS 1 2 3", "#c8bcd8", 1, VW / 2, 142, "center");
+}
+function drawEnchHud() {
+  let y = VH - 20;
+  for (const slot of ["skill", "basic"]) {
+    const L = ench[slot]; let x = 6, any = false;
+    for (const k of ENCH_KEYS) {
+      if (!L[k]) continue; any = true;
+      const info = ENCH_INFO[k];
+      h.fillStyle = "#0d0814"; h.fillRect(x - 1, y - 1, 12, 9);
+      h.fillStyle = info.col; h.fillRect(x, y, 10, 7);
+      hudText(info.tag[0] + L[k], "#ffffff", 1, x + 5, y, "center");
+      x += 13;
+    }
+    if (any) hudText(slot === "basic" ? "B" : "S", slot === "basic" ? "#8fdcff" : "#ff9a3c", 1, x + 1, y);
+    if (any) y -= 10;
+  }
+}
+
 // ======================================================================
 //  setup / waves
 // ======================================================================
@@ -1474,7 +1863,7 @@ function spawnEnemy(kind) {
   enemies.push(new Enemy(kind, at));
 }
 function resetAll() {
-  player.reset(); enemies = []; projectiles.length = 0; pickups.length = 0; parts.length = 0;
+  player.reset(); enemies = []; projectiles.length = 0; pickups.length = 0; parts.length = 0; enchReset();
   kills = combo = bestCombo = 0; comboTimer = 0; gradeIdx = -1;
   dctx.clearRect(0, 0, FLOOR_W, FLOOR_H);
   waves.n = 0; waves.queue = []; waves.state = "intro"; waves.t = 0.8;
@@ -1489,10 +1878,12 @@ function updateWaves(dt, rdt) {
     else if (!enemies.some(e => e.alive)) {
       waves.state = "clear"; waves.t = 2.8; player.victoryAnim = 36 / 60;
       banner("WAVE CLEAR", "#8be3a6", 2.2, "HP +20");
+      if (T.enchCards) { enchOfferCards(); if (enchReward.cards) { waves.state = "reward"; fxs.bannerT = Math.min(fxs.bannerT, 1.1); fxs.bannerMax = 1.1; } }
       sfx("clear"); player.hp = Math.min(player.maxHp, player.hp + 20);
       popText(player.pos.x, player.pos.y + 1.4, "+20", "#8be3a6", 2, { z: 20 });
     }
   } else if (waves.state === "clear") { waves.t -= rdt; if (waves.t <= 0) startWave(waves.n + 1); }
+  else if (waves.state === "reward") { enchReward.t += rdt; if (enchReward.picked >= 0 && enchReward.t > 0.7) { enchReward.cards = null; waves.state = "clear"; waves.t = 0.9; } }
 }
 
 // ======================================================================
@@ -1804,7 +2195,8 @@ function drawSmear() {
   if (!s || !T.trails) return;
   const age = 1 - s.life / s.max;
   const [cx, cy] = toScreen(p.center.x, p.center.y + p.z / PPU);
-  const pal = s.crit ? ["#ffffff", "#fff3b0", "#ffd25a", "#ff9a2a"] : s.kind === "spin" ? ["#ffffff", "#ffe8b0", "#ffb43c", "#ff6a2a"] : s.heavy ? ["#ffffff", "#ffe0b0", "#ffb070", "#e86a3a"] : ["#ffffff", "#c8f0ff", "#7cc8ff", "#3a7ae0"];
+  let pal = s.crit ? ["#ffffff", "#fff3b0", "#ffd25a", "#ff9a2a"] : s.kind === "spin" ? ["#ffffff", "#ffe8b0", "#ffb43c", "#ff6a2a"] : s.heavy ? ["#ffffff", "#ffe0b0", "#ffb070", "#e86a3a"] : ["#ffffff", "#c8f0ff", "#7cc8ff", "#3a7ae0"];
+  { const L = ench[enchSlotOf(s.idx)]; if (!s.crit && (L.fire || L.frost || L.chain)) pal = L.fire ? ["#ffffff", "#fff3a0", "#ff9a3a", "#c8321e"] : L.frost ? ["#ffffff", "#dff8ff", "#8fdcff", "#3a9ee8"] : ["#ffffff", "#fff8c8", "#ffe066", "#c88a10"]; }
   if (s.kind === "thrust") {
     const d = s.dir, L = s.r * (1 - age * 0.3), dx = d.x, dy = -d.y;
     for (let i = 4; i < L; i++) {
@@ -1862,6 +2254,7 @@ function drawEnemy(e) {
     if (e.kind === "wisp") { const c = toScreen(e.center.x + e.aimDir.x * 0.45, e.center.y + e.aimDir.y * 0.45); pixelRing(c[0], c[1], 1 + k * 3, 1 + (k * 2 | 0), k > 0.7 && Math.floor(f / 3) % 2 ? "#ffffff" : "#d8a8ff", false, 1); glow(c[0], c[1], 6 + k * 14, "rgba(190,120,255,1)", 0.6); }
   }
   if (e.flashT > 0 && T.hitFlash) drawSpr(tinted(e.spr, e.flashColor), x, y, e.flip, scx, scy);
+  drawEnemyStatus(e, x, y);
   if (e.broken > 0) {
     for (let i = 0; i < 3; i++) { const a = realTime * 6 + i / 3 * TAU; plot(x + Math.cos(a) * 8, y - e.spr.h - 2 + Math.sin(a) * 2, i ? "#ffe066" : "#ffffff"); }
   }
@@ -1990,6 +2383,7 @@ function drawWorld() {
   for (const c of list) { if (c === player) drawPlayer(); else drawEnemy(c); }
   drawPickups();
   drawProjectiles();
+  drawEnchFx();
   drawParts("front");
   drawSmear();
   g.drawImage(VIGNETTE, 0, 0);
@@ -2102,6 +2496,8 @@ function drawHud() {
     if (fxs.banner.sub && age > 0.2) hudText(fxs.banner.sub, "#c8bcd8", 1, VW / 2, VH * 0.38 + 33, "center");
     h.globalAlpha = 1;
   }
+  drawEnchHud();
+  drawEnchCards();
   if (labSlow < 1) hudText("SLOW X0.25", "#8fdcff", 1, 6, VH - 10);
   if (paused) { h.fillStyle = "rgba(8,4,12,0.6)"; h.fillRect(0, 0, VW, VH); hudText("PAUSED", "#ffffff", 3, VW / 2, VH / 2 - 10, "center"); }
   if (fxs.flash) { h.globalAlpha = fxs.flash.a * (fxs.flash.t / fxs.flash.max); h.fillStyle = fxs.flash.color; h.fillRect(0, 0, VW, VH); h.globalAlpha = 1; }
@@ -2135,7 +2531,8 @@ function frame(now) {
     const dt = rawDt * labSlow * slow.scale;
     time += dt;
     player.update(dt);
-    for (const e of enemies) e.update(dt);
+    enchUpdate(dt);
+    for (const e of enemies) e.update(dt * enchTimeScale(e));
     enemies = enemies.filter(e => e.alive);
     updateProjectiles(dt);
     updatePickups(dt);
@@ -2204,6 +2601,25 @@ for (const [key, label, min, max, step, fmt] of SLIDERS) {
 }
 syncToggles();
 
+const enchGrid = document.getElementById("enchGrid"), enchBtns = {};
+for (const slot of ["basic", "skill"]) {
+  const lab = document.createElement("span"); lab.className = "slot"; lab.textContent = slot === "basic" ? "평타" : "스킬"; enchGrid.appendChild(lab);
+  for (const k of ENCH_KEYS) {
+    const b = document.createElement("button"); b.type = "button"; b.style.setProperty("--kc", ENCH_INFO[k].col);
+    b.addEventListener("click", () => { ench[slot][k] = (ench[slot][k] + 1) % 4; syncEnchUi(); screenCanvas.focus(); });
+    enchGrid.appendChild(b); enchBtns[slot + k] = b;
+  }
+}
+document.getElementById("enchDesc").innerHTML = ENCH_KEYS.map(k => `<li><b style="color:${ENCH_INFO[k].col}">${ENCH_INFO[k].name}</b> ${ENCH_INFO[k].ko}</li>`).join("");
+function syncEnchUi() {
+  for (const slot of ["basic", "skill"]) for (const k of ENCH_KEYS) { const b = enchBtns[slot + k], lv = ench[slot][k]; b.dataset.lv = lv; b.innerHTML = `${ENCH_INFO[k].name}<b>${lv ? "Lv" + lv : "–"}</b>`; b.setAttribute("aria-label", (slot === "basic" ? "평타 " : "스킬 ") + ENCH_INFO[k].name + " 레벨 " + lv); }
+  document.getElementById("enchCardsBtn").textContent = "웨이브 보상 카드: " + (T.enchCards ? "ON" : "OFF");
+}
+document.getElementById("enchAll3").addEventListener("click", () => { for (const s of ["basic", "skill"]) for (const k of ENCH_KEYS) ench[s][k] = 3; syncEnchUi(); screenCanvas.focus(); });
+document.getElementById("enchClear").addEventListener("click", () => { for (const s of ["basic", "skill"]) for (const k of ENCH_KEYS) ench[s][k] = 0; syncEnchUi(); screenCanvas.focus(); });
+document.getElementById("enchCardsBtn").addEventListener("click", () => { T.enchCards = !T.enchCards; syncEnchUi(); screenCanvas.focus(); });
+syncEnchUi();
+
 const GAME_KEYS = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"]);
 window.addEventListener("keydown", e => {
   const tag = (e.target && e.target.tagName) || "";
@@ -2222,6 +2638,7 @@ window.addEventListener("keydown", e => {
   if (e.code === "Tab") statusEl.hidden = !statusEl.hidden;
   if (e.code === "KeyR") resetAll();
   const m = /^Digit(\d)$/.exec(e.code);
+  if (m && enchReward.cards && waves.state === "reward" && +m[1] >= 1 && +m[1] <= 3) { enchPick(+m[1] - 1); return; }
   if (m) {
     const d = +m[1];
     if (d === 0) { const anyOn = BASIC.concat(JUICE).some(([k]) => k !== "god" && T[k]); preset(anyOn ? "off" : "full"); }
@@ -2245,7 +2662,8 @@ screenCanvas.addEventListener("pointerdown", e => {
   screenCanvas.focus();
   if (player.state === "Dead" && player.deadT > 0.8) { resetAll(); return; }
   if (e.pointerType === "touch") {
-    const [px] = canvasPoint(e);
+    const [px, py] = canvasPoint(e);
+    if (enchReward.cards && waves.state === "reward" && enchReward.picked < 0) for (let i = 0; i < enchReward.cards.length; i++) { const [x, y, w, hh] = cardRect(i); if (px >= x && px < x + w && py >= y && py < y + hh) { enchPick(i); return; } }
     if (px < VW / 2 && touchStick.id === null) {
       touchStick.id = e.pointerId; touchStick.ox = touchStick.x = e.clientX; touchStick.oy = touchStick.y = e.clientY;
       screenCanvas.setPointerCapture(e.pointerId);
@@ -2253,6 +2671,9 @@ screenCanvas.addEventListener("pointerdown", e => {
     return;
   }
   [mouse.x, mouse.y] = canvasPoint(e); mouse.has = true;
+  if (e.button === 0 && enchReward.cards && waves.state === "reward" && enchReward.picked < 0) {
+    for (let i = 0; i < enchReward.cards.length; i++) { const [x, y, w, hh] = cardRect(i); if (mouse.x >= x && mouse.x < x + w && mouse.y >= y && mouse.y < y + hh) { enchPick(i); return; } }
+  }
   if (e.button === 0) { pressed.attack = true; held.mouse = true; }
   if (e.button === 2) pressed.dash = true;
 });
@@ -2277,7 +2698,7 @@ document.getElementById("startBtn").addEventListener("click", () => {
   screenCanvas.focus();
 });
 
-window.__ash = { T, player, get enemies() { return enemies; }, waves, pressed, held, keys, mouse, parts, projectiles, pickups, cam, slow, fxs, startWave, spawnEnemy, resetAll, get combo() { return combo; }, get kills() { return kills; } };
+window.__ash = { ench, enchFx, enchReward, enchPick, T, player, get enemies() { return enemies; }, waves, pressed, held, keys, mouse, parts, projectiles, pickups, cam, slow, fxs, startWave, spawnEnemy, resetAll, get combo() { return combo; }, get kills() { return kills; } };
 cam.x = player.pos.x; cam.y = player.pos.y;
 requestAnimationFrame(frame);
 })();
