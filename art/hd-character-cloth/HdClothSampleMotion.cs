@@ -100,7 +100,7 @@ public class HdClothSampleMotion : MonoBehaviour
             {
                 float p = Frac(ph + i * 0.5f);                       // 0 = heel strike with this leg in front
                 th[i] = w * legSwing * Mathf.Cos(2f * Mathf.PI * p);
-                kn[i] = w * (6f + 12f * Bump(p, 0f, 0.3f) + 58f * Bump(p, 0.52f, 0.95f));
+                kn[i] = w * (6f + 12f * Bump(p, 0f, 0.3f) + 36f * Bump(p, 0.52f, 0.95f));
             }
             float pl = Frac(ph);
             hipYaw = w * 5f * Mathf.Cos(2f * Mathf.PI * pl) * facing;
@@ -135,7 +135,7 @@ public class HdClothSampleMotion : MonoBehaviour
                 th[i] = 95f * crouch; kn[i] = 118f * crouch;
                 armSwing[i] = 18f * crouch; elbow[i] = 12f + 22f * crouch;
             }
-            lean1 = 30f * crouch; lean2 = 12f * crouch; neckLean = -26f * crouch;
+            lean1 = 24f * crouch; lean2 = 8f * crouch; neckLean = -18f * crouch;
         }
 
         // ---- root ---------------------------------------------------------------
