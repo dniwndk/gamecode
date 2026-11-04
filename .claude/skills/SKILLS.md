@@ -147,6 +147,18 @@
 | `performance-optimization` | 측정 먼저, 프레임 예산, 그리기 호출·풀링·GC | awesome-gamedev |
 | `itch-publish` | itch.io 페이지와 butler 업로드 | awesome-gamedev |
 
+### 3D 캐릭터 (Blender → 게임 엔진)
+| 스킬 | 하는 일 | 출처 |
+|---|---|---|
+| `scenario-blender-expert` | Blender 작업 공통 규칙, 메시 검사(`bx_audit`)·검토 시트 렌더(`bx_review`) | scenario-labs |
+| `scenario-blender-rigging` | Rigify 리그 맞추기, 자동 가중치 실패 검출, 게임용 리그 제약(`bx_rig`) | scenario-labs |
+| `scenario-blender-retopology` | AI 생성 메시 리토폴로지, 게임용 삼각형 예산(`bx_retopo`) | scenario-labs |
+| `scenario-blender-uv-baking` | UV 펼치기·패킹, 노멀·AO 굽기(`bx_uvbake`) | scenario-labs |
+| `scenario-blender-export` | 유니티용 FBX/GLB 내보내기와 재가져오기 검증(`bx_export`) | scenario-labs |
+
+쓰는 조건: Blender **5.2** 기준(4.x에서는 API 차이로 일부 실패). 헤드리스 렌더(`bx_review`)는 리눅스에서 `libegl1`이 있어야 한다.
+SKILL.md의 `<skills>` 자리에는 `.claude/skills`의 절대 경로를 넣는다.
+
 ## 출처와 라이선스
 
 | 출처 | 커밋 | 라이선스 | 가져온 스킬 |
@@ -161,6 +173,7 @@
 | [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai) | b37e020 | MIT (`_licenses/`) | humanize-korean, humanize, humanize-scan, humanize-redo + `.claude/agents/` 4개 (공식 `install.sh --copy`로 설치) |
 | [patch-gg/pixelfx](https://github.com/patch-gg/pixelfx) | a841596 | MIT (`_licenses/`, NOTICE 포함) | pixelfx (스킬 폴더만. 라이브러리는 사용 시 따로 받음) |
 | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | 8644175 | Apache-2.0 (`_licenses/`) | impeccable + `.claude/agents/impeccable-*` 4개 |
+| [scenario-labs/skills](https://github.com/scenario-labs/skills) | e24bc7d | MIT (`_licenses/`) | scenario-blender-expert, -rigging, -retopology, -uv-baking, -export (`skills/dcc/blender/`, 원본 그대로) |
 
 수정한 곳: `router/SKILL.md` 맨 위에 "이 저장소에서는 스킬이 `.claude/skills/<이름>/`에 평평하게 설치돼 있다"는 안내를 덧붙였다. 또 다음을 고쳤다.
 - `game-ux-designer`·`game-accessibility-specialist`: 원본 저장소의 `docs/` 문서(게임 디자인 이론 등)를 각 스킬의 `references/`에 함께 넣고 경로를 바꿨다.
