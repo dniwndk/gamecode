@@ -3,14 +3,17 @@ using UnityEngine;
 
 /// Captures the sample from a 3/4 front camera and a side camera into <project>/SampleShots as JPG.
 /// Runs at a fixed 30 fps capture clock so the result is the same in batch mode and in the editor.
+/// Execution order 2000: renders after the cloth simulation (1000) has posed the bones this frame.
+[DefaultExecutionOrder(2000)]
 public class HdClothSampleCapture : MonoBehaviour
 {
     public Transform target;
-    public float duration = 9f;
+    public float duration = 11f;
     public int everyNthFrame = 3;       // 30 fps clock -> 10 shots per second
     public int width = 960, height = 540;
     public string outDir;
-    Camera camA, camB;
+    Camera camA, camB, camC;
+    Quaternion startRot; float facing = 1f;
     RenderTexture rt; Texture2D tex;
     int frame, shot;
 
@@ -19,7 +22,8 @@ public class HdClothSampleCapture : MonoBehaviour
         Time.captureFramerate = 30;
         if (string.IsNullOrEmpty(outDir)) outDir = Path.Combine(Application.dataPath, "..", "SampleShots");
         Directory.CreateDirectory(outDir);
-        camA = MakeCam("CamFront"); camB = MakeCam("CamSide");
+        camA = MakeCam("CamFront"); camB = MakeCam("CamSide"); camC = MakeCam("CamFace");
+        startRot = target.rotation;
         rt = new RenderTexture(width, height, 24); tex = new Texture2D(width, height, TextureFormat.RGB24, false);
     }
 
@@ -32,7 +36,7 @@ public class HdClothSampleCapture : MonoBehaviour
 
     void Aim(Camera c, Vector3 offsetDir, float dist)
     {
-        Vector3 focus = target.position + Vector3.up * 1.0f;
+        Vector3 focus = new Vector3(target.position.x, 0f, target.position.z) + Vector3.up * 0.95f;
         c.transform.position = focus + offsetDir.normalized * dist + Vector3.up * 0.15f;
         c.transform.LookAt(focus);
     }
@@ -42,10 +46,16 @@ public class HdClothSampleCapture : MonoBehaviour
         if (target == null) return;
         frame++;
         if (frame % everyNthFrame != 0) return;
-        // cameras follow the character in world space (not its yaw), so the turn is visible
-        Aim(camA, new Vector3(-0.7f, 0f, -1f), 3.2f);
-        Aim(camB, new Vector3(1f, 0f, 0f), 3.2f);
-        Save(camA, $"front_{shot:D3}.jpg"); Save(camB, $"side_{shot:D3}.jpg");
+        var cloth = target.GetComponent<AshClothChains>();
+        if (cloth) facing = cloth.facing;
+        // front/side follow the character's position but keep the starting direction (the turn is visible);
+        // the face camera always looks at the character's front three-quarter.
+        Vector3 f0 = startRot * Vector3.forward * facing, r0 = startRot * Vector3.right * facing;
+        Vector3 f1 = target.forward * facing, r1 = target.right * facing;
+        Aim(camA, f0 + r0 * 0.6f, 3.4f);
+        Aim(camB, r0, 3.4f);
+        Aim(camC, f1 - r1 * 0.6f, 3.0f);
+        Save(camA, $"front_{shot:D3}.jpg"); Save(camB, $"side_{shot:D3}.jpg"); Save(camC, $"face_{shot:D3}.jpg");
         shot++;
         if (frame * (1f / 30f) >= duration) Finish();
     }

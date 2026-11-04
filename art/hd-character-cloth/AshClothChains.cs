@@ -2,55 +2,79 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Cloth sway for the coat / front-panel / wing bone chains of character_rigged.fbx.
-/// Each chain is a spring (verlet) simulation that hangs with gravity, lags behind body
-/// motion and is pushed out of leg capsules and off the floor, so the cloth does not pass
-/// through the legs or fold into the ground when the character crouches.
-/// Put it on the character root (the object that holds the GameRig). With autoSetup on,
-/// chains and leg colliders are found by bone name (DEF-skirt_*, DEF-wing*, DEF-thigh/shin).
+/// Cloth for the coat / front-panel / wing bone chains of character_rigged_cloth.fbx.
+///
+/// Two layers:
+/// 1. Leg drivers (ported from the Blender rig): each coat chain root turns with the thigh
+///    swing (front panel with whichever thigh is forward, back coat with its own thigh going
+///    back, side coat both ways) and lower bones bend or hang back by set amounts. This is
+///    what keeps the legs from walking through the cloth.
+/// 2. Spring (verlet) simulation on top: gravity, lag behind body motion, push-out from leg
+///    capsules tested against whole segments (not only joints), and a floor plane.
+///
+/// Put it on the character root. With autoSetup on, everything is found by bone name.
 /// </summary>
 [DefaultExecutionOrder(1000)]
 public class AshClothChains : MonoBehaviour
 {
     [System.Serializable]
+    public class LegDriver
+    {
+        public Transform thigh, knee;        // thigh bone and the bone at the knee (shin)
+        [HideInInspector] public float restAngle;
+        [HideInInspector] public float swing; // degrees, + = forward
+    }
+
+    [System.Serializable]
     public class Chain
     {
         public Transform root;
-        [Range(0f, 1f)] public float stiffness = 0.08f;   // pull back toward the animated pose
-        [Range(0f, 1f)] public float damping = 0.12f;     // velocity loss per step
-        public float gravity = 2.0f;                      // m/s^2 along world down
-        [Range(0f, 1f)] public float inertia = 0.6f;      // how much body motion is ignored (0 = follows, 1 = lags fully)
+        [Range(0f, 1f)] public float stiffness = 0.08f;   // pull back toward the driven pose
+        [Range(0f, 1f)] public float damping = 0.12f;
+        public float gravity = 2.0f;                      // m/s^2
+        [Range(0f, 1f)] public float inertia = 0.6f;      // 0 = follows body travel, 1 = lags fully
         public float particleRadius = 0.02f;
+        [Header("Leg driver (degrees of cloth per degree of thigh swing)")]
+        public int legL = -1, legR = -1;                  // indices into legs; -1 = none
+        public bool eitherLegForward;                     // front panel: use the most-forward thigh
+        public float followForward, followBack;
+        public float[] perBone = new float[0];            // extra turn per bone (+ = bend further, - = hang back)
         [HideInInspector] public List<Transform> bones = new List<Transform>();
         [HideInInspector] public Vector3[] pos, prev;
         [HideInInspector] public float[] len;
         [HideInInspector] public Quaternion[] restLocalRot;
         [HideInInspector] public Vector3[] restLocalPos;
-        [HideInInspector] public Vector3 tailLocal;     // virtual tip past the last bone
+        [HideInInspector] public Vector3 tailLocal;
     }
 
     [System.Serializable]
     public class Capsule
     {
-        public Transform start;
-        public Transform end;
+        public Transform start, end;
         public float radius = 0.07f;
     }
 
     public bool autoSetup = true;
+    public List<LegDriver> legs = new List<LegDriver>();
     public List<Chain> chains = new List<Chain>();
     public List<Capsule> colliders = new List<Capsule>();
-    [Range(1, 4)] public int substeps = 2;
-    [Tooltip("Keep cloth above the character's feet (local Y of this transform). Stops the hem folding into the floor when crouching.")]
+    [Range(1, 6)] public int substeps = 3;
     public bool floorCollision = true;
+    [Tooltip("World height of the floor. Taken from the character's position at start.")]
+    public float floorY;
     public float floorOffset = 0.01f;
+
+    [Tooltip("+1 if the character faces this object's +Z, -1 if it faces -Z. Auto-detected from the front panel.")]
+    public float facing = 1f;
 
     Vector3 lastRootPos;
 
     void Awake()
     {
+        floorY = transform.position.y;
         if (autoSetup) AutoSetup();
         chains.RemoveAll(c => c == null || c.root == null);
+        foreach (var l in legs) l.restAngle = SagittalAngle(l);
         foreach (var c in chains) Init(c);
         lastRootPos = transform.position;
     }
@@ -59,31 +83,59 @@ public class AshClothChains : MonoBehaviour
     {
         var all = new Dictionary<string, Transform>();
         foreach (var t in GetComponentsInChildren<Transform>(true)) all[t.name] = t;
-        void AddChain(string name, float stiff, float grav, float inertia)
+        int Leg(string s)
         {
-            if (all.TryGetValue(name, out var t) && !chains.Exists(c => c.root == t))
-                chains.Add(new Chain { root = t, stiffness = stiff, gravity = grav, inertia = inertia });
+            if (!all.TryGetValue("DEF-thigh." + s, out var th) || !all.TryGetValue("DEF-shin." + s, out var sh)) return -1;
+            legs.Add(new LegDriver { thigh = th, knee = sh });
+            return legs.Count - 1;
         }
-        AddChain("DEF-skirt_front", 0.06f, 2.0f, 0.55f);
+        int L = Leg("L"), R = Leg("R");
+        if (all.TryGetValue("DEF-skirt_front", out var fp) && all.TryGetValue("DEF-spine", out var sp))
+            facing = Mathf.Sign(transform.InverseTransformPoint(fp.position).z - transform.InverseTransformPoint(sp.position).z + 1e-6f);
+        Chain Add(string name, float stiff, float grav, float inertia, float radius)
+        {
+            if (!all.TryGetValue(name, out var t) || chains.Exists(c => c.root == t)) return null;
+            var c = new Chain { root = t, stiffness = stiff, gravity = grav, inertia = inertia, particleRadius = radius };
+            chains.Add(c);
+            return c;
+        }
+        // values from the Blender rig (ch8): front panel 0.9 with the forward thigh, lower part hangs;
+        // back coat 0.7 with its thigh going back (+0.1 forward), second bone bends on, lower part hangs;
+        // side coat about a third both ways.
+        var f = Add("DEF-skirt_front", 0.10f, 2.0f, 0.5f, 0.03f);
+        if (f != null) { f.legL = L; f.legR = R; f.eitherLegForward = true; f.followForward = 0.9f; f.perBone = new[] { 0f, 0f, -0.35f, -0.14f }; }
         foreach (var s in new[] { "L", "R" })
         {
-            AddChain("DEF-skirt_back." + s, 0.05f, 2.0f, 0.6f);
-            AddChain("DEF-skirt_side." + s, 0.06f, 2.0f, 0.55f);
-            AddChain("DEF-wing." + s, 0.35f, 0.3f, 0.25f);   // wings: stiff, slight follow-through
+            int leg = s == "L" ? L : R;
+            var b = Add("DEF-skirt_back." + s, 0.08f, 2.0f, 0.55f, 0.03f);
+            if (b != null) { b.legL = leg; b.followBack = 0.7f; b.followForward = 0.1f; b.perBone = new[] { 0f, 0.5f, -0.5f, -0.3f, 0f }; }
+            var sd = Add("DEF-skirt_side." + s, 0.08f, 2.0f, 0.5f, 0.03f);
+            if (sd != null) { sd.legL = leg; sd.followBack = 0.315f; sd.followForward = 0.3f; }
+            Add("DEF-wing." + s, 0.30f, 0.4f, 0.3f, 0.02f);
+
             if (all.TryGetValue("DEF-thigh." + s, out var th) && all.TryGetValue("DEF-shin." + s, out var sh))
-                colliders.Add(new Capsule { start = th, end = sh, radius = 0.075f });
+                colliders.Add(new Capsule { start = th, end = sh, radius = 0.085f });
             if (all.TryGetValue("DEF-shin." + s, out var sh2) && all.TryGetValue("DEF-foot." + s, out var ft))
-                colliders.Add(new Capsule { start = sh2, end = ft, radius = 0.055f });
+                colliders.Add(new Capsule { start = sh2, end = ft, radius = 0.06f });
+            if (all.TryGetValue("DEF-foot." + s, out var ft2) && all.TryGetValue("DEF-toe." + s, out var toe))
+                colliders.Add(new Capsule { start = ft2, end = toe, radius = 0.05f });
         }
         if (all.TryGetValue("DEF-spine", out var hip) && all.TryGetValue("DEF-spine.002", out var chest))
             colliders.Add(new Capsule { start = hip, end = chest, radius = 0.11f });
     }
 
+    // thigh direction angle in the character's side plane, 0 = straight down, + = forward
+    float SagittalAngle(LegDriver l)
+    {
+        Vector3 d = transform.InverseTransformDirection(l.knee.position - l.thigh.position);
+        return Mathf.Atan2(d.z * facing, -d.y) * Mathf.Rad2Deg;
+    }
+
     void Init(Chain c)
     {
         c.bones.Clear();
-        for (var t = c.root; t != null; t = t.childCount > 0 ? FirstBoneChild(t) : null) c.bones.Add(t);
-        int n = c.bones.Count + 1;   // + virtual tail
+        for (var t = c.root; t != null; t = FirstBoneChild(t)) c.bones.Add(t);
+        int n = c.bones.Count + 1;
         c.pos = new Vector3[n]; c.prev = new Vector3[n]; c.len = new float[n];
         c.restLocalRot = new Quaternion[c.bones.Count]; c.restLocalPos = new Vector3[c.bones.Count];
         for (int i = 0; i < c.bones.Count; i++)
@@ -115,8 +167,8 @@ public class AshClothChains : MonoBehaviour
         return last.position + last.TransformVector(c.tailLocal);
     }
 
-    // Restore the rest pose before the Animator writes; unanimated chain bones would
-    // otherwise keep last frame's simulated rotation as their "animated" pose.
+    // Restore the rest pose before the Animator / motion scripts write, so last frame's
+    // simulated rotation never becomes this frame's "animated" pose.
     void Update()
     {
         foreach (var c in chains)
@@ -131,13 +183,16 @@ public class AshClothChains : MonoBehaviour
     {
         float dt = Mathf.Min(Time.deltaTime, 1f / 30f);
         if (dt <= 0f) return;
+        foreach (var l in legs) l.swing = SagittalAngle(l) - l.restAngle;
+        foreach (var c in chains) Drive(c);
+
         Vector3 rootMove = transform.position - lastRootPos;
         lastRootPos = transform.position;
         float h = dt / substeps;
         foreach (var c in chains)
         {
             if (c.bones.Count == 0) continue;
-            for (int i = 1; i < c.pos.Length; i++)    // keep part of the body's travel (inertia)
+            for (int i = 1; i < c.pos.Length; i++)
             {
                 c.pos[i] += rootMove * (1f - c.inertia);
                 c.prev[i] += rootMove * (1f - c.inertia);
@@ -147,46 +202,91 @@ public class AshClothChains : MonoBehaviour
         }
     }
 
+    // Turn the chain with the thigh(s): this sets the pose the spring pulls toward.
+    void Drive(Chain c)
+    {
+        if (c.legL < 0 && c.legR < 0) return;
+        float s;
+        if (c.eitherLegForward)
+        {
+            float a = c.legL >= 0 ? legs[c.legL].swing : 0f, b = c.legR >= 0 ? legs[c.legR].swing : 0f;
+            s = Mathf.Max(a, b);
+        }
+        else s = legs[c.legL >= 0 ? c.legL : c.legR].swing;
+        float angle = c.followForward * Mathf.Max(s, 0f) + c.followBack * Mathf.Min(s, 0f);
+        if (Mathf.Abs(angle) < 0.01f) return;
+        Vector3 axis = transform.right * facing;   // turning by -angle about this swings down -> forward
+        c.bones[0].rotation = Quaternion.AngleAxis(-angle, axis) * c.bones[0].rotation;
+        for (int i = 1; i < c.bones.Count && i < c.perBone.Length; i++)
+            if (c.perBone[i] != 0f)
+                c.bones[i].rotation = Quaternion.AngleAxis(-angle * c.perBone[i], axis) * c.bones[i].rotation;
+    }
+
     void Step(Chain c, float h)
     {
-        c.pos[0] = c.prev[0] = c.bones[0].position;   // pinned to the waist / shoulder
+        c.pos[0] = c.prev[0] = c.bones[0].position;
+        float floor = floorY + floorOffset + c.particleRadius;
         for (int i = 1; i < c.pos.Length; i++)
         {
             Vector3 v = (c.pos[i] - c.prev[i]) * (1f - c.damping);
             c.prev[i] = c.pos[i];
             c.pos[i] += v + Vector3.down * c.gravity * h * h;
-            // spring toward where the animation puts this joint, measured from the simulated parent
             Vector3 target = c.pos[i - 1] + (Animated(c, i) - Animated(c, i - 1));
             c.pos[i] = Vector3.Lerp(c.pos[i], target, c.stiffness);
-            Collide(ref c.pos[i], c.particleRadius);
-            if (floorCollision)
+            for (int it = 0; it < 2; it++)
             {
-                float floorY = transform.position.y + floorOffset + c.particleRadius;
-                if (c.pos[i].y < floorY) c.pos[i].y = floorY;
+                Keep(c, i);
+                CollideSegment(c.pos[i - 1], ref c.pos[i], c.particleRadius);
+                if (floorCollision && c.pos[i].y < floor) c.pos[i].y = floor;
             }
-            // keep segment length
-            Vector3 d = c.pos[i] - c.pos[i - 1];
-            float m = d.magnitude;
-            if (m > 1e-6f) c.pos[i] = c.pos[i - 1] + d * (c.len[i] / m);
+            Keep(c, i);
         }
     }
 
-    void Collide(ref Vector3 p, float pr)
+    void Keep(Chain c, int i)
+    {
+        Vector3 d = c.pos[i] - c.pos[i - 1];
+        float m = d.magnitude;
+        if (m > 1e-6f) c.pos[i] = c.pos[i - 1] + d * (c.len[i] / m);
+    }
+
+    // Push the segment a->p out of every capsule by moving its free end p.
+    void CollideSegment(Vector3 a, ref Vector3 p, float pr)
     {
         foreach (var k in colliders)
         {
             if (k.start == null || k.end == null) continue;
-            Vector3 a = k.start.position, b = k.end.position, ab = b - a;
-            float t = Mathf.Clamp01(Vector3.Dot(p - a, ab) / Mathf.Max(ab.sqrMagnitude, 1e-8f));
-            Vector3 q = a + ab * t;
-            Vector3 d = p - q;
+            Vector3 c0 = k.start.position, c1 = k.end.position;
+            ClosestPoints(a, p, c0, c1, out float s, out Vector3 onSeg, out Vector3 onAxis);
+            Vector3 d = onSeg - onAxis;
             float r = k.radius + pr, dist = d.magnitude;
-            if (dist < r)
+            if (dist >= r || s <= 1e-3f) continue;
+            Vector3 nrm = dist > 1e-6f ? d / dist : transform.forward * facing;
+            // move the end so the touching point clears the capsule (lever: touching point is s along the segment)
+            p += nrm * ((r - dist) / s);
+        }
+    }
+
+    static void ClosestPoints(Vector3 p0, Vector3 p1, Vector3 q0, Vector3 q1, out float s, out Vector3 cp, out Vector3 cq)
+    {
+        Vector3 d1 = p1 - p0, d2 = q1 - q0, r = p0 - q0;
+        float a = Vector3.Dot(d1, d1), e = Vector3.Dot(d2, d2), f = Vector3.Dot(d2, r);
+        float t;
+        if (a < 1e-9f) { s = 0; t = Mathf.Clamp01(f / Mathf.Max(e, 1e-9f)); }
+        else
+        {
+            float cc = Vector3.Dot(d1, r);
+            if (e < 1e-9f) { t = 0; s = Mathf.Clamp01(-cc / a); }
+            else
             {
-                Vector3 nrm = dist > 1e-6f ? d / dist : transform.forward;
-                p = q + nrm * r;
+                float b = Vector3.Dot(d1, d2), den = a * e - b * b;
+                s = den > 1e-9f ? Mathf.Clamp01((b * f - cc * e) / den) : 0f;
+                t = (b * s + f) / e;
+                if (t < 0f) { t = 0f; s = Mathf.Clamp01(-cc / a); }
+                else if (t > 1f) { t = 1f; s = Mathf.Clamp01((b - cc) / a); }
             }
         }
+        cp = p0 + d1 * s; cq = q0 + d2 * t;
     }
 
     void Apply(Chain c)
