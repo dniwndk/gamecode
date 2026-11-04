@@ -133,9 +133,9 @@ public class HdClothSampleMotion : MonoBehaviour
             for (int i = 0; i < 2; i++)
             {
                 th[i] = 95f * crouch; kn[i] = 118f * crouch;
-                armSwing[i] = 38f * crouch; elbow[i] = 12f + 38f * crouch;
+                armSwing[i] = 18f * crouch; elbow[i] = 12f + 22f * crouch;
             }
-            lean1 = 26f * crouch; lean2 = 10f * crouch; neckLean = -22f * crouch;
+            lean1 = 30f * crouch; lean2 = 12f * crouch; neckLean = -26f * crouch;
         }
 
         // ---- root ---------------------------------------------------------------

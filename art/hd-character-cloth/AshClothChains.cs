@@ -34,6 +34,8 @@ public class AshClothChains : MonoBehaviour
         public float gravity = 2.0f;                      // m/s^2
         [Range(0f, 1f)] public float inertia = 0.6f;      // 0 = follows body travel, 1 = lags fully
         public float particleRadius = 0.02f;
+        [Tooltip("Max degrees a segment may swing away from its driven pose (stops flag-like flapping).")]
+        public float maxAngle = 40f;
         [Header("Leg driver (degrees of cloth per degree of thigh swing)")]
         public int legL = -1, legR = -1;                  // indices into legs; -1 = none
         public bool eitherLegForward;                     // front panel: use the most-forward thigh
@@ -54,11 +56,20 @@ public class AshClothChains : MonoBehaviour
         public float radius = 0.07f;
     }
 
+    [System.Serializable]
+    public class Link
+    {
+        public int a, b;                 // chain indices; joints with the same index are tied together
+        [Range(0f, 1f)] public float strength = 0.5f;
+        [HideInInspector] public float[] rest;
+    }
+
     public bool autoSetup = true;
+    public List<Link> links = new List<Link>();
     public List<LegDriver> legs = new List<LegDriver>();
     public List<Chain> chains = new List<Chain>();
     public List<Capsule> colliders = new List<Capsule>();
-    [Range(1, 6)] public int substeps = 3;
+    [Range(1, 8)] public int substeps = 4;
     public bool floorCollision = true;
     [Tooltip("World height of the floor. Taken from the character's position at start.")]
     public float floorY;
@@ -76,6 +87,12 @@ public class AshClothChains : MonoBehaviour
         chains.RemoveAll(c => c == null || c.root == null);
         foreach (var l in legs) l.restAngle = SagittalAngle(l);
         foreach (var c in chains) Init(c);
+        foreach (var l in links)
+        {
+            int n = Mathf.Min(chains[l.a].pos.Length, chains[l.b].pos.Length);
+            l.rest = new float[n];
+            for (int i = 0; i < n; i++) l.rest[i] = Vector3.Distance(chains[l.a].pos[i], chains[l.b].pos[i]);
+        }
         lastRootPos = transform.position;
     }
 
@@ -102,16 +119,18 @@ public class AshClothChains : MonoBehaviour
         // values from the Blender rig (ch8): front panel 0.9 with the forward thigh, lower part hangs;
         // back coat 0.7 with its thigh going back (+0.1 forward), second bone bends on, lower part hangs;
         // side coat about a third both ways.
-        var f = Add("DEF-skirt_front", 0.10f, 2.0f, 0.5f, 0.03f);
+        var f = Add("DEF-skirt_front", 0.25f, 3.0f, 0.3f, 0.03f);
         if (f != null) { f.legL = L; f.legR = R; f.eitherLegForward = true; f.followForward = 0.9f; f.perBone = new[] { 0f, 0f, -0.35f, -0.14f }; }
         foreach (var s in new[] { "L", "R" })
         {
             int leg = s == "L" ? L : R;
-            var b = Add("DEF-skirt_back." + s, 0.08f, 2.0f, 0.55f, 0.03f);
+            var b = Add("DEF-skirt_back." + s, 0.22f, 3.0f, 0.3f, 0.03f);
+            if (b != null) b.maxAngle = 45f;
             if (b != null) { b.legL = leg; b.followBack = 0.7f; b.followForward = 0.1f; b.perBone = new[] { 0f, 0.5f, -0.5f, -0.3f, 0f }; }
-            var sd = Add("DEF-skirt_side." + s, 0.08f, 2.0f, 0.5f, 0.03f);
+            var sd = Add("DEF-skirt_side." + s, 0.22f, 3.0f, 0.3f, 0.03f);
             if (sd != null) { sd.legL = leg; sd.followBack = 0.315f; sd.followForward = 0.3f; }
-            Add("DEF-wing." + s, 0.30f, 0.4f, 0.3f, 0.02f);
+            var w = Add("DEF-wing." + s, 0.35f, 0.4f, 0.25f, 0.02f);
+            if (w != null) w.maxAngle = 25f;
 
             if (all.TryGetValue("DEF-thigh." + s, out var th) && all.TryGetValue("DEF-shin." + s, out var sh))
                 colliders.Add(new Capsule { start = th, end = sh, radius = 0.085f });
@@ -120,6 +139,15 @@ public class AshClothChains : MonoBehaviour
             if (all.TryGetValue("DEF-foot." + s, out var ft2) && all.TryGetValue("DEF-toe." + s, out var toe))
                 colliders.Add(new Capsule { start = ft2, end = toe, radius = 0.05f });
         }
+        // tie neighbouring coat chains together so the coat moves as one piece (no gaps or flaps)
+        int Idx(string n) => chains.FindIndex(c => c.root != null && c.root.name == n);
+        void TieChains(string x, string y, float k) { int i = Idx(x), j = Idx(y); if (i >= 0 && j >= 0) links.Add(new Link { a = i, b = j, strength = k }); }
+        TieChains("DEF-skirt_back.L", "DEF-skirt_back.R", 0.5f);
+        TieChains("DEF-skirt_back.L", "DEF-skirt_side.L", 0.5f);
+        TieChains("DEF-skirt_back.R", "DEF-skirt_side.R", 0.5f);
+        TieChains("DEF-skirt_side.L", "DEF-skirt_front", 0.3f);
+        TieChains("DEF-skirt_side.R", "DEF-skirt_front", 0.3f);
+
         if (all.TryGetValue("DEF-spine", out var hip) && all.TryGetValue("DEF-spine.002", out var chest))
             colliders.Add(new Capsule { start = hip, end = chest, radius = 0.11f });
     }
@@ -190,16 +218,43 @@ public class AshClothChains : MonoBehaviour
         lastRootPos = transform.position;
         float h = dt / substeps;
         foreach (var c in chains)
-        {
-            if (c.bones.Count == 0) continue;
             for (int i = 1; i < c.pos.Length; i++)
             {
                 c.pos[i] += rootMove * (1f - c.inertia);
                 c.prev[i] += rootMove * (1f - c.inertia);
             }
-            for (int s = 0; s < substeps; s++) Step(c, h);
-            Apply(c);
+        for (int s = 0; s < substeps; s++)
+        {
+            foreach (var c in chains) Step(c, h);
+            foreach (var l in links) Tie(l);
+            foreach (var c in chains) for (int i = 1; i < c.pos.Length; i++) { Keep(c, i); Limit(c, i); CollideSegment(c.pos[i - 1], ref c.pos[i], c.particleRadius); }
         }
+        foreach (var c in chains) Apply(c);
+    }
+
+    // keep corresponding joints of two neighbouring chains at their rest spacing
+    void Tie(Link l)
+    {
+        var A = chains[l.a]; var B = chains[l.b];
+        for (int i = 1; i < l.rest.Length; i++)
+        {
+            Vector3 d = B.pos[i] - A.pos[i];
+            float m = d.magnitude;
+            if (m < 1e-6f) continue;
+            Vector3 corr = d * ((m - l.rest[i]) / m) * 0.5f * l.strength;
+            A.pos[i] += corr; B.pos[i] -= corr;
+        }
+    }
+
+    // a segment may not swing further than maxAngle from its driven direction
+    void Limit(Chain c, int i)
+    {
+        Vector3 anim = Animated(c, i) - Animated(c, i - 1);
+        Vector3 d = c.pos[i] - c.pos[i - 1];
+        if (anim.sqrMagnitude < 1e-10f || d.sqrMagnitude < 1e-10f) return;
+        if (Vector3.Angle(anim, d) <= c.maxAngle) return;
+        Vector3 lim = Vector3.RotateTowards(anim.normalized, d.normalized, c.maxAngle * Mathf.Deg2Rad, 0f);
+        c.pos[i] = c.pos[i - 1] + lim * c.len[i];
     }
 
     // Turn the chain with the thigh(s): this sets the pose the spring pulls toward.
@@ -237,7 +292,11 @@ public class AshClothChains : MonoBehaviour
             {
                 Keep(c, i);
                 CollideSegment(c.pos[i - 1], ref c.pos[i], c.particleRadius);
-                if (floorCollision && c.pos[i].y < floor) c.pos[i].y = floor;
+                if (floorCollision && c.pos[i].y < floor)
+                {
+                    c.pos[i].y = floor;
+                    c.prev[i] = Vector3.Lerp(c.prev[i], c.pos[i], 0.7f);   // friction: cloth on the floor stops sliding
+                }
             }
             Keep(c, i);
         }
