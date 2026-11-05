@@ -623,7 +623,7 @@ function updatePlayer(dt) {
   const dashPress = Input.hit(' ') || Input.hit('l') || Input.hit('Shift');
   const spinPress = Input.hit('q') || Input.hit('u');
   const ultPress = Input.hit('r') || Input.hit('i');
-  if (atkPress) P.buffer = 0.25;
+  if (atkPress) { P.buffer = 0.25; P.atkAt = gameTime; }
   P.parryBuf = (P.parryBuf || 0) - dt; if (parryPress) P.parryBuf = 0.2; // 대시·휘두름 중에 눌러도 0.2초 안에 발동
 
   // 대시
@@ -631,14 +631,18 @@ function updatePlayer(dt) {
   if (dashPress && P.dashCharges > 0 && P.dashT <= 0 && cancelable) {
     P.dashCharges--; P.dashRe = 0;
     P.dashDir = (mv.x || mv.y) ? Math.atan2(mv.y, mv.x) : aimAngle();
-    P.dashT = 0.16; P.iframe = Math.max(P.iframe, 0.2); P.act = null; P.dashAfter = 0; P.buffer = 0;
+    // 대시와 공격을 거의 동시에(0.1초 안) 누르면 "대시 공격" 의도로 봐요: 막 시작한 평타는 취소하고 공격 입력을 살려 둬요
+    const chord = gameTime - (P.atkAt != null ? P.atkAt : -9) < 0.1;
+    if (chord && P.act && P.act.type === 'swing' && (P.act.phase === 'wind' || (P.act.phase === 'active' && P.act.t < 0.03))) P.combo = (P.combo + 2) % 3;
+    P.dashT = 0.16; P.iframe = Math.max(P.iframe, 0.2); P.act = null; P.dashAfter = 0; P.buffer = chord ? 0.25 : 0;
     if (Run.augs.gale) P.galeT = 1.16;
     Sfx.dash(); FX.burst(P.x, P.y, '#9fe8ff', 8, 120, 0.3, 5); FX.burst(P.x, P.y + 12, '#8a8296', 10, 160, 0.35, 6);
     P.sqK = 0.45; P.sqA = P.dashDir; FX.ring(P.x, P.y, 6, 40, '#9fe8ff', 0.2, 3);
   }
   if (P.dashT > 0) {
     // 대시 중 공격 → 그 자리에서 바로 대시 찌르기 (대시를 끊고, 대시 방향으로)
-    if (P.buffer > 0 && P.dashT < 0.14) { P.dashT = 0; startThrust(P.dashDir); moveBody(P, dt); return; }
+    // 최소 0.08초(약 76px)는 대시로 이동한 뒤 찔러요 → 동시 입력도 '이동하면서 찌르기'로 보임
+    if (P.buffer > 0 && P.dashT <= 0.08) { P.dashT = 0; startThrust(P.dashDir); moveBody(P, dt); return; }
     P.dashT -= dt; const sp = 950;
     P.vx = Math.cos(P.dashDir) * sp; P.vy = Math.sin(P.dashDir) * sp;
     P.trail.push({ x: P.x, y: P.y, life: 0.22, max: 0.22, col: '#7fe0ff' });
