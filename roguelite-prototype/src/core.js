@@ -5,7 +5,7 @@ const cv = document.getElementById('c');
 const cx = cv.getContext('2d');
 function fit() {
   const s = Math.min(innerWidth / W, innerHeight / H);
-  cv.style.width = (W * s) + 'px'; cv.style.height = (H * s) + 'px';
+  for (const c of [cv, document.getElementById('g')]) { c.style.width = (W * s) + 'px'; c.style.height = (H * s) + 'px'; }
   cv.width = W; cv.height = H;
   const ui = document.getElementById('ui');
   ui.style.width = W + 'px'; ui.style.height = H + 'px';
@@ -98,7 +98,7 @@ const FX = {
     this.texts.push({ x: x + (R() - 0.5) * 20, y, s: String(s), col, life: big ? 1.1 : 0.75, max: big ? 1.1 : 0.75, big: !!big, vy: big ? -50 : -80, vx: (R() - 0.5) * 60, age: 0 });
   },
   update(dt) {
-    for (const p of this.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.9; p.vy *= 0.9; p.life -= dt; }
+    for (const p of this.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.9; p.vy *= 0.9; if (p.vh) p.h = (p.h || 0) + p.vh * dt; p.life -= dt; }
     this.parts = this.parts.filter(p => p.life > 0);
     if (this.parts.length > 900) this.parts.splice(0, this.parts.length - 900);
     for (const t of this.texts) { t.y += t.vy * dt; t.x += (t.vx || 0) * dt; t.vy *= 0.94; t.life -= dt; t.age = (t.age || 0) + dt; }

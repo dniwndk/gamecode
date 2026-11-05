@@ -8,7 +8,8 @@
 :root { color-scheme: dark; --bg:#0c0b10; --panel:#16141d; --line:#2c2936; --text:#ecebf2; --dim:#8e8aa0; --gold:#ffd27a; --accent:#4fd1c5; }
 * { box-sizing: border-box; }
 html, body { margin:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden; font-family: "Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; }
-#c { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:block; cursor:crosshair; }
+#c, #g { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:block; }
+#c { cursor:crosshair; } #g { pointer-events:none; }
 #ui { position:absolute; left:50%; top:50%; transform-origin:center; pointer-events:none; }
 .screen { position:absolute; inset:0; background:rgba(12,11,16,0.96); display:flex; flex-direction:column; align-items:center; padding:20px 32px; overflow:auto; }
 .topbar { width:100%; border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:10px; font-size:17px; }
@@ -78,8 +79,10 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--text); ove
 </style>
 </head>
 <body>
+<canvas id="g" width="1600" height="900"></canvas>
 <canvas id="c" width="1600" height="900"></canvas>
 <div id="ui"></div>
+<script>/*__THREE__*/</script>
 <script>
 /*__SCRIPTS__*/
 </script>
