@@ -1,0 +1,144 @@
+{
+ "frames": [
+  {
+   "filename": "impact-sparks-0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-1",
+   "frame": {
+    "x": 64,
+    "y": 0,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-2",
+   "frame": {
+    "x": 128,
+    "y": 0,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-3",
+   "frame": {
+    "x": 192,
+    "y": 0,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-4",
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-5",
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-6",
+   "frame": {
+    "x": 384,
+    "y": 0,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-7",
+   "frame": {
+    "x": 448,
+    "y": 0,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-8",
+   "frame": {
+    "x": 0,
+    "y": 56,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-9",
+   "frame": {
+    "x": 64,
+    "y": 56,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-10",
+   "frame": {
+    "x": 128,
+    "y": 56,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  },
+  {
+   "filename": "impact-sparks-11",
+   "frame": {
+    "x": 192,
+    "y": 56,
+    "w": 64,
+    "h": 56
+   },
+   "duration": 42
+  }
+ ],
+ "meta": {
+  "image": "impact-sparks.png",
+  "size": {
+   "w": 512,
+   "h": 112
+  },
+  "pixelfx": {
+   "fps": 24,
+   "loop": false,
+   "frameSize": [
+    64,
+    56
+   ],
+   "columns": 8,
+   "pivot": [
+    32,
+    30
+   ]
+  }
+ }
+}

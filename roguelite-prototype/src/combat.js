@@ -257,7 +257,7 @@ function swingHits(a) {
     // 방패병: 정면 방어. 3타, 대시 찌르기, 반격은 방패를 깸
     if (e.def.shield && e.shieldUp && Math.abs(angDiff(e.face, angTo(e, P))) < 1.2) {
       if (a.act === 'a3' || isThrust || a.counter) { e.shieldUp = false; e.shieldDown = 3; FX.text(e.x, e.y - 30, '방패 깨짐', '#cfe0ff'); Sfx.crit(); }
-      else { FX.spark(e.x, e.y, angTo(e, P), '#b8c8e0', 6, 300); Sfx.parry(); Juice.hitstop(0.03); continue; }
+      else { FX.spark(e.x, e.y, angTo(e, P), '#b8c8e0', 6, 300); Sfx.parry(); Juice.hitstop(0.03); SpriteFX.spawn('hit-spark', e.x, e.y, e.r, { ang: angTo(e, P), scale: 0.8 }); continue; }
     }
     dealDamage(e, { base: sw.dmg, act: a.act, gen: 0, ang: a.ang, kb: sw.kb, poise: sw.poise, counter: a.counter, parried: P.lastParriedPow || 0 });
   }
@@ -361,6 +361,7 @@ function dealDamage(e, o) {
     const heavy = o.act === 'a3' || o.act === 'spin' || o.act === 'ult' || o.counter;
     Juice.hitstop(o.counter ? 0.11 : isCrit ? 0.08 : heavy ? 0.065 : o.act === 'a2' ? 0.05 : 0.04);
     const ka = o.ang != null ? o.ang : angTo(P, e); Juice.kickDir(ka, o.counter ? 14 : isCrit ? 9 : heavy ? 7 : 4);
+    SpriteFX.hit(e, ka, isCrit || o.counter, heavy);
     e.shk = 0.15; e.sqK = heavy ? 0.4 : 0.28; e.sqA = ka;
     P.hits++; P.hitT = 1.6; P.hitPop = 0.12;
     if (o.counter) { Sfx.thud(); Juice.impactFrame(0.04, '#ffd27a'); Juice.ab(0.12); Juice.punch(0.05); FX.radial(e.x, e.y, '#ffd27a', 14, e.r, 7); FX.slash(e.x, e.y, ka + Math.PI / 2, 0.9, e.r + 26, '#ffd27a', 12, 0.2); }
@@ -399,7 +400,7 @@ function dealDamage(e, o) {
       const n = (A.thunder || 0) + Math.round(St.shockBounce) + (Run.syn.has('supercond') && (e.chill > 0 || e.frozen > 0) ? 1 : 0);
       const near = World.enemies.filter(x => !x.dead && x !== e && dist(x, e) < 240).sort((p, q) => dist(p, e) - dist(q, e)).slice(0, n);
       for (const t of near) {
-        World.bolts.push({ x1: e.x, y1: e.y, x2: t.x, y2: t.y, life: 0.15 });
+        World.bolts.push({ x1: e.x, y1: e.y, x2: t.x, y2: t.y, life: 0.15 }); SpriteFX.bolt(t.x, t.y, t.r);
         const base = dmg * 0.4 * (1 + St.lightPow / 100);
         later(0.05, () => dealDamage(t, { base, gen: gen + 1, elem: 'light', ang: angTo(e, t), noStatus: false, noLightChain: true }));
       }
@@ -471,6 +472,7 @@ function parrySuccess(h) {
   P.sqK = -0.25; P.sqA = P.face;
   FX.spark(sx, sy, R() * 6, '#fff6c9', 18, 520); FX.ring(sx, sy, 8, 70, h.color === 'gold' ? '#ffd27a' : '#ffffff', 0.25, 5);
   h.color === 'gold' ? Sfx.gold() : Sfx.parry();
+  SpriteFX.parry(lerp(P.x, h.src ? h.src.x : P.x, 0.4), lerp(P.y, h.src ? h.src.y : P.y, 0.4), h.color === 'gold');
   FX.text(P.x, P.y - 40, h.color === 'gold' ? '금색 패링' : '패링', h.color === 'gold' ? '#ffd27a' : '#ffffff', h.color === 'gold');
   const e = h.src;
   if (h.proj) { // 반사

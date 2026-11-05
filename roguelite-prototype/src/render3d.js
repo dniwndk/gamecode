@@ -41,7 +41,7 @@ function buildArena() {
   G3.world = new THREE.Group(); G3.scene.add(G3.world);
   G3.enemyMeshes.forEach(m => G3.scene.remove(m)); G3.enemyMeshes.clear();
   G3.projMeshes.forEach(m => G3.scene.remove(m)); G3.projMeshes.clear();
-  G3.arena = A;
+  G3.arena = A; SpriteFX.clear();
   // 바닥 정적 레이어 (바닥색, 격자, 테두리, 웅덩이)
   G3.stat = document.createElement('canvas'); G3.stat.width = A.w; G3.stat.height = A.h; G3.statCx = G3.stat.getContext('2d');
   G3.statTex = canvasTex(G3.stat); G3.puddleKey = ''; paintStatic();
@@ -208,6 +208,7 @@ function syncEnemies() {
     if (g.userData.shield) g.userData.shield.visible = !!e.shieldUp;
     if (e.groggy > 0) g.rotation.z = 0.35 * Math.sin(performance.now() / 200); else g.rotation.z = 0;
     if (e.burn > 0 && R() < 0.4) FX.parts.push({ x: e.x + (R() - 0.5) * e.r, y: e.y + (R() - 0.5) * e.r, h: e.r, vx: 0, vy: 0, vh: 90, life: 0.4, max: 0.4, col: '#ff8a3d', size: 4 + e.burn });
+    if (e.shocked > 0) SpriteFX.shock(e);
     if (e.shocked > 0 && R() < 0.15) World.bolts.push({ x1: e.x - e.r, y1: e.y, x2: e.x + e.r, y2: e.y + (R() - 0.5) * e.r, h: e.r, life: 0.06 });
   }
   for (const [e, g] of G3.enemyMeshes) if (!seen.has(e)) { G3.scene.remove(g); disposeGroup(g); G3.enemyMeshes.delete(e); }
@@ -309,7 +310,7 @@ function drawWorld() {
   if (G3.arena !== World.arena) buildArena();
   const key = World.arena.puddles.map(p => p.used ? 1 : 0).join(''); if (key !== G3.puddleKey) { G3.puddleKey = key; paintStatic(); }
   if (G3.decDirty) { G3.decTex.needsUpdate = true; G3.decDirty = false; }
-  placeCam(); paintDynamic(); syncEnemies(); syncProjs(); syncPlayer();
+  placeCam(); paintDynamic(); syncEnemies(); syncProjs(); syncPlayer(); SpriteFX.init(); SpriteFX.update(G3.dt || 0); G3.dt = 0;
   G3.renderer.render(G3.scene, G3.cam);
   // 위에 겹치는 2D 레이어
   cx.clearRect(0, 0, W, H);

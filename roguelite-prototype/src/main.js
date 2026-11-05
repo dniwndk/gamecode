@@ -180,7 +180,7 @@ function frame(now) {
         for (let i = 0; i < steps; i++) {
           const d = sdt / steps; gameTime += d; Run.time += d;
           if (god) { Run.hp = St.maxHp; }
-          updatePlayer(d); updateWorld(d); updateLater(d); FX.update(d);
+          updatePlayer(d); updateWorld(d); updateLater(d); FX.update(d); G3.dt = (G3.dt || 0) + d;
           if (Scene !== 'fight') break;
         }
       }
