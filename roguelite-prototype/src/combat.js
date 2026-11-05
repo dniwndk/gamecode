@@ -123,7 +123,7 @@ function moveInput() {
 function updatePlayer(dt) {
   if (!P.alive) return;
   const mv = moveInput();
-  P.iframe -= dt; P.parryT -= dt; P.parryLock -= dt; P.counterT -= dt; P.guardT -= dt; P.chainT -= dt; P.galeT -= dt; P.cycleT -= dt; P.hurtT -= dt; P.dashAfter -= dt; P.buffer -= dt;
+  P.iframe -= dt; P.parryT -= dt; P.parryLock -= dt; P.counterT -= dt; P.guardT -= dt; P.chainT -= dt; P.galeT -= dt; P.cycleT -= dt; P.hurtT -= dt; P.dashAfter -= dt; P.buffer -= dt; P.dashEndGlide = (P.dashEndGlide || 0) - dt;
   if (P.chainT <= 0) P.chainStacks = 0;
   P.comboGap += dt;
   P.perfectT = (P.perfectT || 0) - dt; if (P.perfectT <= 0) P.perfect = false;
@@ -163,7 +163,9 @@ function updatePlayer(dt) {
     P.dashT -= dt; const sp = 950;
     P.vx = Math.cos(P.dashDir) * sp; P.vy = Math.sin(P.dashDir) * sp;
     P.trail.push({ x: P.x, y: P.y, life: 0.22, max: 0.22, col: '#7fe0ff' });
-    if (P.dashT <= 0) { P.dashAfter = 0.2; P.vx *= 0.25; P.vy *= 0.25; } // 대시가 끝난 뒤 0.2초 안의 공격도 대시 찌르기
+    if (P.dashT <= 0) { // 대시가 끝난 뒤 0.2초 안의 공격도 대시 찌르기
+      // 후딜 줄이기: 걷기 속도 아래로 뚝 끊지 않고 걷기보다 조금 빠른 속도로 넘겨서, 이동 키를 누르고 있으면 그대로 이어 걷고 놓으면 짧게 미끄러져 멈춤
+      P.dashAfter = 0.2; const keep = 300 * St.move * 1.3; P.vx = Math.cos(P.dashDir) * keep; P.vy = Math.sin(P.dashDir) * keep; P.dashEndGlide = 0.08; }
     moveBody(P, dt);
     return;
   }
@@ -260,7 +262,8 @@ function updatePlayer(dt) {
   // 이동
   if (!P.act || P.act.type === 'parryWhiff' || P.act.type === 'parry') {
     let sp = 300 * St.move * (P.galeT > 0 ? 1.3 : 1); if (P.act) sp *= 0.35;
-    P.vx = lerp(P.vx, mv.x * sp, Math.min(1, dt * 18)); P.vy = lerp(P.vy, mv.y * sp, Math.min(1, dt * 18));
+    const rate = P.dashEndGlide > 0 && !(mv.x || mv.y) ? 12 : 22; // 대시 직후 손을 떼면 살짝 미끄러짐, 평소엔 반응 빠르게
+    P.vx = lerp(P.vx, mv.x * sp, Math.min(1, dt * rate)); P.vy = lerp(P.vy, mv.y * sp, Math.min(1, dt * rate));
     if (mv.x || mv.y) { if (performance.now() - Input.mouseMoved > 4000 && !(Input.bot && Input.bot.aim != null)) P.face = Math.atan2(mv.y, mv.x); }
   }
   if (!P.act && performance.now() - Input.mouseMoved < 4000) P.face = aimAngle();
