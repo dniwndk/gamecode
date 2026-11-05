@@ -156,8 +156,8 @@ function updatePlayer(dt) {
   }
   if (P.dashT > 0) {
     // 대시 중 공격 → 그 자리에서 바로 대시 찌르기 (대시를 끊고, 대시 방향으로)
-    // 최소 0.08초(약 76px)는 대시로 이동한 뒤 찔러요 → 동시 입력도 '이동하면서 찌르기'로 보임
-    if (P.buffer > 0 && P.dashT <= 0.08) { P.dashT = 0; startThrust(P.dashDir); moveBody(P, dt); return; }
+    // 대시 중 공격: 0.04초(약 38px) 뒤부터 바로 대시 공격. 대시 속도를 그대로 싣고 미끄러지며 벰 (세피리아식)
+    if (P.buffer > 0 && P.dashT <= 0.12) { P.dashT = 0; startThrust(P.dashDir, 950); moveBody(P, dt); return; }
     P.dashT -= dt; const sp = 950;
     P.vx = Math.cos(P.dashDir) * sp; P.vy = Math.sin(P.dashDir) * sp;
     P.trail.push({ x: P.x, y: P.y, life: 0.22, max: 0.22, col: '#7fe0ff' });
@@ -203,10 +203,12 @@ function updatePlayer(dt) {
         if (a.t >= tr) { P.act = null; P.comboGap = 0; }
       }
     } else if (a.type === 'thrust') {
-      // 대시 찌르기: 추가 전진 없음 (대시가 끝난 자리에서 멈춰 찌름)
-      P.vx *= 0.5; P.vy *= 0.5;
-      if (a.t <= 0.18) swingHits(a);
-      if (a.t >= 0.26) { P.act = null; P.comboGap = 0.3; }
+      // 대시 공격: 대시 관성으로 미끄러지며 베고 0.3초에 걸쳐 자연스럽게 멈춤 (대시 중 시작이면 약 110px)
+      const k = clamp(a.t / 0.3, 0, 1), v = a.sp * Math.pow(1 - k, 1.5);
+      P.vx = Math.cos(a.ang) * v; P.vy = Math.sin(a.ang) * v;
+      if (k < 0.6) P.trail.push({ x: P.x, y: P.y, life: 0.16, max: 0.16, col: a.counter ? '#ffd27a' : '#9fe8ff' });
+      if (a.t <= 0.22) swingHits(a);
+      if (a.t >= 0.32) { P.act = null; P.comboGap = 0.3; }
     } else if (a.type === 'parry') {
       P.vx *= 0.6; P.vy *= 0.6;
       if (P.parryT <= 0) { // 헛패링
@@ -458,11 +460,13 @@ function playerHit(h) {
   return 'hit';
 }
 // 대시 찌르기: 판정 부채꼴 86° × 사거리 140 (넉넉하게), 반격 창 안이면 반격으로
-function startThrust(ang) {
+function startThrust(ang, carry) {
   const isCounter = P.counterT > 0; P.buffer = 0; P.dashAfter = 0; P.face = ang;
   P.act = { type: 'thrust', t: 0, ang, hitSet: new Set(), act: 'dash', counter: isCounter, dmg: 22, poise: 20, kb: 300, range: 140, arc: 1.5 };
   if (isCounter) { P.counterT = 0; FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
-  P.vx = 0; P.vy = 0; P.sqK = 0.3; P.sqA = ang;
+  // 관성: 대시 중이면 대시 속도, 대시 직후면 남은 속도로 출발해서 0.2초 동안 줄어들며 멈춤 (따로 내딛는 스텝 없음)
+  const sp = Math.max(carry || 0, Math.hypot(P.vx, P.vy), 420); P.act.sp = sp; P.vx = Math.cos(ang) * sp; P.vy = Math.sin(ang) * sp;
+  P.iframe = Math.max(P.iframe, 0.08); P.sqK = 0.35; P.sqA = ang;
   FX.slash(P.x, P.y, ang, 1.5, 140 + P.r - 12, isCounter ? '#ffd27a' : '#9fe8ff', 13, 0.2, P);
   FX.spark(P.x + Math.cos(ang) * 60, P.y + Math.sin(ang) * 60, ang, '#cfefff', 8, 600);
   Juice.kickDir(ang, 3); usePerfect(P.act); Sfx.swing(1.3); Sfx.dash();
