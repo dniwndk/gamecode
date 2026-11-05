@@ -142,7 +142,8 @@ function updatePlayer(dt) {
   P.parryBuf = (P.parryBuf || 0) - dt; if (parryPress) P.parryBuf = 0.2; // 대시·휘두름 중에 눌러도 0.2초 안에 발동
 
   // 대시
-  const cancelable = !P.act || ['swing', 'thrust', 'parryWhiff'].includes(P.act.type) || P.act.phase === 'rec'; // 대시·패링은 평타 어느 단계에서든 취소
+  // 대시·패링은 평타 어느 단계에서든 취소. 회전베기(Q)는 첫 타가 나간 뒤부터 대시·패링으로 취소 (때리고 빠지기)
+  const cancelable = !P.act || ['swing', 'thrust', 'parryWhiff'].includes(P.act.type) || P.act.phase === 'rec' || (P.act.type === 'spin' && P.act.h1);
   if (dashPress && P.dashCharges > 0 && P.dashT <= 0 && cancelable) {
     P.dashCharges--; P.dashRe = 0;
     // 대시 방향: 키보드 이동은 8방향뿐이라, 마우스 커서가 이동 방향 앞쪽(±90°)에 있으면 커서 방향으로 자유 각도 대시.
@@ -233,7 +234,7 @@ function updatePlayer(dt) {
   }
 
   // 공격 시작
-  const free = !P.act || (P.act.type === 'swing' && P.act.phase === 'rec' && P.act.t > 0.02);
+  const free = !P.act || (P.act.type === 'swing' && P.act.phase === 'rec' && P.act.t > 0.02) || (P.act.type === 'spin' && P.act.h2); // 회전베기 둘째 타 뒤 후딜은 평타로 취소
   if (P.buffer > 0 && free && P.parryLock <= 0) {
     P.buffer = 0; const ang = aimAngle(); P.face = ang;
     const isCounter = P.counterT > 0;
@@ -468,8 +469,11 @@ function playerHit(h) {
   if (P.guardT > 0) dmg *= 1 - Math.min(0.6, ActMods.parry.guard);
   dmg = Math.max(1, Math.round(dmg));
   Run.hp -= dmg; P.iframe = 0.5; P.hurtT = 0.2;
-  Sfx.hurt(); Juice.kick(12); Juice.ab(0.12); P.sqK = -0.3; P.hits = 0; Juice.hitstop(0.06); Juice.screen('#ff3b3b', 0.12);
+  // 회전베기 슈퍼아머: 일반 공격(흰 섬광·일반 투사체)은 피해만 받고 끊기지 않음. 강공격(금색)·패링 불가 공격(붉은색)은 끊김
+  const armored = P.act && P.act.type === 'spin' && h.color !== 'gold' && (h.color !== 'red' || h.light);
+  Sfx.hurt(); Juice.kick(armored ? 6 : 12); Juice.ab(0.12); P.sqK = armored ? -0.12 : -0.3; P.hits = 0; Juice.hitstop(armored ? 0.03 : 0.06); Juice.screen('#ff3b3b', 0.12);
   FX.text(P.x, P.y - 30, '-' + dmg, '#ff6b6b'); FX.burst(P.x, P.y, '#ff5a5a', 14, 260, 0.4, 5);
+  if (armored && Run.hp > 0) { FX.ring(P.x, P.y, P.r + 4, P.r + 26, '#cfe8ff', 0.18, 4); return 'hit'; }
   const a = h.src ? angTo(h.src, P) : (h.proj ? Math.atan2(h.proj.vy, h.proj.vx) : 0);
   P.vx += Math.cos(a) * 320; P.vy += Math.sin(a) * 320;
   if (P.act && P.act.type !== 'ult') P.act = null;

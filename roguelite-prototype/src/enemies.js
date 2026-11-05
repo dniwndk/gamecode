@@ -179,7 +179,7 @@ function updateHits(dt) {
     h.t -= dt;
     if (h.done || h.src.dead && !h.keep) continue;
     if (hitOverlap(h)) {
-      const r = playerHit({ dmg: h.dmg, color: h.color, src: h.src });
+      const r = playerHit({ dmg: h.dmg, color: h.color, src: h.src, light: h.light });
       if (r === 'parry' || r === 'hit') h.done = true;
     }
     if (h.hurtsEnemies && !h.enemyDone) {
@@ -334,7 +334,7 @@ function killEnemy(e, finisher) {
   if (Run.augs.overcharge) { if (P.dashCharges < 2) P.dashCharges++; }
   if (e.elite && !e.boss && R() < 0.15) { const it = pick(ITEMS); Run.pendingDrops = (Run.pendingDrops || []).concat(it.id); FX.text(e.x, e.y - 50, `인장: ${it.name}`, '#9fe8ff', true); }
   if (World.mods.includes('chainboom') && !e.boss) {
-    const h = addHit(e, { shape: 'circle', r: 75, t: 0.1, dmg: 8 * scaleFor().dmg, color: 'red', x: e.x, y: e.y, keep: true });
+    const h = addHit(e, { shape: 'circle', r: 75, t: 0.1, dmg: 8 * scaleFor().dmg, color: 'red', light: true, x: e.x, y: e.y, keep: true });
     h.hurtsEnemies = true; h.enemyDmg = 14; FX.ring(e.x, e.y, 5, 75, '#ffb030', 0.3, 6);
   }
   if (e.boss) { Juice.slowmo(1.4, 0.2); Juice.kick(24); Juice.screen('#ffffff', 0.2); Juice.impactFrame(0.08, '#ffffff'); Juice.ab(0.3); Juice.punch(0.1); FX.radial(e.x, e.y, '#ffffff', 40, e.r, 12); FX.shatter(e.x, e.y, e.def.col, 30, 700, 14); splat(e.x, e.y, '#000', 220, 'scorch'); Sfx.boom(); FX.text(e.x, e.y - 100, '처치', '#ffffff', true); World.enemies.forEach(o => { if (!o.boss && !o.dead) { o.hp = 0; killEnemy(o); } }); }
