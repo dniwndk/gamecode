@@ -627,7 +627,7 @@ function updatePlayer(dt) {
     // 대시와 공격을 거의 동시에(0.1초 안) 누르면 "대시 공격" 의도로 봐요: 막 시작한 평타는 취소하고 공격 입력을 살려 둬요
     const chord = gameTime - (P.atkAt != null ? P.atkAt : -9) < 0.1;
     if (chord && P.act && P.act.type === 'swing' && (P.act.phase === 'wind' || (P.act.phase === 'active' && P.act.t < 0.03))) P.combo = (P.combo + 2) % 3;
-    P.dashT = 0.16; P.iframe = Math.max(P.iframe, 0.2); P.act = null; P.dashAfter = 0; P.buffer = chord ? 0.25 : 0;
+    P.dashT = 0.16; P.dashX0 = P.x; P.dashY0 = P.y; P.dashAt = gameTime; P.iframe = Math.max(P.iframe, 0.2); P.act = null; P.dashAfter = 0; P.buffer = chord ? 0.25 : 0;
     if (Run.augs.gale) P.galeT = 1.16;
     Sfx.dash(); FX.burst(P.x, P.y, '#9fe8ff', 8, 120, 0.3, 5); FX.burst(P.x, P.y + 12, '#8a8296', 10, 160, 0.35, 6);
     P.sqK = 0.45; P.sqA = P.dashDir; FX.ring(P.x, P.y, 6, 40, '#9fe8ff', 0.2, 3);
@@ -685,7 +685,7 @@ function updatePlayer(dt) {
       const k = clamp(a.t / 0.3, 0, 1), v = a.sp * Math.pow(1 - k, 1.5);
       P.vx = Math.cos(a.ang) * v; P.vy = Math.sin(a.ang) * v;
       if (k < 0.6) P.trail.push({ x: P.x, y: P.y, life: 0.16, max: 0.16, col: a.counter ? '#ffd27a' : '#9fe8ff' });
-      if (a.t <= 0.22) swingHits(a);
+      if (a.t <= 0.24) swingHits(a);
       if (a.t >= 0.32) { P.act = null; P.comboGap = 0.3; }
     } else if (a.type === 'parry') {
       P.vx *= 0.6; P.vy *= 0.6;
@@ -747,12 +747,18 @@ function updatePlayer(dt) {
 function swingHits(a) {
   const isThrust = a.type === 'thrust';
   const sw = a.sw || { range: a.range, arc: a.arc || 1.1, dmg: a.dmg, poise: a.poise, kb: a.kb };
+  // 대시 공격: 대시를 시작한 곳 → 지금 위치 → 앞으로 칼끝(reach)까지 이어진 띠(폭 halfW×2) 안의 적을 벰
+  const tip = isThrust ? thrustTip(a) : null;
   for (const e of World.enemies) {
     if (e.dead || a.hitSet.has(e)) continue;
-    const d = dist(P, e) - e.r;
-    if (d > sw.range) continue;
-    if (!isThrust && Math.abs(angDiff(a.ang, angTo(P, e))) > sw.arc / 2 && d > 20) continue;
-    if (isThrust && Math.abs(angDiff(a.ang, angTo(P, e))) > sw.arc / 2 && d > 15) continue;
+    if (isThrust) { // 시작점 뒤쪽은 제외 (경로 앞쪽만)
+      if ((e.x - a.x0) * Math.cos(a.ang) + (e.y - a.y0) * Math.sin(a.ang) < -e.r * 0.5) continue;
+      if (segDist(e.x, e.y, a.x0, a.y0, tip.x, tip.y) - e.r > a.halfW) continue; }
+    else {
+      const d = dist(P, e) - e.r;
+      if (d > sw.range) continue;
+      if (Math.abs(angDiff(a.ang, angTo(P, e))) > sw.arc / 2 && d > 20) continue;
+    }
     a.hitSet.add(e);
     // 방패병: 정면 방어. 3타, 대시 찌르기, 반격은 방패를 깸
     if (e.def.shield && e.shieldUp && Math.abs(angDiff(e.face, angTo(e, P))) < 1.2) {
@@ -761,6 +767,12 @@ function swingHits(a) {
     }
     dealDamage(e, { base: sw.dmg, act: a.act, gen: 0, ang: a.ang, kb: sw.kb, poise: sw.poise, counter: a.counter, parried: P.lastParriedPow || 0 });
   }
+}
+function thrustTip(a) { return { x: P.x + Math.cos(a.ang) * a.reach, y: P.y + Math.sin(a.ang) * a.reach }; }
+function segDist(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+  const t = L > 0 ? clamp(((px - ax) * dx + (py - ay) * dy) / L, 0, 1) : 0;
+  return Math.hypot(px - ax - dx * t, py - ay - dy * t);
 }
 function spinHit() {
   for (const e of World.enemies) {
@@ -937,15 +949,17 @@ function playerHit(h) {
   if (Run.hp <= 0) { Run.hp = 0; P.alive = false; Juice.slowmo(1.2, 0.25); later(1.0, () => endRun(false)); }
   return 'hit';
 }
-// 대시 찌르기: 판정 부채꼴 86° × 사거리 140 (넉넉하게), 반격 창 안이면 반격으로
+// 대시 공격: 판정은 지나간 경로 전체(대시 시작점부터) + 앞쪽 칼끝 90, 폭 좌우 50씩. 반격 창 안이면 반격으로
 function startThrust(ang, carry) {
   const isCounter = P.counterT > 0; P.buffer = 0; P.dashAfter = 0; P.face = ang;
-  P.act = { type: 'thrust', t: 0, ang, hitSet: new Set(), act: 'dash', counter: isCounter, dmg: 22, poise: 20, kb: 300, range: 140, arc: 1.5 };
+  const fromDash = P.dashAt != null && gameTime - P.dashAt < 0.6;
+  P.act = { type: 'thrust', t: 0, ang, hitSet: new Set(), act: 'dash', counter: isCounter, dmg: 22, poise: 20, kb: 300, reach: 90, halfW: 50,
+    x0: fromDash ? P.dashX0 : P.x, y0: fromDash ? P.dashY0 : P.y };
   if (isCounter) { P.counterT = 0; FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
   // 관성: 대시 중이면 대시 속도, 대시 직후면 남은 속도로 출발해서 0.2초 동안 줄어들며 멈춤 (따로 내딛는 스텝 없음)
   const sp = Math.max(carry || 0, Math.hypot(P.vx, P.vy), 420); P.act.sp = sp; P.vx = Math.cos(ang) * sp; P.vy = Math.sin(ang) * sp;
   P.iframe = Math.max(P.iframe, 0.08); P.sqK = 0.35; P.sqA = ang;
-  FX.slash(P.x, P.y, ang, 1.5, 140 + P.r - 12, isCounter ? '#ffd27a' : '#9fe8ff', 13, 0.2, P);
+  FX.slash(P.x, P.y, ang, 0.9, 90 + P.r, isCounter ? '#ffd27a' : '#9fe8ff', 13, 0.2, P);
   FX.spark(P.x + Math.cos(ang) * 60, P.y + Math.sin(ang) * 60, ang, '#cfefff', 8, 600);
   Juice.kickDir(ang, 3); usePerfect(P.act); Sfx.swing(1.3); Sfx.dash();
 }
@@ -2033,7 +2047,10 @@ function paintDynamic() {
   const a = P.act;
   if (P.counterT > 0) { g.strokeStyle = '#ffd27a'; g.lineWidth = 4; g.globalAlpha = 0.5 + P.counterT; g.beginPath(); g.arc(P.x, P.y, P.r + 14, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }
   if (a && a.type === 'swing' && a.phase === 'active') { const sw = a.sw; g.fillStyle = a.counter ? 'rgba(255,210,122,0.5)' : 'rgba(230,245,255,0.4)'; g.beginPath(); g.moveTo(P.x, P.y); g.arc(P.x, P.y, sw.range + P.r, a.ang - sw.arc / 2, a.ang + sw.arc / 2); g.closePath(); g.fill(); }
-  if (a && a.type === 'thrust' && a.t <= 0.22) { g.fillStyle = 'rgba(200,240,255,0.45)'; g.beginPath(); g.moveTo(P.x, P.y); g.arc(P.x, P.y, a.range + P.r, a.ang - a.arc / 2, a.ang + a.arc / 2); g.closePath(); g.fill(); }
+  if (a && a.type === 'thrust' && a.t <= 0.24) { // 대시 공격 판정: 지나온 경로 띠
+    const tx = P.x + Math.cos(a.ang) * a.reach, ty = P.y + Math.sin(a.ang) * a.reach;
+    g.strokeStyle = a.counter ? 'rgba(255,210,122,0.45)' : 'rgba(200,240,255,0.42)'; g.lineWidth = a.halfW * 2; g.lineCap = 'butt';
+    g.beginPath(); g.moveTo(a.x0, a.y0); g.lineTo(tx, ty); g.stroke(); g.lineCap = 'butt'; }
   if (a && a.type === 'spin') { g.strokeStyle = 'rgba(220,240,255,0.7)'; g.lineWidth = 12; g.beginPath(); g.arc(P.x, P.y, 140, a.t * 30, a.t * 30 + 4.5); g.stroke(); }
   if (a && a.type === 'parry') { g.strokeStyle = '#ffffff'; g.lineWidth = 8; g.beginPath(); g.arc(P.x, P.y, P.r + 18, P.face - 1.3, P.face + 1.3); g.stroke(); }
   if (a && a.type === 'parryWhiff') { g.strokeStyle = 'rgba(255,120,120,0.6)'; g.lineWidth = 4; g.beginPath(); g.arc(P.x, P.y, P.r + 16, 0, Math.PI * 2); g.stroke(); }
