@@ -29,7 +29,7 @@ function drawHUD() {
   // 체력·궁극기
   bar(30, 28, 340, 18, Run.hp / St.maxHp, '#e05555'); cx.fillStyle = '#fff'; cx.fillText(`${Math.ceil(Run.hp)} / ${St.maxHp}`, 38, 44);
   bar(30, 52, 340, 10, P.ult, P.ult >= 1 ? '#ffb36b' : '#a86a3a');
-  const md = Run.augs.overcharge ? 2 : 1;
+  const md = Math.max(Run.augs.overcharge ? 2 : 1, St.dashMax || 1);
   for (let i = 0; i < md; i++) { cx.fillStyle = i < P.dashCharges ? '#9fe8ff' : '#33404a'; cx.fillRect(30 + i * 26, 70, 20, 8); }
   cx.fillStyle = '#ccc'; cx.font = '600 14px sans-serif'; cx.fillText('대시', 30 + md * 26 + 4, 79);
   const ms = Run.augs.overcharge ? 2 : 1;
@@ -59,16 +59,19 @@ function drawHUD() {
   if (P.counterT > 0) { cx.textAlign = 'center'; cx.font = '900 26px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText('반격!', W / 2, H - 150); }
   if (P.perfect) { cx.textAlign = 'center'; cx.font = '900 22px sans-serif'; cx.fillStyle = '#9ffcff'; cx.fillText(`퍼펙트: 다음 공격 +${Math.round(St.perfectBonus * 100)}%`, W / 2, H - 178); cx.fillStyle = '#9ffcff55'; cx.fillRect(W / 2 - 90, H - 170, 180, 4); cx.fillStyle = '#9ffcff'; cx.fillRect(W / 2 - 90, H - 170, 180 * clamp(P.perfectT / 2, 0, 1), 4); }
   if (P.chainStacks > 0 && Run.augs.chainparry) { cx.textAlign = 'center'; cx.font = '700 16px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText(`연속 응수 ${P.chainStacks}`, W / 2, H - 125); }
-  // 동작 각인 줄
-  const keys = ['dash', 'a1', 'a2', 'a3', 'parry', 'counter', 'core'];
-  const curAct = P.act ? (P.act.type === 'swing' ? (P.act.counter ? 'counter' : P.act.act) : P.act.type === 'thrust' ? 'dash' : P.act.type === 'parry' ? 'parry' : null) : (P.dashT > 0 ? 'dash' : null);
-  keys.forEach((k, i) => {
-    const x = W / 2 - 3.5 * 120 + i * 120, y = H - 64; const inst = Run.engr[k]; const open = Run.open.has(k);
-    cx.fillStyle = curAct === k || (P.act && P.act.counter && k === P.act.act) ? '#2b3a48' : '#14121add'; cx.fillRect(x, y, 112, 46);
-    cx.strokeStyle = inst ? ELEM[ITEM[inst.id].elem].col : open ? '#444' : '#222'; cx.lineWidth = Links[k] > 1 ? 3 : 1.5; cx.strokeRect(x, y, 112, 46);
-    cx.textAlign = 'center'; cx.font = '700 13px sans-serif'; cx.fillStyle = '#aaa'; cx.fillText(SLOT[k].name, x + 56, y + 17);
-    cx.font = '700 13px sans-serif'; cx.fillStyle = inst ? ELEM[ITEM[inst.id].elem].col : '#555'; cx.fillText(inst ? ITEM[inst.id].name : open ? '비어 있음' : '잠김', x + 56, y + 36);
+  // 행동 키워드 줄
+  const curAct = P.act ? (P.act.type === 'swing' ? 'atk' : P.act.type === 'thrust' ? 'dash' : P.act.type === 'parry' ? 'parry' : P.act.type === 'spin' ? 'spin' : null) : (P.dashT > 0 ? 'dash' : null);
+  ACTS.forEach((ac, i) => {
+    const bw = 170, x = W / 2 - 2 * (bw + 8) + i * (bw + 8), y = H - 66; const ks = kwAll(ac.k);
+    cx.fillStyle = curAct === ac.k ? '#2b3a48' : '#14121add'; cx.fillRect(x, y, bw, 50);
+    cx.strokeStyle = ks.length ? KW[ks[0].id].col : '#444'; cx.lineWidth = ks.length > 1 ? 3 : 1.5; cx.strokeRect(x, y, bw, 50);
+    cx.textAlign = 'center'; cx.font = '700 13px sans-serif'; cx.fillStyle = '#aaa'; cx.fillText(`${ac.name} · ${ac.key}`, x + bw / 2, y + 17);
+    cx.font = '800 14px sans-serif';
+    if (!ks.length) { cx.fillStyle = '#555'; cx.fillText('키워드 없음', x + bw / 2, y + 38); }
+    else { const parts = ks.map(k => ({ t: KW[k.id].name + (k.lv > 1 ? '★'.repeat(k.lv - 1) : ''), c: KW[k.id].col })); const tw = parts.reduce((s, p) => s + cx.measureText(p.t).width, 0) + (parts.length - 1) * 10; let px = x + bw / 2 - tw / 2; cx.textAlign = 'left'; for (const p of parts) { cx.fillStyle = p.c; cx.fillText(p.t, px, y + 38); px += cx.measureText(p.t).width + 10; } }
   });
+  // 첫 합성·반응 알림
+  if (World.banner) { const bn = World.banner, k = Math.min(1, bn.t / 0.3, (bn.max - bn.t) / 0.15); cx.save(); cx.globalAlpha = k; cx.textAlign = 'center'; cx.font = '900 54px sans-serif'; cx.fillStyle = bn.col; cx.fillText(bn.name, W / 2, H * 0.3); cx.font = '700 20px sans-serif'; cx.fillStyle = '#e6e3ee'; cx.fillText(bn.sub, W / 2, H * 0.3 + 34); cx.font = '600 14px sans-serif'; cx.fillStyle = '#9a96a8'; cx.fillText('새 합성 발견', W / 2, H * 0.3 - 52); cx.restore(); }
   // 보스 바
   const b = World.boss;
   if (b && !b.dead) {
@@ -77,19 +80,6 @@ function drawHUD() {
     bar(x, y, w, 16, b.hp / b.maxHp, '#d04848');
   }
   if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 300, 79); }
-  // 보유 증강 (항상 표시)
-  { let x = 30, y = 118; cx.textAlign = 'left'; cx.font = '700 13px sans-serif';
-    const ids = Object.keys(Run.augs);
-    cx.fillStyle = '#9a96a8'; cx.fillText(ids.length ? '증강 (Tab: 자세히)' : '증강 없음 (Tab: 능력치)', x, y); y += 8;
-    for (const id of ids) {
-      const a = AUG[id], l = Run.augs[id]; const lit = synOf(id).some(s => Run.syn.has(s.id));
-      const label = (lit ? '✦ ' : '') + a.name + (a.max > 1 ? ' ' + l : ''); const w = cx.measureText(label).width + 16;
-      if (x + w > 400) { x = 30; y += 26; }
-      cx.fillStyle = '#14121add'; cx.fillRect(x, y, w, 22); cx.strokeStyle = GRADE[a.grade].col; cx.lineWidth = 1.5; cx.strokeRect(x, y, w, 22);
-      cx.fillStyle = lit ? '#ffd27a' : '#e6e3ee'; cx.fillText(label, x + 8, y + 16); x += w + 6;
-    }
-    if (Run.syn && Run.syn.size) { y += 40; cx.fillStyle = '#ffd27a'; cx.fillText('시너지: ' + [...Run.syn].map(s => SYN[s].name).join(', '), 30, y); }
-  }
   if (paused) { cx.fillStyle = '#000a'; cx.fillRect(0, 0, W, H); cx.textAlign = 'center'; cx.fillStyle = '#fff'; cx.font = '900 48px sans-serif'; cx.fillText('일시정지', W / 2, H / 2); cx.font = '600 18px sans-serif'; cx.fillText('Esc로 계속', W / 2, H / 2 + 40); }
 }
 
@@ -101,9 +91,10 @@ function toggleDebug() {
   btn('무적 켜기/끄기', () => { god = !god; });
   btn('이 층 즉시 클리어', () => { if (Scene === 'fight') { World.queue = []; World.enemies.forEach(e => { if (!e.dead) { e.hp = 0; killEnemy(e); } }); } });
   btn('파편 +500', () => { Run.shards += 500; });
-  btn('무작위 증강', () => { const a = pick(AUGMENTS.filter(x => (Run.augs[x.id] || 0) < x.max)); if (a) { takeAug(a.id); flashMsg(a.name); } });
-  btn('무작위 인장 (가방)', () => { if (Run.bag.length < Run.bagMax) { Run.bag.push({ id: pick(ITEMS).id, lv: 0 }); flashMsg('가방에 넣음'); } });
-  btn('모든 각인 자리 열기', () => { SLOTS.forEach(s => Run.open.add(s.k)); recalc(); });
+  btn('무작위 기본 키워드 (가방)', () => { const k = pick(KW_BASE); const r = kwGain(k.id, 'bag'); flashMsg(r.lost ? '가방이 가득 참' : k.name); });
+  btn('무작위 합성 키워드 (가방)', () => { const k = pick(KW_COMP); const r = kwGain(k.id, 'bag'); flashMsg(r.lost ? '가방이 가득 참' : k.name); });
+  btn('행동 칸 모두 열기', () => { ACTS.forEach(a => Run.kwSlots[a.k] = 2); recalc(); });
+  btn('키워드 판 열기 (전투 밖)', () => { if (Scene !== 'fight') showKwOnly(); });
   btn('체력 가득', () => { Run.hp = St.maxHp; });
   btn('궁극기 가득', () => { P.ult = 1; });
   btn('닫기', () => d.remove());
@@ -151,19 +142,12 @@ function makeBot() {
   } };
   return bot;
 }
-function autoEngrave() {
-  for (let i = Run.bag.length - 1; i >= 0; i--) {
-    const it = ITEM[Run.bag[i].id];
-    const slot = KIND_SLOTS[it.kind].find(k => Run.open.has(k) && !Run.engr[k]);
-    if (slot) { Run.engr[slot] = Run.bag.splice(i, 1)[0]; }
-  }
-  recalc();
-}
+function autoEngrave() { autoKw(); }
 function autoShop(stock, draw, redraw) {
-  for (const s of stock) { const price = Math.round(s.it.price * (Run.augs.regular ? 0.8 : 1)); if (!s.sold && Run.shards >= price + 20 && Run.bag.length < Run.bagMax) { Run.shards -= price; s.sold = true; Run.bag.push({ id: s.it.id, lv: 0 }); autoEngrave(); } }
-  const lock = SLOT_UNLOCK_ORDER.find(s => !Run.open.has(s)); if (lock && Run.shards >= 100) { Run.shards -= 100; Run.open.add(lock); autoEngrave(); }
-  if (Run.shards >= 60 && Run.engr.a1) { Run.shards -= 60; Run.stones++; useStone('a1', () => 0); }
-  setTimeout(() => { Sel = null; afterFloor(); }, 20);
+  for (const s of stock) { if (!s.sold && Run.shards >= s.price + 20) { Run.shards -= s.price; s.sold = true; kwGain(s.id, ACTS.find(a => Run.kw[a.k].some((x, n) => !x && n < Run.kwSlots[a.k]))?.k || 'bag'); } }
+  const lock = ACTS.find(a => Run.kwSlots[a.k] < 2); if (lock && Run.shards >= 120) { Run.shards -= 120; Run.kwSlots[lock.k] = 2; }
+  autoKw();
+  setTimeout(() => { KwSel = null; afterFloor(); }, 20);
 }
 
 // ───────── 루프 ─────────
@@ -201,5 +185,6 @@ window.__proto = {
   clear() { World.queue = []; World.enemies.forEach(e => { if (!e.dead) { e.hp = 0; killEnemy(e); } }); },
   enter(id) { const n = Run.map.byId[id]; if (n) enterNode(n); }, reach() { return reachable(); },
   aug(id) { takeAug(id); }, item(id, slot) { Run.open.add(slot); Run.engr[slot] = { id, lv: 0 }; recalc(); },
+  kw(act, i, id, lv) { if (Run.kwSlots[act] <= i) Run.kwSlots[act] = i + 1; Run.kw[act][i] = id ? { id, lv: lv || 1 } : null; recalc(); },
 };
 fit(); showTitle(); requestAnimationFrame(frame);

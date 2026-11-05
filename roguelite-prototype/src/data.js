@@ -7,6 +7,9 @@ const ELEM = {
   fire: { name: '화염', col: '#ff8a3d' },
   ice: { name: '냉기', col: '#7fd8ff' },
   light: { name: '번개', col: '#ffe45c' },
+  water: { name: '물', col: '#4aa8ff' },
+  earth: { name: '대지', col: '#c49a5a' },
+  wind: { name: '바람', col: '#a8f0c8' },
   none: { name: '무계열', col: '#b9b4c8' },
 };
 

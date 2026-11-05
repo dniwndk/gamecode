@@ -43,6 +43,18 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--text); ove
 .shop h2 { margin:6px 0; } .shoprow { display:flex; gap:12px; flex-wrap:wrap; margin:8px 0; }
 .shopitem { width:220px; background:var(--panel); border:1px solid #3a3646; border-radius:10px; padding:12px; color:var(--text); text-align:left; cursor:pointer; font-family:inherit; }
 .shopitem:hover:not(:disabled) { border-color:var(--gold); } .shopitem:disabled { opacity:0.45; } .price { color:#ffd86b; margin-top:6px; } .iname { font-weight:800; font-size:17px; }
+.kwtag { display:inline-block; align-self:flex-start; width:fit-content; border:2px solid; border-radius:7px; padding:2px 9px; font-weight:800; font-size:15px; background:#0e0c14; }
+.kwtag.sm { font-size:12px; padding:1px 6px; border-width:1.5px; }
+.kwgrid { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin:10px 0; }
+.kwcol { display:flex; flex-direction:column; gap:8px; }
+.kwhead { font-weight:800; font-size:16px; }
+.kwslot { background:#1b1922; border:2px solid #3a3646; border-radius:10px; color:var(--text); cursor:pointer; font-family:inherit; padding:8px; min-height:84px; text-align:left; display:flex; flex-direction:column; gap:6px; }
+.kwslot.locked { opacity:0.35; cursor:default; } .kwslot.sel { box-shadow:0 0 0 3px var(--gold); }
+.kwd { font-size:13px; color:#cfcbd9; line-height:1.4; }
+.btn.fuse { border:2px solid; font-weight:800; }
+.kwplace { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin:18px 0; }
+.card.kwact { width:230px; min-height:170px; } .card.kwact.full, .card[disabled] { opacity:0.45; cursor:default; }
+.kwline { margin:6px 0; }
 .engrave { background:#121019; border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:12px; position:relative; }
 .etitle { font-weight:800; font-size:18px; margin-bottom:6px; }
 .egrid { position:relative; width:800px; height:300px; margin:0 auto; }

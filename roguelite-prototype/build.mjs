@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const dir = dirname(fileURLToPath(import.meta.url));
-const order = ['core.js', 'data.js', 'combat.js', 'enemies.js', 'run.js', 'render3d.js', 'spritefx.js', 'main.js'];
+const order = ['core.js', 'data.js', 'combat.js', 'enemies.js', 'keywords.js', 'run.js', 'render3d.js', 'spritefx.js', 'main.js'];
 // 도트 효과 시트 (fx/*.png + *.json) → SHEETS 상수
 import { readdirSync } from 'node:fs';
 const sheets = {};

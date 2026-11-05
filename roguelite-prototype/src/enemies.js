@@ -1,6 +1,6 @@
 'use strict';
 // ───────── 전투 세계: 아레나, 적, 보스, 투사체 ─────────
-const World = { arena: null, enemies: [], projs: [], hits: [], bolts: [], marks: [], mods: [], queue: [], waveT: 0, kind: 'fight', over: false, clearT: -1, merchantT: -1, cam: { x: 0, y: 0 }, info: null };
+const World = { arena: null, enemies: [], projs: [], fields: [], decoy: null, banner: null, hits: [], bolts: [], marks: [], mods: [], queue: [], waveT: 0, kind: 'fight', over: false, clearT: -1, merchantT: -1, cam: { x: 0, y: 0 }, info: null };
 
 function makeArena(size) {
   const [w, h] = ARENA_SIZE[size];
@@ -35,7 +35,7 @@ function makeEnemy(type, x, y, opts = {}) {
 
 function startFight(node) {
   const kind = node.type; World.kind = kind;
-  World.enemies = []; World.projs = []; World.hits = []; World.bolts = []; World.marks = []; World.queue = []; Later = [];
+  World.enemies = []; World.projs = []; World.hits = []; World.bolts = []; World.marks = []; World.queue = []; Later = []; World.fields = []; World.decoy = null; World.banner = null;
   World.over = false; World.clearT = -1; World.t = 0; World.boss = null; World.mods = node.mods || []; World.merchantT = -1;
   FX.clear();
   let compo, size;
@@ -191,8 +191,8 @@ function updateHits(dt) {
 }
 
 // ───────── 적 행동 ─────────
-function chillMul(e) { return e.frozen > 0 ? 0 : 1 - Math.min(0.4, e.chill * 0.08); }
-function startAtk(e, name, color, tele) { e.atk = { name, color, t: 0, phase: 'tele', tele: tele / e.spdMul, ang: angTo(e, P) }; }
+function chillMul(e) { return e.frozen > 0 ? 0 : (1 - Math.min(0.4, e.chill * 0.08)) * kwSlowMul(e); }
+function startAtk(e, name, color, tele) { e.atk = { name, color, t: 0, phase: 'tele', tele: tele / e.spdMul, ang: angTo(e, e.tgt || P) }; }
 function updateEnemy(e, dt) {
   e.life += dt; e.flash -= dt; e.shk = (e.shk || 0) - dt; e.sqK = (e.sqK || 0) * Math.exp(-dt * 12);
   if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; dealDamage(e, { base: e.burn * (2 + St.firePow * 0.08), gen: 1, elem: 'fire', noStatus: true, burnTick: true }); } if (e.burnT <= 0) e.burn = 0; }
@@ -207,7 +207,8 @@ function updateEnemy(e, dt) {
   if (e.kbT > 0) { e.vx *= Math.exp(-fric * dt); e.vy *= Math.exp(-fric * dt); moveEnemy(e, dt); return; }
   if (e.boss) { if (e.atk) bossAct(e, dt); else bossThink(e, dt); moveEnemy(e, dt); return; }
   const sp = e.def.spd * e.spdMul * chillMul(e);
-  const d = dist(e, P), a = angTo(e, P);
+  const tg = World.decoy ? World.decoy : P; e.tgt = tg; // 복제 분신이 있으면 분신을 노려요
+  const d = dist(e, tg), a = angTo(e, tg);
   if (e.atk) { enemyAct(e, dt); moveEnemy(e, dt); return; }
   e.cd -= dt;
   const want = (tx, ty, s) => { e.vx = lerp(e.vx, tx * s, Math.min(1, dt * 6)); e.vy = lerp(e.vy, ty * s, Math.min(1, dt * 6)); };
@@ -373,7 +374,7 @@ function updateWorld(dt) {
   World.t = (World.t || 0) + dt;
   for (const m of World.marks) m.t -= dt; World.marks = World.marks.filter(m => m.t > 0);
   for (const e of World.enemies) updateEnemy(e, dt);
-  updateHits(dt); updateProjs(dt);
+  updateHits(dt); updateProjs(dt); updateFields(dt);
   for (const b of World.bolts) b.life -= dt; World.bolts = World.bolts.filter(b => b.life > 0);
   // 파상 등장
   if (World.queue.length) { World.waveT += dt; if (enemiesLeft() <= 2 || World.waveT > 8) { World.waveT = 0; spawnGroup(World.queue.shift(), World.kind === 'fight' && Run.node && Run.node.elite, false); } }

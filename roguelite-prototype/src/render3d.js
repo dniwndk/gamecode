@@ -131,8 +131,21 @@ function paintDynamic() {
   const A = G3.arena, g = G3.dynCx; g.setTransform(G3.DYN, 0, 0, G3.DYN, 0, 0); g.clearRect(0, 0, A.w, A.h);
   for (const m of World.marks) { const k = 1 - m.t / m.max; g.strokeStyle = m.col; g.globalAlpha = 0.4 + k * 0.6; g.lineWidth = 4; g.beginPath(); g.arc(m.x, m.y, 34 - k * 14, 0, Math.PI * 2); g.stroke(); }
   g.globalAlpha = 1;
+  // 키워드 장판 (불길·서리·물·진흙·용암·모래·안개·뇌운)
+  for (const f of World.fields || []) {
+    const k = Math.min(1, f.t / 0.4, (f.max - f.t) / 0.15 + 0.2); const col = FIELD_COL[f.type] || '#fff';
+    g.globalAlpha = (f.type === 'fog' ? 0.42 : f.type === 'cloud' ? 0.16 : 0.3) * k; g.fillStyle = col;
+    g.beginPath(); g.arc(f.x, f.y, f.r, 0, Math.PI * 2); g.fill();
+    g.globalAlpha = 0.6 * k; g.strokeStyle = col; g.lineWidth = f.type === 'cloud' ? 2 : 3; g.setLineDash(f.type === 'cloud' ? [10, 10] : []);
+    g.beginPath(); g.arc(f.x, f.y, f.r * (f.type === 'fire' || f.type === 'lava' ? 0.92 + Math.sin(performance.now() / 90) * 0.06 : 1), 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+  }
+  if (World.decoy) { const d = World.decoy; g.globalAlpha = 0.5 + 0.3 * Math.sin(performance.now() / 60); g.fillStyle = '#e3c8ff'; g.beginPath(); g.arc(d.x, d.y, 18, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#e3c8ff'; g.lineWidth = 3; g.beginPath(); g.arc(d.x, d.y, 30, 0, Math.PI * 2 * d.t / d.max); g.stroke(); }
+  g.globalAlpha = 1;
   for (const e of World.enemies) {
     if (e.dead) continue;
+    if ((e.wet || 0) > 0) { g.fillStyle = '#4aa8ff'; g.globalAlpha = 0.35; g.beginPath(); g.arc(e.x, e.y, e.r + 4, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
+    if (e.shocked > 0) { g.strokeStyle = '#ffe45c'; g.lineWidth = 2; g.globalAlpha = 0.5 + 0.5 * Math.random(); g.beginPath(); g.arc(e.x, e.y, e.r + 9, Math.random() * 6, Math.random() * 6 + 1.2); g.stroke(); g.globalAlpha = 1; }
+    if (e.burn > 0) { g.strokeStyle = '#ff8a3d'; g.lineWidth = 3; g.globalAlpha = 0.7; g.beginPath(); g.arc(e.x, e.y, e.r + 3, 0, Math.PI * 2 * Math.min(1, e.burn / 5)); g.stroke(); g.globalAlpha = 1; }
     const t = e.atk && e.atk.phase === 'tele' && !e.atk.noFlash ? e.atk : null;
     if (t) { const c = COLMAP[t.color]; const pulse = 0.6 + Math.sin(performance.now() / 40) * 0.4; g.strokeStyle = c; g.globalAlpha = 0.8; g.lineWidth = 6 * pulse + 2; g.beginPath(); g.arc(e.x, e.y, e.r + 12, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }
     if (e.chill > 0) { g.strokeStyle = '#7fd8ff'; g.lineWidth = 3; for (let i = 0; i < e.chill; i++) { g.beginPath(); g.arc(e.x, e.y, e.r + 6 + i * 4, 0, Math.PI * 2 * 0.2); g.stroke(); } }

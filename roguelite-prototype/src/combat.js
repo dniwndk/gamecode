@@ -14,6 +14,7 @@ function newRun(seedVal) {
     kills: 0, parries: 0, golds: 0, maxHit: 0, time: 0,
     upNext: 0, sagaOn: false, history: [],
   };
+  kwInit();
   recalc();
   Run.hp = St.maxHp;
 }
@@ -77,6 +78,7 @@ function recalc() {
       }
     }
   }
+  kwPassive(s);
   s.dashCd = s.dashCd * (1 + (ActMods.dash.dashCd || 0));
   s.maxHp = Math.round(s.maxHp * (1 + s.maxHpMul));
   s.atkSpd = Math.max(0.5, s.atkSpd);
@@ -97,7 +99,7 @@ function resetPlayer(x, y) {
   Object.assign(P, { x, y, vx: 0, vy: 0, act: null, combo: 0, comboGap: 0, buffer: 0, dashT: 0, dashRe: 0, dashAfter: 0, iframe: 0.6, galeT: 0,
     parryT: 0, parryLock: 0, whiffAt: -9, counterT: 0, guardT: 0, chainStacks: 0, chainT: 0, spinRe: 0, cycleT: 0, hurtT: 0, alive: true, usedFlash: {},
     trail: [], sqK: 0, sqA: 0, hits: 0, hitT: 0, hitPop: 0 });
-  P.dashCharges = Run.augs.overcharge ? 2 : 1; P.spinCharges = Run.augs.overcharge ? 2 : 1;
+  P.dashCharges = Math.max(Run.augs.overcharge ? 2 : 1, St.dashMax || 1); P.spinCharges = Run.augs.overcharge ? 2 : 1;
 }
 const SWINGS = [
   // 하데스식: 짧은 선딜·후딜, 타마다 분명한 전진 스텝, 휘두르는 동안 이동 입력은 무시(스텝이 대신), 대시·패링으로 언제든 취소
@@ -129,9 +131,9 @@ function updatePlayer(dt) {
   P.perfectT = (P.perfectT || 0) - dt; if (P.perfectT <= 0) P.perfect = false;
   P.sqK *= Math.exp(-dt * 14); P.hitPop = Math.max(0, P.hitPop - dt); P.hitT -= dt; if (P.hitT <= 0) P.hits = 0;
   for (const t of P.trail) t.life -= dt; P.trail = P.trail.filter(t => t.life > 0);
-  const maxDash = Run.augs.overcharge ? 2 : 1, maxSpin = Run.augs.overcharge ? 2 : 1;
+  const maxDash = Math.max(Run.augs.overcharge ? 2 : 1, St.dashMax || 1), maxSpin = Run.augs.overcharge ? 2 : 1;
   if (P.dashCharges < maxDash) { P.dashRe += dt; if (P.dashRe >= St.dashCd) { P.dashCharges++; P.dashRe = 0; } }
-  if (P.spinCharges < maxSpin) { P.spinRe += dt; if (P.spinRe >= 6) { P.spinCharges++; P.spinRe = 0; } }
+  if (P.spinCharges < maxSpin) { P.spinRe += dt; if (P.spinRe >= (St.spinCd || 6)) { P.spinCharges++; P.spinRe = 0; } }
 
   const atkPress = Input.hit('mouse0') || Input.hit('j');
   const parryPress = Input.hit('mouse2') || Input.hit('k');
@@ -152,7 +154,7 @@ function updatePlayer(dt) {
     // 대시와 공격을 거의 동시에(0.1초 안) 누르면 "대시 공격" 의도로 봐요: 막 시작한 평타는 취소하고 공격 입력을 살려 둬요
     const chord = gameTime - (P.atkAt != null ? P.atkAt : -9) < 0.1;
     if (chord && P.act && P.act.type === 'swing' && (P.act.phase === 'wind' || (P.act.phase === 'active' && P.act.t < 0.03))) P.combo = (P.combo + 2) % 3;
-    P.dashT = 0.16; P.dashX0 = P.x; P.dashY0 = P.y; P.dashAt = gameTime; P.iframe = Math.max(P.iframe, 0.2); P.act = null; P.dashAfter = 0; P.buffer = chord ? 0.25 : 0;
+    P.dashT = 0.16; P.dashX0 = P.x; P.dashY0 = P.y; P.dashAt = gameTime; kwOnDashStart(); P.iframe = Math.max(P.iframe, 0.2); P.act = null; P.dashAfter = 0; P.buffer = chord ? 0.25 : 0;
     if (Run.augs.gale) P.galeT = 1.16;
     Sfx.dash(); FX.burst(P.x, P.y, '#9fe8ff', 8, 120, 0.3, 5); FX.burst(P.x, P.y + 12, '#8a8296', 10, 160, 0.35, 6);
     P.sqK = 0.45; P.sqA = P.dashDir; FX.ring(P.x, P.y, 6, 40, '#9fe8ff', 0.2, 3);
@@ -160,13 +162,13 @@ function updatePlayer(dt) {
   if (P.dashT > 0) {
     // 대시 중 공격 → 그 자리에서 바로 대시 찌르기 (대시를 끊고, 대시 방향으로)
     // 대시 중 공격: 0.04초(약 38px) 뒤부터 바로 대시 공격. 대시 속도를 그대로 싣고 미끄러지며 벰 (세피리아식)
-    if (P.buffer > 0 && P.dashT <= 0.12) { P.dashT = 0; startThrust(P.dashDir, 950); moveBody(P, dt); return; }
-    P.dashT -= dt; const sp = 950;
+    if (P.buffer > 0 && P.dashT <= 0.12) { P.dashT = 0; startThrust(P.dashDir, St.dashSp || 950); moveBody(P, dt); return; }
+    P.dashT -= dt; const sp = St.dashSp || 950;
     P.vx = Math.cos(P.dashDir) * sp; P.vy = Math.sin(P.dashDir) * sp;
     P.trail.push({ x: P.x, y: P.y, life: 0.22, max: 0.22, col: '#7fe0ff' });
     if (P.dashT <= 0) { // 대시가 끝난 뒤 0.2초 안의 공격도 대시 찌르기
       // 후딜 줄이기: 걷기 속도 아래로 뚝 끊지 않고 걷기보다 조금 빠른 속도로 넘겨서, 이동 키를 누르고 있으면 그대로 이어 걷고 놓으면 짧게 미끄러져 멈춤
-      P.dashAfter = 0.2; const keep = 300 * St.move * 1.3; P.vx = Math.cos(P.dashDir) * keep; P.vy = Math.sin(P.dashDir) * keep; P.dashEndGlide = 0.08; }
+      kwOnDashEnd(); P.dashAfter = 0.2; const keep = 300 * St.move * 1.3; P.vx = Math.cos(P.dashDir) * keep; P.vy = Math.sin(P.dashDir) * keep; P.dashEndGlide = 0.08; }
     moveBody(P, dt);
     return;
   }
@@ -205,6 +207,7 @@ function updatePlayer(dt) {
         FX.slash(P.x, P.y, a.ang, sw.arc * 1.05, sw.range + P.r - 6, a.counter ? '#ffd27a' : i3 ? '#dff6ff' : '#eef6ff', a.counter ? 16 : i3 ? 14 : 9, i3 ? 0.24 : 0.16, P);
         P.sqK = i3 ? 0.32 : 0.2; P.sqA = a.ang; Juice.kickDir(a.ang, i3 ? 4 : 2);
         if (i3) FX.burst(P.x + Math.cos(a.ang) * 30, P.y + Math.sin(a.ang) * 30 + 10, '#8a8296', 8, 180, 0.3, 5);
+        kwOnSwingStart(a);
       }
       else if (a.phase === 'active') {
         const k = clamp(a.t / ta, 0, 1); const sv = sw.lunge * (1 - k) * 2.4;
@@ -222,7 +225,7 @@ function updatePlayer(dt) {
       P.vx = Math.cos(a.ang) * v; P.vy = Math.sin(a.ang) * v;
       if (k < 0.6) P.trail.push({ x: P.x, y: P.y, life: 0.16, max: 0.16, col: a.counter ? '#ffd27a' : '#9fe8ff' });
       if (a.t <= 0.24) swingHits(a);
-      if (a.t >= 0.32) { P.act = null; P.comboGap = 0.3; }
+      if (a.t >= 0.32) { P.act = null; P.comboGap = 0.3; kwOnDashEnd(); }
     } else if (a.type === 'parry') {
       P.vx *= 0.6; P.vy *= 0.6;
       if (P.parryT <= 0) { // 헛패링
@@ -232,7 +235,7 @@ function updatePlayer(dt) {
       P.vx *= 0.6; P.vy *= 0.6; if (a.t >= 0.35) P.act = null;
     } else if (a.type === 'spin') {
       P.vx *= 0.85; P.vy *= 0.85;
-      if (a.t >= 0.05 && !a.h1) { a.h1 = true; spinHit(); }
+      if (a.t >= 0.05 && !a.h1) { a.h1 = true; spinHit(); kwOnSpin(); }
       if (a.t >= 0.22 && !a.h2) { a.h2 = true; spinHit(); }
       if (a.t >= 0.4) P.act = null;
     } else if (a.type === 'ult') {
@@ -256,7 +259,7 @@ function updatePlayer(dt) {
       let stepAng = ang; if (mv.x || mv.y) { const sx = Math.cos(ang) * 0.7 + mv.x * 0.3, sy = Math.sin(ang) * 0.7 + mv.y * 0.3; stepAng = Math.atan2(sy, sx); }
       P.act = { type: 'swing', sw, phase: 'wind', t: 0, ang, stepAng, hitSet: new Set(), act: sw.k, counter: isCounter };
       usePerfect(P.act);
-      if (isCounter) { P.counterT = 0; FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
+      if (isCounter) { kwCounterUsed(); FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
       P.combo = (P.combo + 1) % 3;
     }
   }
@@ -293,7 +296,7 @@ function swingHits(a) {
       if (segDist(e.x, e.y, a.x0, a.y0, tip.x, tip.y) - e.r > a.halfW) continue; }
     else {
       const d = dist(P, e) - e.r;
-      if (d > sw.range) continue;
+      if (d > sw.range + (kwLv('atk', 'wind') ? 60 : 0)) continue;
       if (Math.abs(angDiff(a.ang, angTo(P, e))) > sw.arc / 2 && d > 20) continue;
     }
     a.hitSet.add(e);
@@ -303,6 +306,7 @@ function swingHits(a) {
       else { FX.spark(e.x, e.y, angTo(e, P), '#b8c8e0', 6, 300); Sfx.parry(); SpriteFX.spawn('hit-spark', e.x, e.y, e.r, { ang: angTo(e, P), scale: 0.8 }); continue; }
     }
     dealDamage(e, { base: sw.dmg, act: a.act, gen: 0, ang: a.ang, kb: sw.kb, poise: sw.poise, counter: a.counter, parried: P.lastParriedPow || 0 });
+    kwOnHit(e, a);
   }
 }
 function thrustTip(a) { return { x: P.x + Math.cos(a.ang) * a.reach, y: P.y + Math.sin(a.ang) * a.reach }; }
@@ -311,10 +315,10 @@ function segDist(px, py, ax, ay, bx, by) {
   const t = L > 0 ? clamp(((px - ax) * dx + (py - ay) * dy) / L, 0, 1) : 0;
   return Math.hypot(px - ax - dx * t, py - ay - dy * t);
 }
-function spinHit() {
+function spinHit(mul) {
   for (const e of World.enemies) {
     if (e.dead) continue;
-    if (dist(P, e) - e.r < 145) dealDamage(e, { base: 18, act: 'spin', gen: 0, ang: angTo(P, e), kb: 360, poise: 26 });
+    if (dist(P, e) - e.r < 145) { dealDamage(e, { base: 18 * (mul || 1), act: 'spin', gen: 0, ang: angTo(P, e), kb: 360, poise: 26 }); kwOnHit(e, { type: 'spin' }); }
   }
   Juice.kick(6);
 }
@@ -476,6 +480,7 @@ function playerHit(h) {
   const parryable = h.color !== 'red' || Run.augs.redsteel;
   if (P.parryT > 0 && parryable) { parrySuccess(h); return 'parry'; }
   if (P.iframe > 0) return 'dodge';
+  if (inFog(P.x, P.y) && R() < 0.5) { FX.text(P.x, P.y - 40, '빗나감', '#cfd8e8'); P.iframe = 0.15; return 'dodge'; }
   let dmg = h.dmg * St.dmgTaken;
   if (P.guardT > 0) dmg *= 1 - Math.min(0.6, ActMods.parry.guard);
   dmg = Math.max(1, Math.round(dmg));
@@ -497,7 +502,7 @@ function startThrust(ang, carry) {
   const fromDash = P.dashAt != null && gameTime - P.dashAt < 0.6;
   P.act = { type: 'thrust', t: 0, ang, hitSet: new Set(), act: 'dash', counter: isCounter, dmg: 22, poise: 20, kb: 300, reach: 90, halfW: 50,
     x0: fromDash ? P.dashX0 : P.x, y0: fromDash ? P.dashY0 : P.y };
-  if (isCounter) { P.counterT = 0; FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
+  if (isCounter) { kwCounterUsed(); FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
   // 관성: 대시 중이면 대시 속도, 대시 직후면 남은 속도로 출발해서 0.2초 동안 줄어들며 멈춤 (따로 내딛는 스텝 없음)
   const sp = Math.max(carry || 0, Math.hypot(P.vx, P.vy), 420); P.act.sp = sp; P.vx = Math.cos(ang) * sp; P.vy = Math.sin(ang) * sp;
   P.iframe = Math.max(P.iframe, 0.08); P.sqK = 0.35; P.sqA = ang;
@@ -546,6 +551,7 @@ function parrySuccess(h) {
     e.cancelAttack && e.cancelAttack();
   }
   if (h.color === 'gold') Run.golds++;
+  kwOnParry(h);
 }
 
 function moveBody(b, dt) {
