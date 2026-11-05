@@ -397,13 +397,13 @@ function endRun(win) {
   c.innerHTML = `<h1>${win ? '최종 보스 처치' : '쓰러졌어요'}</h1>
     <p class="lead">${Run.floor}층 · ${Math.floor(Run.time / 60)}분 ${Math.floor(Run.time % 60)}초</p>
     <div class="result">
-      <div>처치 <b>${Run.kills}</b></div><div>패링 <b>${Run.parries}</b> (금색 ${Run.golds})</div><div>그로기 <b>${Run.groggies}</b></div><div>최대 한 방 <b>${Run.maxHit}</b></div>
+      <div>처치 <b>${Run.kills}</b></div><div>패링 <b>${Run.parries}</b> (퍼펙트 ${Run.perfects || 0}, 금색 ${Run.golds})</div><div>그로기 <b>${Run.groggies}</b></div><div>최대 한 방 <b>${Run.maxHit}</b></div>
     </div>
     <p>증강: ${Object.entries(Run.augs).map(([k, l]) => AUG[k].name + (AUG[k].max > 1 ? l : '')).join(', ') || '없음'}</p>
     <p>각인: ${eng}</p>`;
   const b = h('button', 'btn big', '다시 시작'); b.onclick = () => startRun(); c.appendChild(b);
   p.appendChild(c);
-  window.__lastResult = { win, floor: Run.floor, kills: Run.kills, parries: Run.parries, time: Run.time };
+  window.__lastResult = { win, floor: Run.floor, kills: Run.kills, parries: Run.parries, perfects: Run.perfects || 0, time: Run.time };
 }
 
 function showTitle() {
@@ -459,7 +459,7 @@ function toggleCodex() {
   const stats = [
     ['최대 체력', `${St.maxHp} (현재 ${Math.ceil(Run.hp)})`], ['모든 피해', pct(St.dmg)], ['물리 피해', pct(St.physDmg)], ['화염 피해', pct(St.fireDmg)],
     ['공격 속도', pct(St.atkSpd - 1)], ['이동 속도', pct(St.move - 1)], ['치명 확률', Math.round(St.crit * 100) + '%'], ['치명 피해', '×' + St.critDmg.toFixed(2)],
-    ['대시 쿨다운', St.dashCd.toFixed(2) + '초'], ['패링 판정', St.parryWin.toFixed(2) + '초'], ['포이즈·체간 피해', pct(St.poise + St.stance)], ['궁극기 충전', '×' + St.ultGain.toFixed(2)],
+    ['대시 쿨다운', St.dashCd.toFixed(2) + '초'], ['패링 판정', St.parryWin.toFixed(2) + '초'], ['퍼펙트 패링', `앞 ${St.perfectWin.toFixed(2)}초, 다음 공격 +${Math.round(St.perfectBonus * 100)}%`], ['포이즈·체간 피해', pct(St.poise + St.stance)], ['궁극기 충전', '×' + St.ultGain.toFixed(2)],
     ['받는 피해', '×' + St.dmgTaken.toFixed(2)], ['화염·냉기·번개 위력', `${Math.round(St.firePow)} · ${Math.round(St.icePow)} · ${Math.round(St.lightPow)}`], ['파편 획득', pct(St.shardMul)], ['속성 전환', conv || '없음 (모두 물리)'],
   ];
   const bl = Object.entries(Run.blessings).map(([id, c]) => { const b = BLESSINGS.find(x => x.id === id); return `<div class="cbl"><b>${b.name} ×${c}</b> <span class="dim">${b.desc} × ${c}</span></div>`; }).join('') || '<p class="dim">고른 축복이 없어요.</p>';

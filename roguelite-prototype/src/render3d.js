@@ -237,7 +237,7 @@ function syncPlayer() {
   else if (a && a.type === 'parry') { g.userData.sword.rotation.z = 1.1; g.userData.sword.rotation.y = 0.5; }
   else { g.userData.sword.rotation.z = 0; }
   const bm = g.userData.body.material; bm.color.set(P.hurtT > 0 ? '#ff8a8a' : P.counterT > 0 ? '#ffe2a0' : '#4fd1c5');
-  bm.emissive.set(P.counterT > 0 ? '#ffd27a' : P.iframe > 0 ? '#7fe0ff' : '#000000'); bm.emissiveIntensity = P.counterT > 0 ? 0.5 : P.iframe > 0 ? 0.35 : 0;
+  bm.emissive.set(P.perfect ? '#9ffcff' : P.counterT > 0 ? '#ffd27a' : P.iframe > 0 ? '#7fe0ff' : '#000000'); bm.emissiveIntensity = P.perfect ? 0.45 + Math.sin(performance.now() / 70) * 0.2 : P.counterT > 0 ? 0.5 : P.iframe > 0 ? 0.35 : 0;
   g.userData.cring.visible = P.counterT > 0; g.userData.cring.scale.setScalar(1 + (1 - clamp(P.counterT / 0.6, 0, 1)) * 0.4);
   const tr = P.trail || [];
   for (let i = 0; i < G3.ghost.length; i++) { const gh = G3.ghost[i], t = tr[tr.length - 1 - i]; if (!t) { gh.visible = false; continue; } gh.visible = true; gh.position.set(t.x, 23, t.y); gh.material.opacity = t.life / t.max * 0.35; gh.scale.setScalar(0.8 + 0.2 * t.life / t.max); }

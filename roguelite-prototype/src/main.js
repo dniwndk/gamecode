@@ -57,6 +57,7 @@ function drawHUD() {
     cx.fillStyle = '#ffffff33'; cx.fillRect(-110, 30, 110, 4); cx.fillStyle = '#ffd27a'; cx.fillRect(-110 * k, 30, 110 * k, 4); cx.restore(); }
   // 반격 창
   if (P.counterT > 0) { cx.textAlign = 'center'; cx.font = '900 26px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText('반격!', W / 2, H - 150); }
+  if (P.perfect) { cx.textAlign = 'center'; cx.font = '900 22px sans-serif'; cx.fillStyle = '#9ffcff'; cx.fillText(`퍼펙트: 다음 공격 +${Math.round(St.perfectBonus * 100)}%`, W / 2, H - 178); cx.fillStyle = '#9ffcff55'; cx.fillRect(W / 2 - 90, H - 170, 180, 4); cx.fillStyle = '#9ffcff'; cx.fillRect(W / 2 - 90, H - 170, 180 * clamp(P.perfectT / 2, 0, 1), 4); }
   if (P.chainStacks > 0 && Run.augs.chainparry) { cx.textAlign = 'center'; cx.font = '700 16px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText(`연속 응수 ${P.chainStacks}`, W / 2, H - 125); }
   // 동작 각인 줄
   const keys = ['dash', 'a1', 'a2', 'a3', 'parry', 'counter', 'core'];

@@ -32,7 +32,7 @@ function addEff(t, e, m) {
 function itemLvMul(inst) { return 1 + 0.5 * (inst.lv || 0); }
 
 function recalc() {
-  const s = { maxHp: 100, dmg: 0, atkSpd: 1, move: 1, dashCd: 0.55, ultGain: 1, parryWin: 0.18, parryWinBase: 0.18, crit: 0.05, critDmg: 1.5,
+  const s = { maxHp: 100, dmg: 0, atkSpd: 1, move: 1, dashCd: 0.55, ultGain: 1, parryWin: 0.26, parryWinBase: 0.26, perfectWin: 0.07, perfectBonus: 0.8, crit: 0.05, critDmg: 1.5,
     firePow: 0, icePow: 0, lightPow: 0, fireDmg: 0, physDmg: 0, poise: 0, stance: 0, shardMul: 0, chillAmp: 0, shockBounce: 0, maxHpMul: 0, dmgTaken: 1 };
   const A = Run.augs;
   if (A.catch) { s.parryWin += 0.06; s.parryWinBase += 0.06; }
@@ -126,6 +126,7 @@ function updatePlayer(dt) {
   P.iframe -= dt; P.parryT -= dt; P.parryLock -= dt; P.counterT -= dt; P.guardT -= dt; P.chainT -= dt; P.galeT -= dt; P.cycleT -= dt; P.hurtT -= dt; P.dashAfter -= dt; P.buffer -= dt;
   if (P.chainT <= 0) P.chainStacks = 0;
   P.comboGap += dt;
+  P.perfectT = (P.perfectT || 0) - dt; if (P.perfectT <= 0) P.perfect = false;
   P.sqK *= Math.exp(-dt * 14); P.hitPop = Math.max(0, P.hitPop - dt); P.hitT -= dt; if (P.hitT <= 0) P.hits = 0;
   for (const t of P.trail) t.life -= dt; P.trail = P.trail.filter(t => t.life > 0);
   const maxDash = Run.augs.overcharge ? 2 : 1, maxSpin = Run.augs.overcharge ? 2 : 1;
@@ -222,6 +223,7 @@ function updatePlayer(dt) {
     const isCounter = P.counterT > 0;
     if (P.dashAfter > 0 && !isCounter) {
       P.act = { type: 'thrust', t: 0, ang, hitSet: new Set(), act: 'dash', counter: false, dmg: 22, poise: 20, kb: 300, range: 70 };
+      usePerfect(P.act);
       P.dashAfter = 0; Sfx.swing();
     } else {
       if (P.comboGap > 0.5 || !(P.act && P.act.type === 'swing')) { if (P.comboGap > 0.5) P.combo = 0; }
@@ -229,12 +231,13 @@ function updatePlayer(dt) {
       // 전진 스텝 방향: 조준 70% + 이동 입력 30% (이동하던 쪽으로 밀고 들어가는 느낌)
       let stepAng = ang; if (mv.x || mv.y) { const sx = Math.cos(ang) * 0.7 + mv.x * 0.3, sy = Math.sin(ang) * 0.7 + mv.y * 0.3; stepAng = Math.atan2(sy, sx); }
       P.act = { type: 'swing', sw, phase: 'wind', t: 0, ang, stepAng, hitSet: new Set(), act: sw.k, counter: isCounter };
+      usePerfect(P.act);
       if (isCounter) { P.counterT = 0; FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
       P.combo = (P.combo + 1) % 3;
     }
   }
   if (spinPress && P.spinCharges > 0 && (!P.act || P.act.phase === 'rec')) {
-    P.spinCharges--; P.spinRe = 0; P.act = { type: 'spin', t: 0, hitSet: new Set() };
+    P.spinCharges--; P.spinRe = 0; P.act = { type: 'spin', t: 0, hitSet: new Set() }; usePerfect(P.act);
     Sfx.swing(); FX.ring(P.x, P.y, 30, 150, '#cfe8ff', 0.3, 6);
   }
   if (ultPress && P.ult >= 1 && (!P.act || P.act.phase === 'rec')) {
@@ -336,6 +339,7 @@ function dealDamage(e, o) {
   if (A.finisher && o.act === 'a3') mult += 0.6;
   if (A.gale && o.act === 'dash') mult += 0.5;
   if (o.counter) { mult *= 2; if (A.chainparry) mult *= 1 + 0.3 * P.chainStacks; }
+  const perfectHit = gen === 0 && P.act && P.act.perfect && !o.echo; if (perfectHit) mult *= 1 + St.perfectBonus;
   if (e.groggy > 0) mult *= 1.5;
   if (e.def.weak === elem) mult *= 1.25; else if (e.def.res === elem) mult *= 0.75;
   if (A.frost && elem === 'ice' && e.boss && e.chill >= 4) mult *= 1.3;
@@ -373,6 +377,7 @@ function dealDamage(e, o) {
     SpriteFX.hit(e, ka, isCrit || o.counter, heavy);
     e.shk = 0.15; e.sqK = heavy ? 0.4 : 0.28; e.sqA = ka;
     P.hits++; P.hitT = 1.6; P.hitPop = 0.12;
+    if (perfectHit && !P.act.perfectShown) { P.act.perfectShown = true; FX.text(e.x, e.y - 60, `퍼펙트 +${Math.round(St.perfectBonus * 100)}%`, '#9ffcff', true); FX.radial(e.x, e.y, '#9ffcff', 16, e.r, 8); FX.ring(e.x, e.y, e.r, e.r + 90, '#9ffcff', 0.3, 6); Juice.hitstop(0.13); Juice.impactFrame(0.04, '#9ffcff'); Sfx.gold(); }
     if (o.counter) { Sfx.thud(); Juice.impactFrame(0.04, '#ffd27a'); Juice.ab(0.12); Juice.punch(0.05); FX.radial(e.x, e.y, '#ffd27a', 14, e.r, 7); FX.slash(e.x, e.y, ka + Math.PI / 2, 0.9, e.r + 26, '#ffd27a', 12, 0.2); }
     else if (isCrit) { Sfx.crit(); FX.radial(e.x, e.y, '#fff1a8', 8, e.r, 5); if (dmg > 60) Juice.ab(0.06); }
     else Sfx.hit(o.act === 'a3' ? 0.75 : o.act === 'a2' ? 1.15 : 1);
@@ -468,7 +473,10 @@ function playerHit(h) {
   if (Run.hp <= 0) { Run.hp = 0; P.alive = false; Juice.slowmo(1.2, 0.25); later(1.0, () => endRun(false)); }
   return 'hit';
 }
+function usePerfect(act) { if (P.perfect) { act.perfect = true; P.perfect = false; P.perfectT = 0; FX.slash(P.x, P.y, act.ang != null ? act.ang : P.face, 2.4, 90, '#9ffcff', 14, 0.22, P); } }
 function parrySuccess(h) {
+  const elapsed = P.act && P.act.type === 'parry' ? P.act.dur - P.parryT : 9;
+  const perfect = elapsed <= St.perfectWin;
   P.parryT = 0; P.act = null; P.counterT = 0.6; P.iframe = Math.max(P.iframe, 0.2);
   P.lastParriedPow = h.dmg; Run.parries++;
   if (ActMods.parry.guard) P.guardT = 2;
@@ -482,7 +490,12 @@ function parrySuccess(h) {
   FX.spark(sx, sy, R() * 6, '#fff6c9', 18, 520); FX.ring(sx, sy, 8, 70, h.color === 'gold' ? '#ffd27a' : '#ffffff', 0.25, 5);
   h.color === 'gold' ? Sfx.gold() : Sfx.parry();
   SpriteFX.parry(lerp(P.x, h.src ? h.src.x : P.x, 0.4), lerp(P.y, h.src ? h.src.y : P.y, 0.4), h.color === 'gold');
-  FX.text(P.x, P.y - 40, h.color === 'gold' ? '금색 패링' : '패링', h.color === 'gold' ? '#ffd27a' : '#ffffff', h.color === 'gold');
+  if (perfect) {
+    P.perfect = true; P.perfectT = 2.0; Run.perfects = (Run.perfects || 0) + 1;
+    FX.text(P.x, P.y - 40, h.color === 'gold' ? '퍼펙트 금색 패링' : '퍼펙트 패링', '#9ffcff', true);
+    Juice.hitstop(h.color === 'gold' ? 0.26 : 0.16); Juice.slowmo(0.3, 0.35); Juice.impactFrame(0.05, '#9ffcff'); Juice.ab(0.2);
+    FX.ring(sx, sy, 10, 120, '#9ffcff', 0.35, 7); FX.radial(sx, sy, '#9ffcff', 20, 12, 7); SpriteFX.parry(sx, sy, true); Sfx.gold(); Sfx.raise();
+  } else FX.text(P.x, P.y - 40, h.color === 'gold' ? '금색 패링' : '패링', h.color === 'gold' ? '#ffd27a' : '#ffffff', h.color === 'gold');
   const e = h.src;
   if (h.proj) { // 반사
     const pr = h.proj; const a = e && !e.dead ? angTo(P, e) : Math.atan2(-pr.vy, -pr.vx);
