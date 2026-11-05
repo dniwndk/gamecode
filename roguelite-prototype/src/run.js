@@ -89,6 +89,7 @@ function topBar(p) {
   bar.innerHTML = `<div class="stats"><b>${Run.floor ? Run.floor + '층' : '출발'}</b> · ${TIERS[Run.tier - 1].name}
     <span class="hp">체력 ${Math.ceil(Run.hp)}/${St.maxHp}</span><span class="sh">파편 ${Run.shards}</span><span>리롤권 ${Run.rerolls}</span><span>각인석 ${Run.stones}</span></div>
     <div class="row"><span class="lbl">증강</span>${aug}</div><div class="row"><span class="lbl">축복</span>${bl}</div>`;
+  const cb = h('button', 'btn small codexbtn', '증강·능력치 (Tab)'); cb.onclick = () => toggleCodex(); bar.appendChild(cb);
   p.appendChild(bar);
 }
 
@@ -212,18 +213,20 @@ function showAugments(prism, cb) {
   const cards = rollAugs(grade, n, up, prism);
   cardPicker({
     title: prism ? '계층보스 보상: 프리즘 증강' : '증강', sub: prism ? '예전 키워드 자리예요. 가장 강한 증강 중 하나를 고르세요.' : `${GRADE[grade].name} 등급 증강 중 하나를 고르세요.`, cards,
-    render: a => { const l = (Run.augs[a.id] || 0) + 1; return `<div class="grade" style="color:${GRADE[a.grade].col}">${GRADE[a.grade].name} · ${a.tag}</div><div class="cname">${a.name}${a.max > 1 ? ` <small>${l}단계</small>` : ''}</div><div class="cdesc">${a.desc(l)}</div>`; },
+    render: a => { const l = (Run.augs[a.id] || 0) + 1; return `<div class="grade" style="color:${GRADE[a.grade].col}">${GRADE[a.grade].name} · ${a.tag}</div><div class="cname">${a.name}${a.max > 1 ? ` <small>${l}단계</small>` : ''}</div><div class="cdesc">${a.desc(l)}</div>${synHint(a.id)}`; },
     reroll: (a, cs) => { const pool = augPool(a.grade).filter(x => !cs.includes(x)); return pool.length ? pick(pool) : null; },
     onPick: a => { takeAug(a.id); cb(); },
     skipLabel: `건너뛰기 (리롤권 +${prism ? 2 : 1})`, onSkip: () => { Run.rerolls = Math.min(5, Run.rerolls + (prism ? 2 : 1)); cb(); },
   });
 }
 function takeAug(id) {
+  const before = new Set(Run.syn || []);
   Run.augs[id] = (Run.augs[id] || 0) + 1;
   if (id === 'star') Run.upNext = Math.max(Run.upNext, 1);
   if (id === 'moon') Run.upNext = 3;
   if (id === 'saga') Run.sagaOn = true;
   recalc();
+  for (const s of Run.syn) if (!before.has(s)) setTimeout(() => flashMsg(`시너지 완성: ${SYN[s].name}`), 50);
 }
 
 // ───────── 인장 얻기 ─────────
@@ -411,8 +414,64 @@ function showTitle() {
     <tr><td>이동</td><td>WASD</td></tr><tr><td>공격 (3타 콤보)</td><td>마우스 왼쪽 / J</td></tr>
     <tr><td>패링</td><td>마우스 오른쪽 / K</td></tr><tr><td>대시</td><td>Space / L / Shift</td></tr>
     <tr><td>대시 직후 공격</td><td>대시 찌르기</td></tr><tr><td>회전베기 (액티브)</td><td>Q / U</td></tr><tr><td>궁극기</td><td>R / I</td></tr>
-    <tr><td>일시정지·디버그</td><td>Esc · \` (백틱)</td></tr>
+    <tr><td>증강·능력치 창</td><td>Tab</td></tr><tr><td>일시정지·디버그</td><td>Esc · \` (백틱)</td></tr>
   </table>
   <p class="dim">섬광 색: <b style="color:#fff">흰색</b> 패링 가능 · <b style="color:#ffd27a">금색</b> 패링하면 바로 그로기 · <b style="color:#ff5a5a">붉은색</b> 패링 불가, 회피만</p>`;
   const b = h('button', 'btn big', '시작'); b.onclick = () => { Sfx.init(); startRun(); }; c.appendChild(b); p.appendChild(c);
+}
+
+// ───────── 증강 창 (Tab): 보유 증강, 효과, 시너지, 능력치 ─────────
+function synHint(augId) {
+  const list = synOf(augId); if (!list.length) return '';
+  return '<div class="synhint">' + list.map(s => {
+    const other = s.need.find(n => n !== augId); const has = !!Run.augs[other];
+    return `<div class="${has ? 'on' : ''}">✦ ${s.name}: ${AUG[other].name}${has ? ' 보유 중, 고르면 완성' : '와 함께'}</div>`;
+  }).join('') + '</div>';
+}
+let codexPrevPause = false;
+function toggleCodex() {
+  const old = document.getElementById('codex');
+  if (old) { old.remove(); if (Scene === 'fight') paused = codexPrevPause; return; }
+  if (!Run || Scene === 'title' || Scene === 'result') return;
+  if (Scene === 'fight') { codexPrevPause = paused; paused = true; }
+  recalc();
+  const o = h('div', 'codex'); o.id = 'codex';
+  const owned = Object.entries(Run.augs);
+  const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
+  // 1) 보유 증강
+  const augHtml = owned.length ? owned.map(([id, l]) => {
+    const a = AUG[id]; const syns = synOf(id);
+    return `<div class="caug" style="border-color:${GRADE[a.grade].col}">
+      <div class="grade" style="color:${GRADE[a.grade].col}">${GRADE[a.grade].name} · ${a.tag}</div>
+      <div class="cname2">${a.name}${a.max > 1 ? ` <small>${l}/${a.max}단계</small>` : ''}</div>
+      <div class="cdesc2">${a.desc(l)}</div>
+      ${syns.map(s => { const on = Run.syn.has(s.id); const other = s.need.find(n => n !== id); return `<div class="csyn ${on ? 'on' : ''}">${on ? '✦ 켜짐' : '○ 꺼짐'} · ${s.name} <span class="dim">(${AUG[other].name} 필요)</span></div>`; }).join('')}
+    </div>`; }).join('') : '<p class="dim">아직 가진 증강이 없어요. 5층마다 보스를 쓰러뜨리면 얻어요.</p>';
+  // 2) 시너지
+  const rel = SYNERGIES.filter(s => s.need.some(n => Run.augs[n])).sort((a, b) => Run.syn.has(b.id) - Run.syn.has(a.id));
+  const synHtml = (rel.length ? rel : SYNERGIES).map(s => {
+    const on = Run.syn.has(s.id);
+    return `<div class="csyn2 ${on ? 'on' : ''}"><div><b>${on ? '✦ ' : ''}${s.name}</b> <span class="dim">${s.need.map(n => `<span class="${Run.augs[n] ? 'have' : ''}">${AUG[n].name}</span>`).join(' + ')}</span></div><div class="cdesc2">${s.desc}</div></div>`;
+  }).join('');
+  // 3) 능력치 (축복·인장·증강 모두 반영된 값)
+  const A = Run.augs;
+  const conv = [['flame', '화염'], ['frost', '냉기'], ['thunder', '번개']].filter(([k]) => A[k]).map(([k, n]) => `${n} ${Math.round(FLAME[A[k]] * 100)}%`).join(', ');
+  const stats = [
+    ['최대 체력', `${St.maxHp} (현재 ${Math.ceil(Run.hp)})`], ['모든 피해', pct(St.dmg)], ['물리 피해', pct(St.physDmg)], ['화염 피해', pct(St.fireDmg)],
+    ['공격 속도', pct(St.atkSpd - 1)], ['이동 속도', pct(St.move - 1)], ['치명 확률', Math.round(St.crit * 100) + '%'], ['치명 피해', '×' + St.critDmg.toFixed(2)],
+    ['대시 쿨다운', St.dashCd.toFixed(2) + '초'], ['패링 판정', St.parryWin.toFixed(2) + '초'], ['포이즈·체간 피해', pct(St.poise + St.stance)], ['궁극기 충전', '×' + St.ultGain.toFixed(2)],
+    ['받는 피해', '×' + St.dmgTaken.toFixed(2)], ['화염·냉기·번개 위력', `${Math.round(St.firePow)} · ${Math.round(St.icePow)} · ${Math.round(St.lightPow)}`], ['파편 획득', pct(St.shardMul)], ['속성 전환', conv || '없음 (모두 물리)'],
+  ];
+  const bl = Object.entries(Run.blessings).map(([id, c]) => { const b = BLESSINGS.find(x => x.id === id); return `<div class="cbl"><b>${b.name} ×${c}</b> <span class="dim">${b.desc} × ${c}</span></div>`; }).join('') || '<p class="dim">고른 축복이 없어요.</p>';
+  o.innerHTML = `<div class="codex-in">
+    <div class="codex-head"><h2>증강 · 능력치</h2><span class="dim">Tab 또는 Esc로 닫기${Scene === 'fight' ? ' · 여는 동안 전투가 멈춰요' : ''}</span></div>
+    <div class="codex-cols">
+      <section><h3>보유 증강 <span class="dim">${owned.length}개</span></h3><div class="clist">${augHtml}</div></section>
+      <section><h3>시너지 <span class="dim">켜짐 ${Run.syn.size}개</span></h3><div class="clist">${synHtml}</div></section>
+      <section><h3>능력치</h3><table class="cstats">${stats.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>
+        <h3>고른 축복</h3>${bl}</section>
+    </div></div>`;
+  o.onclick = e => { if (e.target === o) toggleCodex(); };
+  UI.appendChild(o); UI.style.pointerEvents = 'auto';
+  o.addEventListener('remove', () => 0);
 }

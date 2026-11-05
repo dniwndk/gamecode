@@ -55,6 +55,22 @@ const AUGMENTS = [
 ];
 const AUG = Object.fromEntries(AUGMENTS.map(a => [a.id, a]));
 
+// 증강 시너지: 두 증강을 함께 가지면 켜져요 (8장)
+const SYNERGIES = [
+  { id: 'thermal', name: '열충격', need: ['flame', 'frost'], desc: '화상 중인 적이 빙결되면 터져 주변에 화염 피해 (화상 중첩 × 12)' },
+  { id: 'overheat', name: '과열 회로', need: ['flame', 'thunder'], desc: '감전된 적이 받는 화상 피해 +50%' },
+  { id: 'supercond', name: '초전도', need: ['frost', 'thunder'], desc: '둔화된 적에게서 번개가 1명 더 튐' },
+  { id: 'bladestorm', name: '검기 폭풍', need: ['pierce', 'fork'], desc: '검기 위력 +30%, 검기가 더 커짐' },
+  { id: 'finisherwave', name: '마무리 검기', need: ['finisher', 'pierce'], desc: '3타 검기 위력 +50%' },
+  { id: 'doublebrand', name: '겹낙인', need: ['echo', 'brand'], desc: '메아리 타격도 낙인을 쌓음' },
+  { id: 'executioner', name: '처형인', need: ['cut', 'groggyhunt'], desc: '그로기 중인 적은 끊어내기 기준 +10%' },
+  { id: 'master', name: '응수의 달인', need: ['chainparry', 'repay'], desc: '연속 응수 2중첩 이상이면 되갚음 150% → 250%' },
+  { id: 'ironwall', name: '철벽', need: ['catch', 'redsteel'], desc: '붉은 쇠의 패링 판정 감소(-0.04초)가 사라짐' },
+  { id: 'galecharge', name: '질풍 충전', need: ['overcharge', 'gale'], desc: '대시 찌르기로 적을 처치하면 회전베기 1회 충전' },
+];
+const SYN = Object.fromEntries(SYNERGIES.map(s => [s.id, s]));
+function synOf(augId) { return SYNERGIES.filter(s => s.need.includes(augId)); }
+
 // 9.2 동작 각인: 자리 7개
 const SLOTS = [
   { k: 'dash', name: '대시', kind: 'body', links: ['a1'], x: 0, y: 0 },

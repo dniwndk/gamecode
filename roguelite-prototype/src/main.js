@@ -196,7 +196,20 @@ function drawHUD() {
     cx.textAlign = 'center'; cx.font = '800 20px sans-serif'; cx.fillStyle = '#fff'; cx.fillText(b.title + (b.phase > 1 ? ` · 페이즈 ${b.phase}` : ''), W / 2, y - 6);
     bar(x, y, w, 16, b.hp / b.maxHp, '#d04848'); bar(x, y + 20, w, 8, b.groggy > 0 ? 1 : b.stance / b.stanceMax, b.groggy > 0 ? '#ffffff' : '#ffd27a');
   }
-  if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 30, 100); }
+  if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 300, 79); }
+  // 보유 증강 (항상 표시)
+  { let x = 30, y = 118; cx.textAlign = 'left'; cx.font = '700 13px sans-serif';
+    const ids = Object.keys(Run.augs);
+    cx.fillStyle = '#9a96a8'; cx.fillText(ids.length ? '증강 (Tab: 자세히)' : '증강 없음 (Tab: 능력치)', x, y); y += 8;
+    for (const id of ids) {
+      const a = AUG[id], l = Run.augs[id]; const lit = synOf(id).some(s => Run.syn.has(s.id));
+      const label = (lit ? '✦ ' : '') + a.name + (a.max > 1 ? ' ' + l : ''); const w = cx.measureText(label).width + 16;
+      if (x + w > 400) { x = 30; y += 26; }
+      cx.fillStyle = '#14121add'; cx.fillRect(x, y, w, 22); cx.strokeStyle = GRADE[a.grade].col; cx.lineWidth = 1.5; cx.strokeRect(x, y, w, 22);
+      cx.fillStyle = lit ? '#ffd27a' : '#e6e3ee'; cx.fillText(label, x + 8, y + 16); x += w + 6;
+    }
+    if (Run.syn && Run.syn.size) { y += 40; cx.fillStyle = '#ffd27a'; cx.fillText('시너지: ' + [...Run.syn].map(s => SYN[s].name).join(', '), 30, y); }
+  }
   if (paused) { cx.fillStyle = '#000a'; cx.fillRect(0, 0, W, H); cx.textAlign = 'center'; cx.fillStyle = '#fff'; cx.font = '900 48px sans-serif'; cx.fillText('일시정지', W / 2, H / 2); cx.font = '600 18px sans-serif'; cx.fillText('Esc로 계속', W / 2, H / 2 + 40); }
 }
 
@@ -218,6 +231,8 @@ function toggleDebug() {
 }
 addEventListener('keydown', e => {
   if (e.key === '`') toggleDebug();
+  if (e.key === 'Tab') { e.preventDefault(); toggleCodex(); if (Scene === 'fight' && !document.getElementById('codex')) UI.style.pointerEvents = 'none'; return; }
+  if (e.key === 'Escape' && document.getElementById('codex')) { toggleCodex(); if (Scene === 'fight') UI.style.pointerEvents = 'none'; return; }
   if (e.key === 'Escape' && Scene === 'fight') paused = !paused;
 });
 

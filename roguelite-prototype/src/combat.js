@@ -36,7 +36,8 @@ function recalc() {
     firePow: 0, icePow: 0, lightPow: 0, fireDmg: 0, physDmg: 0, poise: 0, stance: 0, shardMul: 0, chillAmp: 0, shockBounce: 0, maxHpMul: 0, dmgTaken: 1 };
   const A = Run.augs;
   if (A.catch) { s.parryWin += 0.06; s.parryWinBase += 0.06; }
-  if (A.redsteel) { s.parryWin -= 0.04; s.parryWinBase -= 0.04; }
+  Run.syn = new Set(SYNERGIES.filter(x => x.need.every(n => A[n])).map(x => x.id));
+  if (A.redsteel && !Run.syn.has('ironwall')) { s.parryWin -= 0.04; s.parryWinBase -= 0.04; }
   for (const id in Run.blessings) { const b = BLESSINGS.find(x => x.id === id); for (let i = 0; i < Run.blessings[id]; i++) b.apply(s); }
   if (A.topple) s.stance += 0.4;
   if (A.plate) s.dmgTaken *= 0.88;
@@ -272,9 +273,10 @@ function fireWaves(a) {
   if (!(a.act === 'a3' || a.counter)) return;
   const pl = Run.augs.pierce || 0, fl = Run.augs.fork || 0;
   if (!pl && !fl) return;
+  const storm = Run.syn.has('bladestorm');
   const mk = (ang, pow, pierce) => World.projs.push({ owner: 'player', x: P.x + Math.cos(ang) * 30, y: P.y + Math.sin(ang) * 30, vx: Math.cos(ang) * 900, vy: Math.sin(ang) * 900,
-    r: 16, life: 0.55, dmg: (a.sw ? a.sw.dmg : 20) * pow, col: '#dff6ff', pierce, hitSet: new Set(), gen: 1, wave: true, act: a.act });
-  if (pl) mk(a.ang, [0.5, 0.8, 1.1][pl - 1], true);
+    r: storm ? 24 : 16, life: 0.55, dmg: (a.sw ? a.sw.dmg : 20) * pow * (storm ? 1.3 : 1), col: '#dff6ff', pierce, hitSet: new Set(), gen: 1, wave: true, act: a.act });
+  if (pl) mk(a.ang, [0.5, 0.8, 1.1][pl - 1] * (a.act === 'a3' && Run.syn.has('finisherwave') ? 1.5 : 1), true);
   else if (fl) mk(a.ang, 0.4, false);
   for (let i = 1; i <= fl; i++) { mk(a.ang + 0.35 * i, 0.4, !!pl); mk(a.ang - 0.35 * i, 0.4, !!pl); }
 }
@@ -320,7 +322,8 @@ function dealDamage(e, o) {
   if (A.frost && elem === 'ice' && e.boss && e.chill >= 4) mult *= 1.3;
   if (World.mods.includes('chief') && e.chief) mult *= 0.8;
   let dmg = o.base * mult;
-  if (o.counter && A.repay && o.parried) dmg += o.parried * 1.5;
+  if (o.counter && A.repay && o.parried) dmg += o.parried * (Run.syn.has('master') && P.chainStacks >= 2 ? 2.5 : 1.5);
+  if (o.burnTick && e.shocked > 0 && Run.syn.has('overheat')) dmg *= 1.5;
   let crit = St.crit + mods.crit; for (const c of mods.critCond) if (hasVs(e, c.vs)) crit += c.v;
   const isCrit = o.counter || o.forceCrit || (gen === 0 && R() < crit);
   if (isCrit) dmg *= St.critDmg;
@@ -334,7 +337,7 @@ function dealDamage(e, o) {
   }
   // 끊어내기
   if (A.cut && gen <= 1) {
-    const th = CUT[A.cut];
+    const th = CUT[A.cut] + (Run.syn.has('executioner') && e.groggy > 0 ? 0.1 : 0);
     if (!e.boss && (e.hp - dmg) / e.maxHp <= th && e.hp > 0) { dmg = e.hp; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
     else if (e.boss && e.hp / e.maxHp <= th && gameTime - (e.cutAt || -9) > 3) { e.cutAt = gameTime; dmg += e.maxHp * 0.05; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
   }
@@ -369,12 +372,13 @@ function dealDamage(e, o) {
   if (elem === 'fire' && !o.noStatus) { e.burn = Math.min(5, e.burn + 1); e.burnT = 3; }
   if (elem === 'ice' && !o.noStatus) {
     e.chillT = 3; e.chill = Math.min(5, e.chill + 1);
-    if (e.chill >= 5 && !e.boss && e.freezeImm <= 0) { e.frozen = 1.5; e.chill = 0; e.freezeImm = 3.5; FX.text(e.x, e.y - 40, '빙결', '#bfefff'); e.cancelAttack && e.cancelAttack(); }
+    if (e.chill >= 5 && !e.boss && e.freezeImm <= 0) { e.frozen = 1.5; e.chill = 0; e.freezeImm = 3.5; FX.text(e.x, e.y - 40, '빙결', '#bfefff'); e.cancelAttack && e.cancelAttack();
+      if (Run.syn.has('thermal') && e.burn > 0) { const pw = e.burn * 12; FX.text(e.x, e.y - 64, '열충격', '#ffb36b', true); FX.ring(e.x, e.y, 10, 130, '#ffb36b', 0.35, 8); Sfx.boom(); for (const t of World.enemies) if (!t.dead && dist(t, e) < 130 + t.r) later(0.03, () => dealDamage(t, { base: pw, gen: 2, elem: 'fire', noStatus: true, ang: angTo(e, t), kb: 260 })); } }
   }
   if (elem === 'light' && !o.noStatus) {
     e.shocked = 3;
     if (gen <= 1 && !o.noLightChain) {
-      const n = (A.thunder || 0) + Math.round(St.shockBounce);
+      const n = (A.thunder || 0) + Math.round(St.shockBounce) + (Run.syn.has('supercond') && (e.chill > 0 || e.frozen > 0) ? 1 : 0);
       const near = World.enemies.filter(x => !x.dead && x !== e && dist(x, e) < 240).sort((p, q) => dist(p, e) - dist(q, e)).slice(0, n);
       for (const t of near) {
         World.bolts.push({ x1: e.x, y1: e.y, x2: t.x, y2: t.y, life: 0.15 });
@@ -385,7 +389,7 @@ function dealDamage(e, o) {
   }
   envReact(e, elem, dmg, gen);
   // 낙인
-  if (A.brand && gen === 0 && !o.noBrand) {
+  if (A.brand && (gen === 0 || (o.echo && Run.syn.has('doublebrand'))) && !o.noBrand) {
     e.brand = (e.brand || 0) + 1;
     if (e.brand >= 3) {
       e.brand = 0; const pw = BRAND[A.brand];
@@ -397,7 +401,7 @@ function dealDamage(e, o) {
   if (A.echo && gen <= 1 && !o.echo && R() < ECHO[A.echo]) {
     later(0.2, () => { if (!e.dead) { FX.text(e.x, e.y - 70, '메아리', '#e78bff'); dealDamage(e, { ...o, base: o.base * 0.5, gen: gen + 1, echo: true, counter: false, forceCrit: false, kb: 0 }); } });
   }
-  if (e.hp <= 0) killEnemy(e, finisher);
+  if (e.hp <= 0) { if (o.act === 'dash' && Run.syn.has('galecharge') && P.spinCharges < 2) { P.spinCharges++; FX.text(P.x, P.y - 50, '질풍 충전', '#9fe8ff'); } killEnemy(e, finisher); }
   return dmg;
 }
 function addStance(e, v) {

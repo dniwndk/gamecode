@@ -59,6 +59,22 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--text); ove
 .keys { margin:16px auto; font-size:18px; border-collapse:collapse; } .keys td { padding:4px 16px; border-bottom:1px solid var(--line); text-align:left; } .keys td:first-child { color:var(--dim); }
 .toast { position:fixed; left:50%; top:12%; transform:translateX(-50%); background:#2a2534; border:1px solid var(--gold); padding:10px 20px; border-radius:8px; z-index:20; font-size:16px; }
 .dbg { position:fixed; right:10px; top:10px; z-index:30; background:#16141dee; border:1px solid var(--line); border-radius:10px; padding:8px; display:flex; flex-direction:column; width:200px; }
+.codexbtn { float:right; margin-top:-34px; }
+.synhint { font-size:14px; color:var(--dim); border-top:1px solid var(--line); padding-top:8px; } .synhint .on { color:var(--gold); }
+.codex { position:absolute; inset:0; background:rgba(8,7,12,0.88); z-index:15; display:flex; justify-content:center; align-items:center; pointer-events:auto; }
+.codex-in { width:1500px; height:820px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 24px; display:flex; flex-direction:column; }
+.codex-head { display:flex; align-items:baseline; gap:16px; } .codex-head h2 { margin:0; font-size:28px; }
+.codex-cols { display:grid; grid-template-columns: 1.1fr 1fr 1fr; gap:22px; flex:1; min-height:0; margin-top:12px; }
+.codex-cols section { min-height:0; overflow:auto; padding-right:6px; } .codex-cols h3 { margin:6px 0 10px; font-size:19px; }
+.clist { display:flex; flex-direction:column; gap:10px; }
+.caug { border:1px solid; border-left-width:4px; border-radius:10px; padding:10px 12px; background:#1b1922; }
+.cname2 { font-size:19px; font-weight:800; } .cname2 small { color:var(--gold); font-size:13px; }
+.cdesc2 { font-size:15px; color:#d8d4e6; line-height:1.45; margin-top:2px; }
+.csyn { font-size:14px; color:var(--dim); margin-top:4px; } .csyn.on { color:var(--gold); }
+.csyn2 { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#1b1922; } .csyn2.on { border-color:var(--gold); }
+.csyn2 .have { color:var(--text); font-weight:700; }
+.cstats { width:100%; border-collapse:collapse; font-size:15px; font-variant-numeric:tabular-nums; } .cstats td { padding:5px 4px; border-bottom:1px solid var(--line); } .cstats td:last-child { text-align:right; font-weight:700; }
+.cbl { font-size:15px; margin:4px 0; }
 </style>
 </head>
 <body>
@@ -277,6 +293,22 @@ const AUGMENTS = [
 ];
 const AUG = Object.fromEntries(AUGMENTS.map(a => [a.id, a]));
 
+// 증강 시너지: 두 증강을 함께 가지면 켜져요 (8장)
+const SYNERGIES = [
+  { id: 'thermal', name: '열충격', need: ['flame', 'frost'], desc: '화상 중인 적이 빙결되면 터져 주변에 화염 피해 (화상 중첩 × 12)' },
+  { id: 'overheat', name: '과열 회로', need: ['flame', 'thunder'], desc: '감전된 적이 받는 화상 피해 +50%' },
+  { id: 'supercond', name: '초전도', need: ['frost', 'thunder'], desc: '둔화된 적에게서 번개가 1명 더 튐' },
+  { id: 'bladestorm', name: '검기 폭풍', need: ['pierce', 'fork'], desc: '검기 위력 +30%, 검기가 더 커짐' },
+  { id: 'finisherwave', name: '마무리 검기', need: ['finisher', 'pierce'], desc: '3타 검기 위력 +50%' },
+  { id: 'doublebrand', name: '겹낙인', need: ['echo', 'brand'], desc: '메아리 타격도 낙인을 쌓음' },
+  { id: 'executioner', name: '처형인', need: ['cut', 'groggyhunt'], desc: '그로기 중인 적은 끊어내기 기준 +10%' },
+  { id: 'master', name: '응수의 달인', need: ['chainparry', 'repay'], desc: '연속 응수 2중첩 이상이면 되갚음 150% → 250%' },
+  { id: 'ironwall', name: '철벽', need: ['catch', 'redsteel'], desc: '붉은 쇠의 패링 판정 감소(-0.04초)가 사라짐' },
+  { id: 'galecharge', name: '질풍 충전', need: ['overcharge', 'gale'], desc: '대시 찌르기로 적을 처치하면 회전베기 1회 충전' },
+];
+const SYN = Object.fromEntries(SYNERGIES.map(s => [s.id, s]));
+function synOf(augId) { return SYNERGIES.filter(s => s.need.includes(augId)); }
+
 // 9.2 동작 각인: 자리 7개
 const SLOTS = [
   { k: 'dash', name: '대시', kind: 'body', links: ['a1'], x: 0, y: 0 },
@@ -452,7 +484,8 @@ function recalc() {
     firePow: 0, icePow: 0, lightPow: 0, fireDmg: 0, physDmg: 0, poise: 0, stance: 0, shardMul: 0, chillAmp: 0, shockBounce: 0, maxHpMul: 0, dmgTaken: 1 };
   const A = Run.augs;
   if (A.catch) { s.parryWin += 0.06; s.parryWinBase += 0.06; }
-  if (A.redsteel) { s.parryWin -= 0.04; s.parryWinBase -= 0.04; }
+  Run.syn = new Set(SYNERGIES.filter(x => x.need.every(n => A[n])).map(x => x.id));
+  if (A.redsteel && !Run.syn.has('ironwall')) { s.parryWin -= 0.04; s.parryWinBase -= 0.04; }
   for (const id in Run.blessings) { const b = BLESSINGS.find(x => x.id === id); for (let i = 0; i < Run.blessings[id]; i++) b.apply(s); }
   if (A.topple) s.stance += 0.4;
   if (A.plate) s.dmgTaken *= 0.88;
@@ -688,9 +721,10 @@ function fireWaves(a) {
   if (!(a.act === 'a3' || a.counter)) return;
   const pl = Run.augs.pierce || 0, fl = Run.augs.fork || 0;
   if (!pl && !fl) return;
+  const storm = Run.syn.has('bladestorm');
   const mk = (ang, pow, pierce) => World.projs.push({ owner: 'player', x: P.x + Math.cos(ang) * 30, y: P.y + Math.sin(ang) * 30, vx: Math.cos(ang) * 900, vy: Math.sin(ang) * 900,
-    r: 16, life: 0.55, dmg: (a.sw ? a.sw.dmg : 20) * pow, col: '#dff6ff', pierce, hitSet: new Set(), gen: 1, wave: true, act: a.act });
-  if (pl) mk(a.ang, [0.5, 0.8, 1.1][pl - 1], true);
+    r: storm ? 24 : 16, life: 0.55, dmg: (a.sw ? a.sw.dmg : 20) * pow * (storm ? 1.3 : 1), col: '#dff6ff', pierce, hitSet: new Set(), gen: 1, wave: true, act: a.act });
+  if (pl) mk(a.ang, [0.5, 0.8, 1.1][pl - 1] * (a.act === 'a3' && Run.syn.has('finisherwave') ? 1.5 : 1), true);
   else if (fl) mk(a.ang, 0.4, false);
   for (let i = 1; i <= fl; i++) { mk(a.ang + 0.35 * i, 0.4, !!pl); mk(a.ang - 0.35 * i, 0.4, !!pl); }
 }
@@ -736,7 +770,8 @@ function dealDamage(e, o) {
   if (A.frost && elem === 'ice' && e.boss && e.chill >= 4) mult *= 1.3;
   if (World.mods.includes('chief') && e.chief) mult *= 0.8;
   let dmg = o.base * mult;
-  if (o.counter && A.repay && o.parried) dmg += o.parried * 1.5;
+  if (o.counter && A.repay && o.parried) dmg += o.parried * (Run.syn.has('master') && P.chainStacks >= 2 ? 2.5 : 1.5);
+  if (o.burnTick && e.shocked > 0 && Run.syn.has('overheat')) dmg *= 1.5;
   let crit = St.crit + mods.crit; for (const c of mods.critCond) if (hasVs(e, c.vs)) crit += c.v;
   const isCrit = o.counter || o.forceCrit || (gen === 0 && R() < crit);
   if (isCrit) dmg *= St.critDmg;
@@ -750,7 +785,7 @@ function dealDamage(e, o) {
   }
   // 끊어내기
   if (A.cut && gen <= 1) {
-    const th = CUT[A.cut];
+    const th = CUT[A.cut] + (Run.syn.has('executioner') && e.groggy > 0 ? 0.1 : 0);
     if (!e.boss && (e.hp - dmg) / e.maxHp <= th && e.hp > 0) { dmg = e.hp; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
     else if (e.boss && e.hp / e.maxHp <= th && gameTime - (e.cutAt || -9) > 3) { e.cutAt = gameTime; dmg += e.maxHp * 0.05; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
   }
@@ -785,12 +820,13 @@ function dealDamage(e, o) {
   if (elem === 'fire' && !o.noStatus) { e.burn = Math.min(5, e.burn + 1); e.burnT = 3; }
   if (elem === 'ice' && !o.noStatus) {
     e.chillT = 3; e.chill = Math.min(5, e.chill + 1);
-    if (e.chill >= 5 && !e.boss && e.freezeImm <= 0) { e.frozen = 1.5; e.chill = 0; e.freezeImm = 3.5; FX.text(e.x, e.y - 40, '빙결', '#bfefff'); e.cancelAttack && e.cancelAttack(); }
+    if (e.chill >= 5 && !e.boss && e.freezeImm <= 0) { e.frozen = 1.5; e.chill = 0; e.freezeImm = 3.5; FX.text(e.x, e.y - 40, '빙결', '#bfefff'); e.cancelAttack && e.cancelAttack();
+      if (Run.syn.has('thermal') && e.burn > 0) { const pw = e.burn * 12; FX.text(e.x, e.y - 64, '열충격', '#ffb36b', true); FX.ring(e.x, e.y, 10, 130, '#ffb36b', 0.35, 8); Sfx.boom(); for (const t of World.enemies) if (!t.dead && dist(t, e) < 130 + t.r) later(0.03, () => dealDamage(t, { base: pw, gen: 2, elem: 'fire', noStatus: true, ang: angTo(e, t), kb: 260 })); } }
   }
   if (elem === 'light' && !o.noStatus) {
     e.shocked = 3;
     if (gen <= 1 && !o.noLightChain) {
-      const n = (A.thunder || 0) + Math.round(St.shockBounce);
+      const n = (A.thunder || 0) + Math.round(St.shockBounce) + (Run.syn.has('supercond') && (e.chill > 0 || e.frozen > 0) ? 1 : 0);
       const near = World.enemies.filter(x => !x.dead && x !== e && dist(x, e) < 240).sort((p, q) => dist(p, e) - dist(q, e)).slice(0, n);
       for (const t of near) {
         World.bolts.push({ x1: e.x, y1: e.y, x2: t.x, y2: t.y, life: 0.15 });
@@ -801,7 +837,7 @@ function dealDamage(e, o) {
   }
   envReact(e, elem, dmg, gen);
   // 낙인
-  if (A.brand && gen === 0 && !o.noBrand) {
+  if (A.brand && (gen === 0 || (o.echo && Run.syn.has('doublebrand'))) && !o.noBrand) {
     e.brand = (e.brand || 0) + 1;
     if (e.brand >= 3) {
       e.brand = 0; const pw = BRAND[A.brand];
@@ -813,7 +849,7 @@ function dealDamage(e, o) {
   if (A.echo && gen <= 1 && !o.echo && R() < ECHO[A.echo]) {
     later(0.2, () => { if (!e.dead) { FX.text(e.x, e.y - 70, '메아리', '#e78bff'); dealDamage(e, { ...o, base: o.base * 0.5, gen: gen + 1, echo: true, counter: false, forceCrit: false, kb: 0 }); } });
   }
-  if (e.hp <= 0) killEnemy(e, finisher);
+  if (e.hp <= 0) { if (o.act === 'dash' && Run.syn.has('galecharge') && P.spinCharges < 2) { P.spinCharges++; FX.text(P.x, P.y - 50, '질풍 충전', '#9fe8ff'); } killEnemy(e, finisher); }
   return dmg;
 }
 function addStance(e, v) {
@@ -1092,7 +1128,7 @@ function chillMul(e) { return e.frozen > 0 ? 0 : 1 - Math.min(0.4, e.chill * 0.0
 function startAtk(e, name, color, tele) { e.atk = { name, color, t: 0, phase: 'tele', tele: tele / e.spdMul, ang: angTo(e, P) }; }
 function updateEnemy(e, dt) {
   e.life += dt; e.flash -= dt;
-  if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; dealDamage(e, { base: e.burn * (2 + St.firePow * 0.08), gen: 1, elem: 'fire', noStatus: true }); } if (e.burnT <= 0) e.burn = 0; }
+  if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; dealDamage(e, { base: e.burn * (2 + St.firePow * 0.08), gen: 1, elem: 'fire', noStatus: true, burnTick: true }); } if (e.burnT <= 0) e.burn = 0; }
   if (e.chillT > 0) { e.chillT -= dt; if (e.chillT <= 0) e.chill = 0; }
   e.frozen -= dt; e.freezeImm -= dt; e.shocked -= dt; e.kbT -= dt;
   if (e.shieldDown > 0) { e.shieldDown -= dt; if (e.shieldDown <= 0 && e.def.shield) e.shieldUp = true; }
@@ -1372,6 +1408,7 @@ function topBar(p) {
   bar.innerHTML = `<div class="stats"><b>${Run.floor ? Run.floor + '층' : '출발'}</b> · ${TIERS[Run.tier - 1].name}
     <span class="hp">체력 ${Math.ceil(Run.hp)}/${St.maxHp}</span><span class="sh">파편 ${Run.shards}</span><span>리롤권 ${Run.rerolls}</span><span>각인석 ${Run.stones}</span></div>
     <div class="row"><span class="lbl">증강</span>${aug}</div><div class="row"><span class="lbl">축복</span>${bl}</div>`;
+  const cb = h('button', 'btn small codexbtn', '증강·능력치 (Tab)'); cb.onclick = () => toggleCodex(); bar.appendChild(cb);
   p.appendChild(bar);
 }
 
@@ -1495,18 +1532,20 @@ function showAugments(prism, cb) {
   const cards = rollAugs(grade, n, up, prism);
   cardPicker({
     title: prism ? '계층보스 보상: 프리즘 증강' : '증강', sub: prism ? '예전 키워드 자리예요. 가장 강한 증강 중 하나를 고르세요.' : `${GRADE[grade].name} 등급 증강 중 하나를 고르세요.`, cards,
-    render: a => { const l = (Run.augs[a.id] || 0) + 1; return `<div class="grade" style="color:${GRADE[a.grade].col}">${GRADE[a.grade].name} · ${a.tag}</div><div class="cname">${a.name}${a.max > 1 ? ` <small>${l}단계</small>` : ''}</div><div class="cdesc">${a.desc(l)}</div>`; },
+    render: a => { const l = (Run.augs[a.id] || 0) + 1; return `<div class="grade" style="color:${GRADE[a.grade].col}">${GRADE[a.grade].name} · ${a.tag}</div><div class="cname">${a.name}${a.max > 1 ? ` <small>${l}단계</small>` : ''}</div><div class="cdesc">${a.desc(l)}</div>${synHint(a.id)}`; },
     reroll: (a, cs) => { const pool = augPool(a.grade).filter(x => !cs.includes(x)); return pool.length ? pick(pool) : null; },
     onPick: a => { takeAug(a.id); cb(); },
     skipLabel: `건너뛰기 (리롤권 +${prism ? 2 : 1})`, onSkip: () => { Run.rerolls = Math.min(5, Run.rerolls + (prism ? 2 : 1)); cb(); },
   });
 }
 function takeAug(id) {
+  const before = new Set(Run.syn || []);
   Run.augs[id] = (Run.augs[id] || 0) + 1;
   if (id === 'star') Run.upNext = Math.max(Run.upNext, 1);
   if (id === 'moon') Run.upNext = 3;
   if (id === 'saga') Run.sagaOn = true;
   recalc();
+  for (const s of Run.syn) if (!before.has(s)) setTimeout(() => flashMsg(`시너지 완성: ${SYN[s].name}`), 50);
 }
 
 // ───────── 인장 얻기 ─────────
@@ -1694,10 +1733,66 @@ function showTitle() {
     <tr><td>이동</td><td>WASD</td></tr><tr><td>공격 (3타 콤보)</td><td>마우스 왼쪽 / J</td></tr>
     <tr><td>패링</td><td>마우스 오른쪽 / K</td></tr><tr><td>대시</td><td>Space / L / Shift</td></tr>
     <tr><td>대시 직후 공격</td><td>대시 찌르기</td></tr><tr><td>회전베기 (액티브)</td><td>Q / U</td></tr><tr><td>궁극기</td><td>R / I</td></tr>
-    <tr><td>일시정지·디버그</td><td>Esc · \` (백틱)</td></tr>
+    <tr><td>증강·능력치 창</td><td>Tab</td></tr><tr><td>일시정지·디버그</td><td>Esc · \` (백틱)</td></tr>
   </table>
   <p class="dim">섬광 색: <b style="color:#fff">흰색</b> 패링 가능 · <b style="color:#ffd27a">금색</b> 패링하면 바로 그로기 · <b style="color:#ff5a5a">붉은색</b> 패링 불가, 회피만</p>`;
   const b = h('button', 'btn big', '시작'); b.onclick = () => { Sfx.init(); startRun(); }; c.appendChild(b); p.appendChild(c);
+}
+
+// ───────── 증강 창 (Tab): 보유 증강, 효과, 시너지, 능력치 ─────────
+function synHint(augId) {
+  const list = synOf(augId); if (!list.length) return '';
+  return '<div class="synhint">' + list.map(s => {
+    const other = s.need.find(n => n !== augId); const has = !!Run.augs[other];
+    return `<div class="${has ? 'on' : ''}">✦ ${s.name}: ${AUG[other].name}${has ? ' 보유 중, 고르면 완성' : '와 함께'}</div>`;
+  }).join('') + '</div>';
+}
+let codexPrevPause = false;
+function toggleCodex() {
+  const old = document.getElementById('codex');
+  if (old) { old.remove(); if (Scene === 'fight') paused = codexPrevPause; return; }
+  if (!Run || Scene === 'title' || Scene === 'result') return;
+  if (Scene === 'fight') { codexPrevPause = paused; paused = true; }
+  recalc();
+  const o = h('div', 'codex'); o.id = 'codex';
+  const owned = Object.entries(Run.augs);
+  const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
+  // 1) 보유 증강
+  const augHtml = owned.length ? owned.map(([id, l]) => {
+    const a = AUG[id]; const syns = synOf(id);
+    return `<div class="caug" style="border-color:${GRADE[a.grade].col}">
+      <div class="grade" style="color:${GRADE[a.grade].col}">${GRADE[a.grade].name} · ${a.tag}</div>
+      <div class="cname2">${a.name}${a.max > 1 ? ` <small>${l}/${a.max}단계</small>` : ''}</div>
+      <div class="cdesc2">${a.desc(l)}</div>
+      ${syns.map(s => { const on = Run.syn.has(s.id); const other = s.need.find(n => n !== id); return `<div class="csyn ${on ? 'on' : ''}">${on ? '✦ 켜짐' : '○ 꺼짐'} · ${s.name} <span class="dim">(${AUG[other].name} 필요)</span></div>`; }).join('')}
+    </div>`; }).join('') : '<p class="dim">아직 가진 증강이 없어요. 5층마다 보스를 쓰러뜨리면 얻어요.</p>';
+  // 2) 시너지
+  const rel = SYNERGIES.filter(s => s.need.some(n => Run.augs[n])).sort((a, b) => Run.syn.has(b.id) - Run.syn.has(a.id));
+  const synHtml = (rel.length ? rel : SYNERGIES).map(s => {
+    const on = Run.syn.has(s.id);
+    return `<div class="csyn2 ${on ? 'on' : ''}"><div><b>${on ? '✦ ' : ''}${s.name}</b> <span class="dim">${s.need.map(n => `<span class="${Run.augs[n] ? 'have' : ''}">${AUG[n].name}</span>`).join(' + ')}</span></div><div class="cdesc2">${s.desc}</div></div>`;
+  }).join('');
+  // 3) 능력치 (축복·인장·증강 모두 반영된 값)
+  const A = Run.augs;
+  const conv = [['flame', '화염'], ['frost', '냉기'], ['thunder', '번개']].filter(([k]) => A[k]).map(([k, n]) => `${n} ${Math.round(FLAME[A[k]] * 100)}%`).join(', ');
+  const stats = [
+    ['최대 체력', `${St.maxHp} (현재 ${Math.ceil(Run.hp)})`], ['모든 피해', pct(St.dmg)], ['물리 피해', pct(St.physDmg)], ['화염 피해', pct(St.fireDmg)],
+    ['공격 속도', pct(St.atkSpd - 1)], ['이동 속도', pct(St.move - 1)], ['치명 확률', Math.round(St.crit * 100) + '%'], ['치명 피해', '×' + St.critDmg.toFixed(2)],
+    ['대시 쿨다운', St.dashCd.toFixed(2) + '초'], ['패링 판정', St.parryWin.toFixed(2) + '초'], ['포이즈·체간 피해', pct(St.poise + St.stance)], ['궁극기 충전', '×' + St.ultGain.toFixed(2)],
+    ['받는 피해', '×' + St.dmgTaken.toFixed(2)], ['화염·냉기·번개 위력', `${Math.round(St.firePow)} · ${Math.round(St.icePow)} · ${Math.round(St.lightPow)}`], ['파편 획득', pct(St.shardMul)], ['속성 전환', conv || '없음 (모두 물리)'],
+  ];
+  const bl = Object.entries(Run.blessings).map(([id, c]) => { const b = BLESSINGS.find(x => x.id === id); return `<div class="cbl"><b>${b.name} ×${c}</b> <span class="dim">${b.desc} × ${c}</span></div>`; }).join('') || '<p class="dim">고른 축복이 없어요.</p>';
+  o.innerHTML = `<div class="codex-in">
+    <div class="codex-head"><h2>증강 · 능력치</h2><span class="dim">Tab 또는 Esc로 닫기${Scene === 'fight' ? ' · 여는 동안 전투가 멈춰요' : ''}</span></div>
+    <div class="codex-cols">
+      <section><h3>보유 증강 <span class="dim">${owned.length}개</span></h3><div class="clist">${augHtml}</div></section>
+      <section><h3>시너지 <span class="dim">켜짐 ${Run.syn.size}개</span></h3><div class="clist">${synHtml}</div></section>
+      <section><h3>능력치</h3><table class="cstats">${stats.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>
+        <h3>고른 축복</h3>${bl}</section>
+    </div></div>`;
+  o.onclick = e => { if (e.target === o) toggleCodex(); };
+  UI.appendChild(o); UI.style.pointerEvents = 'auto';
+  o.addEventListener('remove', () => 0);
 }
 
 // ===== main.js =====
@@ -1898,7 +1993,20 @@ function drawHUD() {
     cx.textAlign = 'center'; cx.font = '800 20px sans-serif'; cx.fillStyle = '#fff'; cx.fillText(b.title + (b.phase > 1 ? ` · 페이즈 ${b.phase}` : ''), W / 2, y - 6);
     bar(x, y, w, 16, b.hp / b.maxHp, '#d04848'); bar(x, y + 20, w, 8, b.groggy > 0 ? 1 : b.stance / b.stanceMax, b.groggy > 0 ? '#ffffff' : '#ffd27a');
   }
-  if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 30, 100); }
+  if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 300, 79); }
+  // 보유 증강 (항상 표시)
+  { let x = 30, y = 118; cx.textAlign = 'left'; cx.font = '700 13px sans-serif';
+    const ids = Object.keys(Run.augs);
+    cx.fillStyle = '#9a96a8'; cx.fillText(ids.length ? '증강 (Tab: 자세히)' : '증강 없음 (Tab: 능력치)', x, y); y += 8;
+    for (const id of ids) {
+      const a = AUG[id], l = Run.augs[id]; const lit = synOf(id).some(s => Run.syn.has(s.id));
+      const label = (lit ? '✦ ' : '') + a.name + (a.max > 1 ? ' ' + l : ''); const w = cx.measureText(label).width + 16;
+      if (x + w > 400) { x = 30; y += 26; }
+      cx.fillStyle = '#14121add'; cx.fillRect(x, y, w, 22); cx.strokeStyle = GRADE[a.grade].col; cx.lineWidth = 1.5; cx.strokeRect(x, y, w, 22);
+      cx.fillStyle = lit ? '#ffd27a' : '#e6e3ee'; cx.fillText(label, x + 8, y + 16); x += w + 6;
+    }
+    if (Run.syn && Run.syn.size) { y += 40; cx.fillStyle = '#ffd27a'; cx.fillText('시너지: ' + [...Run.syn].map(s => SYN[s].name).join(', '), 30, y); }
+  }
   if (paused) { cx.fillStyle = '#000a'; cx.fillRect(0, 0, W, H); cx.textAlign = 'center'; cx.fillStyle = '#fff'; cx.font = '900 48px sans-serif'; cx.fillText('일시정지', W / 2, H / 2); cx.font = '600 18px sans-serif'; cx.fillText('Esc로 계속', W / 2, H / 2 + 40); }
 }
 
@@ -1920,6 +2028,8 @@ function toggleDebug() {
 }
 addEventListener('keydown', e => {
   if (e.key === '`') toggleDebug();
+  if (e.key === 'Tab') { e.preventDefault(); toggleCodex(); if (Scene === 'fight' && !document.getElementById('codex')) UI.style.pointerEvents = 'none'; return; }
+  if (e.key === 'Escape' && document.getElementById('codex')) { toggleCodex(); if (Scene === 'fight') UI.style.pointerEvents = 'none'; return; }
   if (e.key === 'Escape' && Scene === 'fight') paused = !paused;
 });
 

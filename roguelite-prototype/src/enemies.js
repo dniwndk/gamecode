@@ -194,7 +194,7 @@ function chillMul(e) { return e.frozen > 0 ? 0 : 1 - Math.min(0.4, e.chill * 0.0
 function startAtk(e, name, color, tele) { e.atk = { name, color, t: 0, phase: 'tele', tele: tele / e.spdMul, ang: angTo(e, P) }; }
 function updateEnemy(e, dt) {
   e.life += dt; e.flash -= dt;
-  if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; dealDamage(e, { base: e.burn * (2 + St.firePow * 0.08), gen: 1, elem: 'fire', noStatus: true }); } if (e.burnT <= 0) e.burn = 0; }
+  if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; dealDamage(e, { base: e.burn * (2 + St.firePow * 0.08), gen: 1, elem: 'fire', noStatus: true, burnTick: true }); } if (e.burnT <= 0) e.burn = 0; }
   if (e.chillT > 0) { e.chillT -= dt; if (e.chillT <= 0) e.chill = 0; }
   e.frozen -= dt; e.freezeImm -= dt; e.shocked -= dt; e.kbT -= dt;
   if (e.shieldDown > 0) { e.shieldDown -= dt; if (e.shieldDown <= 0 && e.def.shield) e.shieldUp = true; }

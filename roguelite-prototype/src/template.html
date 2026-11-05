@@ -59,6 +59,22 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--text); ove
 .keys { margin:16px auto; font-size:18px; border-collapse:collapse; } .keys td { padding:4px 16px; border-bottom:1px solid var(--line); text-align:left; } .keys td:first-child { color:var(--dim); }
 .toast { position:fixed; left:50%; top:12%; transform:translateX(-50%); background:#2a2534; border:1px solid var(--gold); padding:10px 20px; border-radius:8px; z-index:20; font-size:16px; }
 .dbg { position:fixed; right:10px; top:10px; z-index:30; background:#16141dee; border:1px solid var(--line); border-radius:10px; padding:8px; display:flex; flex-direction:column; width:200px; }
+.codexbtn { float:right; margin-top:-34px; }
+.synhint { font-size:14px; color:var(--dim); border-top:1px solid var(--line); padding-top:8px; } .synhint .on { color:var(--gold); }
+.codex { position:absolute; inset:0; background:rgba(8,7,12,0.88); z-index:15; display:flex; justify-content:center; align-items:center; pointer-events:auto; }
+.codex-in { width:1500px; height:820px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 24px; display:flex; flex-direction:column; }
+.codex-head { display:flex; align-items:baseline; gap:16px; } .codex-head h2 { margin:0; font-size:28px; }
+.codex-cols { display:grid; grid-template-columns: 1.1fr 1fr 1fr; gap:22px; flex:1; min-height:0; margin-top:12px; }
+.codex-cols section { min-height:0; overflow:auto; padding-right:6px; } .codex-cols h3 { margin:6px 0 10px; font-size:19px; }
+.clist { display:flex; flex-direction:column; gap:10px; }
+.caug { border:1px solid; border-left-width:4px; border-radius:10px; padding:10px 12px; background:#1b1922; }
+.cname2 { font-size:19px; font-weight:800; } .cname2 small { color:var(--gold); font-size:13px; }
+.cdesc2 { font-size:15px; color:#d8d4e6; line-height:1.45; margin-top:2px; }
+.csyn { font-size:14px; color:var(--dim); margin-top:4px; } .csyn.on { color:var(--gold); }
+.csyn2 { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#1b1922; } .csyn2.on { border-color:var(--gold); }
+.csyn2 .have { color:var(--text); font-weight:700; }
+.cstats { width:100%; border-collapse:collapse; font-size:15px; font-variant-numeric:tabular-nums; } .cstats td { padding:5px 4px; border-bottom:1px solid var(--line); } .cstats td:last-child { text-align:right; font-weight:700; }
+.cbl { font-size:15px; margin:4px 0; }
 </style>
 </head>
 <body>
