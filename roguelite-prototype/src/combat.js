@@ -196,8 +196,9 @@ function updatePlayer(dt) {
         if (a.t >= tr) { P.act = null; P.comboGap = 0; }
       }
     } else if (a.type === 'thrust') {
-      const k = a.t / 0.18; P.vx = Math.cos(a.ang) * 820 * (1 - k); P.vy = Math.sin(a.ang) * 820 * (1 - k);
-      swingHits(a);
+      // 대시 찌르기: 추가 전진 없음 (대시가 끝난 자리에서 멈춰 찌름)
+      P.vx *= 0.5; P.vy *= 0.5;
+      if (a.t <= 0.14) swingHits(a);
       if (a.t >= 0.26) { P.act = null; P.comboGap = 0.3; }
     } else if (a.type === 'parry') {
       P.vx *= 0.6; P.vy *= 0.6;
@@ -224,7 +225,9 @@ function updatePlayer(dt) {
     P.buffer = 0; const ang = aimAngle(); P.face = ang;
     const isCounter = P.counterT > 0;
     if (P.dashAfter > 0 && !isCounter) {
-      P.act = { type: 'thrust', t: 0, ang, hitSet: new Set(), act: 'dash', counter: false, dmg: 22, poise: 20, kb: 300, range: 70 };
+      // 판정: 부채꼴 63°(평타 109°보다 좁음) × 사거리 110
+      P.act = { type: 'thrust', t: 0, ang, hitSet: new Set(), act: 'dash', counter: false, dmg: 22, poise: 20, kb: 300, range: 110, arc: 1.1 };
+      P.vx = 0; P.vy = 0; FX.slash(P.x, P.y, ang, 1.1, 110 + P.r - 10, '#cfefff', 10, 0.18, P);
       usePerfect(P.act);
       P.dashAfter = 0; Sfx.swing();
     } else {
@@ -260,13 +263,13 @@ function updatePlayer(dt) {
 
 function swingHits(a) {
   const isThrust = a.type === 'thrust';
-  const sw = a.sw || { range: a.range, arc: 1.2, dmg: a.dmg, poise: a.poise, kb: a.kb };
+  const sw = a.sw || { range: a.range, arc: a.arc || 1.1, dmg: a.dmg, poise: a.poise, kb: a.kb };
   for (const e of World.enemies) {
     if (e.dead || a.hitSet.has(e)) continue;
     const d = dist(P, e) - e.r;
     if (d > sw.range) continue;
     if (!isThrust && Math.abs(angDiff(a.ang, angTo(P, e))) > sw.arc / 2 && d > 20) continue;
-    if (isThrust && Math.abs(angDiff(a.ang, angTo(P, e))) > 1.0 && d > 15) continue;
+    if (isThrust && Math.abs(angDiff(a.ang, angTo(P, e))) > sw.arc / 2 && d > 15) continue;
     a.hitSet.add(e);
     // 방패병: 정면 방어. 3타, 대시 찌르기, 반격은 방패를 깸
     if (e.def.shield && e.shieldUp && Math.abs(angDiff(e.face, angTo(e, P))) < 1.2) {
