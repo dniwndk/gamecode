@@ -174,3 +174,12 @@
 - **Phaser 공식 스킬 28종** (`phaserjs/phaser`의 `skills/`): Phaser를 깊게 쓸 때 추가. 여기선 `phaser-core`·`phaser-arcade-physics`와 겹쳐 뺐다.
 - **[Claude-Code-Game-Studios](https://github.com/Donchitos/Claude-Code-Game-Studios)**, **[gstack-game](https://github.com/fagemx/gstack-game)**: 스튜디오형 통합 체계라 스킬이 자체 스크립트·훅·문서 폴더에 묶여 있어, 일부만 떼어 오면 동작하지 않는다. 쓰려면 각 저장소의 설치 안내대로 통째로 설치한다.
 - **Anthropic의 docx·pdf 스킬**: 재배포가 허용되지 않는 라이선스라 넣지 않았다. claude.ai·Claude Code에 기본 제공되는 문서 스킬로 .docx·.pdf 기획서를 읽을 수 있다.
+
+## 게임 스튜디오 명령어 (Claude Code Game Studios)
+
+[Donchitos/Claude-Code-Game-Studios](https://github.com/Donchitos/Claude-Code-Game-Studios) v1.2.0(MIT, 라이선스는
+`_licenses/claude-code-game-studios.LICENSE`)의 스킬 74개·에이전트 49개·훅·규칙을 그대로 들였다. 위 스킬과 이름이 겹치는 것은 없다.
+
+- **처음 시작**: 새 스레드에서 `/start` — 아이디어·엔진 유무를 묻고 다음 흐름을 골라 준다.
+- 자주 쓰는 것: `/help`, `/brainstorm`, `/setup-engine`, `/design-system`, `/create-epics`, `/create-stories`, `/dev-story`, `/story-done`.
+- 전체 목록과 흐름: `.claude/docs/skills-reference.md`, `docs/WORKFLOW-GUIDE.md`. 설정은 루트의 `CLAUDE.md`·`project.yaml`·`.claude/settings.json`.

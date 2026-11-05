@@ -5,3 +5,14 @@ dist/
 
 # humanize-korean 스킬의 실행 기록
 _workspace/
+
+# Claude Code Game Studios (CCGS) 템플릿 — 개인 설정·세션 기록
+.claude/settings.local.json
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+production/session-state/
+.scratch/
+.claude/agent-memory/
+.claude/worktrees/
+docs/consistency-failures.md
