@@ -236,7 +236,7 @@ function syncPlayer() {
   g.rotation.y = -(P.face || 0);
   const fa = a && a.ang != null ? a.ang : P.face; g.userData.sword.rotation.y = -(fa - P.face);
   g.userData.sword.position.x = 0;
-  if (a && a.type === 'swing') { const k = a.phase === 'wind' ? -0.9 : a.phase === 'active' ? 0.5 : 0.2; g.userData.sword.rotation.z = a.act === 'a3' ? -0.6 + k * 0.4 : 0; g.userData.sword.rotation.y += a.phase === 'wind' ? 1.1 : a.phase === 'active' ? -0.9 : -0.3; }
+  if (a && a.type === 'swing') { const k = a.phase === 'wind' ? -0.9 : a.phase === 'active' ? 0.5 : 0.2; g.userData.sword.rotation.z = a.act === 'a3' ? -0.6 + k * 0.4 : 0; g.userData.sword.rotation.y += a.phase === 'wind' ? 1.1 : a.phase === 'active' ? -0.9 : -0.3; if (a.drag > 0) { g.userData.sword.rotation.y += 0.35 + (Math.random() - 0.5) * 0.12; g.userData.sword.rotation.x = (Math.random() - 0.5) * 0.1; } else g.userData.sword.rotation.x = 0; }
   else if (a && a.type === 'thrust') { g.userData.sword.rotation.y = 0; g.userData.sword.rotation.z = 0; g.userData.sword.position.x = a.t < 0.12 ? 14 : 0; }
   else if (a && a.type === 'spin') { g.userData.sword.rotation.y = -a.t * 30; }
   else if (a && a.type === 'parry') { g.userData.sword.rotation.z = 1.1; g.userData.sword.rotation.y = 0.5; }

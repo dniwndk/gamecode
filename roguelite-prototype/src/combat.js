@@ -185,7 +185,15 @@ function updatePlayer(dt) {
   }
 
   if (P.act) {
-    const a = P.act; a.t += dt;
+    const a = P.act;
+    // 평타 "걸림": 적에 맞은 순간 짧게(0.07초) 동작이 0.25배로 느려져 칼이 몸에 박힌 듯하고,
+    // 그만큼 밀린 시간(빚)은 후딜을 빨리 감아서 갚음 → 평타 전체 길이는 그대로
+    let adt = dt;
+    if (a.type === 'swing') {
+      if (a.drag > 0) { a.drag -= dt; adt = dt * 0.25; a.debt = (a.debt || 0) + dt - adt; }
+      else if (a.phase === 'rec' && a.debt > 0) { const extra = Math.min(a.debt, dt); a.debt -= extra; adt = dt + extra; }
+    }
+    a.t += adt;
     if (a.type === 'swing') {
       const sw = a.sw, sp = St.atkSpd;
       const tw = sw.wind / sp, ta = sw.active / sp, tr = sw.rec / sp;
@@ -200,8 +208,9 @@ function updatePlayer(dt) {
       }
       else if (a.phase === 'active') {
         const k = clamp(a.t / ta, 0, 1); const sv = sw.lunge * (1 - k) * 2.4;
-        P.vx = Math.cos(sa) * sv; P.vy = Math.sin(sa) * sv;
-        swingHits(a);
+        const drag = a.drag > 0 ? 0.15 : 1; P.vx = Math.cos(sa) * sv * drag; P.vy = Math.sin(sa) * sv * drag;
+        const n0 = a.hitSet.size; swingHits(a);
+        if (a.hitSet.size > n0 && !a.dragged) { a.dragged = true; a.drag = 0.07; P.sqK = 0.28; P.sqA = a.ang; }
         if (a.t >= ta) { a.phase = 'rec'; a.t = 0; }
       } else if (a.phase === 'rec') {
         P.vx *= 0.75; P.vy *= 0.75;
