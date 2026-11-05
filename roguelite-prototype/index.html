@@ -517,7 +517,7 @@ function addEff(t, e, m) {
 function itemLvMul(inst) { return 1 + 0.5 * (inst.lv || 0); }
 
 function recalc() {
-  const s = { maxHp: 100, dmg: 0, atkSpd: 1, move: 1, dashCd: 0.55, ultGain: 1, parryWin: 0.26, parryWinBase: 0.26, perfectWin: 0.07, perfectBonus: 0.8, crit: 0.05, critDmg: 1.5,
+  const s = { maxHp: 100, dmg: 0, atkSpd: 1, move: 1, dashCd: 0.55, ultGain: 1, parryWin: 0.2, parryWinBase: 0.2, perfectWin: 0.067, perfectBonus: 0.5, crit: 0.05, critDmg: 1.5,
     firePow: 0, icePow: 0, lightPow: 0, fireDmg: 0, physDmg: 0, poise: 0, stance: 0, shardMul: 0, chillAmp: 0, shockBounce: 0, maxHpMul: 0, dmgTaken: 1 };
   const A = Run.augs;
   if (A.catch) { s.parryWin += 0.06; s.parryWinBase += 0.06; }
@@ -624,7 +624,7 @@ function updatePlayer(dt) {
   const spinPress = Input.hit('q') || Input.hit('u');
   const ultPress = Input.hit('r') || Input.hit('i');
   if (atkPress) P.buffer = 0.25;
-  P.parryBuf = (P.parryBuf || 0) - dt; if (parryPress) P.parryBuf = P.parryLock > 0 ? 0 : 0.2; // 대시·휘두름 중에 눌러도 0.2초 안에 발동
+  P.parryBuf = (P.parryBuf || 0) - dt; if (parryPress) P.parryBuf = 0.2; // 대시·휘두름 중에 눌러도 0.2초 안에 발동
 
   // 대시
   const cancelable = !P.act || ['swing', 'thrust', 'parryWhiff'].includes(P.act.type) || P.act.phase === 'rec'; // 대시·패링은 평타 어느 단계에서든 취소
@@ -645,11 +645,13 @@ function updatePlayer(dt) {
   }
 
   // 패링 (공격 후딜 중에도 끊을 수 있음, 궁극기 중 불가)
-  if (P.parryBuf > 0 && P.parryLock <= 0 && cancelable && !(P.act && P.act.type === 'parry')) {
+  if (P.parryBuf > 0 && cancelable) {
     P.parryBuf = 0;
-    const halved = gameTime - P.whiffAt < 0.5;
-    P.parryT = St.parryWin * (halved ? 0.5 : 1);
-    P.act = { type: 'parry', t: 0, dur: P.parryT };
+    // 세키로식 연타 벌칙: 최근 0.5초(30프레임) 안에 누른 횟수만큼 판정이 2프레임씩 줄어 최소 4프레임. 성공하거나 0.5초 지나면 풀림.
+    P.parryPresses = (P.parryPresses || []).filter(t => gameTime - t < 0.5);
+    const n = P.parryPresses.length; P.parryPresses.push(gameTime);
+    P.parryT = Math.max(0.067, St.parryWin - n * 0.033);
+    P.act = { type: 'parry', t: 0, dur: P.parryT, clean: n === 0 };
     P.face = aimAngle(); P.vx *= 0.3; P.vy *= 0.3;
     // 누르는 순간 바로 보이고 들리게
     Sfx.raise(); FX.ring(P.x, P.y, P.r + 6, P.r + 30, '#ffffff', 0.12, 5); P.sqK = -0.18; P.sqA = P.face;
@@ -685,7 +687,7 @@ function updatePlayer(dt) {
     } else if (a.type === 'parry') {
       P.vx *= 0.6; P.vy *= 0.6;
       if (P.parryT <= 0) { // 헛패링
-        P.act = { type: 'parryWhiff', t: 0, phase: 'rec' }; P.parryLock = 0.35; P.whiffAt = gameTime;
+        P.act = null; // 세키로처럼 헛패링 경직 없음 (대신 연타 벌칙)
       }
     } else if (a.type === 'parryWhiff') {
       P.vx *= 0.6; P.vy *= 0.6; if (a.t >= 0.35) P.act = null;
@@ -961,7 +963,8 @@ function playerHit(h) {
 function usePerfect(act) { if (P.perfect) { act.perfect = true; P.perfect = false; P.perfectT = 0; FX.slash(P.x, P.y, act.ang != null ? act.ang : P.face, 2.4, 90, '#9ffcff', 14, 0.22, P); } }
 function parrySuccess(h) {
   const elapsed = P.act && P.act.type === 'parry' ? P.act.dur - P.parryT : 9;
-  const perfect = elapsed <= St.perfectWin;
+  const perfect = elapsed <= St.perfectWin && P.act.clean; // 연타로 줄어든 판정에서는 퍼펙트 없음
+  P.parryPresses = [];
   P.parryT = 0; P.act = null; P.counterT = 0.6; P.iframe = Math.max(P.iframe, 0.2);
   P.lastParriedPow = h.dmg; Run.parries++;
   if (ActMods.parry.guard) P.guardT = 2;
