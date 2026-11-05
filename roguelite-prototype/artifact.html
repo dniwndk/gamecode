@@ -579,9 +579,9 @@ function resetPlayer(x, y) {
 }
 const SWINGS = [
   // 하데스식: 짧은 선딜·후딜, 타마다 분명한 전진 스텝, 휘두르는 동안 이동 입력은 무시(스텝이 대신), 대시·패링으로 언제든 취소
-  { k: 'a1', wind: 0.05, active: 0.08, rec: 0.11, range: 100, arc: 1.9, dmg: 14, poise: 12, kb: 160, lunge: 230 },
-  { k: 'a2', wind: 0.05, active: 0.08, rec: 0.11, range: 100, arc: 1.9, dmg: 16, poise: 14, kb: 180, lunge: 240 },
-  { k: 'a3', wind: 0.10, active: 0.10, rec: 0.24, range: 128, arc: 2.8, dmg: 28, poise: 34, kb: 520, lunge: 360 },
+  { k: 'a1', wind: 0.05, active: 0.08, rec: 0.11, range: 100, arc: 1.9, dmg: 14, poise: 12, kb: 0, lunge: 230 },
+  { k: 'a2', wind: 0.05, active: 0.08, rec: 0.11, range: 100, arc: 1.9, dmg: 16, poise: 14, kb: 0, lunge: 240 },
+  { k: 'a3', wind: 0.10, active: 0.10, rec: 0.24, range: 128, arc: 2.8, dmg: 28, poise: 34, kb: 260, lunge: 360 },
 ];
 let gameTime = 0;
 function aimAngle() {
@@ -892,7 +892,7 @@ function dealDamage(e, o) {
     FX.spark(e.x, e.y, o.ang || 0, col, isCrit ? 10 : 6, 420);
     P.ult = Math.min(1, P.ult + dmg * 0.0009 * St.ultGain);
   }
-  // 넉백
+  // 넉백: 평타는 3타에만 약간(260, 정예 ×0.6). 슈퍼아머(강타수 등, 경직 중 제외)와 보스는 밀리지 않음
   if (o.kb && !(e.def.armor && !e.groggy && !e.staggerT) && !e.boss) {
     const a = o.ang != null ? o.ang : angTo(P, e); const k = o.kb * (e.elite ? 0.6 : 1);
     e.vx += Math.cos(a) * k; e.vy += Math.sin(a) * k; e.kbT = 0.25;
