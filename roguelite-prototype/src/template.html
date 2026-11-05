@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>전투 빌드 프로토타입</title>
+<style>
+:root { color-scheme: dark; --bg:#0c0b10; --panel:#16141d; --line:#2c2936; --text:#ecebf2; --dim:#8e8aa0; --gold:#ffd27a; --accent:#4fd1c5; }
+* { box-sizing: border-box; }
+html, body { margin:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden; font-family: "Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; }
+#c { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:block; cursor:crosshair; }
+#ui { position:absolute; left:50%; top:50%; transform-origin:center; pointer-events:none; }
+.screen { position:absolute; inset:0; background:rgba(12,11,16,0.96); display:flex; flex-direction:column; align-items:center; padding:20px 32px; overflow:auto; }
+.topbar { width:100%; border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:10px; font-size:17px; }
+.topbar .stats span { margin-left:18px; } .topbar .hp { color:#ff8a8a; } .topbar .sh { color:#ffd86b; }
+.topbar .row { margin-top:6px; } .lbl { color:var(--dim); margin-right:8px; font-size:14px; }
+.chip { display:inline-block; border:1px solid #555; border-radius:6px; padding:2px 8px; margin:2px 4px 2px 0; font-size:14px; }
+.dim { color:var(--dim); }
+.btn { background:#24212d; color:var(--text); border:1px solid #3a3646; border-radius:8px; padding:10px 18px; font-size:17px; cursor:pointer; margin:6px; font-family:inherit; }
+.btn:hover:not(:disabled) { background:#302c3c; border-color:var(--gold); }
+.btn:disabled { opacity:0.4; cursor:default; }
+.btn.big { font-size:21px; padding:14px 30px; } .btn.small { font-size:14px; padding:6px 12px; } .btn.ghost { background:transparent; }
+.card-wrap { display:flex; flex-direction:column; align-items:center; margin-top:30px; max-width:1300px; text-align:center; }
+.card-wrap h1 { font-size:40px; margin:10px 0; } .lead { font-size:20px; color:#cfcbe0; }
+.cards { display:flex; gap:22px; margin:20px 0; flex-wrap:wrap; justify-content:center; }
+.cardbox { display:flex; flex-direction:column; align-items:center; }
+.card { width:270px; min-height:250px; background:var(--panel); border:2px solid #3a3646; border-radius:14px; padding:20px; color:var(--text); cursor:pointer; text-align:left; font-family:inherit; display:flex; flex-direction:column; gap:10px; }
+.card:hover { border-color:var(--gold); transform:translateY(-4px); }
+.cname { font-size:26px; font-weight:800; } .cname small { font-size:15px; color:var(--gold); }
+.cdesc { font-size:17px; line-height:1.5; color:#d8d4e6; } .cfoot { margin-top:auto; color:var(--dim); font-size:14px; } .grade { font-size:14px; font-weight:700; }
+.mapwrap { position:relative; width:1000px; height:640px; flex:none; }
+.mapsvg { position:absolute; inset:0; width:100%; height:100%; }
+.edge { stroke:#3a3646; stroke-width:3; } .edge.hot { stroke:var(--gold); }
+.node { position:absolute; transform:translate(-50%,-50%); width:52px; height:52px; border-radius:50%; background:#1b1922; border:2px solid #3a3646; font-size:24px; cursor:default; font-family:inherit; display:flex; align-items:center; justify-content:center; }
+.node.reach { border-color:var(--gold); cursor:pointer; box-shadow:0 0 14px rgba(255,210,122,0.5); animation:pulse 1.2s infinite; }
+.node.here { background:#3a3020; } .node.past { opacity:0.35; }
+.node .mod { position:absolute; top:52px; font-size:11px; font-style:normal; color:#d27aff; white-space:nowrap; }
+@keyframes pulse { 50% { box-shadow:0 0 24px rgba(255,210,122,0.9); } }
+.mapside { position:absolute; right:30px; bottom:30px; width:320px; text-align:right; } .hint { color:var(--dim); font-size:15px; margin-bottom:10px; }
+.center { display:flex; justify-content:center; align-items:center; height:100%; }
+.wide { width:100%; max-width:1300px; }
+.shop h2 { margin:6px 0; } .shoprow { display:flex; gap:12px; flex-wrap:wrap; margin:8px 0; }
+.shopitem { width:220px; background:var(--panel); border:1px solid #3a3646; border-radius:10px; padding:12px; color:var(--text); text-align:left; cursor:pointer; font-family:inherit; }
+.shopitem:hover:not(:disabled) { border-color:var(--gold); } .shopitem:disabled { opacity:0.45; } .price { color:#ffd86b; margin-top:6px; } .iname { font-weight:800; font-size:17px; }
+.engrave { background:#121019; border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:12px; position:relative; }
+.etitle { font-weight:800; font-size:18px; margin-bottom:6px; }
+.egrid { position:relative; width:800px; height:300px; margin:0 auto; }
+.elinks { position:absolute; inset:0; width:100%; height:100%; } .elink { stroke:#3a3646; stroke-width:4; } .elink.lit { stroke-width:6; }
+.slot { position:absolute; transform:translate(-50%,-50%); width:150px; height:84px; background:#1b1922; border:2px solid #3a3646; border-radius:10px; color:var(--text); cursor:pointer; font-family:inherit; padding:6px; }
+.slot.locked { opacity:0.35; cursor:default; } .slot.sel, .bagitem.sel { box-shadow:0 0 0 3px var(--gold); }
+.sname { font-size:13px; color:var(--dim); } .linkb { font-size:12px; color:var(--gold); }
+.chains { text-align:center; margin:6px 0; font-size:14px; }
+.bag { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.bagitem { background:#1b1922; border:2px solid #3a3646; border-radius:8px; color:var(--text); padding:8px 12px; cursor:pointer; font-family:inherit; font-size:15px; display:flex; flex-direction:column; }
+.bagitem small { color:var(--dim); font-size:12px; }
+.tip { margin-top:10px; min-height:90px; background:#0e0d14; border-radius:8px; padding:10px; font-size:15px; line-height:1.5; }
+.tipname { font-weight:800; font-size:17px; } .tipat .on { color:var(--gold); }
+.result { display:grid; grid-template-columns:repeat(4, auto); gap:12px 30px; font-size:20px; margin:10px 0; }
+.keys { margin:16px auto; font-size:18px; border-collapse:collapse; } .keys td { padding:4px 16px; border-bottom:1px solid var(--line); text-align:left; } .keys td:first-child { color:var(--dim); }
+.toast { position:fixed; left:50%; top:12%; transform:translateX(-50%); background:#2a2534; border:1px solid var(--gold); padding:10px 20px; border-radius:8px; z-index:20; font-size:16px; }
+.dbg { position:fixed; right:10px; top:10px; z-index:30; background:#16141dee; border:1px solid var(--line); border-radius:10px; padding:8px; display:flex; flex-direction:column; width:200px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1600" height="900"></canvas>
+<div id="ui"></div>
+<script>
+/*__SCRIPTS__*/
+</script>
+</body>
+</html>
