@@ -258,6 +258,7 @@ const Sfx = {
   parry() { this.tone(1400, 900, 0.18, 'triangle', 0.25); this.tone(2100, 1600, 0.12, 'sine', 0.15); },
   gold() { this.tone(900, 1800, 0.3, 'triangle', 0.25); this.tone(600, 1200, 0.35, 'sine', 0.2); },
   dash() { this.noise(0.12, 0.12, 2500); },
+  raise() { this.tone(900, 1500, 0.06, 'triangle', 0.12); this.noise(0.04, 0.08, 3000); },
   swing(p) { this.noise(0.07, 0.09, 2600 * (p || 1)); },
   hurt() { this.tone(220, 70, 0.2, 'sawtooth', 0.2); },
   boom() { this.noise(0.35, 0.35, 120); this.tone(90, 30, 0.35, 'sine', 0.3); },
@@ -615,6 +616,7 @@ function updatePlayer(dt) {
   const spinPress = Input.hit('q') || Input.hit('u');
   const ultPress = Input.hit('r') || Input.hit('i');
   if (atkPress) P.buffer = 0.25;
+  P.parryBuf = (P.parryBuf || 0) - dt; if (parryPress) P.parryBuf = P.parryLock > 0 ? 0 : 0.2; // 대시·휘두름 중에 눌러도 0.2초 안에 발동
 
   // 대시
   const cancelable = !P.act || ['swing', 'thrust', 'parryWhiff'].includes(P.act.type) || P.act.phase === 'rec'; // 대시·패링은 평타 어느 단계에서든 취소
@@ -635,11 +637,14 @@ function updatePlayer(dt) {
   }
 
   // 패링 (공격 후딜 중에도 끊을 수 있음, 궁극기 중 불가)
-  if (parryPress && P.parryLock <= 0 && cancelable && !(P.act && P.act.type === 'parry')) {
+  if (P.parryBuf > 0 && P.parryLock <= 0 && cancelable && !(P.act && P.act.type === 'parry')) {
+    P.parryBuf = 0;
     const halved = gameTime - P.whiffAt < 0.5;
     P.parryT = St.parryWin * (halved ? 0.5 : 1);
     P.act = { type: 'parry', t: 0, dur: P.parryT };
-    P.face = aimAngle();
+    P.face = aimAngle(); P.vx *= 0.3; P.vy *= 0.3;
+    // 누르는 순간 바로 보이고 들리게
+    Sfx.raise(); FX.ring(P.x, P.y, P.r + 6, P.r + 30, '#ffffff', 0.12, 5); P.sqK = -0.18; P.sqA = P.face;
   }
 
   if (P.act) {
@@ -2433,10 +2438,12 @@ function frame(now) {
   const rdt = Math.min(0.033, (now - last) / 1000); last = now;
   Juice.update(rdt);
   if (Input.bot) Input.bot.think();
+  let stepped = Scene !== 'fight'; // 히트스톱·일시정지 동안 누른 키는 버리지 않고 다음 틱에 넘겨요
   if (Scene === 'fight' && World.arena) {
     if (!paused) {
       if (Juice.stop > 0) Juice.stop -= rdt;
       else {
+        stepped = true;
         const sdt = rdt * Juice.scale() * (window.__speed || 1);
         const steps = Math.ceil((window.__speed || 1));
         for (let i = 0; i < steps; i++) {
@@ -2450,7 +2457,7 @@ function frame(now) {
     }
     if (World.arena) { drawWorld(); drawHUD(); }
   } else drawIdle();
-  Input.endFrame();
+  if (stepped) Input.endFrame();
   requestAnimationFrame(frame);
 }
 

@@ -170,6 +170,7 @@ const Sfx = {
   parry() { this.tone(1400, 900, 0.18, 'triangle', 0.25); this.tone(2100, 1600, 0.12, 'sine', 0.15); },
   gold() { this.tone(900, 1800, 0.3, 'triangle', 0.25); this.tone(600, 1200, 0.35, 'sine', 0.2); },
   dash() { this.noise(0.12, 0.12, 2500); },
+  raise() { this.tone(900, 1500, 0.06, 'triangle', 0.12); this.noise(0.04, 0.08, 3000); },
   swing(p) { this.noise(0.07, 0.09, 2600 * (p || 1)); },
   hurt() { this.tone(220, 70, 0.2, 'sawtooth', 0.2); },
   boom() { this.noise(0.35, 0.35, 120); this.tone(90, 30, 0.35, 'sine', 0.3); },

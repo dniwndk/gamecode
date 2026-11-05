@@ -171,10 +171,12 @@ function frame(now) {
   const rdt = Math.min(0.033, (now - last) / 1000); last = now;
   Juice.update(rdt);
   if (Input.bot) Input.bot.think();
+  let stepped = Scene !== 'fight'; // 히트스톱·일시정지 동안 누른 키는 버리지 않고 다음 틱에 넘겨요
   if (Scene === 'fight' && World.arena) {
     if (!paused) {
       if (Juice.stop > 0) Juice.stop -= rdt;
       else {
+        stepped = true;
         const sdt = rdt * Juice.scale() * (window.__speed || 1);
         const steps = Math.ceil((window.__speed || 1));
         for (let i = 0; i < steps; i++) {
@@ -188,7 +190,7 @@ function frame(now) {
     }
     if (World.arena) { drawWorld(); drawHUD(); }
   } else drawIdle();
-  Input.endFrame();
+  if (stepped) Input.endFrame();
   requestAnimationFrame(frame);
 }
 

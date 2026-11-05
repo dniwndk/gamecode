@@ -138,6 +138,7 @@ function updatePlayer(dt) {
   const spinPress = Input.hit('q') || Input.hit('u');
   const ultPress = Input.hit('r') || Input.hit('i');
   if (atkPress) P.buffer = 0.25;
+  P.parryBuf = (P.parryBuf || 0) - dt; if (parryPress) P.parryBuf = P.parryLock > 0 ? 0 : 0.2; // 대시·휘두름 중에 눌러도 0.2초 안에 발동
 
   // 대시
   const cancelable = !P.act || ['swing', 'thrust', 'parryWhiff'].includes(P.act.type) || P.act.phase === 'rec'; // 대시·패링은 평타 어느 단계에서든 취소
@@ -158,11 +159,14 @@ function updatePlayer(dt) {
   }
 
   // 패링 (공격 후딜 중에도 끊을 수 있음, 궁극기 중 불가)
-  if (parryPress && P.parryLock <= 0 && cancelable && !(P.act && P.act.type === 'parry')) {
+  if (P.parryBuf > 0 && P.parryLock <= 0 && cancelable && !(P.act && P.act.type === 'parry')) {
+    P.parryBuf = 0;
     const halved = gameTime - P.whiffAt < 0.5;
     P.parryT = St.parryWin * (halved ? 0.5 : 1);
     P.act = { type: 'parry', t: 0, dur: P.parryT };
-    P.face = aimAngle();
+    P.face = aimAngle(); P.vx *= 0.3; P.vy *= 0.3;
+    // 누르는 순간 바로 보이고 들리게
+    Sfx.raise(); FX.ring(P.x, P.y, P.r + 6, P.r + 30, '#ffffff', 0.12, 5); P.sqK = -0.18; P.sqA = P.face;
   }
 
   if (P.act) {
