@@ -95,7 +95,8 @@ const P = {
 };
 function resetPlayer(x, y) {
   Object.assign(P, { x, y, vx: 0, vy: 0, act: null, combo: 0, comboGap: 0, buffer: 0, dashT: 0, dashRe: 0, dashAfter: 0, iframe: 0.6, galeT: 0,
-    parryT: 0, parryLock: 0, whiffAt: -9, counterT: 0, guardT: 0, chainStacks: 0, chainT: 0, spinRe: 0, cycleT: 0, hurtT: 0, alive: true, usedFlash: {} });
+    parryT: 0, parryLock: 0, whiffAt: -9, counterT: 0, guardT: 0, chainStacks: 0, chainT: 0, spinRe: 0, cycleT: 0, hurtT: 0, alive: true, usedFlash: {},
+    trail: [], sqK: 0, sqA: 0, hits: 0, hitT: 0, hitPop: 0 });
   P.dashCharges = Run.augs.overcharge ? 2 : 1; P.spinCharges = Run.augs.overcharge ? 2 : 1;
 }
 const SWINGS = [
@@ -124,6 +125,8 @@ function updatePlayer(dt) {
   P.iframe -= dt; P.parryT -= dt; P.parryLock -= dt; P.counterT -= dt; P.guardT -= dt; P.chainT -= dt; P.galeT -= dt; P.cycleT -= dt; P.hurtT -= dt; P.dashAfter -= dt; P.buffer -= dt;
   if (P.chainT <= 0) P.chainStacks = 0;
   P.comboGap += dt;
+  P.sqK *= Math.exp(-dt * 14); P.hitPop = Math.max(0, P.hitPop - dt); P.hitT -= dt; if (P.hitT <= 0) P.hits = 0;
+  for (const t of P.trail) t.life -= dt; P.trail = P.trail.filter(t => t.life > 0);
   const maxDash = Run.augs.overcharge ? 2 : 1, maxSpin = Run.augs.overcharge ? 2 : 1;
   if (P.dashCharges < maxDash) { P.dashRe += dt; if (P.dashRe >= St.dashCd) { P.dashCharges++; P.dashRe = 0; } }
   if (P.spinCharges < maxSpin) { P.spinRe += dt; if (P.spinRe >= 6) { P.spinCharges++; P.spinRe = 0; } }
@@ -141,12 +144,13 @@ function updatePlayer(dt) {
     P.dashDir = (mv.x || mv.y) ? Math.atan2(mv.y, mv.x) : aimAngle();
     P.dashT = 0.16; P.iframe = Math.max(P.iframe, 0.2); P.act = null; P.dashAfter = 0.32;
     if (Run.augs.gale) P.galeT = 1.16;
-    Sfx.dash(); FX.burst(P.x, P.y, '#9fe8ff', 8, 120, 0.3, 5);
+    Sfx.dash(); FX.burst(P.x, P.y, '#9fe8ff', 8, 120, 0.3, 5); FX.burst(P.x, P.y + 12, '#8a8296', 10, 160, 0.35, 6);
+    P.sqK = 0.45; P.sqA = P.dashDir; FX.ring(P.x, P.y, 6, 40, '#9fe8ff', 0.2, 3);
   }
   if (P.dashT > 0) {
     P.dashT -= dt; const sp = 950;
     P.vx = Math.cos(P.dashDir) * sp; P.vy = Math.sin(P.dashDir) * sp;
-    if (R() < 0.7) FX.parts.push({ x: P.x, y: P.y, vx: 0, vy: 0, life: 0.18, max: 0.18, col: 'rgba(120,220,255,0.5)', size: 22 });
+    P.trail.push({ x: P.x, y: P.y, life: 0.22, max: 0.22, col: '#7fe0ff' });
     moveBody(P, dt);
     return;
   }
@@ -164,7 +168,13 @@ function updatePlayer(dt) {
     if (a.type === 'swing') {
       const sw = a.sw, sp = St.atkSpd;
       const tw = sw.wind / sp, ta = sw.active / sp, tr = sw.rec / sp;
-      if (a.phase === 'wind' && a.t >= tw) { a.phase = 'active'; a.t = 0; Sfx.swing(); fireWaves(a); }
+      if (a.phase === 'wind' && a.t >= tw) {
+        a.phase = 'active'; a.t = 0; const i3 = sw.k === 'a3';
+        Sfx.swing(i3 ? 0.7 : sw.k === 'a2' ? 1.15 : 1); fireWaves(a);
+        FX.slash(P.x, P.y, a.ang, sw.arc * 1.05, sw.range + P.r - 6, a.counter ? '#ffd27a' : i3 ? '#dff6ff' : '#eef6ff', a.counter ? 16 : i3 ? 14 : 9, i3 ? 0.24 : 0.16, P);
+        P.sqK = i3 ? 0.32 : 0.2; P.sqA = a.ang; Juice.kickDir(a.ang, i3 ? 4 : 2);
+        if (i3) FX.burst(P.x + Math.cos(a.ang) * 30, P.y + Math.sin(a.ang) * 30 + 10, '#8a8296', 8, 180, 0.3, 5);
+      }
       else if (a.phase === 'active') {
         const k = clamp(a.t / ta, 0, 1); const sv = sw.lunge * (1 - k) * 2.2;
         P.vx = Math.cos(a.ang) * sv; P.vy = Math.sin(a.ang) * sv;
@@ -332,7 +342,8 @@ function dealDamage(e, o) {
   if (e.groggy > 0 && !e.finished && gen === 0) {
     e.finished = true; finisher = true;
     dmg += e.maxHp * (e.boss ? 0.04 : 0.08) * (A.groggyhunt ? 2 : 1);
-    Juice.hitstop(0.16); Juice.kick(16); Juice.punch(0.05); Sfx.gold(); Juice.slowmo(0.35, 0.35);
+    Juice.hitstop(0.18); Juice.kick(16); Juice.punch(0.07); Sfx.gold(); Sfx.thud(); Juice.slowmo(0.4, 0.3); Juice.impactFrame(0.06, '#ffd27a'); Juice.ab(0.2);
+    FX.radial(e.x, e.y, '#ffd27a', 24, e.r, 9); FX.ring(e.x, e.y, e.r, e.r + 140, '#ffd27a', 0.45, 10); splat(e.x, e.y, '#000', e.r + 40, 'crack');
     FX.text(e.x, e.y - 60, '결정타', '#ffd27a', true);
   }
   // 끊어내기
@@ -347,8 +358,15 @@ function dealDamage(e, o) {
   const col = isCrit ? '#fff1a8' : ELEM[elem].col;
   FX.text(e.x, e.y - e.r - 10, dmg + (isCrit ? '!' : ''), col, isCrit && dmg > 60);
   if (gen === 0) {
-    Juice.hitstop(isCrit ? 0.07 : 0.045); Juice.kick(isCrit ? 7 : 3.5);
-    isCrit ? Sfx.crit() : Sfx.hit();
+    const heavy = o.act === 'a3' || o.act === 'spin' || o.act === 'ult' || o.counter;
+    Juice.hitstop(o.counter ? 0.11 : isCrit ? 0.08 : heavy ? 0.065 : o.act === 'a2' ? 0.05 : 0.04);
+    const ka = o.ang != null ? o.ang : angTo(P, e); Juice.kickDir(ka, o.counter ? 14 : isCrit ? 9 : heavy ? 7 : 4);
+    e.shk = 0.15; e.sqK = heavy ? 0.4 : 0.28; e.sqA = ka;
+    P.hits++; P.hitT = 1.6; P.hitPop = 0.12;
+    if (o.counter) { Sfx.thud(); Juice.impactFrame(0.04, '#ffd27a'); Juice.ab(0.12); Juice.punch(0.05); FX.radial(e.x, e.y, '#ffd27a', 14, e.r, 7); FX.slash(e.x, e.y, ka + Math.PI / 2, 0.9, e.r + 26, '#ffd27a', 12, 0.2); }
+    else if (isCrit) { Sfx.crit(); FX.radial(e.x, e.y, '#fff1a8', 8, e.r, 5); if (dmg > 60) Juice.ab(0.06); }
+    else Sfx.hit(o.act === 'a3' ? 0.75 : o.act === 'a2' ? 1.15 : 1);
+    FX.burst(e.x, e.y, e.def.col, heavy ? 10 : 5, heavy ? 360 : 240, 0.35, 4);
     FX.spark(e.x, e.y, o.ang || 0, col, isCrit ? 10 : 6, 420);
     P.ult = Math.min(1, P.ult + dmg * 0.0009 * St.ultGain);
   }
@@ -432,7 +450,7 @@ function playerHit(h) {
   if (P.guardT > 0) dmg *= 1 - Math.min(0.6, ActMods.parry.guard);
   dmg = Math.max(1, Math.round(dmg));
   Run.hp -= dmg; P.iframe = 0.5; P.hurtT = 0.2;
-  Sfx.hurt(); Juice.kick(12); Juice.hitstop(0.06); Juice.screen('#ff3b3b', 0.12);
+  Sfx.hurt(); Juice.kick(12); Juice.ab(0.12); P.sqK = -0.3; P.hits = 0; Juice.hitstop(0.06); Juice.screen('#ff3b3b', 0.12);
   FX.text(P.x, P.y - 30, '-' + dmg, '#ff6b6b'); FX.burst(P.x, P.y, '#ff5a5a', 14, 260, 0.4, 5);
   const a = h.src ? angTo(h.src, P) : (h.proj ? Math.atan2(h.proj.vy, h.proj.vx) : 0);
   P.vx += Math.cos(a) * 320; P.vy += Math.sin(a) * 320;
@@ -447,7 +465,10 @@ function parrySuccess(h) {
   if (P.chainT > 0) P.chainStacks = Math.min(3, P.chainStacks + 1); P.chainT = 4;
   P.ult = Math.min(1, P.ult + 0.08 * St.ultGain);
   const sx = h.src ? lerp(P.x, h.src.x, 0.4) : P.x, sy = h.src ? lerp(P.y, h.src.y, 0.4) : P.y;
-  Juice.hitstop(h.color === 'gold' ? 0.18 : 0.08); Juice.punch(0.03); Juice.kick(8);
+  Juice.hitstop(h.color === 'gold' ? 0.2 : 0.1); Juice.punch(h.color === 'gold' ? 0.06 : 0.035); Juice.kick(8); Juice.ab(h.color === 'gold' ? 0.18 : 0.09);
+  if (h.color === 'gold') Juice.impactFrame(0.05, '#ffd27a');
+  FX.radial(lerp(P.x, h.src ? h.src.x : P.x, 0.4), lerp(P.y, h.src ? h.src.y : P.y, 0.4), h.color === 'gold' ? '#ffd27a' : '#ffffff', h.color === 'gold' ? 22 : 12, 10, 6);
+  P.sqK = -0.25; P.sqA = P.face;
   FX.spark(sx, sy, R() * 6, '#fff6c9', 18, 520); FX.ring(sx, sy, 8, 70, h.color === 'gold' ? '#ffd27a' : '#ffffff', 0.25, 5);
   h.color === 'gold' ? Sfx.gold() : Sfx.parry();
   FX.text(P.x, P.y - 40, h.color === 'gold' ? '금색 패링' : '패링', h.color === 'gold' ? '#ffd27a' : '#ffffff', h.color === 'gold');

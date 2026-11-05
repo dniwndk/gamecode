@@ -46,6 +46,7 @@ function startFight(node) {
     compo = pick(COMPOS[diff]); size = compo.size;
   }
   World.arena = makeArena(size);
+  World.decal = document.createElement('canvas'); World.decal.width = World.arena.w; World.decal.height = World.arena.h;
   World.info = { compo: compo ? compo.name : null, kind };
   resetPlayer(World.arena.w / 2, World.arena.h * 0.72);
   if (compo) {
@@ -150,7 +151,7 @@ function bossFire(e, k) {
   if (k.name === 'combo') { addHit(e, { shape: 'arc', range: e.r + 120, arc: 2.3, ang: k.ang, t: 0.12, dmg: D * (k.color === 'gold' ? 1.5 : 1), color: k.color }); Sfx.swing(); }
   if (k.name === 'charge') addHit(e, { shape: 'body', r: e.r + 10, t: 0.45, dmg: D * 1.2, color: 'white', follow: true });
   if (k.name === 'fan') { const n = e.phase >= 2 ? 11 : 7; for (let i = 0; i < n; i++) { const a = k.ang + (i - (n - 1) / 2) * 0.16; enemyShot(e, a, 380, D * 0.7, 'white'); } }
-  if (k.name === 'slam') { addHit(e, { shape: 'circle', r: 240, t: 0.14, dmg: D * 1.6, color: 'red' }); Juice.kick(18); Sfx.boom(); FX.ring(e.x, e.y, e.r, 240, '#ff5a5a', 0.4, 10); }
+  if (k.name === 'slam') { addHit(e, { shape: 'circle', r: 240, t: 0.14, dmg: D * 1.6, color: 'red' }); Juice.kick(18); splat(e.x, e.y, '#000', 200, 'crack'); Sfx.boom(); FX.ring(e.x, e.y, e.r, 240, '#ff5a5a', 0.4, 10); }
   if (k.name === 'sweep') { addHit(e, { shape: 'line', len: 800, w: 100, ang: k.ang, t: 0.16, dmg: D * 1.5, color: 'red' }); Juice.kick(14); Sfx.boom(); }
   if (k.name === 'summon') { for (let i = 0; i < 2; i++) { const x = clamp(e.x + rint(-200, 200), 80, World.arena.w - 80), y = clamp(e.y + rint(-150, 150), 80, World.arena.h - 80); World.marks.push({ x, y, t: 0.7, max: 0.7, col: '#ff6b6b' }); later(0.7, () => World.enemies.push(makeEnemy(pick(['grunt', 'bomber', 'wisp']), x, y))); } }
 }
@@ -193,7 +194,7 @@ function updateHits(dt) {
 function chillMul(e) { return e.frozen > 0 ? 0 : 1 - Math.min(0.4, e.chill * 0.08); }
 function startAtk(e, name, color, tele) { e.atk = { name, color, t: 0, phase: 'tele', tele: tele / e.spdMul, ang: angTo(e, P) }; }
 function updateEnemy(e, dt) {
-  e.life += dt; e.flash -= dt;
+  e.life += dt; e.flash -= dt; e.shk = (e.shk || 0) - dt; e.sqK = (e.sqK || 0) * Math.exp(-dt * 12);
   if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; dealDamage(e, { base: e.burn * (2 + St.firePow * 0.08), gen: 1, elem: 'fire', noStatus: true, burnTick: true }); } if (e.burnT <= 0) e.burn = 0; }
   if (e.chillT > 0) { e.chillT -= dt; if (e.chillT <= 0) e.chill = 0; }
   e.frozen -= dt; e.freezeImm -= dt; e.shocked -= dt; e.kbT -= dt;
@@ -252,13 +253,13 @@ function enemyAct(e, dt) {
       if (k.name === 'lunge') addHit(e, { shape: 'body', r: e.r + 8, t: 0.25, dmg: D, color: 'white', follow: true });
       if (k.name === 'poke') addHit(e, { shape: 'line', len: 120, w: 40, ang: e.face, t: 0.12, dmg: D, color: 'white' });
       if (k.name === 'swing') { addHit(e, { shape: 'arc', range: e.r + 110, arc: 2.2, ang: k.ang, t: 0.12, dmg: D * 1.2, color: 'gold' }); Sfx.swing(); }
-      if (k.name === 'slam') { addHit(e, { shape: 'circle', r: 150, t: 0.12, dmg: D * 1.3, color: 'red' }); Juice.kick(9); FX.ring(e.x, e.y, e.r, 150, '#ff5a5a', 0.35, 8); Sfx.boom(); }
+      if (k.name === 'slam') { addHit(e, { shape: 'circle', r: 150, t: 0.12, dmg: D * 1.3, color: 'red' }); Juice.kick(9); splat(e.x, e.y, '#000', 120, 'crack'); FX.ring(e.x, e.y, e.r, 150, '#ff5a5a', 0.35, 8); Sfx.boom(); }
       if (k.name === 'shot') { if (e.elite) { for (let i = -1; i <= 1; i++) enemyShot(e, k.ang + i * 0.22, 330, D, 'white'); } else enemyShot(e, k.ang, 330, D, 'white'); }
       if (k.name === 'heal') { const t = k.target; if (t && !t.dead) { t.hp = Math.min(t.maxHp, t.hp + t.maxHp * 0.25); World.bolts.push({ x1: e.x, y1: e.y, x2: t.x, y2: t.y, life: 0.3, col: '#5fc98a' }); FX.text(t.x, t.y - 30, '+회복', '#5fc98a'); } }
       if (k.name === 'boom') {
         const h = addHit(e, { shape: 'circle', r: 115, t: 0.12, dmg: D, color: 'red', x: e.x, y: e.y, keep: true });
         h.hurtsEnemies = true; h.enemyDmg = 30;
-        FX.ring(e.x, e.y, 10, 115, '#ffb030', 0.35, 10); FX.burst(e.x, e.y, '#ffb030', 30, 400, 0.5, 6); Sfx.boom(); Juice.kick(10);
+        FX.ring(e.x, e.y, 10, 115, '#ffb030', 0.35, 10); FX.burst(e.x, e.y, '#ffb030', 30, 400, 0.5, 6); Sfx.boom(); Juice.kick(10); splat(e.x, e.y, '#000', 110, 'scorch');
         e.dead = true; e.hp = 0; World.enemies.forEach(() => 0);
       }
     }
@@ -304,7 +305,7 @@ function envReact(e, elem, dmg, gen) {
     if (pd.used) continue;
     if (Math.hypot(e.x - pd.x, e.y - pd.y) > pd.r) continue;
     if (pd.kind === 'oil' && elem === 'fire') {
-      pd.used = true; FX.ring(pd.x, pd.y, 10, pd.r + 60, '#ff7a2a', 0.5, 12); FX.burst(pd.x, pd.y, '#ff9a3d', 40, 450, 0.6, 7); Sfx.boom(); Juice.kick(14);
+      pd.used = true; splat(pd.x, pd.y, '#000', pd.r + 50, 'scorch'); FX.ring(pd.x, pd.y, 10, pd.r + 60, '#ff7a2a', 0.5, 12); FX.burst(pd.x, pd.y, '#ff9a3d', 40, 450, 0.6, 7); Sfx.boom(); Juice.kick(14);
       FX.text(pd.x, pd.y - 20, '기름 폭발', '#ff9a3d', true);
       for (const t of World.enemies) if (!t.dead && Math.hypot(t.x - pd.x, t.y - pd.y) < pd.r + 60) later(0.03, () => dealDamage(t, { base: 45, gen: 2, elem: 'fire', ang: Math.atan2(t.y - pd.y, t.x - pd.x), kb: 400 }));
     }
@@ -323,7 +324,10 @@ function killEnemy(e, finisher) {
     return;
   }
   Run.kills++;
-  FX.burst(e.x, e.y, e.def.col, 22, 380, 0.55, 6); FX.ring(e.x, e.y, e.r, e.r + 40, '#ffffff', 0.25, 4);
+  FX.burst(e.x, e.y, e.def.col, 16, 380, 0.5, 6); FX.ring(e.x, e.y, e.r, e.r + 50, '#ffffff', 0.25, 5);
+  FX.shatter(e.x, e.y, e.def.col, 8 + Math.round(e.r / 4), 420, e.r * 0.35); splat(e.x, e.y, e.def.col, e.r * 1.4); Sfx.crunch();
+  World.killLog = (World.killLog || []).filter(t => World.t - t < 0.4); World.killLog.push(World.t);
+  if (World.killLog.length >= 3) { const n = World.killLog.length; FX.text(e.x, e.y - 70, `${n}연속 처치`, n >= 5 ? '#ff9a3d' : '#ffd27a', true); Juice.slowmo(0.25, 0.4); Juice.ab(0.08); }
   const sh = Math.round((e.boss ? 0 : e.elite ? 4 : 1 + (R() < 0.4 ? 1 : 0)) * (1 + St.shardMul));
   if (sh) { Run.shards += sh; Run.floorShards = (Run.floorShards || 0) + sh; }
   if (Run.augs.thirst) Run.hp = Math.min(St.maxHp, Run.hp + 2);
@@ -333,7 +337,7 @@ function killEnemy(e, finisher) {
     const h = addHit(e, { shape: 'circle', r: 75, t: 0.1, dmg: 8 * scaleFor().dmg, color: 'red', x: e.x, y: e.y, keep: true });
     h.hurtsEnemies = true; h.enemyDmg = 14; FX.ring(e.x, e.y, 5, 75, '#ffb030', 0.3, 6);
   }
-  if (e.boss) { Juice.slowmo(1.2, 0.2); Juice.kick(24); Juice.screen('#ffffff', 0.2); Sfx.boom(); FX.text(e.x, e.y - 100, '처치', '#ffffff', true); World.enemies.forEach(o => { if (!o.boss && !o.dead) { o.hp = 0; killEnemy(o); } }); }
+  if (e.boss) { Juice.slowmo(1.4, 0.2); Juice.kick(24); Juice.screen('#ffffff', 0.2); Juice.impactFrame(0.08, '#ffffff'); Juice.ab(0.3); Juice.punch(0.1); FX.radial(e.x, e.y, '#ffffff', 40, e.r, 12); FX.shatter(e.x, e.y, e.def.col, 30, 700, 14); splat(e.x, e.y, '#000', 220, 'scorch'); Sfx.boom(); FX.text(e.x, e.y - 100, '처치', '#ffffff', true); World.enemies.forEach(o => { if (!o.boss && !o.dead) { o.hp = 0; killEnemy(o); } }); }
 }
 function enemiesLeft() { return World.enemies.filter(e => !e.dead && e.type !== 'merchant').length; }
 

@@ -8,7 +8,9 @@ function updateCam(dt) {
   let tx = P.x, ty = P.y;
   if (A.w <= W) tx = A.w / 2; else tx = clamp(tx, W / 2 - 40, A.w - W / 2 + 40);
   if (A.h <= H) ty = A.h / 2; else ty = clamp(ty, H / 2 - 40, A.h - H / 2 + 40);
-  Cam.x = lerp(Cam.x, tx, Math.min(1, dt * 8)); Cam.y = lerp(Cam.y, ty, Math.min(1, dt * 8));
+  const lead = 46; const fa = P.face || 0; tx += Math.cos(fa) * lead; ty += Math.sin(fa) * lead * 0.7;
+  if (A.w <= W) tx = A.w / 2; if (A.h <= H) ty = A.h / 2;
+  Cam.x = lerp(Cam.x, tx, Math.min(1, dt * 7)); Cam.y = lerp(Cam.y, ty, Math.min(1, dt * 7));
 }
 const COLMAP = { white: '#ffffff', gold: '#ffd27a', red: '#ff4a4a' };
 
@@ -17,7 +19,7 @@ function drawWorld() {
   cx.fillStyle = '#0c0b10'; cx.fillRect(0, 0, W, H);
   cx.save();
   const z = 1 + Juice.zoom, sh = Juice.shake;
-  cx.translate(W / 2 + (R() - 0.5) * sh, H / 2 + (R() - 0.5) * sh); cx.scale(z, z); cx.translate(-Cam.x, -Cam.y);
+  cx.translate(W / 2 + (R() - 0.5) * sh * 0.6 + Juice.kx, H / 2 + (R() - 0.5) * sh * 0.6 + Juice.ky); cx.scale(z, z); cx.translate(-Cam.x, -Cam.y);
   // 바닥
   cx.fillStyle = th.floor; cx.fillRect(0, 0, A.w, A.h);
   cx.strokeStyle = th.line; cx.lineWidth = 1; cx.beginPath();
@@ -30,6 +32,7 @@ function drawWorld() {
     cx.beginPath(); cx.ellipse(pd.x, pd.y, pd.r, pd.r * 0.75, 0, 0, Math.PI * 2); cx.fill();
     if (!pd.used) { cx.strokeStyle = pd.kind === 'water' ? 'rgba(140,200,255,0.4)' : 'rgba(160,110,50,0.5)'; cx.lineWidth = 2; cx.stroke(); }
   }
+  if (World.decal) cx.drawImage(World.decal, 0, 0);
   for (const pl of A.pillars) {
     cx.fillStyle = '#3c3946'; cx.beginPath(); cx.arc(pl.x, pl.y, pl.r, 0, Math.PI * 2); cx.fill();
     cx.fillStyle = '#4b4757'; cx.beginPath(); cx.arc(pl.x - 4, pl.y - 6, pl.r * 0.8, 0, Math.PI * 2); cx.fill();
@@ -75,6 +78,9 @@ function drawWorld() {
   drawPlayer();
   FX.draw();
   cx.restore();
+  // 색수차 (큰 타격·패링)
+  if (Juice.chroma > 0) { const o = 3 + Juice.chroma * 60; cx.save(); cx.globalCompositeOperation = 'screen'; cx.globalAlpha = 0.35; cx.filter = 'none';
+    cx.drawImage(cv, -o, 0); cx.drawImage(cv, o, 0); cx.restore(); }
   // 어둠 변형자
   if (World.mods.includes('dark')) {
     const z2 = 1 + Juice.zoom; const sx = (P.x - Cam.x) * z2 + W / 2, sy = (P.y - Cam.y) * z2 + H / 2;
@@ -85,6 +91,10 @@ function drawWorld() {
   const vg = cx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 0.95); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.5)');
   cx.fillStyle = vg; cx.fillRect(0, 0, W, H);
   if (Juice.flash > 0) { cx.globalAlpha = Juice.flash * 2; cx.fillStyle = Juice.flashCol; cx.fillRect(0, 0, W, H); cx.globalAlpha = 1; }
+  // 저체력: 붉은 맥박
+  if (Run.hp < St.maxHp * 0.3 && P.alive) { const k = 0.25 + Math.sin(performance.now() / 180) * 0.12; const g = cx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.9); g.addColorStop(0, 'rgba(120,0,0,0)'); g.addColorStop(1, `rgba(170,10,20,${k})`); cx.fillStyle = g; cx.fillRect(0, 0, W, H); }
+  // 임팩트 프레임 (한두 프레임 반전)
+  if (Juice.impact > 0) { cx.save(); cx.globalCompositeOperation = 'difference'; cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, W, H); cx.globalCompositeOperation = 'source-over'; cx.globalAlpha = 0.35; cx.fillStyle = Juice.impactCol; cx.fillRect(0, 0, W, H); cx.restore(); }
 }
 
 function drawEnemy(e) {
@@ -100,8 +110,13 @@ function drawEnemy(e) {
     cx.fillStyle = c; cx.font = '900 28px sans-serif'; cx.textAlign = 'center'; cx.fillText('!', e.x, e.y - e.r - 18);
   }
   let col = e.def.col; if (e.flash > 0) col = '#ffffff'; else if (e.frozen > 0) col = '#bfefff';
-  cx.fillStyle = col; cx.beginPath(); cx.arc(e.x, e.y, e.r, 0, Math.PI * 2); cx.fill();
+  const shx = e.shk > 0 ? (R() - 0.5) * 10 * e.shk / 0.15 : 0, shy = e.shk > 0 ? (R() - 0.5) * 10 * e.shk / 0.15 : 0;
+  const wind = t ? 1 + 0.14 * clamp(t.t / t.tele, 0, 1) : 1;
+  const sq = e.sqK || 0; const sa = e.sqA || 0;
+  cx.save(); cx.translate(e.x + shx, e.y + shy); cx.rotate(sa); cx.scale((1 + sq) * wind, (1 - sq * 0.7) * wind); cx.rotate(-sa);
+  cx.fillStyle = col; cx.beginPath(); cx.arc(0, 0, e.r, 0, Math.PI * 2); cx.fill();
   if (e.elite || e.boss) { cx.strokeStyle = e.boss ? '#ffffff' : '#ffd27a'; cx.lineWidth = 3; cx.stroke(); }
+  cx.restore();
   // 얼굴 방향
   cx.fillStyle = '#16131c'; cx.beginPath(); cx.arc(e.x + Math.cos(e.face) * e.r * 0.5, e.y + Math.sin(e.face) * e.r * 0.5, e.r * 0.22, 0, Math.PI * 2); cx.fill();
   if (e.def.shield && e.shieldUp) { cx.strokeStyle = '#d8e4f4'; cx.lineWidth = 7; cx.beginPath(); cx.arc(e.x, e.y, e.r + 7, e.face - 1.0, e.face + 1.0); cx.stroke(); }
@@ -127,8 +142,11 @@ function drawPlayer() {
   cx.fillStyle = 'rgba(0,0,0,0.35)'; cx.beginPath(); cx.ellipse(P.x, P.y + 14, 18, 7, 0, 0, Math.PI * 2); cx.fill();
   if (P.counterT > 0) { cx.strokeStyle = '#ffd27a'; cx.lineWidth = 3; cx.globalAlpha = 0.5 + P.counterT; cx.beginPath(); cx.arc(P.x, P.y, P.r + 10, 0, Math.PI * 2); cx.stroke(); cx.globalAlpha = 1; }
   if (P.iframe > 0 && P.dashT <= 0 && Math.floor(performance.now() / 60) % 2) cx.globalAlpha = 0.5;
-  cx.fillStyle = P.hurtT > 0 ? '#ff8a8a' : '#4fd1c5'; cx.beginPath(); cx.arc(P.x, P.y, P.r, 0, Math.PI * 2); cx.fill();
-  cx.strokeStyle = '#e8fffb'; cx.lineWidth = 3; cx.stroke();
+  for (const t of P.trail || []) { cx.globalAlpha = t.life / t.max * 0.45; cx.fillStyle = t.col; cx.beginPath(); cx.arc(t.x, t.y, P.r * (0.8 + 0.2 * t.life / t.max), 0, Math.PI * 2); cx.fill(); }
+  if (P.iframe > 0 && P.dashT <= 0 && Math.floor(performance.now() / 60) % 2) cx.globalAlpha = 0.5; else cx.globalAlpha = 1;
+  cx.save(); cx.translate(P.x, P.y); cx.rotate(P.sqA || 0); cx.scale(1 + (P.sqK || 0), 1 - (P.sqK || 0) * 0.6); cx.rotate(-(P.sqA || 0));
+  cx.fillStyle = P.hurtT > 0 ? '#ff8a8a' : P.counterT > 0 ? '#ffe2a0' : '#4fd1c5'; cx.beginPath(); cx.arc(0, 0, P.r, 0, Math.PI * 2); cx.fill();
+  cx.strokeStyle = '#e8fffb'; cx.lineWidth = 3; cx.stroke(); cx.restore();
   cx.globalAlpha = 1;
   // 칼
   const fa = a && a.ang != null ? a.ang : P.face;
@@ -145,6 +163,17 @@ function drawPlayer() {
   }
   if (a && a.type === 'parryWhiff') { cx.strokeStyle = 'rgba(255,120,120,0.6)'; cx.lineWidth = 3; cx.beginPath(); cx.arc(P.x, P.y, P.r + 12, 0, Math.PI * 2); cx.stroke(); }
 }
+
+// 바닥 자국 (처치 흔적, 균열, 그을음)
+function stampDecal(p) { if (!World.decal) return; const g = World.decal.getContext('2d'); g.save(); g.globalAlpha = 0.5; g.translate(p.x, p.y); g.rotate(p.rot); g.fillStyle = p.col; g.beginPath(); g.moveTo(-p.size, -p.size * 0.6); g.lineTo(p.size, 0); g.lineTo(-p.size * 0.4, p.size * 0.7); g.closePath(); g.fill(); g.restore(); }
+function splat(x, y, col, r, kind) {
+  if (!World.decal) return; const g = World.decal.getContext('2d'); g.save();
+  if (kind === 'crack') { g.strokeStyle = 'rgba(0,0,0,0.45)'; g.lineWidth = 3; for (let i = 0; i < 9; i++) { const a = R() * Math.PI * 2; g.beginPath(); g.moveTo(x, y); let px = x, py = y; for (let j = 0; j < 4; j++) { px += Math.cos(a + (R() - 0.5) * 0.8) * r / 4; py += Math.sin(a + (R() - 0.5) * 0.8) * r / 4; g.lineTo(px, py); } g.stroke(); } }
+  else if (kind === 'scorch') { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(0,0,0,0.6)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); }
+  else { g.globalAlpha = 0.35; g.fillStyle = col; for (let i = 0; i < 7; i++) { const a = R() * Math.PI * 2, d = R() * r; g.beginPath(); g.ellipse(x + Math.cos(a) * d, y + Math.sin(a) * d, r * (0.2 + R() * 0.3), r * (0.12 + R() * 0.2), a, 0, Math.PI * 2); g.fill(); } }
+  g.restore();
+}
+window.stampDecal = stampDecal;
 
 // ───────── 화면 표시 (HUD) ─────────
 function bar(x, y, w, hgt, k, col, bg) { cx.fillStyle = bg || '#0008'; cx.fillRect(x, y, w, hgt); cx.fillStyle = col; cx.fillRect(x, y, w * clamp(k, 0, 1), hgt); }
@@ -176,6 +205,10 @@ function drawHUD() {
   cx.font = '600 16px sans-serif'; cx.fillStyle = '#ffd86b'; cx.fillText(`파편 ${Run.shards}`, W - 30, 66);
   if (World.mods.length) { cx.fillStyle = '#d27aff'; cx.fillText('변형자: ' + World.mods.map(m => MOD[m].name).join(', '), W - 30, 88); }
   if (World.info && World.info.compo) { cx.fillStyle = '#9a96a8'; cx.fillText(World.info.compo, W - 30, 108); }
+  // 타격 수
+  if (P.hits >= 3) { const k = clamp(P.hitT / 1.6, 0, 1); const pop = 1 + Math.max(0, (P.hitPop || 0)) * 0.6; cx.save(); cx.translate(W - 60, 190); cx.scale(pop, pop); cx.textAlign = 'right'; cx.globalAlpha = 0.4 + k * 0.6;
+    cx.font = '900 46px sans-serif'; cx.fillStyle = P.hits >= 30 ? '#ff9a3d' : P.hits >= 15 ? '#ffd27a' : '#ffffff'; cx.fillText(P.hits, 0, 0); cx.font = '800 16px sans-serif'; cx.fillStyle = '#c9c4d6'; cx.fillText('연속 타격', 0, 22);
+    cx.fillStyle = '#ffffff33'; cx.fillRect(-110, 30, 110, 4); cx.fillStyle = '#ffd27a'; cx.fillRect(-110 * k, 30, 110 * k, 4); cx.restore(); }
   // 반격 창
   if (P.counterT > 0) { cx.textAlign = 'center'; cx.font = '900 26px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText('반격!', W / 2, H - 150); }
   if (P.chainStacks > 0 && Run.augs.chainparry) { cx.textAlign = 'center'; cx.font = '700 16px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText(`연속 응수 ${P.chainStacks}`, W / 2, H - 125); }
