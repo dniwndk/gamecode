@@ -776,7 +776,7 @@ function swingHits(a) {
     // 방패병: 정면 방어. 3타, 대시 찌르기, 반격은 방패를 깸
     if (e.def.shield && e.shieldUp && Math.abs(angDiff(e.face, angTo(e, P))) < 1.2) {
       if (a.act === 'a3' || isThrust || a.counter) { e.shieldUp = false; e.shieldDown = 3; FX.text(e.x, e.y - 30, '방패 깨짐', '#cfe0ff'); Sfx.crit(); }
-      else { FX.spark(e.x, e.y, angTo(e, P), '#b8c8e0', 6, 300); Sfx.parry(); Juice.hitstop(0.03); SpriteFX.spawn('hit-spark', e.x, e.y, e.r, { ang: angTo(e, P), scale: 0.8 }); continue; }
+      else { FX.spark(e.x, e.y, angTo(e, P), '#b8c8e0', 6, 300); Sfx.parry(); SpriteFX.spawn('hit-spark', e.x, e.y, e.r, { ang: angTo(e, P), scale: 0.8 }); continue; }
     }
     dealDamage(e, { base: sw.dmg, act: a.act, gen: 0, ang: a.ang, kb: sw.kb, poise: sw.poise, counter: a.counter, parried: P.lastParriedPow || 0 });
   }
@@ -795,7 +795,7 @@ function spinHit() {
   Juice.kick(6);
 }
 function ultBurst() {
-  Sfx.boom(); Juice.kick(22); Juice.hitstop(0.12); Juice.punch(0.06); Juice.screen('#ff9a3d', 0.15);
+  Sfx.boom(); Juice.kick(22); Juice.punch(0.06); Juice.screen('#ff9a3d', 0.15);
   FX.ring(P.x, P.y, 20, 360, '#ff9a3d', 0.5, 14); FX.burst(P.x, P.y, '#ffb36b', 60, 600, 0.7, 7);
   for (const e of World.enemies) {
     if (e.dead) continue;
@@ -876,12 +876,13 @@ function dealDamage(e, o) {
   FX.text(e.x, e.y - e.r - 10, dmg + (isCrit ? '!' : ''), col, isCrit && dmg > 60);
   if (gen === 0) {
     const heavy = o.act === 'a3' || o.act === 'spin' || o.act === 'ult' || o.counter;
-    Juice.hitstop(o.counter ? 0.11 : isCrit ? 0.08 : heavy ? 0.065 : o.act === 'a2' ? 0.05 : 0.04);
+    // 히트스톱은 평타 마지막 연격(3타)과 적을 죽이는 공격에만 (처치는 아래 e.hp <= 0에서)
+    if (o.act === 'a3' && e.hp > 0) Juice.hitstop(isCrit ? 0.09 : 0.075);
     const ka = o.ang != null ? o.ang : angTo(P, e); Juice.kickDir(ka, o.counter ? 14 : isCrit ? 9 : heavy ? 7 : 4);
     SpriteFX.hit(e, ka, isCrit || o.counter, heavy);
     e.shk = 0.15; e.sqK = heavy ? 0.4 : 0.28; e.sqA = ka;
     P.hits++; P.hitT = 1.6; P.hitPop = 0.12;
-    if (perfectHit && !P.act.perfectShown) { P.act.perfectShown = true; FX.text(e.x, e.y - 60, `퍼펙트 +${Math.round(St.perfectBonus * 100)}%`, '#9ffcff', true); FX.radial(e.x, e.y, '#9ffcff', 16, e.r, 8); FX.ring(e.x, e.y, e.r, e.r + 90, '#9ffcff', 0.3, 6); Juice.hitstop(0.13); Juice.impactFrame(0.04, '#9ffcff'); Sfx.gold(); }
+    if (perfectHit && !P.act.perfectShown) { P.act.perfectShown = true; FX.text(e.x, e.y - 60, `퍼펙트 +${Math.round(St.perfectBonus * 100)}%`, '#9ffcff', true); FX.radial(e.x, e.y, '#9ffcff', 16, e.r, 8); FX.ring(e.x, e.y, e.r, e.r + 90, '#9ffcff', 0.3, 6); Juice.impactFrame(0.04, '#9ffcff'); Sfx.gold(); }
     if (o.counter) { Sfx.thud(); Juice.impactFrame(0.04, '#ffd27a'); Juice.ab(0.12); Juice.punch(0.05); FX.radial(e.x, e.y, '#ffd27a', 14, e.r, 7); FX.slash(e.x, e.y, ka + Math.PI / 2, 0.9, e.r + 26, '#ffd27a', 12, 0.2); }
     else if (isCrit) { Sfx.crit(); FX.radial(e.x, e.y, '#fff1a8', 8, e.r, 5); if (dmg > 60) Juice.ab(0.06); }
     else Sfx.hit(o.act === 'a3' ? 0.75 : o.act === 'a2' ? 1.15 : 1);
@@ -934,6 +935,7 @@ function dealDamage(e, o) {
   if (A.echo && gen <= 1 && !o.echo && R() < ECHO[A.echo]) {
     later(0.2, () => { if (!e.dead) { FX.text(e.x, e.y - 70, '메아리', '#e78bff'); dealDamage(e, { ...o, base: o.base * 0.5, gen: gen + 1, echo: true, counter: false, forceCrit: false, kb: 0 }); } });
   }
+  if (e.hp <= 0 && !e.dead) Juice.hitstop(e.boss ? 0.25 : gen === 0 ? (o.act === 'a3' || isCrit || o.counter ? 0.11 : 0.085) : 0.05); // 처치 히트스톱
   if (e.hp <= 0) { if (o.act === 'dash' && Run.syn.has('galecharge') && P.spinCharges < 2) { P.spinCharges++; FX.text(P.x, P.y - 50, '질풍 충전', '#9fe8ff'); } killEnemy(e); }
   return dmg;
 }
