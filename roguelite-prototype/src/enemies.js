@@ -25,7 +25,7 @@ function makeEnemy(type, x, y, opts = {}) {
     type, def, x, y, vx: 0, vy: 0, r: def.r * (opts.elite ? 1.15 : 1), hp: def.hp * hpMul, maxHp: def.hp * hpMul,
     elite: !!opts.elite, boss: false, face: 0, atk: null, cd: 0.8 + R() * 0.8, flash: 0,
     burn: 0, burnT: 0, burnTick: 0, chill: 0, chillT: 0, frozen: 0, freezeImm: 0, shocked: 0,
-    staggerT: 0, poiseDmg: 0, stance: 0, stanceMax: opts.elite ? 120 : 0, stanceIdle: 0, groggy: 0, finished: false,
+    staggerT: 0, poiseDmg: 0, stance: 0, stanceMax: 0, stanceIdle: 0, groggy: 0, finished: false, // 체간·그로기는 제거 (2026-11-05)
     shieldUp: !!def.shield, shieldDown: 0, kbT: 0, spdMul: World.mods.includes('haste') ? 1.2 : 1, dmgMul: sc.dmg * (opts.elite ? 1.3 : 1),
     life: 0, dead: false, brand: 0,
   };
@@ -80,8 +80,8 @@ function spawnBoss(bk) {
   const def = BOSSES[bk]; const sc = scaleFor();
   const A = World.arena;
   const e = makeEnemy('brute', A.w / 2, A.h * 0.3, {});
-  const hp = def.hp * (bk === 'final' ? 1 : sc.hp);
-  Object.assign(e, { boss: true, bossKey: bk, bdef: def, r: def.r, hp, maxHp: hp, stanceMax: bk === 'mid' ? 240 : bk === 'tier' ? 320 : 420, dmgMul: sc.dmg, phase: 1, cd: 1.4 });
+  const hp = def.hp * 0.85 * (bk === 'final' ? 1 : sc.hp); // 그로기 추가 피해가 없어진 만큼 체력 -15%
+  Object.assign(e, { boss: true, bossKey: bk, bdef: def, r: def.r, hp, maxHp: hp, stanceMax: 0, dmgMul: sc.dmg, phase: 1, cd: 1.4 });
   e.def = { ...ENEMIES.brute, name: def.name, col: def.col, weak: null, res: null, armor: true, poise: 9999 };
   const tierName = bk === 'final' ? '' : ` ${Run.tier}`;
   e.title = def.name + tierName;

@@ -74,7 +74,7 @@ function drawHUD() {
   if (b && !b.dead) {
     const w = 760, x = W / 2 - w / 2, y = 34;
     cx.textAlign = 'center'; cx.font = '800 20px sans-serif'; cx.fillStyle = '#fff'; cx.fillText(b.title + (b.phase > 1 ? ` · 페이즈 ${b.phase}` : ''), W / 2, y - 6);
-    bar(x, y, w, 16, b.hp / b.maxHp, '#d04848'); bar(x, y + 20, w, 8, b.groggy > 0 ? 1 : b.stance / b.stanceMax, b.groggy > 0 ? '#ffffff' : '#ffd27a');
+    bar(x, y, w, 16, b.hp / b.maxHp, '#d04848');
   }
   if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 300, 79); }
   // 보유 증강 (항상 표시)

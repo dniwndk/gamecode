@@ -11,7 +11,7 @@ function newRun(seedVal) {
     open: new Set(['a1', 'parry', 'core']),
     bag: [], bagMax: 2,
     stones: 0,
-    kills: 0, parries: 0, golds: 0, groggies: 0, maxHit: 0, time: 0,
+    kills: 0, parries: 0, golds: 0, maxHit: 0, time: 0,
     upNext: 0, sagaOn: false, history: [],
   };
   recalc();
@@ -33,13 +33,13 @@ function itemLvMul(inst) { return 1 + 0.5 * (inst.lv || 0); }
 
 function recalc() {
   const s = { maxHp: 100, dmg: 0, atkSpd: 1, move: 1, dashCd: 0.55, ultGain: 1, parryWin: 0.2, parryWinBase: 0.2, perfectWin: 0.067, perfectBonus: 0.5, crit: 0.05, critDmg: 1.5,
-    firePow: 0, icePow: 0, lightPow: 0, fireDmg: 0, physDmg: 0, poise: 0, stance: 0, shardMul: 0, chillAmp: 0, shockBounce: 0, maxHpMul: 0, dmgTaken: 1 };
+    firePow: 0, icePow: 0, lightPow: 0, fireDmg: 0, physDmg: 0, poise: 0, staggerMul: 1, shardMul: 0, chillAmp: 0, shockBounce: 0, maxHpMul: 0, dmgTaken: 1 };
   const A = Run.augs;
   if (A.catch) { s.parryWin += 0.06; s.parryWinBase += 0.06; }
   Run.syn = new Set(SYNERGIES.filter(x => x.need.every(n => A[n])).map(x => x.id));
   if (A.redsteel && !Run.syn.has('ironwall')) { s.parryWin -= 0.04; s.parryWinBase -= 0.04; }
   for (const id in Run.blessings) { const b = BLESSINGS.find(x => x.id === id); for (let i = 0; i < Run.blessings[id]; i++) b.apply(s); }
-  if (A.topple) s.stance += 0.4;
+  if (A.topple) { s.staggerMul += 0.5; s.poise += 0.3; }
   if (A.plate) s.dmgTaken *= 0.88;
   if (A.fate) { s.crit += 0.15; s.critDmg += 0.5; }
   if (Run.sagaOn) s.dmgTaken *= 1.1;
@@ -322,7 +322,7 @@ function hasVs(e, k) {
   if (k === 'chill') return e.chill > 0 || e.frozen > 0;
   if (k === 'shock') return e.shocked > 0;
   if (k === 'elite') return e.elite || e.boss;
-  if (k === 'groggy') return e.groggy > 0;
+  if (k === 'stagger') return e.staggerT > 0 || e.frozen > 0;
   return false;
 }
 function dealDamage(e, o) {
@@ -342,7 +342,7 @@ function dealDamage(e, o) {
   if (A.gale && o.act === 'dash') mult += 0.5;
   if (o.counter) { mult *= 2; if (A.chainparry) mult *= 1 + 0.3 * P.chainStacks; }
   const perfectHit = gen === 0 && P.act && P.act.perfect && !o.echo; if (perfectHit) mult *= 1 + St.perfectBonus;
-  if (e.groggy > 0) mult *= 1.5;
+  if (A.groggyhunt && hasVs(e, 'stagger')) mult += 0.4;
   if (e.def.weak === elem) mult *= 1.25; else if (e.def.res === elem) mult *= 0.75;
   if (A.frost && elem === 'ice' && e.boss && e.chill >= 4) mult *= 1.3;
   if (World.mods.includes('chief') && e.chief) mult *= 0.8;
@@ -352,18 +352,9 @@ function dealDamage(e, o) {
   let crit = St.crit + mods.crit; for (const c of mods.critCond) if (hasVs(e, c.vs)) crit += c.v;
   const isCrit = o.counter || o.forceCrit || (gen === 0 && R() < crit);
   if (isCrit) dmg *= St.critDmg;
-  // 결정타 (그로기 중 첫 타격)
-  let finisher = false;
-  if (e.groggy > 0 && !e.finished && gen === 0) {
-    e.finished = true; finisher = true;
-    dmg += e.maxHp * (e.boss ? 0.04 : 0.08) * (A.groggyhunt ? 2 : 1);
-    Juice.hitstop(0.18); Juice.kick(16); Juice.punch(0.07); Sfx.gold(); Sfx.thud(); Juice.slowmo(0.4, 0.3); Juice.impactFrame(0.06, '#ffd27a'); Juice.ab(0.2);
-    FX.radial(e.x, e.y, '#ffd27a', 24, e.r, 9); FX.ring(e.x, e.y, e.r, e.r + 140, '#ffd27a', 0.45, 10); splat(e.x, e.y, '#000', e.r + 40, 'crack');
-    FX.text(e.x, e.y - 60, '결정타', '#ffd27a', true);
-  }
   // 끊어내기
   if (A.cut && gen <= 1) {
-    const th = CUT[A.cut] + (Run.syn.has('executioner') && e.groggy > 0 ? 0.1 : 0);
+    const th = CUT[A.cut] + (Run.syn.has('executioner') && hasVs(e, 'stagger') ? 0.1 : 0);
     if (!e.boss && (e.hp - dmg) / e.maxHp <= th && e.hp > 0) { dmg = e.hp; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
     else if (e.boss && e.hp / e.maxHp <= th && gameTime - (e.cutAt || -9) > 3) { e.cutAt = gameTime; dmg += e.maxHp * 0.05; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
   }
@@ -395,11 +386,7 @@ function dealDamage(e, o) {
   // 포이즈·체간
   let poise = (o.poise || dmg * 0.3) * (1 + St.poise + mods.poise);
   for (const c of mods.poiseCond) if (hasVs(e, c.vs)) poise *= 1 + c.v;
-  if (e.stanceMax) {
-    let add = poise * 0.55 * (1 + St.stance) * (elem === 'phys' ? 1.3 : 1);
-    if (gen > 0) add *= 0.4;
-    addStance(e, add);
-  } else if (gen === 0 || o.poise) {
+  if (gen === 0 || o.poise) {
     e.poiseDmg += poise;
     if (e.poiseDmg >= e.def.poise) { e.poiseDmg = 0; e.staggerT = 0.45; e.cancelAttack && e.cancelAttack(); }
   }
@@ -436,19 +423,8 @@ function dealDamage(e, o) {
   if (A.echo && gen <= 1 && !o.echo && R() < ECHO[A.echo]) {
     later(0.2, () => { if (!e.dead) { FX.text(e.x, e.y - 70, '메아리', '#e78bff'); dealDamage(e, { ...o, base: o.base * 0.5, gen: gen + 1, echo: true, counter: false, forceCrit: false, kb: 0 }); } });
   }
-  if (e.hp <= 0) { if (o.act === 'dash' && Run.syn.has('galecharge') && P.spinCharges < 2) { P.spinCharges++; FX.text(P.x, P.y - 50, '질풍 충전', '#9fe8ff'); } killEnemy(e, finisher); }
+  if (e.hp <= 0) { if (o.act === 'dash' && Run.syn.has('galecharge') && P.spinCharges < 2) { P.spinCharges++; FX.text(P.x, P.y - 50, '질풍 충전', '#9fe8ff'); } killEnemy(e); }
   return dmg;
-}
-function addStance(e, v) {
-  if (e.groggy > 0) return;
-  e.stance += v; e.stanceIdle = 0;
-  if (e.stance >= e.stanceMax) {
-    e.stance = 0; e.groggy = (e.boss ? 2 : 3) + (Run.augs.groggyhunt ? 1 : 0); e.finished = false;
-    if (e.boss) e.stanceMax *= 1.2;
-    e.cancelAttack && e.cancelAttack();
-    Run.groggies++; Sfx.groggy(); Juice.kick(10); FX.text(e.x, e.y - e.r - 30, '그로기', '#ffd27a', true);
-    FX.ring(e.x, e.y, e.r, e.r + 80, '#ffd27a', 0.4, 6);
-  }
 }
 
 // 지연 실행 (메아리, 연쇄 번개 등)
@@ -505,14 +481,13 @@ function parrySuccess(h) {
     pr.owner = 'player'; pr.vx = Math.cos(a) * 820; pr.vy = Math.sin(a) * 820; pr.life = 1.2; pr.gen = 1; pr.hitSet = new Set(); pr.dmg = pr.dmg * 2.2; pr.col = '#ffffff'; pr.act = 'parry';
   }
   if (e && !e.dead) {
-    const pm = 1 + ActMods.parry.poise + St.poise;
-    let pc = 1; for (const c of ActMods.parry.poiseCond) if (hasVs(e, c.vs)) pc += c.v;
-    if (e.stanceMax) {
-      if (h.color === 'gold') addStance(e, e.stanceMax * 2);
-      else addStance(e, e.stanceMax * (e.boss ? 0.15 : 0.25) * pm * pc * (1 + St.stance));
-    } else if (!h.proj) {
-      e.staggerT = h.color === 'gold' ? 1.2 : 0.6; e.poiseDmg = 0;
-      e.vx += Math.cos(angTo(P, e)) * 260; e.vy += Math.sin(angTo(P, e)) * 260;
+    // 체간·그로기 없음: 패링은 공격을 끊고 경직만 줘요 (금색 = 강공격, 더 길게)
+    const pm = 1 + ActMods.parry.poise; let pc = 1; for (const c of ActMods.parry.poiseCond) if (hasVs(e, c.vs)) pc += c.v;
+    if (!h.proj || h.color === 'gold') {
+      const base = e.boss ? (h.color === 'gold' ? 0.8 : 0.3) : (h.color === 'gold' ? 1.2 : 0.6);
+      e.staggerT = base * St.staggerMul * Math.min(1.5, Math.sqrt(pm * pc)); e.poiseDmg = 0;
+      if (!e.boss) { e.vx += Math.cos(angTo(P, e)) * 260; e.vy += Math.sin(angTo(P, e)) * 260; }
+      if (h.color === 'gold') FX.text(e.x, e.y - e.r - 30, '경직', '#ffd27a', true);
     }
     e.cancelAttack && e.cancelAttack();
   }

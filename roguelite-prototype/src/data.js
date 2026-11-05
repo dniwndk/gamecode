@@ -36,11 +36,11 @@ const AUGMENTS = [
   { id: 'overcharge', name: '덧충전', grade: 'prism', max: 1, tag: '효과', desc: () => '대시·액티브 2회 충전, 처치 시 1회 충전' },
   // 패링 규칙
   { id: 'catch', name: '칼날 받이', grade: 'silver', max: 1, tag: '패링', desc: () => '패링 판정 +0.06초' },
-  { id: 'topple', name: '무너뜨리기', grade: 'silver', max: 1, tag: '패링', desc: () => '체간 피해 +40%' },
+  { id: 'topple', name: '흔들기', grade: 'silver', max: 1, tag: '패링', desc: () => '패링 경직 시간 +50%, 포이즈 피해 +30%' },
   { id: 'chainparry', name: '연속 응수', grade: 'gold', max: 1, tag: '패링', desc: () => '4초 안에 패링을 이어 성공할 때마다 반격 위력 +30% (최대 3중첩)' },
   { id: 'repay', name: '되갚음', grade: 'gold', max: 1, tag: '패링', desc: () => '반격이 튕겨 낸 공격 위력의 150%를 추가 피해로 줌' },
   { id: 'redsteel', name: '붉은 쇠', grade: 'prism', max: 1, tag: '패링', desc: () => '붉은 공격도 패링 가능, 대신 패링 판정 -0.04초' },
-  { id: 'groggyhunt', name: '그로기 사냥', grade: 'prism', max: 1, tag: '패링', desc: () => '결정타 피해 2배, 그로기 시간 +1초' },
+  { id: 'groggyhunt', name: '빈틈 사냥', grade: 'prism', max: 1, tag: '패링', desc: () => '경직·빙결된 적에게 피해 +40%' },
   // 그 밖의 규칙
   { id: 'thirst', name: '피의 갈증', grade: 'silver', max: 1, tag: '규칙', desc: () => '적을 처치하면 체력 2 회복' },
   { id: 'gale', name: '질풍 발', grade: 'silver', max: 1, tag: '규칙', desc: () => '대시 후 1초 동안 이동 +30%, 대시 찌르기 피해 +50%' },
@@ -63,7 +63,7 @@ const SYNERGIES = [
   { id: 'bladestorm', name: '검기 폭풍', need: ['pierce', 'fork'], desc: '검기 위력 +30%, 검기가 더 커짐' },
   { id: 'finisherwave', name: '마무리 검기', need: ['finisher', 'pierce'], desc: '3타 검기 위력 +50%' },
   { id: 'doublebrand', name: '겹낙인', need: ['echo', 'brand'], desc: '메아리 타격도 낙인을 쌓음' },
-  { id: 'executioner', name: '처형인', need: ['cut', 'groggyhunt'], desc: '그로기 중인 적은 끊어내기 기준 +10%' },
+  { id: 'executioner', name: '처형인', need: ['cut', 'groggyhunt'], desc: '경직된 적은 끊어내기 기준 +10%' },
   { id: 'master', name: '응수의 달인', need: ['chainparry', 'repay'], desc: '연속 응수 2중첩 이상이면 되갚음 150% → 250%' },
   { id: 'ironwall', name: '철벽', need: ['catch', 'redsteel'], desc: '붉은 쇠의 패링 판정 감소(-0.04초)가 사라짐' },
   { id: 'galecharge', name: '질풍 충전', need: ['overcharge', 'gale'], desc: '대시 찌르기로 적을 처치하면 회전베기 1회 충전' },
@@ -93,7 +93,7 @@ const SLOT_UNLOCK_ORDER = ['a2', 'dash', 'a3', 'counter'];
 
 // 인장 (아이템). 숫자와 이미 있는 상태에만 반응해요. 상태는 증강이 만들어요.
 // base: 늘 걸리는 능력치. at[자리]: 그 자리에 새겼을 때 그 동작에 붙는 효과.
-// 동작 효과 필드: dmg(피해 +비율), crit(치명 +), poise(포이즈·체간 +비율), vs:{burn,chill,shock,elite,groggy}(그 상태의 적에게 피해 +)
+// 동작 효과 필드: dmg(피해 +비율), crit(치명 +), poise(포이즈 +비율), vs:{burn,chill,shock,elite,stagger}(그 상태의 적에게 피해 +)
 const ITEMS = [
   { id: 'emberawl', name: '불씨 송곳', kind: 'blade', elem: 'fire', form: '지속', price: 100, base: { firePow: 8 },
     at: { a1: { vs: { burn: 0.25 } }, a2: { dmg: 0.15 }, a3: { vs: { burn: 0.4 } } } },
@@ -118,7 +118,7 @@ const ITEMS = [
   { id: 'gauntlet', name: '맞받이 장갑', kind: 'riposte', elem: 'phys', form: '지속', price: 100, base: { maxHp: 10, atkSpd: 0.05 },
     at: { parry: { guard: 0.3 }, counter: { dmg: 0.4 } } },
   { id: 'crackham', name: '균열 망치', kind: 'riposte', elem: 'phys', form: '대형', price: 150, base: { poise: 0.5 },
-    at: { parry: { poise: 0.5 }, counter: { vs: { groggy: 0.2 } } } },
+    at: { parry: { poise: 0.5 }, counter: { vs: { stagger: 0.2 } } } },
   { id: 'embermirror', name: '잿불 거울', kind: 'riposte', elem: 'fire', form: '지속', price: 100, base: { firePow: 8 },
     at: { parry: { poise: 0.5, poiseVs: 'burn' }, counter: { vs: { burn: 0.6 } } } },
   { id: 'crown', name: '잿불 왕관', kind: 'core', elem: 'fire', form: '대형', price: 150, base: { firePow: 40, fireDmg: 0.3 }, at: { core: {} } },
@@ -128,17 +128,17 @@ const ITEMS = [
   { id: 'stormcore', name: '뇌정 심장', kind: 'core', elem: 'light', form: '대형', price: 150, base: { lightPow: 40, shockBounce: 1 }, at: { core: {} } },
 ];
 const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
-const STAT_NAMES = { firePow: '화염 위력', icePow: '냉기 위력', lightPow: '번개 위력', maxHp: '최대 체력', atkSpd: '공격 속도', physDmg: '물리 피해', crit: '치명', shardMul: '파편 획득', move: '이동 속도', poise: '포이즈·체간 피해', fireDmg: '화염 피해', dmg: '모든 피해', maxHpMul: '최대 체력', chillAmp: '둔화된 적 피해', shockBounce: '번개 튐 횟수' };
+const STAT_NAMES = { firePow: '화염 위력', icePow: '냉기 위력', lightPow: '번개 위력', maxHp: '최대 체력', atkSpd: '공격 속도', physDmg: '물리 피해', crit: '치명', shardMul: '파편 획득', move: '이동 속도', poise: '포이즈 피해', fireDmg: '화염 피해', dmg: '모든 피해', maxHpMul: '최대 체력', chillAmp: '둔화된 적 피해', shockBounce: '번개 튐 횟수' };
 const PCT_STATS = new Set(['atkSpd', 'physDmg', 'crit', 'shardMul', 'move', 'poise', 'fireDmg', 'dmg', 'maxHpMul', 'chillAmp']);
 
 function fmtStat(k, v) { return `${STAT_NAMES[k] || k} ${v >= 0 ? '+' : ''}${PCT_STATS.has(k) ? Math.round(v * 100) + '%' : Math.round(v * 10) / 10}`; }
-const VS_NAME = { burn: '화상 중인 적', chill: '둔화된 적', shock: '감전된 적', elite: '정예·보스', groggy: '그로기 중인 적' };
+const VS_NAME = { burn: '화상 중인 적', chill: '둔화된 적', shock: '감전된 적', elite: '정예·보스', stagger: '경직된 적' };
 function fmtAt(e) {
   if (!e) return '';
   const out = [];
   if (e.dmg) out.push(`피해 +${Math.round(e.dmg * 100)}%`);
   if (e.crit) out.push(`${e.critVs ? VS_NAME[e.critVs] + '에게 ' : ''}치명 +${Math.round(e.crit * 100)}%`);
-  if (e.poise) out.push(`${e.poiseVs ? VS_NAME[e.poiseVs] + '에게 ' : ''}체간 +${Math.round(e.poise * 100)}%`);
+  if (e.poise) out.push(`${e.poiseVs ? VS_NAME[e.poiseVs] + '에게 ' : ''}포이즈 +${Math.round(e.poise * 100)}%`);
   if (e.dashCd) out.push(`대시 쿨다운 ${Math.round(e.dashCd * 100)}%`);
   if (e.guard) out.push(`패링 뒤 2초 받는 피해 -${Math.round(e.guard * 100)}%`);
   if (e.vs) for (const k in e.vs) out.push(`${VS_NAME[k]}에게 피해 +${Math.round(e.vs[k] * 100)}%`);
@@ -146,7 +146,7 @@ function fmtAt(e) {
 }
 
 // 5.4 적
-// 섬광: white=패링 가능, gold=패링하면 바로 그로기(정예·보스), red=패링 불가
+// 섬광: white=패링 가능, gold=강공격(패링하면 긴 경직), red=패링 불가
 const ENEMIES = {
   grunt: { name: '돌격병', hp: 40, spd: 150, r: 18, dmg: 10, col: '#d65a5a', weak: 'fire', res: null, poise: 20 },
   wisp: { name: '원혼불', hp: 28, spd: 90, r: 15, dmg: 9, col: '#8f7bff', weak: 'phys', res: 'ice', poise: 10 },

@@ -311,11 +311,11 @@ const AUGMENTS = [
   { id: 'overcharge', name: '덧충전', grade: 'prism', max: 1, tag: '효과', desc: () => '대시·액티브 2회 충전, 처치 시 1회 충전' },
   // 패링 규칙
   { id: 'catch', name: '칼날 받이', grade: 'silver', max: 1, tag: '패링', desc: () => '패링 판정 +0.06초' },
-  { id: 'topple', name: '무너뜨리기', grade: 'silver', max: 1, tag: '패링', desc: () => '체간 피해 +40%' },
+  { id: 'topple', name: '흔들기', grade: 'silver', max: 1, tag: '패링', desc: () => '패링 경직 시간 +50%, 포이즈 피해 +30%' },
   { id: 'chainparry', name: '연속 응수', grade: 'gold', max: 1, tag: '패링', desc: () => '4초 안에 패링을 이어 성공할 때마다 반격 위력 +30% (최대 3중첩)' },
   { id: 'repay', name: '되갚음', grade: 'gold', max: 1, tag: '패링', desc: () => '반격이 튕겨 낸 공격 위력의 150%를 추가 피해로 줌' },
   { id: 'redsteel', name: '붉은 쇠', grade: 'prism', max: 1, tag: '패링', desc: () => '붉은 공격도 패링 가능, 대신 패링 판정 -0.04초' },
-  { id: 'groggyhunt', name: '그로기 사냥', grade: 'prism', max: 1, tag: '패링', desc: () => '결정타 피해 2배, 그로기 시간 +1초' },
+  { id: 'groggyhunt', name: '빈틈 사냥', grade: 'prism', max: 1, tag: '패링', desc: () => '경직·빙결된 적에게 피해 +40%' },
   // 그 밖의 규칙
   { id: 'thirst', name: '피의 갈증', grade: 'silver', max: 1, tag: '규칙', desc: () => '적을 처치하면 체력 2 회복' },
   { id: 'gale', name: '질풍 발', grade: 'silver', max: 1, tag: '규칙', desc: () => '대시 후 1초 동안 이동 +30%, 대시 찌르기 피해 +50%' },
@@ -338,7 +338,7 @@ const SYNERGIES = [
   { id: 'bladestorm', name: '검기 폭풍', need: ['pierce', 'fork'], desc: '검기 위력 +30%, 검기가 더 커짐' },
   { id: 'finisherwave', name: '마무리 검기', need: ['finisher', 'pierce'], desc: '3타 검기 위력 +50%' },
   { id: 'doublebrand', name: '겹낙인', need: ['echo', 'brand'], desc: '메아리 타격도 낙인을 쌓음' },
-  { id: 'executioner', name: '처형인', need: ['cut', 'groggyhunt'], desc: '그로기 중인 적은 끊어내기 기준 +10%' },
+  { id: 'executioner', name: '처형인', need: ['cut', 'groggyhunt'], desc: '경직된 적은 끊어내기 기준 +10%' },
   { id: 'master', name: '응수의 달인', need: ['chainparry', 'repay'], desc: '연속 응수 2중첩 이상이면 되갚음 150% → 250%' },
   { id: 'ironwall', name: '철벽', need: ['catch', 'redsteel'], desc: '붉은 쇠의 패링 판정 감소(-0.04초)가 사라짐' },
   { id: 'galecharge', name: '질풍 충전', need: ['overcharge', 'gale'], desc: '대시 찌르기로 적을 처치하면 회전베기 1회 충전' },
@@ -368,7 +368,7 @@ const SLOT_UNLOCK_ORDER = ['a2', 'dash', 'a3', 'counter'];
 
 // 인장 (아이템). 숫자와 이미 있는 상태에만 반응해요. 상태는 증강이 만들어요.
 // base: 늘 걸리는 능력치. at[자리]: 그 자리에 새겼을 때 그 동작에 붙는 효과.
-// 동작 효과 필드: dmg(피해 +비율), crit(치명 +), poise(포이즈·체간 +비율), vs:{burn,chill,shock,elite,groggy}(그 상태의 적에게 피해 +)
+// 동작 효과 필드: dmg(피해 +비율), crit(치명 +), poise(포이즈 +비율), vs:{burn,chill,shock,elite,stagger}(그 상태의 적에게 피해 +)
 const ITEMS = [
   { id: 'emberawl', name: '불씨 송곳', kind: 'blade', elem: 'fire', form: '지속', price: 100, base: { firePow: 8 },
     at: { a1: { vs: { burn: 0.25 } }, a2: { dmg: 0.15 }, a3: { vs: { burn: 0.4 } } } },
@@ -393,7 +393,7 @@ const ITEMS = [
   { id: 'gauntlet', name: '맞받이 장갑', kind: 'riposte', elem: 'phys', form: '지속', price: 100, base: { maxHp: 10, atkSpd: 0.05 },
     at: { parry: { guard: 0.3 }, counter: { dmg: 0.4 } } },
   { id: 'crackham', name: '균열 망치', kind: 'riposte', elem: 'phys', form: '대형', price: 150, base: { poise: 0.5 },
-    at: { parry: { poise: 0.5 }, counter: { vs: { groggy: 0.2 } } } },
+    at: { parry: { poise: 0.5 }, counter: { vs: { stagger: 0.2 } } } },
   { id: 'embermirror', name: '잿불 거울', kind: 'riposte', elem: 'fire', form: '지속', price: 100, base: { firePow: 8 },
     at: { parry: { poise: 0.5, poiseVs: 'burn' }, counter: { vs: { burn: 0.6 } } } },
   { id: 'crown', name: '잿불 왕관', kind: 'core', elem: 'fire', form: '대형', price: 150, base: { firePow: 40, fireDmg: 0.3 }, at: { core: {} } },
@@ -403,17 +403,17 @@ const ITEMS = [
   { id: 'stormcore', name: '뇌정 심장', kind: 'core', elem: 'light', form: '대형', price: 150, base: { lightPow: 40, shockBounce: 1 }, at: { core: {} } },
 ];
 const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
-const STAT_NAMES = { firePow: '화염 위력', icePow: '냉기 위력', lightPow: '번개 위력', maxHp: '최대 체력', atkSpd: '공격 속도', physDmg: '물리 피해', crit: '치명', shardMul: '파편 획득', move: '이동 속도', poise: '포이즈·체간 피해', fireDmg: '화염 피해', dmg: '모든 피해', maxHpMul: '최대 체력', chillAmp: '둔화된 적 피해', shockBounce: '번개 튐 횟수' };
+const STAT_NAMES = { firePow: '화염 위력', icePow: '냉기 위력', lightPow: '번개 위력', maxHp: '최대 체력', atkSpd: '공격 속도', physDmg: '물리 피해', crit: '치명', shardMul: '파편 획득', move: '이동 속도', poise: '포이즈 피해', fireDmg: '화염 피해', dmg: '모든 피해', maxHpMul: '최대 체력', chillAmp: '둔화된 적 피해', shockBounce: '번개 튐 횟수' };
 const PCT_STATS = new Set(['atkSpd', 'physDmg', 'crit', 'shardMul', 'move', 'poise', 'fireDmg', 'dmg', 'maxHpMul', 'chillAmp']);
 
 function fmtStat(k, v) { return `${STAT_NAMES[k] || k} ${v >= 0 ? '+' : ''}${PCT_STATS.has(k) ? Math.round(v * 100) + '%' : Math.round(v * 10) / 10}`; }
-const VS_NAME = { burn: '화상 중인 적', chill: '둔화된 적', shock: '감전된 적', elite: '정예·보스', groggy: '그로기 중인 적' };
+const VS_NAME = { burn: '화상 중인 적', chill: '둔화된 적', shock: '감전된 적', elite: '정예·보스', stagger: '경직된 적' };
 function fmtAt(e) {
   if (!e) return '';
   const out = [];
   if (e.dmg) out.push(`피해 +${Math.round(e.dmg * 100)}%`);
   if (e.crit) out.push(`${e.critVs ? VS_NAME[e.critVs] + '에게 ' : ''}치명 +${Math.round(e.crit * 100)}%`);
-  if (e.poise) out.push(`${e.poiseVs ? VS_NAME[e.poiseVs] + '에게 ' : ''}체간 +${Math.round(e.poise * 100)}%`);
+  if (e.poise) out.push(`${e.poiseVs ? VS_NAME[e.poiseVs] + '에게 ' : ''}포이즈 +${Math.round(e.poise * 100)}%`);
   if (e.dashCd) out.push(`대시 쿨다운 ${Math.round(e.dashCd * 100)}%`);
   if (e.guard) out.push(`패링 뒤 2초 받는 피해 -${Math.round(e.guard * 100)}%`);
   if (e.vs) for (const k in e.vs) out.push(`${VS_NAME[k]}에게 피해 +${Math.round(e.vs[k] * 100)}%`);
@@ -421,7 +421,7 @@ function fmtAt(e) {
 }
 
 // 5.4 적
-// 섬광: white=패링 가능, gold=패링하면 바로 그로기(정예·보스), red=패링 불가
+// 섬광: white=패링 가능, gold=강공격(패링하면 긴 경직), red=패링 불가
 const ENEMIES = {
   grunt: { name: '돌격병', hp: 40, spd: 150, r: 18, dmg: 10, col: '#d65a5a', weak: 'fire', res: null, poise: 20 },
   wisp: { name: '원혼불', hp: 28, spd: 90, r: 15, dmg: 9, col: '#8f7bff', weak: 'phys', res: 'ice', poise: 10 },
@@ -496,7 +496,7 @@ function newRun(seedVal) {
     open: new Set(['a1', 'parry', 'core']),
     bag: [], bagMax: 2,
     stones: 0,
-    kills: 0, parries: 0, golds: 0, groggies: 0, maxHit: 0, time: 0,
+    kills: 0, parries: 0, golds: 0, maxHit: 0, time: 0,
     upNext: 0, sagaOn: false, history: [],
   };
   recalc();
@@ -518,13 +518,13 @@ function itemLvMul(inst) { return 1 + 0.5 * (inst.lv || 0); }
 
 function recalc() {
   const s = { maxHp: 100, dmg: 0, atkSpd: 1, move: 1, dashCd: 0.55, ultGain: 1, parryWin: 0.2, parryWinBase: 0.2, perfectWin: 0.067, perfectBonus: 0.5, crit: 0.05, critDmg: 1.5,
-    firePow: 0, icePow: 0, lightPow: 0, fireDmg: 0, physDmg: 0, poise: 0, stance: 0, shardMul: 0, chillAmp: 0, shockBounce: 0, maxHpMul: 0, dmgTaken: 1 };
+    firePow: 0, icePow: 0, lightPow: 0, fireDmg: 0, physDmg: 0, poise: 0, staggerMul: 1, shardMul: 0, chillAmp: 0, shockBounce: 0, maxHpMul: 0, dmgTaken: 1 };
   const A = Run.augs;
   if (A.catch) { s.parryWin += 0.06; s.parryWinBase += 0.06; }
   Run.syn = new Set(SYNERGIES.filter(x => x.need.every(n => A[n])).map(x => x.id));
   if (A.redsteel && !Run.syn.has('ironwall')) { s.parryWin -= 0.04; s.parryWinBase -= 0.04; }
   for (const id in Run.blessings) { const b = BLESSINGS.find(x => x.id === id); for (let i = 0; i < Run.blessings[id]; i++) b.apply(s); }
-  if (A.topple) s.stance += 0.4;
+  if (A.topple) { s.staggerMul += 0.5; s.poise += 0.3; }
   if (A.plate) s.dmgTaken *= 0.88;
   if (A.fate) { s.crit += 0.15; s.critDmg += 0.5; }
   if (Run.sagaOn) s.dmgTaken *= 1.1;
@@ -807,7 +807,7 @@ function hasVs(e, k) {
   if (k === 'chill') return e.chill > 0 || e.frozen > 0;
   if (k === 'shock') return e.shocked > 0;
   if (k === 'elite') return e.elite || e.boss;
-  if (k === 'groggy') return e.groggy > 0;
+  if (k === 'stagger') return e.staggerT > 0 || e.frozen > 0;
   return false;
 }
 function dealDamage(e, o) {
@@ -827,7 +827,7 @@ function dealDamage(e, o) {
   if (A.gale && o.act === 'dash') mult += 0.5;
   if (o.counter) { mult *= 2; if (A.chainparry) mult *= 1 + 0.3 * P.chainStacks; }
   const perfectHit = gen === 0 && P.act && P.act.perfect && !o.echo; if (perfectHit) mult *= 1 + St.perfectBonus;
-  if (e.groggy > 0) mult *= 1.5;
+  if (A.groggyhunt && hasVs(e, 'stagger')) mult += 0.4;
   if (e.def.weak === elem) mult *= 1.25; else if (e.def.res === elem) mult *= 0.75;
   if (A.frost && elem === 'ice' && e.boss && e.chill >= 4) mult *= 1.3;
   if (World.mods.includes('chief') && e.chief) mult *= 0.8;
@@ -837,18 +837,9 @@ function dealDamage(e, o) {
   let crit = St.crit + mods.crit; for (const c of mods.critCond) if (hasVs(e, c.vs)) crit += c.v;
   const isCrit = o.counter || o.forceCrit || (gen === 0 && R() < crit);
   if (isCrit) dmg *= St.critDmg;
-  // 결정타 (그로기 중 첫 타격)
-  let finisher = false;
-  if (e.groggy > 0 && !e.finished && gen === 0) {
-    e.finished = true; finisher = true;
-    dmg += e.maxHp * (e.boss ? 0.04 : 0.08) * (A.groggyhunt ? 2 : 1);
-    Juice.hitstop(0.18); Juice.kick(16); Juice.punch(0.07); Sfx.gold(); Sfx.thud(); Juice.slowmo(0.4, 0.3); Juice.impactFrame(0.06, '#ffd27a'); Juice.ab(0.2);
-    FX.radial(e.x, e.y, '#ffd27a', 24, e.r, 9); FX.ring(e.x, e.y, e.r, e.r + 140, '#ffd27a', 0.45, 10); splat(e.x, e.y, '#000', e.r + 40, 'crack');
-    FX.text(e.x, e.y - 60, '결정타', '#ffd27a', true);
-  }
   // 끊어내기
   if (A.cut && gen <= 1) {
-    const th = CUT[A.cut] + (Run.syn.has('executioner') && e.groggy > 0 ? 0.1 : 0);
+    const th = CUT[A.cut] + (Run.syn.has('executioner') && hasVs(e, 'stagger') ? 0.1 : 0);
     if (!e.boss && (e.hp - dmg) / e.maxHp <= th && e.hp > 0) { dmg = e.hp; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
     else if (e.boss && e.hp / e.maxHp <= th && gameTime - (e.cutAt || -9) > 3) { e.cutAt = gameTime; dmg += e.maxHp * 0.05; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
   }
@@ -880,11 +871,7 @@ function dealDamage(e, o) {
   // 포이즈·체간
   let poise = (o.poise || dmg * 0.3) * (1 + St.poise + mods.poise);
   for (const c of mods.poiseCond) if (hasVs(e, c.vs)) poise *= 1 + c.v;
-  if (e.stanceMax) {
-    let add = poise * 0.55 * (1 + St.stance) * (elem === 'phys' ? 1.3 : 1);
-    if (gen > 0) add *= 0.4;
-    addStance(e, add);
-  } else if (gen === 0 || o.poise) {
+  if (gen === 0 || o.poise) {
     e.poiseDmg += poise;
     if (e.poiseDmg >= e.def.poise) { e.poiseDmg = 0; e.staggerT = 0.45; e.cancelAttack && e.cancelAttack(); }
   }
@@ -921,19 +908,8 @@ function dealDamage(e, o) {
   if (A.echo && gen <= 1 && !o.echo && R() < ECHO[A.echo]) {
     later(0.2, () => { if (!e.dead) { FX.text(e.x, e.y - 70, '메아리', '#e78bff'); dealDamage(e, { ...o, base: o.base * 0.5, gen: gen + 1, echo: true, counter: false, forceCrit: false, kb: 0 }); } });
   }
-  if (e.hp <= 0) { if (o.act === 'dash' && Run.syn.has('galecharge') && P.spinCharges < 2) { P.spinCharges++; FX.text(P.x, P.y - 50, '질풍 충전', '#9fe8ff'); } killEnemy(e, finisher); }
+  if (e.hp <= 0) { if (o.act === 'dash' && Run.syn.has('galecharge') && P.spinCharges < 2) { P.spinCharges++; FX.text(P.x, P.y - 50, '질풍 충전', '#9fe8ff'); } killEnemy(e); }
   return dmg;
-}
-function addStance(e, v) {
-  if (e.groggy > 0) return;
-  e.stance += v; e.stanceIdle = 0;
-  if (e.stance >= e.stanceMax) {
-    e.stance = 0; e.groggy = (e.boss ? 2 : 3) + (Run.augs.groggyhunt ? 1 : 0); e.finished = false;
-    if (e.boss) e.stanceMax *= 1.2;
-    e.cancelAttack && e.cancelAttack();
-    Run.groggies++; Sfx.groggy(); Juice.kick(10); FX.text(e.x, e.y - e.r - 30, '그로기', '#ffd27a', true);
-    FX.ring(e.x, e.y, e.r, e.r + 80, '#ffd27a', 0.4, 6);
-  }
 }
 
 // 지연 실행 (메아리, 연쇄 번개 등)
@@ -990,14 +966,13 @@ function parrySuccess(h) {
     pr.owner = 'player'; pr.vx = Math.cos(a) * 820; pr.vy = Math.sin(a) * 820; pr.life = 1.2; pr.gen = 1; pr.hitSet = new Set(); pr.dmg = pr.dmg * 2.2; pr.col = '#ffffff'; pr.act = 'parry';
   }
   if (e && !e.dead) {
-    const pm = 1 + ActMods.parry.poise + St.poise;
-    let pc = 1; for (const c of ActMods.parry.poiseCond) if (hasVs(e, c.vs)) pc += c.v;
-    if (e.stanceMax) {
-      if (h.color === 'gold') addStance(e, e.stanceMax * 2);
-      else addStance(e, e.stanceMax * (e.boss ? 0.15 : 0.25) * pm * pc * (1 + St.stance));
-    } else if (!h.proj) {
-      e.staggerT = h.color === 'gold' ? 1.2 : 0.6; e.poiseDmg = 0;
-      e.vx += Math.cos(angTo(P, e)) * 260; e.vy += Math.sin(angTo(P, e)) * 260;
+    // 체간·그로기 없음: 패링은 공격을 끊고 경직만 줘요 (금색 = 강공격, 더 길게)
+    const pm = 1 + ActMods.parry.poise; let pc = 1; for (const c of ActMods.parry.poiseCond) if (hasVs(e, c.vs)) pc += c.v;
+    if (!h.proj || h.color === 'gold') {
+      const base = e.boss ? (h.color === 'gold' ? 0.8 : 0.3) : (h.color === 'gold' ? 1.2 : 0.6);
+      e.staggerT = base * St.staggerMul * Math.min(1.5, Math.sqrt(pm * pc)); e.poiseDmg = 0;
+      if (!e.boss) { e.vx += Math.cos(angTo(P, e)) * 260; e.vy += Math.sin(angTo(P, e)) * 260; }
+      if (h.color === 'gold') FX.text(e.x, e.y - e.r - 30, '경직', '#ffd27a', true);
     }
     e.cancelAttack && e.cancelAttack();
   }
@@ -1044,7 +1019,7 @@ function makeEnemy(type, x, y, opts = {}) {
     type, def, x, y, vx: 0, vy: 0, r: def.r * (opts.elite ? 1.15 : 1), hp: def.hp * hpMul, maxHp: def.hp * hpMul,
     elite: !!opts.elite, boss: false, face: 0, atk: null, cd: 0.8 + R() * 0.8, flash: 0,
     burn: 0, burnT: 0, burnTick: 0, chill: 0, chillT: 0, frozen: 0, freezeImm: 0, shocked: 0,
-    staggerT: 0, poiseDmg: 0, stance: 0, stanceMax: opts.elite ? 120 : 0, stanceIdle: 0, groggy: 0, finished: false,
+    staggerT: 0, poiseDmg: 0, stance: 0, stanceMax: 0, stanceIdle: 0, groggy: 0, finished: false, // 체간·그로기는 제거 (2026-11-05)
     shieldUp: !!def.shield, shieldDown: 0, kbT: 0, spdMul: World.mods.includes('haste') ? 1.2 : 1, dmgMul: sc.dmg * (opts.elite ? 1.3 : 1),
     life: 0, dead: false, brand: 0,
   };
@@ -1099,8 +1074,8 @@ function spawnBoss(bk) {
   const def = BOSSES[bk]; const sc = scaleFor();
   const A = World.arena;
   const e = makeEnemy('brute', A.w / 2, A.h * 0.3, {});
-  const hp = def.hp * (bk === 'final' ? 1 : sc.hp);
-  Object.assign(e, { boss: true, bossKey: bk, bdef: def, r: def.r, hp, maxHp: hp, stanceMax: bk === 'mid' ? 240 : bk === 'tier' ? 320 : 420, dmgMul: sc.dmg, phase: 1, cd: 1.4 });
+  const hp = def.hp * 0.85 * (bk === 'final' ? 1 : sc.hp); // 그로기 추가 피해가 없어진 만큼 체력 -15%
+  Object.assign(e, { boss: true, bossKey: bk, bdef: def, r: def.r, hp, maxHp: hp, stanceMax: 0, dmgMul: sc.dmg, phase: 1, cd: 1.4 });
   e.def = { ...ENEMIES.brute, name: def.name, col: def.col, weak: null, res: null, armor: true, poise: 9999 };
   const tierName = bk === 'final' ? '' : ` ${Run.tier}`;
   e.title = def.name + tierName;
@@ -1805,7 +1780,7 @@ function endRun(win) {
   c.innerHTML = `<h1>${win ? '최종 보스 처치' : '쓰러졌어요'}</h1>
     <p class="lead">${Run.floor}층 · ${Math.floor(Run.time / 60)}분 ${Math.floor(Run.time % 60)}초</p>
     <div class="result">
-      <div>처치 <b>${Run.kills}</b></div><div>패링 <b>${Run.parries}</b> (퍼펙트 ${Run.perfects || 0}, 금색 ${Run.golds})</div><div>그로기 <b>${Run.groggies}</b></div><div>최대 한 방 <b>${Run.maxHit}</b></div>
+      <div>처치 <b>${Run.kills}</b></div><div>패링 <b>${Run.parries}</b> (퍼펙트 ${Run.perfects || 0}, 금색 ${Run.golds})</div><div>최대 한 방 <b>${Run.maxHit}</b></div>
     </div>
     <p>증강: ${Object.entries(Run.augs).map(([k, l]) => AUG[k].name + (AUG[k].max > 1 ? l : '')).join(', ') || '없음'}</p>
     <p>각인: ${eng}</p>`;
@@ -1824,7 +1799,7 @@ function showTitle() {
     <tr><td>대시 직후 공격</td><td>대시 찌르기</td></tr><tr><td>회전베기 (액티브)</td><td>Q / U</td></tr><tr><td>궁극기</td><td>R / I</td></tr>
     <tr><td>증강·능력치 창</td><td>Tab</td></tr><tr><td>일시정지·디버그</td><td>Esc · \` (백틱)</td></tr>
   </table>
-  <p class="dim">섬광 색: <b style="color:#fff">흰색</b> 패링 가능 · <b style="color:#ffd27a">금색</b> 패링하면 바로 그로기 · <b style="color:#ff5a5a">붉은색</b> 패링 불가, 회피만</p>`;
+  <p class="dim">섬광 색: <b style="color:#fff">흰색</b> 패링 가능 · <b style="color:#ffd27a">금색</b> 강공격, 패링하면 길게 경직 · <b style="color:#ff5a5a">붉은색</b> 패링 불가, 회피만</p>`;
   const b = h('button', 'btn big', '시작'); b.onclick = () => { Sfx.init(); startRun(); }; c.appendChild(b); p.appendChild(c);
 }
 
@@ -1867,7 +1842,7 @@ function toggleCodex() {
   const stats = [
     ['최대 체력', `${St.maxHp} (현재 ${Math.ceil(Run.hp)})`], ['모든 피해', pct(St.dmg)], ['물리 피해', pct(St.physDmg)], ['화염 피해', pct(St.fireDmg)],
     ['공격 속도', pct(St.atkSpd - 1)], ['이동 속도', pct(St.move - 1)], ['치명 확률', Math.round(St.crit * 100) + '%'], ['치명 피해', '×' + St.critDmg.toFixed(2)],
-    ['대시 쿨다운', St.dashCd.toFixed(2) + '초'], ['패링 판정', St.parryWin.toFixed(2) + '초'], ['퍼펙트 패링', `앞 ${St.perfectWin.toFixed(2)}초, 다음 공격 +${Math.round(St.perfectBonus * 100)}%`], ['포이즈·체간 피해', pct(St.poise + St.stance)], ['궁극기 충전', '×' + St.ultGain.toFixed(2)],
+    ['대시 쿨다운', St.dashCd.toFixed(2) + '초'], ['패링 판정', St.parryWin.toFixed(2) + '초'], ['퍼펙트 패링', `앞 ${St.perfectWin.toFixed(2)}초, 다음 공격 +${Math.round(St.perfectBonus * 100)}%`], ['포이즈 피해', pct(St.poise)], ['패링 경직', '×' + St.staggerMul.toFixed(2)], ['궁극기 충전', '×' + St.ultGain.toFixed(2)],
     ['받는 피해', '×' + St.dmgTaken.toFixed(2)], ['화염·냉기·번개 위력', `${Math.round(St.firePow)} · ${Math.round(St.icePow)} · ${Math.round(St.lightPow)}`], ['파편 획득', pct(St.shardMul)], ['속성 전환', conv || '없음 (모두 물리)'],
   ];
   const bl = Object.entries(Run.blessings).map(([id, c]) => { const b = BLESSINGS.find(x => x.id === id); return `<div class="cbl"><b>${b.name} ×${c}</b> <span class="dim">${b.desc} × ${c}</span></div>`; }).join('') || '<p class="dim">고른 축복이 없어요.</p>';
@@ -2364,7 +2339,7 @@ function drawHUD() {
   if (b && !b.dead) {
     const w = 760, x = W / 2 - w / 2, y = 34;
     cx.textAlign = 'center'; cx.font = '800 20px sans-serif'; cx.fillStyle = '#fff'; cx.fillText(b.title + (b.phase > 1 ? ` · 페이즈 ${b.phase}` : ''), W / 2, y - 6);
-    bar(x, y, w, 16, b.hp / b.maxHp, '#d04848'); bar(x, y + 20, w, 8, b.groggy > 0 ? 1 : b.stance / b.stanceMax, b.groggy > 0 ? '#ffffff' : '#ffd27a');
+    bar(x, y, w, 16, b.hp / b.maxHp, '#d04848');
   }
   if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 300, 79); }
   // 보유 증강 (항상 표시)
