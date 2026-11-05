@@ -159,7 +159,7 @@ function paintDynamic() {
   const a = P.act;
   if (P.counterT > 0) { g.strokeStyle = '#ffd27a'; g.lineWidth = 4; g.globalAlpha = 0.5 + P.counterT; g.beginPath(); g.arc(P.x, P.y, P.r + 14, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }
   if (a && a.type === 'swing' && a.phase === 'active') { const sw = a.sw; g.fillStyle = a.counter ? 'rgba(255,210,122,0.5)' : 'rgba(230,245,255,0.4)'; g.beginPath(); g.moveTo(P.x, P.y); g.arc(P.x, P.y, sw.range + P.r, a.ang - sw.arc / 2, a.ang + sw.arc / 2); g.closePath(); g.fill(); }
-  if (a && a.type === 'thrust' && a.t <= 0.14) { g.fillStyle = 'rgba(200,240,255,0.45)'; g.beginPath(); g.moveTo(P.x, P.y); g.arc(P.x, P.y, a.range + P.r, a.ang - a.arc / 2, a.ang + a.arc / 2); g.closePath(); g.fill(); }
+  if (a && a.type === 'thrust' && a.t <= 0.18) { g.fillStyle = 'rgba(200,240,255,0.45)'; g.beginPath(); g.moveTo(P.x, P.y); g.arc(P.x, P.y, a.range + P.r, a.ang - a.arc / 2, a.ang + a.arc / 2); g.closePath(); g.fill(); }
   if (a && a.type === 'spin') { g.strokeStyle = 'rgba(220,240,255,0.7)'; g.lineWidth = 12; g.beginPath(); g.arc(P.x, P.y, 140, a.t * 30, a.t * 30 + 4.5); g.stroke(); }
   if (a && a.type === 'parry') { g.strokeStyle = '#ffffff'; g.lineWidth = 8; g.beginPath(); g.arc(P.x, P.y, P.r + 18, P.face - 1.3, P.face + 1.3); g.stroke(); }
   if (a && a.type === 'parryWhiff') { g.strokeStyle = 'rgba(255,120,120,0.6)'; g.lineWidth = 4; g.beginPath(); g.arc(P.x, P.y, P.r + 16, 0, Math.PI * 2); g.stroke(); }
@@ -232,7 +232,9 @@ function syncPlayer() {
   const sq = P.sqK || 0; g.scale.set(1 + sq, 1 - sq * 0.6, 1 + sq);
   g.rotation.y = -(P.face || 0);
   const fa = a && a.ang != null ? a.ang : P.face; g.userData.sword.rotation.y = -(fa - P.face);
+  g.userData.sword.position.x = 0;
   if (a && a.type === 'swing') { const k = a.phase === 'wind' ? -0.9 : a.phase === 'active' ? 0.5 : 0.2; g.userData.sword.rotation.z = a.act === 'a3' ? -0.6 + k * 0.4 : 0; g.userData.sword.rotation.y += a.phase === 'wind' ? 1.1 : a.phase === 'active' ? -0.9 : -0.3; }
+  else if (a && a.type === 'thrust') { g.userData.sword.rotation.y = 0; g.userData.sword.rotation.z = 0; g.userData.sword.position.x = a.t < 0.12 ? 14 : 0; }
   else if (a && a.type === 'spin') { g.userData.sword.rotation.y = -a.t * 30; }
   else if (a && a.type === 'parry') { g.userData.sword.rotation.z = 1.1; g.userData.sword.rotation.y = 0.5; }
   else { g.userData.sword.rotation.z = 0; }

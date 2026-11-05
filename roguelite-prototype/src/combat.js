@@ -146,15 +146,18 @@ function updatePlayer(dt) {
   if (dashPress && P.dashCharges > 0 && P.dashT <= 0 && cancelable) {
     P.dashCharges--; P.dashRe = 0;
     P.dashDir = (mv.x || mv.y) ? Math.atan2(mv.y, mv.x) : aimAngle();
-    P.dashT = 0.16; P.iframe = Math.max(P.iframe, 0.2); P.act = null; P.dashAfter = 0.32;
+    P.dashT = 0.16; P.iframe = Math.max(P.iframe, 0.2); P.act = null; P.dashAfter = 0; P.buffer = 0;
     if (Run.augs.gale) P.galeT = 1.16;
     Sfx.dash(); FX.burst(P.x, P.y, '#9fe8ff', 8, 120, 0.3, 5); FX.burst(P.x, P.y + 12, '#8a8296', 10, 160, 0.35, 6);
     P.sqK = 0.45; P.sqA = P.dashDir; FX.ring(P.x, P.y, 6, 40, '#9fe8ff', 0.2, 3);
   }
   if (P.dashT > 0) {
+    // 대시 중 공격 → 그 자리에서 바로 대시 찌르기 (대시를 끊고, 대시 방향으로)
+    if (P.buffer > 0 && P.dashT < 0.14) { P.dashT = 0; startThrust(P.dashDir); moveBody(P, dt); return; }
     P.dashT -= dt; const sp = 950;
     P.vx = Math.cos(P.dashDir) * sp; P.vy = Math.sin(P.dashDir) * sp;
     P.trail.push({ x: P.x, y: P.y, life: 0.22, max: 0.22, col: '#7fe0ff' });
+    if (P.dashT <= 0) { P.dashAfter = 0.2; P.vx *= 0.25; P.vy *= 0.25; } // 대시가 끝난 뒤 0.2초 안의 공격도 대시 찌르기
     moveBody(P, dt);
     return;
   }
@@ -198,7 +201,7 @@ function updatePlayer(dt) {
     } else if (a.type === 'thrust') {
       // 대시 찌르기: 추가 전진 없음 (대시가 끝난 자리에서 멈춰 찌름)
       P.vx *= 0.5; P.vy *= 0.5;
-      if (a.t <= 0.14) swingHits(a);
+      if (a.t <= 0.18) swingHits(a);
       if (a.t >= 0.26) { P.act = null; P.comboGap = 0.3; }
     } else if (a.type === 'parry') {
       P.vx *= 0.6; P.vy *= 0.6;
@@ -224,12 +227,8 @@ function updatePlayer(dt) {
   if (P.buffer > 0 && free && P.parryLock <= 0) {
     P.buffer = 0; const ang = aimAngle(); P.face = ang;
     const isCounter = P.counterT > 0;
-    if (P.dashAfter > 0 && !isCounter) {
-      // 판정: 부채꼴 63°(평타 109°보다 좁음) × 사거리 110
-      P.act = { type: 'thrust', t: 0, ang, hitSet: new Set(), act: 'dash', counter: false, dmg: 22, poise: 20, kb: 300, range: 110, arc: 1.1 };
-      P.vx = 0; P.vy = 0; FX.slash(P.x, P.y, ang, 1.1, 110 + P.r - 10, '#cfefff', 10, 0.18, P);
-      usePerfect(P.act);
-      P.dashAfter = 0; Sfx.swing();
+    if (P.dashAfter > 0) {
+      startThrust(ang);
     } else {
       if (P.comboGap > 0.5 || !(P.act && P.act.type === 'swing')) { if (P.comboGap > 0.5) P.combo = 0; }
       const sw = SWINGS[P.combo % 3];
@@ -453,6 +452,16 @@ function playerHit(h) {
   if (P.act && P.act.type !== 'ult') P.act = null;
   if (Run.hp <= 0) { Run.hp = 0; P.alive = false; Juice.slowmo(1.2, 0.25); later(1.0, () => endRun(false)); }
   return 'hit';
+}
+// 대시 찌르기: 판정 부채꼴 86° × 사거리 140 (넉넉하게), 반격 창 안이면 반격으로
+function startThrust(ang) {
+  const isCounter = P.counterT > 0; P.buffer = 0; P.dashAfter = 0; P.face = ang;
+  P.act = { type: 'thrust', t: 0, ang, hitSet: new Set(), act: 'dash', counter: isCounter, dmg: 22, poise: 20, kb: 300, range: 140, arc: 1.5 };
+  if (isCounter) { P.counterT = 0; FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
+  P.vx = 0; P.vy = 0; P.sqK = 0.3; P.sqA = ang;
+  FX.slash(P.x, P.y, ang, 1.5, 140 + P.r - 12, isCounter ? '#ffd27a' : '#9fe8ff', 13, 0.2, P);
+  FX.spark(P.x + Math.cos(ang) * 60, P.y + Math.sin(ang) * 60, ang, '#cfefff', 8, 600);
+  Juice.kickDir(ang, 3); usePerfect(P.act); Sfx.swing(1.3); Sfx.dash();
 }
 function usePerfect(act) { if (P.perfect) { act.perfect = true; P.perfect = false; P.perfectT = 0; FX.slash(P.x, P.y, act.ang != null ? act.ang : P.face, 2.4, 90, '#9ffcff', 14, 0.22, P); } }
 function parrySuccess(h) {
