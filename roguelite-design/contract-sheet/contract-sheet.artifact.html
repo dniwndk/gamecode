@@ -1,0 +1,938 @@
+<title>계약 시트</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an editing ledger. Sticky header + filter bar, a wide sheet that scrolls inside its own frame, and a tag-tally rail on the right (stacks below on narrow screens). */
+:root {
+  --bg: #f6f6f9;
+  --surface: #ffffff;
+  --surface-2: #efeff5;
+  --line: #dddde8;
+  --line-strong: #c4c3d4;
+  --fg: #1d1b29;
+  --fg-2: #4f4c63;
+  --fg-3: #75728a;
+  --accent: #5b3fd0;
+  --accent-fg: #ffffff;
+  --accent-soft: #ece8fd;
+  --danger: #b42340;
+  --danger-soft: #fbe9ed;
+  --ok: #1f7a55;
+  --warn: #9a6200;
+  --row-hover: #f8f7fd;
+  --row-sel: #f1edfe;
+  --silver: #6d7b8c; --silver-bg: #e9edf2;
+  --gold: #8a5a00;   --gold-bg: #fbefd2;
+  --prism-fg: #4b2fb0;
+  --chip-s: 70%; --chip-bg-l: 93%; --chip-fg-l: 30%; --chip-dot-l: 50%;
+  --shadow: 0 10px 30px rgba(29, 27, 41, .14), 0 2px 6px rgba(29, 27, 41, .08);
+  --font-display: "Hahmlet", "Nanum Myeongjo", "AppleMyungjo", serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15141c; --surface: #1d1c26; --surface-2: #262532; --line: #33313f; --line-strong: #4a4759;
+    --fg: #ecebf3; --fg-2: #bdbacd; --fg-3: #8f8ca3;
+    --accent: #a993ff; --accent-fg: #15141c; --accent-soft: #2d2747;
+    --danger: #ff8197; --danger-soft: #3a1f27; --ok: #6fd3a6; --warn: #f0b44c;
+    --row-hover: #22212c; --row-sel: #2a2540;
+    --silver: #aebbc9; --silver-bg: #2a3038; --gold: #f2c25c; --gold-bg: #3a2f14; --prism-fg: #c7b8ff;
+    --chip-s: 45%; --chip-bg-l: 22%; --chip-fg-l: 82%; --chip-dot-l: 62%;
+    --shadow: 0 10px 30px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15141c; --surface: #1d1c26; --surface-2: #262532; --line: #33313f; --line-strong: #4a4759;
+  --fg: #ecebf3; --fg-2: #bdbacd; --fg-3: #8f8ca3;
+  --accent: #a993ff; --accent-fg: #15141c; --accent-soft: #2d2747;
+  --danger: #ff8197; --danger-soft: #3a1f27; --ok: #6fd3a6; --warn: #f0b44c;
+  --row-hover: #22212c; --row-sel: #2a2540;
+  --silver: #aebbc9; --silver-bg: #2a3038; --gold: #f2c25c; --gold-bg: #3a2f14; --prism-fg: #c7b8ff;
+  --chip-s: 45%; --chip-bg-l: 22%; --chip-fg-l: 82%; --chip-dot-l: 62%;
+  --shadow: 0 10px 30px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* header */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-in { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-block: 12px; }
+.brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 22px; margin: 0; letter-spacing: -.01em; }
+.tabs { display: flex; gap: 2px; background: var(--surface-2); padding: 3px; border-radius: 8px; }
+.tab { border: 0; background: transparent; padding: 5px 14px; border-radius: 6px; cursor: pointer; color: var(--fg-2); font-weight: 500; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.tab .n { font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); margin-left: 4px; }
+.spacer { flex: 1; }
+.status { font-size: 12.5px; color: var(--fg-3); display: flex; align-items: center; gap: 6px; }
+.status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--fg-3); }
+.status[data-s="ok"] .dot { background: var(--ok); }
+.status[data-s="busy"] .dot { background: var(--warn); }
+.status[data-s="err"] .dot { background: var(--danger); }
+.status[data-s="err"] { color: var(--danger); }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: var(--r); border: 1px solid var(--line-strong); background: var(--surface); cursor: pointer; font-weight: 500; white-space: nowrap; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
+.btn.danger:hover { background: var(--danger-soft); }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.ghost:hover { background: var(--surface-2); }
+.btn svg { width: 15px; height: 15px; flex: none; }
+.menu-wrap { position: relative; }
+.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 260px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 6px; }
+.menu button.item { display: grid; grid-template-columns: 1fr; text-align: left; width: 100%; border: 0; background: transparent; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+.menu button.item:hover, .menu button.item:focus-visible { background: var(--surface-2); }
+.menu .item b { font-weight: 600; }
+.menu .item small { color: var(--fg-3); font-size: 12px; }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px 4px; }
+.menu label.opt { display: flex; gap: 8px; align-items: center; padding: 6px 10px; font-size: 13px; color: var(--fg-2); cursor: pointer; }
+
+/* filter bar */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-block: 10px; border-top: 1px solid var(--line); }
+.search { position: relative; flex: 1 1 220px; max-width: 320px; min-width: 0; }
+.search input { width: 100%; height: 32px; border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--bg); padding: 0 10px 0 30px; }
+.search svg { position: absolute; left: 9px; top: 9px; width: 14px; height: 14px; color: var(--fg-3); }
+.fgroup { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.fgroup > .lbl { font-size: 12px; color: var(--fg-3); margin-right: 2px; letter-spacing: .02em; }
+.fchip { height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 13px; color: var(--fg-2); display: inline-flex; align-items: center; gap: 5px; }
+.fchip:hover { border-color: var(--line-strong); }
+.fchip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--fg); font-weight: 500; }
+.fchip .sw { width: 8px; height: 8px; border-radius: 50%; }
+select.fsel { height: 28px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); padding: 0 8px; font-size: 13px; color: var(--fg-2); }
+.clear { font-size: 12.5px; color: var(--accent); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+/* main grid */
+main { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; padding-block: 16px 40px; align-items: start; }
+@media (max-width: 1100px) { main { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.sheet-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.count { font-size: 13px; color: var(--fg-2); }
+.count b { font-family: var(--font-mono); font-weight: 500; color: var(--fg); }
+.bulk { display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 10px; background: var(--row-sel); border-radius: 8px; font-size: 13px; }
+.scroller { overflow: auto; max-height: calc(100vh - 230px); min-height: 320px; }
+@media (max-width: 1100px) { .scroller { max-height: 70vh; } }
+
+table.sheet { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+.sheet th, .sheet td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); vertical-align: top; text-align: left; }
+.sheet th:last-child, .sheet td:last-child { border-right: 0; }
+.sheet thead th { position: sticky; top: 0; z-index: 3; background: var(--surface-2); font-size: 12px; font-weight: 600; color: var(--fg-2); padding: 0; white-space: nowrap; letter-spacing: .02em; }
+.sheet thead th .th { display: flex; align-items: center; gap: 4px; padding: 8px 10px; }
+.sheet thead th button.sort { all: unset; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 8px 10px; width: 100%; box-sizing: border-box; }
+.sheet thead th button.sort:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sheet thead th .arr { font-family: var(--font-mono); color: var(--fg-3); font-size: 11px; }
+.sheet thead th[aria-sort="ascending"] .arr, .sheet thead th[aria-sort="descending"] .arr { color: var(--accent); }
+.sheet td { background: var(--surface); padding: 0; }
+.sheet tr:hover td { background: var(--row-hover); }
+.sheet tr.sel td { background: var(--row-sel); }
+.sheet tr.fresh td { animation: fresh 1.6s ease-out; }
+@keyframes fresh { from { background: var(--accent-soft); } }
+.sheet .stick { position: sticky; left: 0; z-index: 2; }
+.sheet .stick2 { position: sticky; left: 36px; z-index: 2; box-shadow: 1px 0 0 var(--line-strong); }
+.sheet thead .stick, .sheet thead .stick2 { z-index: 4; }
+.c-sel { width: 36px; }
+.c-sel .cb { display: grid; place-items: center; height: 100%; min-height: 40px; }
+.c-sel input { width: 16px; height: 16px; accent-color: var(--accent); }
+.cell { display: block; width: 100%; border: 0; background: transparent; padding: 9px 10px; min-height: 40px; border-radius: 0; }
+.cell:focus { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--surface); }
+textarea.cell { resize: none; field-sizing: content; overflow: hidden; line-height: 1.5; min-height: 40px; }
+input.cell.name { font-weight: 600; }
+select.cell { cursor: pointer; appearance: none; -webkit-appearance: none; padding-right: 22px; background-image: linear-gradient(45deg, transparent 50%, var(--fg-3) 50%), linear-gradient(135deg, var(--fg-3) 50%, transparent 50%); background-position: calc(100% - 13px) 18px, calc(100% - 9px) 18px; background-size: 4px 4px; background-repeat: no-repeat; }
+select.cell:disabled { color: var(--fg-3); cursor: not-allowed; background-image: none; }
+.idtag { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); padding: 0 10px 8px; margin-top: -8px; }
+.w-name { width: 168px; } .w-kind { width: 86px; } .w-act { width: 100px; } .w-grade { width: 96px; } .w-tags { width: 210px; }
+.w-eff { width: 340px; } .w-lim { width: 200px; } .w-st { width: 104px; } .w-src { width: 230px; } .w-note { width: 200px; } .w-del { width: 44px; }
+
+select.grade { font-weight: 600; }
+select.grade[data-g="silver"] { color: var(--silver); }
+select.grade[data-g="gold"] { color: var(--gold); }
+select.grade[data-g="prism"] { color: var(--prism-fg); }
+.gpip { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; }
+.gpip.silver { background: linear-gradient(135deg, #c9d2dc, #7f8c9b); }
+.gpip.gold { background: linear-gradient(135deg, #ffd87a, #b07a10); }
+.gpip.prism { background: conic-gradient(from 20deg, #ff7eb6, #ffd36b, #7cf0c8, #79b8ff, #b58cff, #ff7eb6); }
+.gcell { display: flex; align-items: center; padding-left: 10px; }
+.gcell select { padding-left: 6px; }
+select.kind[data-k="exist"] { color: var(--accent); font-weight: 500; }
+select.st[data-s="채택"] { color: var(--ok); font-weight: 600; }
+select.st[data-s="제외"] { color: var(--danger); }
+select.st[data-s="보류"] { color: var(--warn); }
+tr.out td .cell { color: var(--fg-3); }
+tr.out td .cell.name { text-decoration: line-through; text-decoration-color: var(--fg-3); }
+
+.tagbtn { all: unset; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; width: 100%; min-height: 40px; padding: 7px 8px; cursor: pointer; }
+.tagbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tagbtn .add { font-size: 12px; color: var(--fg-3); padding: 1px 6px; border: 1px dashed var(--line-strong); border-radius: 999px; }
+.tagbtn:hover .add { color: var(--accent); border-color: var(--accent); }
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 12.5px; font-weight: 500; background: hsl(var(--h) var(--chip-s) var(--chip-bg-l)); color: hsl(var(--h) var(--chip-s) var(--chip-fg-l)); white-space: nowrap; }
+.chip .sw, .sw { width: 7px; height: 7px; border-radius: 50%; background: hsl(var(--h) 65% var(--chip-dot-l)); flex: none; }
+.chip.missing { background: var(--danger-soft); color: var(--danger); }
+.del { all: unset; cursor: pointer; display: grid; place-items: center; width: 100%; min-height: 40px; color: var(--fg-3); }
+.del:hover { color: var(--danger); background: var(--danger-soft); }
+.del:focus-visible { outline: 2px solid var(--danger); outline-offset: -2px; }
+.del svg { width: 15px; height: 15px; }
+.group-row td { background: var(--bg) !important; padding: 6px 10px; font-size: 12px; font-weight: 600; color: var(--fg-2); letter-spacing: .03em; }
+.group-row .gl { position: sticky; left: 10px; display: inline-flex; gap: 8px; align-items: baseline; }
+.group-row .gl span { font-family: var(--font-mono); font-weight: 400; color: var(--fg-3); }
+
+.empty { padding: 48px 24px; text-align: center; color: var(--fg-2); }
+.empty h3 { font-family: var(--font-display); font-size: 18px; margin: 0 0 6px; color: var(--fg); }
+.empty p { margin: 0 0 14px; }
+
+/* aside: tag tally */
+aside .panel { padding: 14px 14px 10px; }
+aside h2 { font-family: var(--font-display); font-size: 16px; margin: 0; }
+aside .sub { font-size: 12px; color: var(--fg-3); margin: 2px 0 12px; }
+.tally { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.tally button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; width: 100%; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+.tally button:hover { background: var(--surface-2); }
+.tally button[aria-pressed="true"] { background: var(--accent-soft); }
+.tally button:focus-visible { outline: 2px solid var(--accent); }
+.tally .nm { display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px; }
+.tally .nm small { font-weight: 400; color: var(--fg-3); font-size: 11px; }
+.tally .num { font-family: var(--font-mono); font-size: 12px; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.tally .num.short { color: var(--warn); }
+.bar { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
+.bar i { height: 5px; border-radius: 2px; background: var(--surface-2); }
+.bar i.on { background: hsl(var(--h) 60% var(--chip-dot-l)); }
+.bar i.goal { box-shadow: inset 0 0 0 1px var(--line-strong); }
+.mix { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.mix div { background: var(--surface-2); border-radius: 6px; padding: 6px 8px; }
+.mix b { display: block; font-family: var(--font-mono); font-size: 16px; font-weight: 500; }
+.mix span { font-size: 11.5px; color: var(--fg-3); }
+.note { font-size: 12px; color: var(--fg-3); margin: 12px 0 2px; line-height: 1.55; }
+
+/* tag tab */
+.w-tname { width: 150px; } .w-tst { width: 110px; } .w-tx { width: 260px; } .w-use { width: 70px; }
+.use { padding: 9px 10px; font-family: var(--font-mono); font-size: 13px; color: var(--fg-2); }
+.tname { display: flex; align-items: center; padding-left: 10px; }
+.tname input { padding-left: 8px; }
+
+/* popover */
+.pop { position: fixed; z-index: 50; width: 270px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); display: flex; flex-direction: column; max-height: min(420px, 70vh); }
+.pop-h { padding: 8px; border-bottom: 1px solid var(--line); }
+.pop-h input { width: 100%; height: 32px; border: 1px solid var(--line-strong); border-radius: var(--r); padding: 0 10px; background: var(--bg); }
+.pop ul { list-style: none; margin: 0; padding: 4px; overflow: auto; }
+.pop li label { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13.5px; }
+.pop li label:hover { background: var(--surface-2); }
+.pop li input { width: 16px; height: 16px; accent-color: var(--accent); }
+.pop li .cnt { margin-left: auto; font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-3); }
+.pop .create { all: unset; display: block; box-sizing: border-box; width: calc(100% - 8px); margin: 0 4px 4px; padding: 7px 8px; border-radius: 6px; cursor: pointer; color: var(--accent); font-size: 13px; }
+.pop .create:hover, .pop .create:focus-visible { background: var(--accent-soft); }
+.pop-f { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-top: 1px solid var(--line); font-size: 12px; color: var(--fg-3); }
+
+/* confirm strip + toast */
+.confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; background: var(--danger-soft); border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.confirm.info { background: var(--accent-soft); }
+.toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 60; display: grid; gap: 8px; width: min(480px, calc(100vw - 32px)); }
+.toast { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; background: var(--fg); color: var(--bg); border-radius: 10px; box-shadow: var(--shadow); font-size: 13.5px; }
+.toast .msg { flex: 1; min-width: 0; }
+.toast button { all: unset; cursor: pointer; font-weight: 600; color: var(--accent-soft); padding: 2px 6px; border-radius: 4px; }
+.toast button:focus-visible { outline: 2px solid var(--accent-soft); }
+.toast.err { background: var(--danger); color: #fff; }
+.cell::placeholder { color: transparent; }
+.cell:focus::placeholder { color: var(--fg-3); }
+@media (max-width: 700px) { .top { position: static; } .scroller { max-height: none; } }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.hide-src .c-src, .hide-src .c-note { display: none; }
+</style>
+
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand"><h1>계약 시트</h1></div>
+    <div class="tabs" role="tablist" aria-label="편집할 표">
+      <button class="tab" role="tab" id="tab-c" aria-selected="true" aria-controls="view-c">계약<span class="n" id="n-c">0</span></button>
+      <button class="tab" role="tab" id="tab-t" aria-selected="false" aria-controls="view-t">태그<span class="n" id="n-t">0</span></button>
+    </div>
+    <div class="spacer"></div>
+    <div class="status" id="status" data-s="busy" aria-live="polite"><span class="dot"></span><span id="status-t">불러오는 중</span></div>
+    <button class="btn" id="btn-import" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 10V2M5 7l3 3 3-3M2.5 11v2.5h11V11"/></svg>가져오기</button>
+    <input type="file" id="file" accept=".json,.csv,application/json,text/csv" hidden>
+    <div class="menu-wrap">
+      <button class="btn primary" id="btn-export" type="button" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2v8M5 5l3-3 3 3M2.5 11v2.5h11V11"/></svg>내보내기</button>
+      <div class="menu" id="menu-export" hidden>
+        <button class="item" type="button" data-fmt="csv"><b>CSV 파일</b><small>엑셀·구글 시트에서 열기</small></button>
+        <button class="item" type="button" data-fmt="json"><b>JSON 파일</b><small>계약과 태그 전체, 다시 가져오기 가능</small></button>
+        <button class="item" type="button" data-fmt="md"><b>마크다운 파일</b><small>표 형식, 문서나 채팅에 붙이기</small></button>
+        <button class="item" type="button" data-fmt="copy"><b>마크다운 복사</b><small>클립보드에 바로 복사</small></button>
+        <hr>
+        <label class="opt"><input type="checkbox" id="opt-visible"> 지금 필터에 보이는 계약만</label>
+      </div>
+    </div>
+  </div>
+  <div class="wrap filters" id="filters">
+    <div class="search"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg><input id="q" type="search" placeholder="이름·효과·메모 검색" aria-label="계약 검색"></div>
+    <div class="fgroup" id="f-kind" role="group" aria-label="종류"><span class="lbl">종류</span></div>
+    <div class="fgroup" id="f-act" role="group" aria-label="붙는 행동"><span class="lbl">행동</span></div>
+    <div class="fgroup" id="f-grade" role="group" aria-label="등급"><span class="lbl">등급</span></div>
+    <div class="fgroup"><span class="lbl">상태</span><select class="fsel" id="f-st" aria-label="상태 필터"></select></div>
+    <div class="fgroup" id="f-tag" role="group" aria-label="태그"><span class="lbl">태그</span></div>
+    <button class="clear" id="f-clear" type="button" hidden>필터 지우기</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="view-c" role="tabpanel" aria-labelledby="tab-c" class="panel">
+    <div class="sheet-head">
+      <button class="btn primary" id="add-c" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v10M3 8h10"/></svg>계약 추가</button>
+      <span class="count" id="count-c"></span>
+      <div class="bulk" id="bulk" hidden><span id="bulk-t"></span><button class="btn danger" id="bulk-del" type="button">선택 삭제</button><button class="btn ghost" id="bulk-clear" type="button">선택 해제</button></div>
+      <div class="spacer"></div>
+      <label class="count"><input type="checkbox" id="opt-group" checked> 행동별로 묶기</label>
+      <label class="count"><input type="checkbox" id="opt-src" checked> 착안·메모 열</label>
+    </div>
+    <div id="confirm-c"></div>
+    <div class="scroller" id="scroll-c">
+      <table class="sheet" id="sheet-c" aria-label="계약 목록">
+        <colgroup><col class="c-sel"><col class="w-name"><col class="w-kind"><col class="w-act"><col class="w-grade"><col class="w-tags"><col class="w-eff"><col class="w-lim"><col class="w-st"><col class="w-src c-src"><col class="w-note c-note"><col class="w-del"></colgroup>
+        <thead><tr>
+          <th class="stick c-sel"><div class="cb"><input type="checkbox" id="sel-all" aria-label="보이는 계약 모두 선택"></div></th>
+          <th class="stick2" data-sort="name"><button class="sort" type="button">계약 이름 <span class="arr"></span></button></th>
+          <th data-sort="kind"><button class="sort" type="button">종류 <span class="arr"></span></button></th>
+          <th data-sort="action"><button class="sort" type="button">붙는 행동 <span class="arr"></span></button></th>
+          <th data-sort="grade"><button class="sort" type="button">등급 <span class="arr"></span></button></th>
+          <th><div class="th">태그</div></th>
+          <th><div class="th">효과 (1단계)</div></th>
+          <th><div class="th">제한·버그 규칙</div></th>
+          <th data-sort="status"><button class="sort" type="button">상태 <span class="arr"></span></button></th>
+          <th class="c-src"><div class="th">착안 (내부 참고)</div></th>
+          <th class="c-note"><div class="th">메모</div></th>
+          <th><span class="sr">삭제</span></th>
+        </tr></thead>
+        <tbody id="body-c"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="view-t" role="tabpanel" aria-labelledby="tab-t" class="panel" hidden>
+    <div class="sheet-head">
+      <button class="btn primary" id="add-t" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v10M3 8h10"/></svg>태그 추가</button>
+      <span class="count">태그 이름을 바꾸면 그 태그를 단 계약에도 바로 반영돼요.</span>
+    </div>
+    <div id="confirm-t"></div>
+    <div class="scroller">
+      <table class="sheet" aria-label="태그 목록">
+        <colgroup><col class="w-tname"><col class="w-tst"><col class="w-tx"><col class="w-tx"><col class="w-tx"><col class="w-use"><col class="w-del"></colgroup>
+        <thead><tr>
+          <th class="stick"><div class="th">태그</div></th>
+          <th><div class="th">상태</div></th>
+          <th><div class="th">2개 모으면</div></th>
+          <th><div class="th">3개</div></th>
+          <th><div class="th">4개</div></th>
+          <th><div class="th">계약 수</div></th>
+          <th><span class="sr">삭제</span></th>
+        </tr></thead>
+        <tbody id="body-t"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside>
+    <div class="panel">
+      <h2>태그별 계약 수</h2>
+      <p class="sub">제외한 계약은 빼고 셉니다. 목표는 태그마다 6개 이상.</p>
+      <ul class="tally" id="tally"></ul>
+      <div class="mix" id="mix"></div>
+      <p class="note">태그를 누르면 그 태그로 걸러 봅니다. 시너지는 한 런에서 같은 태그 계약을 2·3·4개 모으면 켜져요.</p>
+    </div>
+  </aside>
+</main>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  const SEED = window.__CONTRACT_SEED || null;
+  const LS_KEY = 'contract-sheet-v1';
+  const ACTIONS = ['평타', '마법', '방어', '대시', '궁극기', '선택'];
+  const ACT_LABEL = { '선택': '붙일 때 고름' };
+  const KINDS = { act: '행위', exist: '존재' };
+  const GRADES = { silver: '실버', gold: '골드', prism: '프리즘' };
+  const STATUSES = ['후보', '설계서', '채택', '보류', '제외'];
+  const TAG_STATUSES = ['기본', '신규 후보', '채택', '보류'];
+  const HUES = [22, 205, 48, 282, 355, 150, 228, 88, 318, 255, 180];
+  const GOAL = 6;
+  const $ = (s, r = document) => r.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v;
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+      else if (k === 'style') n.style.cssText = v; else n.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of kids.flat()) if (c != null) n.append(c);
+    return n;
+  };
+  const icon = (d) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 16 16'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '1.6'); s.innerHTML = d; return s; };
+  const TRASH = '<path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/>';
+
+  // ---------- state ----------
+  const S = { contracts: new Map(), tags: new Map(), mode: 'loading', sel: new Set(),
+    f: { q: '', kind: '', acts: new Set(), grades: new Set(), tags: new Set(), st: '' },
+    sort: { key: '', dir: 1 }, group: true, showSrc: true, tab: 'c' };
+  let store = null; // { save(col,id,data), remove(col,id) }
+
+  const sortedTags = () => [...S.tags.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name, 'ko'));
+  const tagByName = (n) => { for (const t of S.tags.values()) if (t.name === n) return t; return null; };
+  const hueOf = (name) => { const t = tagByName(name); return t ? (t.hue ?? 0) : null; };
+  const newId = (p) => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const clean = (o) => { const c = { ...o }; delete c.id; return c; };
+
+  function normContract(id, d) {
+    return { id, name: d.name || '', kind: d.kind === 'exist' ? 'exist' : 'act', action: d.kind === 'exist' ? '' : (d.action || ''),
+      grade: GRADES[d.grade] ? d.grade : 'silver', tags: Array.isArray(d.tags) ? d.tags.filter(Boolean) : [],
+      effect: d.effect || '', limit: d.limit || '', status: d.status || '후보', source: d.source || '', note: d.note || '', order: Number(d.order) || 0 };
+  }
+  function normTag(id, d) {
+    return { id, name: d.name || '', status: d.status || '신규 후보', t2: d.t2 || '', t3: d.t3 || '', t4: d.t4 || '', order: Number(d.order) || 0, hue: Number.isFinite(d.hue) ? d.hue : 0 };
+  }
+
+  // ---------- status line ----------
+  function setStatus(s, t) { const n = $('#status'); n.dataset.s = s; $('#status-t').textContent = t; }
+  let pendingWrites = 0;
+  function savedLabel() { return S.mode === 'db' ? '저장됨 · 이 시트를 여는 모두에게 보여요' : '저장됨 · 이 브라우저에만'; }
+
+  // ---------- writes (debounced, one at a time per doc) ----------
+  const timers = new Map(), chains = new Map();
+  function queueSave(col, id, delay = 500) {
+    const key = col + '/' + id;
+    clearTimeout(timers.get(key));
+    timers.set(key, setTimeout(() => { timers.delete(key); flushOne(col, id); }, delay));
+    setStatus('busy', '저장 중');
+  }
+  function flushOne(col, id) {
+    const map = col === 'contracts' ? S.contracts : S.tags;
+    const item = map.get(id);
+    run(col, id, () => item ? store.save(col, id, clean(item)) : store.remove(col, id));
+  }
+  function queueRemove(col, id) { const key = col + '/' + id; clearTimeout(timers.get(key)); timers.delete(key); run(col, id, () => store.remove(col, id)); }
+  function run(col, id, fn) {
+    const key = col + '/' + id; pendingWrites++; setStatus('busy', '저장 중');
+    const p = (chains.get(key) || Promise.resolve()).then(fn).then(() => {
+      pendingWrites--; if (!pendingWrites && !timers.size) setStatus('ok', savedLabel());
+    }, (e) => {
+      pendingWrites--; console.error(e);
+      const why = e && /permission|not_granted|denied/i.test((e.code || '') + (e.message || '')) ? '편집 권한이 없어요' : '연결을 확인해 주세요';
+      setStatus('err', '저장하지 못했어요 · ' + why); toast('변경을 저장하지 못했어요. ' + why + '.', { err: true });
+    });
+    chains.set(key, p);
+  }
+  window.addEventListener('beforeunload', () => { for (const [key, t] of timers) { clearTimeout(t); const [col, id] = key.split('/'); flushOne(col, id); } });
+
+  // ---------- storage adapters ----------
+  function localStore() {
+    const write = () => { try { localStorage.setItem(LS_KEY, JSON.stringify({ contracts: [...S.contracts.values()], tags: [...S.tags.values()] })); } catch (e) { throw e; } };
+    return { save: async () => write(), remove: async () => write() };
+  }
+  function loadLocal() {
+    let data = null;
+    try { data = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { data = null; }
+    if (!data && SEED) data = SEED;
+    if (data) { for (const c of data.contracts || []) S.contracts.set(c.id, normContract(c.id, c)); for (const t of data.tags || []) S.tags.set(t.id, normTag(t.id, t)); }
+    S.mode = 'local'; store = localStore();
+    setStatus('ok', savedLabel()); renderAll();
+  }
+  async function boot() {
+    renderAll();
+    let db = null;
+    try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
+    if (!db) { loadLocal(); return; }
+    S.mode = 'db';
+    store = { save: (col, id, data) => db.collection(col).doc(id).set(data), remove: (col, id) => db.collection(col).doc(id).delete() };
+    let got = { contracts: false, tags: false };
+    const slow = setTimeout(() => setStatus('err', '데이터에 아직 연결하지 못했어요'), 10000);
+    const sub = (col, map, norm) => db.collection(col).onSnapshot((snap) => {
+      const seen = new Set();
+      for (const d of snap.docs) {
+        seen.add(d.id);
+        const key = col + '/' + d.id;
+        if (timers.has(key)) continue; // local edit waiting to save wins
+        map.set(d.id, norm(d.id, d.data() || {}));
+      }
+      for (const id of [...map.keys()]) if (!seen.has(id) && !timers.has(col + '/' + id) && !localOnly.has(id)) map.delete(id);
+      got[col] = true;
+      if (!snap.metadata.fromCache) { clearTimeout(slow); if (!pendingWrites && !timers.size) setStatus('ok', savedLabel()); }
+      if (got.contracts && got.tags) { if (S.mode === 'db') S.loaded = true; softRender(); }
+    }, (e) => { clearTimeout(slow); setStatus('err', '데이터를 읽지 못했어요 · 새로고침해 주세요'); console.error(e); });
+    sub('contracts', S.contracts, normContract);
+    sub('tags', S.tags, normTag);
+  }
+  const localOnly = new Set();
+
+  // ---------- filtering & sorting ----------
+  const GORDER = { silver: 0, gold: 1, prism: 2 };
+  function visibleContracts() {
+    const f = S.f, q = f.q.trim().toLowerCase();
+    let list = [...S.contracts.values()].filter((c) => {
+      if (f.kind && c.kind !== f.kind) return false;
+      if (f.acts.size && !f.acts.has(c.kind === 'exist' ? '존재' : c.action)) return false;
+      if (f.grades.size && !f.grades.has(c.grade)) return false;
+      if (f.st && c.status !== f.st) return false;
+      if (f.tags.size && !c.tags.some((t) => f.tags.has(t))) return false;
+      if (q && !(c.name + ' ' + c.effect + ' ' + c.limit + ' ' + c.note + ' ' + c.source + ' ' + c.tags.join(' ')).toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const k = S.sort.key, dir = S.sort.dir;
+    const actIdx = (c) => c.kind === 'exist' ? 99 : (ACTIONS.indexOf(c.action) + 1 || 50);
+    const cmp = {
+      name: (a, b) => a.name.localeCompare(b.name, 'ko'),
+      kind: (a, b) => a.kind.localeCompare(b.kind),
+      action: (a, b) => actIdx(a) - actIdx(b),
+      grade: (a, b) => GORDER[a.grade] - GORDER[b.grade],
+      status: (a, b) => STATUSES.indexOf(a.status) - STATUSES.indexOf(b.status),
+    }[k];
+    list.sort((a, b) => (S.group ? actIdx(a) - actIdx(b) : 0) || (cmp ? cmp(a, b) * dir : 0) || a.order - b.order || a.id.localeCompare(b.id));
+    return list;
+  }
+  const groupKey = (c) => c.kind === 'exist' ? '존재 계약' : (c.action ? (c.action === '선택' ? '행위 계약 · 붙일 때 고름' : '행위 계약 · ' + c.action) : '행위 계약 · 행동 미정');
+
+  // ---------- render: filters ----------
+  function renderFilters() {
+    const mk = (box, items, isOn, toggle) => {
+      box.querySelectorAll('.fchip').forEach((n) => n.remove());
+      for (const it of items) box.append(el('button', { type: 'button', class: 'fchip', 'aria-pressed': String(isOn(it.v)), onclick: () => { toggle(it.v); renderAfterFilter(); } }, it.sw || null, it.label));
+    };
+    mk($('#f-kind'), [{ v: 'act', label: '행위' }, { v: 'exist', label: '존재' }], (v) => S.f.kind === v, (v) => { S.f.kind = S.f.kind === v ? '' : v; });
+    mk($('#f-act'), [...ACTIONS.map((a) => ({ v: a, label: a === '선택' ? '고름' : a })), { v: '존재', label: '전체(존재)' }].filter((x) => x.v !== '존재'), (v) => S.f.acts.has(v), (v) => S.f.acts.has(v) ? S.f.acts.delete(v) : S.f.acts.add(v));
+    mk($('#f-grade'), Object.entries(GRADES).map(([v, l]) => ({ v, label: l, sw: el('span', { class: 'gpip ' + v }) })), (v) => S.f.grades.has(v), (v) => S.f.grades.has(v) ? S.f.grades.delete(v) : S.f.grades.add(v));
+    mk($('#f-tag'), sortedTags().map((t) => ({ v: t.name, label: t.name, sw: el('span', { class: 'sw', style: '--h:' + t.hue }) })), (v) => S.f.tags.has(v), (v) => S.f.tags.has(v) ? S.f.tags.delete(v) : S.f.tags.add(v));
+    const st = $('#f-st');
+    if (!st.options.length) { st.append(el('option', { value: '', text: '전부' })); for (const s of STATUSES) st.append(el('option', { value: s, text: s })); }
+    st.value = S.f.st;
+    const any = S.f.q || S.f.kind || S.f.acts.size || S.f.grades.size || S.f.tags.size || S.f.st;
+    $('#f-clear').hidden = !any;
+  }
+  function renderAfterFilter() { renderFilters(); renderContracts(); renderTally(); }
+
+  // ---------- render: contracts ----------
+  const rowEls = new Map();
+  function sel(options, value, attrs) {
+    const s = el('select', attrs);
+    for (const [v, l] of options) s.append(el('option', { value: v, text: l }));
+    s.value = value; return s;
+  }
+  function autosize(t) { if (CSS.supports && CSS.supports('field-sizing', 'content')) return; t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+  function edit(c, field, value) {
+    c[field] = value; queueSave('contracts', c.id);
+    if (['kind', 'grade', 'status', 'tags', 'action'].includes(field)) { renderTally(); renderCountLine(); }
+  }
+  function contractRow(c) {
+    const lab = c.name || '이름 없는 계약';
+    const tr = el('tr', { 'data-id': c.id, class: (S.sel.has(c.id) ? 'sel ' : '') + (c.status === '제외' ? 'out' : '') });
+    const cb = el('input', { type: 'checkbox', 'aria-label': lab + ' 선택', onchange: (e) => { e.target.checked ? S.sel.add(c.id) : S.sel.delete(c.id); tr.classList.toggle('sel', e.target.checked); renderBulk(); } });
+    cb.checked = S.sel.has(c.id);
+    const name = el('input', { class: 'cell name', value: c.name, 'aria-label': '계약 이름', placeholder: '이름', oninput: (e) => edit(c, 'name', e.target.value) });
+    const kind = sel(Object.entries(KINDS), c.kind, { class: 'cell kind', 'data-k': c.kind, 'aria-label': lab + ' 종류' });
+    const act = sel([['', '—'], ...ACTIONS.map((a) => [a, ACT_LABEL[a] || a])], c.action, { class: 'cell', 'aria-label': lab + ' 붙는 행동', disabled: c.kind === 'exist', title: c.kind === 'exist' ? '존재 계약은 행동에 붙지 않아요' : null });
+    kind.addEventListener('change', (e) => { const v = e.target.value; kind.dataset.k = v; act.disabled = v === 'exist'; act.title = v === 'exist' ? '존재 계약은 행동에 붙지 않아요' : ''; if (v === 'exist') { act.value = ''; c.action = ''; } edit(c, 'kind', v); if (S.group) renderContracts(); });
+    act.addEventListener('change', (e) => { edit(c, 'action', e.target.value); if (S.group) renderContracts(); });
+    const grade = sel(Object.entries(GRADES), c.grade, { class: 'cell grade', 'data-g': c.grade, 'aria-label': lab + ' 등급' });
+    const gpip = el('span', { class: 'gpip ' + c.grade, 'aria-hidden': 'true' });
+    grade.addEventListener('change', (e) => { grade.dataset.g = e.target.value; gpip.className = 'gpip ' + e.target.value; edit(c, 'grade', e.target.value); });
+    const tagBtn = el('button', { type: 'button', class: 'tagbtn', 'aria-haspopup': 'dialog', 'aria-label': lab + ' 태그: ' + (c.tags.join(', ') || '없음') + '. 눌러서 고르기', onclick: (e) => openTagPicker(c, e.currentTarget) });
+    fillTagBtn(tagBtn, c);
+    const ta = (field, label, ph) => { const t = el('textarea', { class: 'cell', rows: '1', 'aria-label': lab + ' ' + label, placeholder: ph || '', oninput: (e) => { edit(c, field, e.target.value); autosize(e.target); } }); t.value = c[field]; return t; };
+    const st = sel(STATUSES.map((s) => [s, s]), c.status, { class: 'cell st', 'data-s': c.status, 'aria-label': lab + ' 상태' });
+    st.addEventListener('change', (e) => { st.dataset.s = e.target.value; tr.classList.toggle('out', e.target.value === '제외'); edit(c, 'status', e.target.value); });
+    const del = el('button', { type: 'button', class: 'del', 'aria-label': lab + ' 삭제', title: '삭제', onclick: () => removeContracts([c.id]) }, icon(TRASH));
+    tr.append(
+      el('td', { class: 'stick c-sel' }, el('div', { class: 'cb' }, cb)),
+      el('td', { class: 'stick2' }, name, el('span', { class: 'idtag', text: c.id })),
+      el('td', {}, kind), el('td', {}, act),
+      el('td', {}, el('div', { class: 'gcell' }, gpip, grade)),
+      el('td', {}, tagBtn),
+      el('td', {}, ta('effect', '효과', '1단계 효과')),
+      el('td', {}, ta('limit', '제한', '상한·연쇄 방지 등')),
+      el('td', {}, st),
+      el('td', { class: 'c-src' }, ta('source', '착안', '')),
+      el('td', { class: 'c-note' }, ta('note', '메모', '')),
+      el('td', {}, del));
+    return tr;
+  }
+  function fillTagBtn(btn, c) {
+    btn.replaceChildren();
+    for (const t of c.tags) { const h = hueOf(t); btn.append(el('span', { class: 'chip' + (h == null ? ' missing' : ''), style: '--h:' + (h ?? 0), title: h == null ? '태그 표에 없는 태그예요' : null }, h == null ? null : el('span', { class: 'sw' }), t)); }
+    btn.append(el('span', { class: 'add', text: c.tags.length ? '편집' : '+ 태그' }));
+    btn.setAttribute('aria-label', (c.name || '이름 없는 계약') + ' 태그: ' + (c.tags.join(', ') || '없음') + '. 눌러서 고르기');
+  }
+  function renderContracts() {
+    const body = $('#body-c');
+    const active = document.activeElement;
+    const activeRow = active && active.closest && active.closest('#body-c tr[data-id]');
+    const activeId = activeRow && activeRow.dataset.id;
+    const list = visibleContracts();
+    const frag = document.createDocumentFragment();
+    let lastG = null;
+    const groupCounts = {};
+    if (S.group) for (const c of list) groupCounts[groupKey(c)] = (groupCounts[groupKey(c)] || 0) + 1;
+    const keep = new Map();
+    for (const c of list) {
+      if (S.group) { const g = groupKey(c); if (g !== lastG) { frag.append(el('tr', { class: 'group-row' }, el('td', { colspan: '12' }, el('span', { class: 'gl' }, g, el('span', { text: groupCounts[g] + '개' }))))); lastG = g; } }
+      let tr = rowEls.get(c.id);
+      const sig = JSON.stringify(c) + (S.sel.has(c.id) ? 1 : 0) + tagSig;
+      if (!tr || tr._sig !== sig) { if (!(c.id === activeId && tr)) { tr = contractRow(c); tr._sig = sig; } }
+      keep.set(c.id, tr); frag.append(tr);
+    }
+    rowEls.clear(); for (const [k, v] of keep) rowEls.set(k, v);
+    body.replaceChildren(frag);
+    if (activeId && rowEls.has(activeId) && document.activeElement !== active && active.isConnected) active.focus();
+    if (!list.length) {
+      const empty = !S.contracts.size;
+      const loading = S.mode === 'loading' || (S.mode === 'db' && !S.loaded);
+      body.append(el('tr', {}, el('td', { colspan: '12' }, el('div', { class: 'empty' },
+        el('h3', { text: loading ? '계약을 불러오는 중이에요' : empty ? '아직 계약이 없어요' : '조건에 맞는 계약이 없어요' }),
+        el('p', { text: loading ? '잠시만 기다려 주세요.' : empty ? '“계약 추가”로 첫 행을 만들거나, 내보냈던 JSON·CSV를 가져오세요.' : '필터를 줄이거나 검색어를 바꿔 보세요.' }),
+        !loading && !empty ? el('button', { class: 'btn', type: 'button', text: '필터 지우기', onclick: clearFilters }) : null))));
+    }
+    body.querySelectorAll('textarea').forEach(autosize);
+    renderCountLine(list.length); renderBulk(list);
+  }
+  let tagSig = '';
+  function renderCountLine(n) {
+    if (n == null) n = visibleContracts().length;
+    const all = S.contracts.size;
+    $('#count-c').replaceChildren(el('b', { text: String(n) }), n === all ? '개 계약' : ' / ' + all + '개 보는 중');
+    $('#n-c').textContent = all; $('#n-t').textContent = S.tags.size;
+  }
+  function renderBulk(list) {
+    for (const id of [...S.sel]) if (!S.contracts.has(id)) S.sel.delete(id);
+    const n = S.sel.size; $('#bulk').hidden = !n; $('#bulk-t').textContent = n + '개 선택';
+    const vis = list || visibleContracts();
+    const allSel = vis.length > 0 && vis.every((c) => S.sel.has(c.id));
+    $('#sel-all').checked = allSel; $('#sel-all').indeterminate = !allSel && vis.some((c) => S.sel.has(c.id));
+  }
+
+  // ---------- render: tags tab ----------
+  function tagUse(name) { let n = 0; for (const c of S.contracts.values()) if (c.status !== '제외' && c.tags.includes(name)) n++; return n; }
+  function renderTags() {
+    const body = $('#body-t');
+    const active = document.activeElement; const activeId = active && active.closest && active.closest('#body-t tr[data-id]')?.dataset.id;
+    if (activeId) { body.querySelectorAll('tr[data-id]').forEach((tr) => { const t = S.tags.get(tr.dataset.id); const u = tr.querySelector('.use'); if (t && u) u.textContent = tagUse(t.name); }); return; }
+    body.replaceChildren();
+    for (const t of sortedTags()) {
+      const tr = el('tr', { 'data-id': t.id });
+      const name = el('input', { class: 'cell name', value: t.name, 'aria-label': '태그 이름', placeholder: '이름' });
+      name.addEventListener('change', (e) => renameTag(t, e.target.value.trim(), e.target));
+      const sw = el('span', { class: 'sw', style: '--h:' + t.hue, 'aria-hidden': 'true' });
+      const st = sel(TAG_STATUSES.map((s) => [s, s]), t.status, { class: 'cell', 'aria-label': t.name + ' 상태', onchange: (e) => { t.status = e.target.value; queueSave('tags', t.id); } });
+      const ta = (f, l) => { const x = el('textarea', { class: 'cell', rows: '1', 'aria-label': t.name + ' ' + l, oninput: (e) => { t[f] = e.target.value; autosize(e.target); queueSave('tags', t.id); } }); x.value = t[f]; return x; };
+      tr.append(el('td', { class: 'stick' }, el('div', { class: 'tname' }, sw, name)), el('td', {}, st), el('td', {}, ta('t2', '2개 효과')), el('td', {}, ta('t3', '3개 효과')), el('td', {}, ta('t4', '4개 효과')),
+        el('td', {}, el('div', { class: 'use', text: String(tagUse(t.name)) })),
+        el('td', {}, el('button', { type: 'button', class: 'del', 'aria-label': t.name + ' 태그 삭제', title: '삭제', onclick: () => askRemoveTag(t) }, icon(TRASH))));
+      body.append(tr);
+    }
+    if (!S.tags.size) body.append(el('tr', {}, el('td', { colspan: '7' }, el('div', { class: 'empty' }, el('h3', { text: '태그가 없어요' }), el('p', { text: '“태그 추가”로 첫 태그를 만드세요.' })))));
+    body.querySelectorAll('textarea').forEach(autosize);
+  }
+
+  // ---------- render: tally ----------
+  function renderTally() {
+    const ul = $('#tally'); ul.replaceChildren();
+    for (const t of sortedTags()) {
+      const n = tagUse(t.name);
+      const bar = el('span', { class: 'bar', 'aria-hidden': 'true' });
+      for (let i = 1; i <= 8; i++) bar.append(el('i', { class: (i <= n ? 'on' : '') + (i === GOAL ? ' goal' : '') }));
+      ul.append(el('li', {}, el('button', { type: 'button', style: '--h:' + t.hue, 'aria-pressed': String(S.f.tags.has(t.name)), 'aria-label': t.name + ' ' + n + '개' + (n < GOAL ? ', 목표까지 ' + (GOAL - n) + '개' : ''), onclick: () => { S.f.tags.has(t.name) ? S.f.tags.delete(t.name) : S.f.tags.add(t.name); if (S.tab !== 'c') switchTab('c'); renderAfterFilter(); } },
+        el('span', { class: 'nm' }, el('span', { class: 'sw' }), t.name, t.status === '신규 후보' ? el('small', { text: '신규' }) : null),
+        el('span', { class: 'num' + (n < GOAL ? ' short' : ''), text: n + (n < GOAL ? ' / ' + GOAL : '') }), bar)));
+    }
+    const live = [...S.contracts.values()].filter((c) => c.status !== '제외');
+    const cnt = (f) => live.filter(f).length;
+    $('#mix').replaceChildren(
+      ...[['행위', cnt((c) => c.kind === 'act')], ['존재', cnt((c) => c.kind === 'exist')], ['태그 없음', cnt((c) => !c.tags.length)],
+        ['실버', cnt((c) => c.grade === 'silver')], ['골드', cnt((c) => c.grade === 'gold')], ['프리즘', cnt((c) => c.grade === 'prism')]]
+        .map(([l, v]) => el('div', {}, el('b', { text: String(v) }), el('span', { text: l }))));
+  }
+
+  function renderAll() { tagSig = JSON.stringify(sortedTags().map((t) => [t.name, t.hue])); renderFilters(); renderContracts(); renderTags(); renderTally(); }
+  function softRender() { renderAll(); }
+
+  // ---------- tag picker ----------
+  let pop = null;
+  function closePop(focusBack = true) { if (!pop) return; const { node, anchor, onKey } = pop; node.remove(); document.removeEventListener('keydown', onKey, true); document.removeEventListener('pointerdown', pop.onDown, true); pop = null; if (focusBack && anchor.isConnected) anchor.focus(); }
+  function openTagPicker(c, anchor) {
+    if (pop) { const same = pop.anchor === anchor; closePop(false); if (same) return; }
+    const input = el('input', { type: 'text', placeholder: '태그 찾기 또는 새로 만들기', 'aria-label': '태그 찾기' });
+    const ul = el('ul', { role: 'group', 'aria-label': '태그' });
+    const create = el('button', { type: 'button', class: 'create', hidden: true });
+    const foot = el('div', { class: 'pop-f' }, el('span', { class: 'picked' }), el('button', { type: 'button', class: 'btn ghost', text: '완료', onclick: () => closePop() }));
+    const node = el('div', { class: 'pop', role: 'dialog', 'aria-label': (c.name || '계약') + ' 태그 고르기' }, el('div', { class: 'pop-h' }, input), ul, create, foot);
+    const refresh = () => {
+      const q = input.value.trim();
+      ul.replaceChildren();
+      for (const t of sortedTags()) {
+        if (q && !t.name.includes(q)) continue;
+        const cb = el('input', { type: 'checkbox', onchange: (e) => toggleTag(e.target.checked, t.name) });
+        cb.checked = c.tags.includes(t.name);
+        ul.append(el('li', {}, el('label', {}, cb, el('span', { class: 'sw', style: '--h:' + t.hue }), t.name, el('span', { class: 'cnt', text: String(tagUse(t.name)) }))));
+      }
+      const exists = q && tagByName(q);
+      create.hidden = !q || !!exists;
+      create.textContent = '“' + q + '” 태그 새로 만들고 달기';
+      foot.querySelector('.picked').textContent = c.tags.length ? c.tags.length + '개 선택' : '선택 없음';
+    };
+    const toggleTag = (on, name) => {
+      const next = on ? [...new Set([...c.tags, name])] : c.tags.filter((x) => x !== name);
+      edit(c, 'tags', next);
+      const live = rowEls.get(c.id)?.querySelector('.tagbtn');
+      if (live && live !== anchor && pop) { anchor = live; pop.anchor = live; }
+      fillTagBtn(anchor, c); refresh();
+    };
+    create.addEventListener('click', () => { const t = addTag(input.value.trim(), false); if (t) { toggleTag(true, t.name); input.value = ''; refresh(); input.focus(); } });
+    input.addEventListener('input', refresh);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const q = input.value.trim(); if (!q) return; const t = tagByName(q) || sortedTags().find((x) => x.name.includes(q)); if (t) { toggleTag(!c.tags.includes(t.name), t.name); input.select(); } else create.click(); } });
+    document.body.append(node);
+    const r = anchor.getBoundingClientRect(); const w = 270; const h = node.offsetHeight;
+    let left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8); let top = r.bottom + 4;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 4);
+    node.style.left = left + 'px'; node.style.top = top + 'px';
+    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); closePop(); } if (e.key === 'Tab') { const f = [...node.querySelectorAll('input,button:not([hidden])')]; const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } } };
+    const onDown = (e) => { if (!node.contains(e.target) && e.target !== anchor && !anchor.contains(e.target)) closePop(false); };
+    document.addEventListener('keydown', onKey, true); document.addEventListener('pointerdown', onDown, true);
+    pop = { node, anchor, onKey, onDown };
+    refresh(); input.focus();
+  }
+  document.getElementById('scroll-c').addEventListener('scroll', () => closePop(false), { passive: true });
+
+  // ---------- add / remove ----------
+  function addContract() {
+    const id = newId('ct');
+    const minOrder = Math.min(0, ...[...S.contracts.values()].map((c) => c.order));
+    const f = S.f;
+    const c = normContract(id, { name: '', kind: f.kind || 'act', action: f.acts.size === 1 ? [...f.acts][0] : '', grade: f.grades.size === 1 ? [...f.grades][0] : 'silver', tags: [...f.tags], status: f.st || '후보', order: minOrder - 10 });
+    S.contracts.set(id, c); localOnly.add(id);
+    S.f.q = ''; $('#q').value = '';
+    queueSave('contracts', id, 0); setTimeout(() => localOnly.delete(id), 5000);
+    renderAll();
+    const tr = rowEls.get(id); if (tr) { tr.classList.add('fresh'); tr.scrollIntoView({ block: 'nearest' }); tr.querySelector('input.name').focus(); }
+  }
+  function removeContracts(ids) {
+    const removed = ids.map((id) => S.contracts.get(id)).filter(Boolean);
+    if (!removed.length) return;
+    for (const c of removed) { S.contracts.delete(c.id); S.sel.delete(c.id); queueRemove('contracts', c.id); }
+    renderAll();
+    const label = removed.length === 1 ? '“' + (removed[0].name || '이름 없는 계약') + '” 삭제함' : '계약 ' + removed.length + '개 삭제함';
+    toast(label, { action: '되돌리기', onAction: () => { for (const c of removed) { S.contracts.set(c.id, c); queueSave('contracts', c.id, 0); } renderAll(); toast('되돌렸어요'); } });
+  }
+  function addTag(name, focus = true) {
+    name = (name || '').trim();
+    if (name && tagByName(name)) { toast('“' + name + '” 태그가 이미 있어요.', { err: true }); return null; }
+    const id = newId('tg');
+    const maxOrder = Math.max(0, ...[...S.tags.values()].map((t) => t.order));
+    const used = new Set([...S.tags.values()].map((t) => t.hue));
+    const hue = HUES.find((h) => !used.has(h)) ?? ((S.tags.size * 47) % 360);
+    const t = normTag(id, { name: name || '새 태그', status: '신규 후보', order: maxOrder + 10, hue });
+    if (!name) { let i = 2; while (tagByName(t.name)) t.name = '새 태그 ' + i++; }
+    S.tags.set(id, t); localOnly.add(id); setTimeout(() => localOnly.delete(id), 5000);
+    queueSave('tags', id, 0); renderAll();
+    if (focus) { const inp = document.querySelector('#body-t tr[data-id="' + id + '"] input.name'); if (inp) { inp.focus(); inp.select(); } }
+    return t;
+  }
+  function renameTag(t, next, input) {
+    if (!next) { input.value = t.name; toast('태그 이름은 비워 둘 수 없어요.', { err: true }); return; }
+    if (next === t.name) return;
+    if (tagByName(next)) { input.value = t.name; toast('“' + next + '” 태그가 이미 있어요.', { err: true }); return; }
+    const old = t.name; t.name = next; queueSave('tags', t.id, 0);
+    let n = 0;
+    for (const c of S.contracts.values()) if (c.tags.includes(old)) { c.tags = c.tags.map((x) => x === old ? next : x); queueSave('contracts', c.id, 50); n++; }
+    if (S.f.tags.has(old)) { S.f.tags.delete(old); S.f.tags.add(next); }
+    renderAll(); if (n) toast('계약 ' + n + '개의 태그도 “' + next + '”로 바꿨어요.');
+  }
+  function askRemoveTag(t) {
+    const users = [...S.contracts.values()].filter((c) => c.tags.includes(t.name));
+    const box = $('#confirm-t');
+    box.replaceChildren(el('div', { class: 'confirm' },
+      el('span', { text: '“' + t.name + '” 태그를 지울까요? ' + (users.length ? '이 태그를 단 계약 ' + users.length + '개에서도 빠져요.' : '쓰는 계약은 없어요.') }),
+      el('button', { type: 'button', class: 'btn danger', text: '태그 삭제', onclick: () => { box.replaceChildren(); removeTag(t, users); } }),
+      el('button', { type: 'button', class: 'btn ghost', text: '취소', onclick: () => box.replaceChildren() })));
+    box.querySelector('.btn.danger').focus();
+  }
+  function removeTag(t, users) {
+    S.tags.delete(t.id); queueRemove('tags', t.id); S.f.tags.delete(t.name);
+    const before = users.map((c) => [c, c.tags.slice()]);
+    for (const c of users) { c.tags = c.tags.filter((x) => x !== t.name); queueSave('contracts', c.id, 50); }
+    renderAll();
+    toast('“' + t.name + '” 태그 삭제함', { action: '되돌리기', onAction: () => { S.tags.set(t.id, t); queueSave('tags', t.id, 0); for (const [c, tags] of before) { if (S.contracts.has(c.id)) { c.tags = tags; queueSave('contracts', c.id, 50); } } renderAll(); toast('되돌렸어요'); } });
+  }
+
+  // ---------- toast ----------
+  function toast(msg, opt = {}) {
+    const box = $('#toasts');
+    if (opt.action) box.querySelectorAll('.toast.has-action').forEach((n) => n.remove());
+    const n = el('div', { class: 'toast' + (opt.err ? ' err' : '') + (opt.action ? ' has-action' : ''), role: 'status' }, el('span', { class: 'msg', text: msg }));
+    if (opt.action) n.append(el('button', { type: 'button', text: opt.action, onclick: () => { n.remove(); opt.onAction(); } }));
+    n.append(el('button', { type: 'button', 'aria-label': '알림 닫기', text: '✕', onclick: () => n.remove() }));
+    box.append(n);
+    setTimeout(() => n.remove(), opt.action ? 12000 : 5000);
+  }
+
+  // ---------- export ----------
+  function exportList() { return ($('#opt-visible').checked ? visibleContracts() : [...S.contracts.values()].sort((a, b) => a.order - b.order)); }
+  const CSV_COLS = [['id', 'id'], ['name', '이름'], ['kind', '종류'], ['action', '붙는 행동'], ['grade', '등급'], ['tags', '태그'], ['effect', '효과'], ['limit', '제한'], ['status', '상태'], ['source', '착안'], ['note', '메모']];
+  const csvCell = (v) => { v = String(v ?? ''); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  function toCSV(list) {
+    const lines = [CSV_COLS.map((c) => c[1]).join(',')];
+    for (const c of list) lines.push(CSV_COLS.map(([k]) => csvCell(k === 'kind' ? KINDS[c.kind] : k === 'grade' ? GRADES[c.grade] : k === 'tags' ? c.tags.join('; ') : c[k])).join(','));
+    return '﻿' + lines.join('\r\n') + '\r\n';
+  }
+  function toJSON(list) {
+    return JSON.stringify({ format: 'contract-sheet', version: 1, exported_at: new Date().toISOString(),
+      contracts: list.map((c) => ({ id: c.id, name: c.name, kind: c.kind, action: c.action, grade: c.grade, tags: c.tags, effect: c.effect, limit: c.limit, status: c.status, source: c.source, note: c.note, order: c.order })),
+      tags: sortedTags().map((t) => ({ id: t.id, name: t.name, status: t.status, t2: t.t2, t3: t.t3, t4: t.t4, order: t.order, hue: t.hue })) }, null, 2);
+  }
+  const mdCell = (v) => String(v ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>') || ' ';
+  function toMD(list) {
+    const out = ['# 계약 시트', '', '내보낸 시각: ' + new Date().toLocaleString('ko-KR') + ' · 계약 ' + list.length + '개 · 태그 ' + S.tags.size + '개', ''];
+    const groups = new Map();
+    for (const c of [...list].sort((a, b) => { const ai = a.kind === 'exist' ? 99 : ACTIONS.indexOf(a.action); const bi = b.kind === 'exist' ? 99 : ACTIONS.indexOf(b.action); return ai - bi || a.order - b.order; })) { const g = groupKey(c); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(c); }
+    for (const [g, cs] of groups) {
+      out.push('## ' + g, '', '| id | 계약 | 등급 | 태그 | 효과 (1단계) | 제한 | 상태 | 착안 | 메모 |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+      for (const c of cs) out.push('| ' + [c.id, c.name, GRADES[c.grade], c.tags.join(', '), c.effect, c.limit, c.status, c.source, c.note].map(mdCell).join(' | ') + ' |');
+      out.push('');
+    }
+    out.push('## 태그', '', '| 태그 | 상태 | 2개 | 3개 | 4개 | 계약 수 |', '| --- | --- | --- | --- | --- | --- |');
+    for (const t of sortedTags()) out.push('| ' + [t.name, t.status, t.t2, t.t3, t.t4, tagUse(t.name)].map(mdCell).join(' | ') + ' |');
+    return out.join('\n') + '\n';
+  }
+  async function saveFile(filename, data) {
+    let dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+    if (dl) {
+      try { await dl.save({ filename, data }); toast(filename + ' 저장함'); }
+      catch (e) { if (e && e.code === 'declined') return; toast('파일을 저장하지 못했어요. ' + (e && e.code === 'rate_limited' ? '잠시 뒤 다시 눌러 주세요.' : '마크다운 복사를 써 보세요.'), { err: true }); }
+      return;
+    }
+    if (S.mode === 'db') { toast('이 화면에서는 파일 저장을 쓸 수 없어요. 마크다운 복사를 써 보세요.', { err: true }); return; }
+    const a = el('a', { href: URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' })), download: filename });
+    document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  async function doExport(fmt) {
+    const list = exportList();
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (fmt === 'csv') return saveFile('contracts-' + stamp + '.csv', toCSV(list));
+    if (fmt === 'json') return saveFile('contract-sheet-' + stamp + '.json', toJSON(list));
+    if (fmt === 'md') return saveFile('contract-sheet-' + stamp + '.md', toMD(list));
+    if (fmt === 'copy') {
+      const text = toMD(list);
+      try { await navigator.clipboard.writeText(text); toast('마크다운을 복사했어요 (계약 ' + list.length + '개).'); }
+      catch (e) { showCopyBox(text); }
+    }
+  }
+  function showCopyBox(text) {
+    const box = $('#confirm-c');
+    const ta = el('textarea', { readonly: true, style: 'width:100%;height:160px;font-family:var(--font-mono);font-size:12px;border:1px solid var(--line-strong);border-radius:6px;padding:8px;background:var(--surface)' }); ta.value = text;
+    box.replaceChildren(el('div', { class: 'confirm info', style: 'display:grid' }, el('span', { text: '자동 복사가 막혀 있어요. 아래 글을 선택해 복사하세요.' }), ta, el('div', {}, el('button', { type: 'button', class: 'btn', text: '닫기', onclick: () => box.replaceChildren() }))));
+    ta.focus(); ta.select();
+  }
+
+  // ---------- import ----------
+  function parseCSV(text) {
+    text = text.replace(/^﻿/, ''); const rows = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true; else if (ch === ',') { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+      else cur += ch;
+    }
+    if (cur || row.length) { row.push(cur); rows.push(row); }
+    return rows.filter((r) => r.some((x) => x.trim()));
+  }
+  function fromCSV(text) {
+    const rows = parseCSV(text); if (rows.length < 2) throw new Error('행이 없어요');
+    const head = rows[0].map((h) => h.trim());
+    const idx = {}; for (const [k, l] of CSV_COLS) { const i = head.findIndex((h) => h === l || h === k); if (i >= 0) idx[k] = i; }
+    if (idx.name == null) throw new Error('“이름” 열을 찾지 못했어요');
+    const rk = { '행위': 'act', '존재': 'exist', act: 'act', exist: 'exist' };
+    const rg = { '실버': 'silver', '골드': 'gold', '프리즘': 'prism', silver: 'silver', gold: 'gold', prism: 'prism' };
+    return { contracts: rows.slice(1).map((r, i) => { const g = (k) => idx[k] != null ? (r[idx[k]] || '').trim() : ''; return { id: g('id') || newId('ct'), name: g('name'), kind: rk[g('kind')] || 'act', action: g('action'), grade: rg[g('grade')] || 'silver', tags: g('tags').split(/[;,]/).map((x) => x.trim()).filter(Boolean), effect: g('effect'), limit: g('limit'), status: g('status') || '후보', source: g('source'), note: g('note'), order: (i + 1) * 10 }; }), tags: null };
+  }
+  function handleImport(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      let data;
+      try {
+        const text = String(reader.result);
+        if (/\.json$/i.test(file.name) || /^\s*\{/.test(text)) { data = JSON.parse(text); if (!Array.isArray(data.contracts)) throw new Error('contracts 목록이 없어요'); }
+        else data = fromCSV(text);
+      } catch (e) { toast('가져오지 못했어요: ' + (e.message || '파일 형식을 확인해 주세요') + '.', { err: true }); return; }
+      const box = $('#confirm-c');
+      const nC = data.contracts.length, nT = data.tags ? data.tags.length : 0;
+      const same = data.contracts.filter((c) => c.id && S.contracts.has(c.id)).length;
+      if (S.tab !== 'c') switchTab('c');
+      box.replaceChildren(el('div', { class: 'confirm info' },
+        el('span', { text: file.name + ': 계약 ' + nC + '개' + (nT ? ', 태그 ' + nT + '개' : '') + '. 같은 id ' + same + '개는 덮어써요.' }),
+        el('button', { type: 'button', class: 'btn primary', text: '합치기', onclick: () => { box.replaceChildren(); applyImport(data, false); } }),
+        el('button', { type: 'button', class: 'btn danger', text: '지금 시트를 전부 바꾸기', onclick: () => { box.replaceChildren(); applyImport(data, true); } }),
+        el('button', { type: 'button', class: 'btn ghost', text: '취소', onclick: () => box.replaceChildren() })));
+      box.querySelector('.btn.primary').focus();
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+  function applyImport(data, replace) {
+    if (replace) {
+      for (const id of [...S.contracts.keys()]) { S.contracts.delete(id); queueRemove('contracts', id); }
+      if (data.tags) for (const id of [...S.tags.keys()]) { S.tags.delete(id); queueRemove('tags', id); }
+    }
+    if (data.tags) for (const t of data.tags) { const id = t.id || newId('tg'); const ex = tagByName(t.name); const useId = ex && ex.id !== id ? ex.id : id; S.tags.set(useId, normTag(useId, t)); localOnly.add(useId); queueSave('tags', useId, 0); }
+    // tags referenced but undefined → create
+    for (const c of data.contracts) for (const name of c.tags || []) if (!tagByName(name)) addTag(name, false);
+    for (const c of data.contracts) { const id = c.id || newId('ct'); S.contracts.set(id, normContract(id, c)); localOnly.add(id); queueSave('contracts', id, 0); }
+    setTimeout(() => localOnly.clear(), 6000);
+    renderAll(); toast('계약 ' + data.contracts.length + '개를 가져왔어요.');
+  }
+
+  // ---------- wiring ----------
+  function clearFilters() { S.f = { q: '', kind: '', acts: new Set(), grades: new Set(), tags: new Set(), st: '' }; $('#q').value = ''; renderAfterFilter(); }
+  function switchTab(t) {
+    S.tab = t; closePop(false);
+    $('#tab-c').setAttribute('aria-selected', String(t === 'c')); $('#tab-t').setAttribute('aria-selected', String(t === 't'));
+    $('#view-c').hidden = t !== 'c'; $('#view-t').hidden = t !== 't'; $('#filters').hidden = t !== 'c';
+    if (t === 't') renderTags();
+  }
+  $('#tab-c').addEventListener('click', () => switchTab('c'));
+  $('#tab-t').addEventListener('click', () => switchTab('t'));
+  document.querySelector('.tabs').addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const n = S.tab === 'c' ? 't' : 'c'; switchTab(n); $('#tab-' + n).focus(); } });
+  let qT; $('#q').addEventListener('input', (e) => { clearTimeout(qT); qT = setTimeout(() => { S.f.q = e.target.value; renderAfterFilter(); }, 150); });
+  $('#f-st').addEventListener('change', (e) => { S.f.st = e.target.value; renderAfterFilter(); });
+  $('#f-clear').addEventListener('click', clearFilters);
+  $('#add-c').addEventListener('click', addContract);
+  $('#add-t').addEventListener('click', () => addTag('', true));
+  $('#bulk-del').addEventListener('click', () => removeContracts([...S.sel]));
+  $('#bulk-clear').addEventListener('click', () => { S.sel.clear(); renderContracts(); });
+  $('#sel-all').addEventListener('change', (e) => { for (const c of visibleContracts()) e.target.checked ? S.sel.add(c.id) : S.sel.delete(c.id); renderContracts(); });
+  $('#opt-group').addEventListener('change', (e) => { S.group = e.target.checked; renderContracts(); });
+  $('#opt-src').addEventListener('change', (e) => { S.showSrc = e.target.checked; $('#view-c').classList.toggle('hide-src', !e.target.checked); });
+  document.querySelectorAll('#sheet-c thead th[data-sort] button').forEach((b) => b.addEventListener('click', () => {
+    const k = b.parentElement.dataset.sort;
+    if (S.sort.key !== k) S.sort = { key: k, dir: 1 }; else if (S.sort.dir === 1) S.sort.dir = -1; else S.sort = { key: '', dir: 1 };
+    document.querySelectorAll('#sheet-c thead th[data-sort]').forEach((th) => { const on = th.dataset.sort === S.sort.key; th.setAttribute('aria-sort', on ? (S.sort.dir === 1 ? 'ascending' : 'descending') : 'none'); th.querySelector('.arr').textContent = on ? (S.sort.dir === 1 ? '↑' : '↓') : ''; });
+    renderContracts();
+  }));
+  const exBtn = $('#btn-export'), exMenu = $('#menu-export');
+  const setMenu = (open) => { exMenu.hidden = !open; exBtn.setAttribute('aria-expanded', String(open)); if (open) exMenu.querySelector('.item').focus(); };
+  exBtn.addEventListener('click', () => setMenu(exMenu.hidden));
+  exMenu.addEventListener('click', (e) => { const b = e.target.closest('[data-fmt]'); if (b) { setMenu(false); doExport(b.dataset.fmt); } });
+  document.addEventListener('pointerdown', (e) => { if (!exMenu.hidden && !e.target.closest('.menu-wrap')) setMenu(false); });
+  exMenu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setMenu(false); exBtn.focus(); } });
+  $('#btn-import').addEventListener('click', () => $('#file').click());
+  $('#file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) handleImport(f); e.target.value = ''; });
+  boot();
+})();
+</script>
