@@ -129,7 +129,9 @@ function placeCam() {
 // ── 바닥 동적 레이어: 예고선, 판정, 표식, 플레이어 공격 범위
 function paintDynamic() {
   const A = G3.arena, g = G3.dynCx; g.setTransform(G3.DYN, 0, 0, G3.DYN, 0, 0); g.clearRect(0, 0, A.w, A.h);
-  for (const m of World.marks) { const k = 1 - m.t / m.max; g.strokeStyle = m.col; g.globalAlpha = 0.4 + k * 0.6; g.lineWidth = 4; g.beginPath(); g.arc(m.x, m.y, 34 - k * 14, 0, Math.PI * 2); g.stroke(); }
+  for (const m of World.marks) { const k = 1 - m.t / m.max;
+    if (m.r) { g.fillStyle = m.col; g.strokeStyle = m.col; g.globalAlpha = 0.14 + k * 0.3; g.beginPath(); g.arc(m.x, m.y, m.r * k, 0, Math.PI * 2); g.fill(); g.globalAlpha = 0.8; g.lineWidth = 3; g.beginPath(); g.arc(m.x, m.y, m.r, 0, Math.PI * 2); g.stroke(); continue; }
+    g.strokeStyle = m.col; g.globalAlpha = 0.4 + k * 0.6; g.lineWidth = 4; g.beginPath(); g.arc(m.x, m.y, 34 - k * 14, 0, Math.PI * 2); g.stroke(); }
   g.globalAlpha = 1;
   // 계약 장판 (불길·서리)
   for (const f of World.fields || []) {
@@ -156,6 +158,7 @@ function paintDynamic() {
     if (k.name === 'sweep') { g.save(); g.translate(e.x, e.y); g.rotate(k.ang); g.fillRect(0, -50, 800 * p, 100); g.strokeRect(0, -50, 800, 100); g.restore(); }
     if (k.name === 'charge' || k.name === 'lunge') { g.save(); g.translate(e.x, e.y); g.rotate(k.ang); g.fillRect(0, -e.r * 0.6, (k.name === 'charge' ? 440 : 150) * p, e.r * 1.2); g.restore(); }
     if (k.name === 'swing' || k.name === 'combo') { const rg = e.r + (e.boss ? 120 : 110); g.beginPath(); g.moveTo(e.x, e.y); g.arc(e.x, e.y, rg, k.ang - 1.15, k.ang + 1.15); g.closePath(); g.globalAlpha = 0.08 + p * 0.22; g.fill(); }
+    if (k.name === 'snipe') { g.save(); g.translate(e.x, e.y); g.rotate(k.ang); g.globalAlpha = 0.25 + p * 0.5; g.fillRect(0, -3 - 5 * (1 - p), 1300, 6 + 10 * (1 - p)); g.restore(); }
     if (k.name === 'poke') { g.save(); g.translate(e.x, e.y); g.rotate(e.face); g.fillRect(0, -20, 120 * p, 40); g.restore(); }
     g.globalAlpha = 1;
   }
@@ -191,6 +194,9 @@ function makeEnemyMesh(e) {
   else if (e.type === 'brute') { body = new THREE.Mesh(new THREE.BoxGeometry(r * 1.7, r * 2.3, r * 1.7), m); body.position.y = r * 1.15; }
   else if (e.type === 'bomber') { body = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), m); body.position.y = r;
     const fuse = new THREE.Mesh(new THREE.ConeGeometry(4, 12, 8), mat('#ff5a2a', { emissive: new THREE.Color('#ff5a2a'), emissiveIntensity: 0.8 })); fuse.position.y = r * 2 + 6; g.add(fuse); }
+  else if (e.type === 'sniper') { body = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.45, r * 0.8, r * 3, 6), m); body.position.y = r * 1.5;
+    const gun = new THREE.Mesh(new THREE.BoxGeometry(r * 2.2, 4, 4), mat('#ffd27a', { emissive: new THREE.Color('#ffd27a'), emissiveIntensity: 0.5 })); gun.position.set(r, r * 2, 0); g.add(gun); }
+  else if (e.type === 'splitter' || e.type === 'mite') { body = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), m); body.position.y = r; }
   else if (e.type === 'healer') { body = new THREE.Mesh(new THREE.ConeGeometry(r, r * 2.6, 14), m); body.position.y = r * 1.3; }
   else if (e.type === 'merchant') { body = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), mat(e.def.col, { metalness: 0.6, roughness: 0.3 })); g.userData.mat = body.material; body.position.y = r + 6; g.userData.float = true; }
   else { body = new THREE.Mesh(new THREE.CapsuleGeometry(r * 0.8, r * 1.2, 5, 14), m); body.position.y = r * 0.8 + r * 0.6; }

@@ -74,9 +74,9 @@ const CONTRACTS = [
   { n: 33, id: 'heatup', name: '달아오름', act: 'atk', grade: 'silver', tags: ['질풍'], d: () => '평타를 이어 칠수록 공격 속도 최대 +30%. 대시·방어로 끊어도 유지, 2초 동안 안 치면 사라져요' },
   { n: 34, id: 'seal', name: '마법 봉인', act: 'atk', grade: 'prism', tags: ['검기', '대가'], d: () => '마법 재사용 시간 2배. 대신 평타 피해 +40%, 평타 속도 +15%, 3타 범위 +30%' },
   { n: 35, id: 'reecho', name: '되울림 주문', act: 'magic', grade: 'prism', tags: ['원소'], d: () => '마법이 0.4초 뒤 같은 자리에서 위력 60%로 한 번 더 나가요 (되울림은 다시 되울리지 않음)' },
-  { n: 36, id: 'homing', name: '추적 부적', act: 'magic', grade: 'gold', tags: ['원소', '권속'], d: () => '마법이 적을 맞히면 유도 부적 3발이 날아가요 (각 15%)' },
+  { n: 36, id: 'homing', name: '추적 부적', act: 'magic', grade: 'gold', tags: ['원소', '권속'], d: () => '마법이 적을 맞히면 유도 부적 3발이 날아가요 (각 35%)' },
   { n: 37, id: 'frog', name: '개구리 저주', act: 'magic', grade: 'prism', tags: ['붕괴'], d: () => '마법에 맞은 일반·정예 적이 1.5초 개구리로 변해요 (공격 못 함, 받는 피해 +20%). 보스는 0.3초 경직' },
-  { n: 38, id: 'bees', name: '벌 떼 부르기', act: 'magic', grade: 'gold', tags: ['권속'], d: () => '마법을 쓰면 벌 3마리가 4초 동안 가까운 적을 쏘아요 (1초마다 평타 위력 10%)' },
+  { n: 38, id: 'bees', name: '벌 떼 부르기', act: 'magic', grade: 'gold', tags: ['권속'], d: () => '마법을 쓰면 벌 3마리가 4초 동안 가까운 적을 쏘아요 (1초마다 평타 위력 25%)' },
   { n: 39, id: 'burnmana', name: '타오르는 마력', act: 'magic', grade: 'gold', tags: ['원소'], d: () => '화상 피해를 줄 때마다 마법 재사용 시간 -0.2초' },
   { n: 40, id: 'jewel', name: '보석 지팡이', act: 'magic', grade: 'gold', tags: ['천운'], d: () => '마법도 치명타가 나고, 마법 치명 피해 +30%' },
   { n: 41, id: 'quickspell', name: '속주문', act: 'magic', grade: 'silver', tags: ['질풍'], d: () => '마법 재사용 시간 -25%' },
@@ -115,7 +115,7 @@ const CONTRACTS = [
   { n: 74, id: 'calm', name: '고요한 결계', grade: 'silver', tags: ['철벽'], d: () => '4초 동안 안 맞으면 최대 체력 10%짜리 보호막' },
   { n: 75, id: 'interest', name: '마녀의 이자', grade: 'silver', tags: ['천운'], d: () => '층을 시작할 때마다 가진 파편의 10%를 더 받아요 (한 번에 최대 20)' },
   { n: 76, id: 'swell', name: '부풀어 오르는 몸', grade: 'gold', tags: ['철벽'], d: () => '층을 깰 때마다 최대 체력 +3, 상한 없음' },
-  { n: 77, id: 'crow', name: '사역마 까마귀', grade: 'gold', tags: ['권속'], d: () => '까마귀가 따라다니며 내가 마지막으로 때린 적을 1초마다 쪼아요 (평타 위력 15%)' },
+  { n: 77, id: 'crow', name: '사역마 까마귀', grade: 'gold', tags: ['권속'], d: () => '까마귀가 따라다니며 내가 마지막으로 때린 적을 1초마다 쪼아요 (평타 위력 40%)' },
 ];
 for (const c of CONTRACTS) { c.max = c.max || 1; c.kind = c.act ? 'act' : 'exist'; }
 const CT = Object.fromEntries(CONTRACTS.map(c => [c.id, c]));
@@ -369,7 +369,7 @@ function magicFx(x, y, s, mini) {
   const r = 145 * (mini ? 0.7 : 1); let any = false;
   for (const e of World.enemies) {
     if (e.dead || Math.hypot(e.x - x, e.y - y) - e.r > r) continue; any = true;
-    const o = { base: 18 * s, act: 'spin', gen: mini || s < 1 ? 1 : 0, ang: Math.atan2(e.y - y, e.x - x), kb: mini ? 0 : 360, poise: 26 * s };
+    const o = { base: 26 * s, act: 'spin', gen: mini || s < 1 ? 1 : 0, ang: Math.atan2(e.y - y, e.x - x), kb: mini ? 0 : 360, poise: 26 * s };
     dealDamage(e, o);
     if (C('frog') && !e.dead) { if (e.boss) { e.staggerT = Math.max(e.staggerT || 0, 0.3); e.cancelAttack && e.cancelAttack(); } else if (!(e.frog > 0)) { e.frog = 1.5; e.cancelAttack && e.cancelAttack(); FX.text(e.x, e.y - e.r - 30, '개굴', '#8fe07a'); FX.burst(e.x, e.y, '#8fe07a', 10, 200, 0.4, 5); } }
   }
@@ -389,7 +389,7 @@ function ctOnMagicCast() {
 }
 // 마법이 적을 맞힘 (시전당 한 번)
 function ctOnMagicHit() {
-  if (C('homing')) { const n = sumN(3); for (let i = 0; i < n; i++) { const a = P.face + (i - (n - 1) / 2) * 0.7; World.projs.push({ owner: 'player', x: P.x, y: P.y, vx: Math.cos(a) * 520, vy: Math.sin(a) * 520, r: 9, life: 2.2, dmg: 18 * 0.15, col: '#ffb3f0', pierce: false, hitSet: new Set(), gen: 1, homing: true, grp: 'magic' }); } }
+  if (C('homing')) { const n = sumN(3); for (let i = 0; i < n; i++) { const a = P.face + (i - (n - 1) / 2) * 0.7; World.projs.push({ owner: 'player', x: P.x, y: P.y, vx: Math.cos(a) * 520, vy: Math.sin(a) * 520, r: 9, life: 2.2, dmg: 26 * 0.35, col: '#ffb3f0', pierce: false, hitSet: new Set(), gen: 1, homing: true, grp: 'magic' }); } }
 }
 // 방어 성공
 function ctOnGuard(h, perfect) {
@@ -460,7 +460,7 @@ function ctOnKill(e, o) {
 }
 // 층 시작 (플레이어를 놓은 뒤)
 function ctOnFloorStart() {
-  World.summons = []; P.shields = []; P.escapeUsed = false; P.wallUsed = false; P.calmT = 0; P.noHit = true; P.heat = 0; P.beat = 0; P.ultT = 0; P.ult2T = 0; P.execT = 0; P.speedT = 0; P.revengeT = 0; P.hideT = 0;
+  World.summons = []; P.shields = []; P.escapeUsed = false; P.wallUsed = false; P.calmT = 0; P.noHit = true; P.heat = 0; P.beat = 0; P.ultT = 0; P.ult2T = 0; P.execT = 0; P.speedT = 0; P.revengeT = 0; P.hideT = 0; P.justT = 0;
   if (C('potion')) { const hp0 = St.maxHp; Run.potion = R() < 0.5 ? 'big' : 'small'; recalc(); if (St.maxHp > hp0) Run.hp += St.maxHp - hp0; P.r = 18 * St.size; later(0.4, () => FX.text(P.x, P.y - 60, Run.potion === 'big' ? '불안정한 약: 거대' : '불안정한 약: 소형', '#c8ff9a', true)); }
   if (tagN('철벽') >= 3) addShield(15);
   if (C('interest')) { const v = Math.min(20, Math.floor(Run.shards * 0.1)); if (v > 0) { Run.shards += v; later(0.5, () => FX.text(P.x, P.y - 40, `이자 +${v}`, '#ffd86b')); } }
@@ -495,7 +495,7 @@ function ctOnDeath() {
 // 매 틱: 소환물, 궁극기 효과, 보호막, 타이머
 function updateContracts(dt) {
   if (World.decoy) { World.decoy.t -= dt; if (World.decoy.t <= 0) { const d = World.decoy; World.decoy = null; burst(d.x, d.y, 110, POW * 0.4, 'phys', { col: '#e3c8ff' }); if (tagN('권속') >= 4) burst(d.x, d.y, 80, POW * 0.3, 'phys', { col: '#ff9ae0' }); } }
-  for (const k of ['heatT', 'execT', 'speedT', 'revengeT', 'hideT', 'ult2T']) P[k] = (P[k] || 0) - dt;
+  for (const k of ['heatT', 'execT', 'speedT', 'revengeT', 'hideT', 'ult2T', 'justT']) P[k] = (P[k] || 0) - dt;
   if (P.heatT <= 0) P.heat = 0;
   for (const s of P.shields || []) s.t -= dt; P.shields = (P.shields || []).filter(s => s.t > 0 && s.v > 0);
   if (C('calm') && P.alive) { P.calmT = (P.calmT || 0) + dt; if (P.calmT >= 4) { P.calmT = 0; const v = Math.round(St.maxHp * 0.1); const s = P.shields.find(x => x.key === 'calm'); if (!s || s.v < v) addShield(v, 1e9, 'calm'); } }
@@ -510,14 +510,14 @@ function updateContracts(dt) {
     s.t -= dt; s.tick -= dt; s.ph += dt * 3;
     if (s.type === 'bee') {
       s.x = P.x + Math.cos(s.ph) * 46; s.y = P.y + Math.sin(s.ph) * 46;
-      if (s.tick <= 0) { s.tick = 1; const t = nearest(P.x, P.y, 380)[0]; if (t) { World.bolts.push({ x1: s.x, y1: s.y, x2: t.x, y2: t.y, life: 0.12, col: '#ffe45c' }); ctDmg(t, ATK_POW * 0.1, 'phys', { grp: 'magic' }); } }
+      if (s.tick <= 0) { s.tick = 1; const t = nearest(P.x, P.y, 380)[0]; if (t) { World.bolts.push({ x1: s.x, y1: s.y, x2: t.x, y2: t.y, life: 0.12, col: '#ffe45c' }); ctDmg(t, ATK_POW * 0.25, 'phys', { grp: 'magic' }); } }
       if (s.t <= 0 && tagN('권속') >= 4) burst(s.x, s.y, 70, POW * 0.3, 'phys', { col: '#ff9ae0' });
     }
     if (s.type === 'crow') {
       const t = P.lastHit && !P.lastHit.dead ? P.lastHit : null;
       const tx = t ? t.x + Math.cos(s.ph) * (t.r + 14) : P.x + Math.cos(s.ph) * 60, ty = t ? t.y + Math.sin(s.ph) * (t.r + 14) : P.y + Math.sin(s.ph) * 60;
       s.x = lerp(s.x, tx, Math.min(1, dt * 6)); s.y = lerp(s.y, ty, Math.min(1, dt * 6));
-      if (s.tick <= 0) { s.tick = 1; if (t && Math.hypot(s.x - t.x, s.y - t.y) < t.r + 60) { FX.spark(t.x, t.y, s.ph, '#b9a8ff', 4, 200); ctDmg(t, ATK_POW * 0.15, 'phys'); } }
+      if (s.tick <= 0) { s.tick = 1; if (t && Math.hypot(s.x - t.x, s.y - t.y) < t.r + 60) { FX.spark(t.x, t.y, s.ph, '#b9a8ff', 4, 200); ctDmg(t, ATK_POW * 0.4, 'phys'); } }
     }
   }
   World.summons = World.summons.filter(s => s.t > 0);
@@ -564,6 +564,7 @@ function showContracts(opt) {
   if (n === 3 && tagN('천운') >= 4 && R() < 0.25) n = 4;
   const up = opt.prism ? 0 : (Run.upNext || 0); if (!opt.prism) Run.upNext = 0;
   const cards = rollContracts(grade, n, up);
+  if (opt.minGold) for (let i = 0; i < cards.length; i++) if (cards[i].grade === 'silver') { const pool = ctPool('gold', cards); if (pool.length) cards[i] = pick(pool); }
   if (!cards.length) { Run.rerolls = Math.min(5, Run.rerolls + 1); notice('맺을 계약이 없어요', '대신 리롤권 1개를 받았어요.', cb); return; }
   const skipN = opt.prism ? 2 : 1;
   cardPicker({
@@ -589,7 +590,7 @@ function ctChooseAct(c, cb) {
     row.appendChild(b);
   }
   w.appendChild(row); p.appendChild(w);
-  if (window.__auto) setTimeout(() => { const b = row.querySelector('.card:not([disabled])'); b && b.isConnected && b.click(); }, 20);
+  setTimeout(() => { if (!window.__auto) return; const b = row.querySelector('.card:not([disabled])'); b && b.isConnected && b.click(); }, 20);
 }
 // 계약 한 줄 (계약 창·상점)
 function ctLine(inst) {

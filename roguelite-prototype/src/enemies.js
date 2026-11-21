@@ -36,7 +36,7 @@ function makeEnemy(type, x, y, opts = {}) {
 function startFight(node) {
   const kind = node.type; World.kind = kind;
   World.enemies = []; World.projs = []; World.hits = []; World.bolts = []; World.marks = []; World.queue = []; Later = []; World.fields = []; World.summons = []; World.decoy = null;
-  World.over = false; World.clearT = -1; World.t = 0; World.boss = null; World.mods = node.mods || []; World.merchantT = -1;
+  World.over = false; World.clearT = -1; World.t = 0; World.topRank = 0; World.boss = null; World.mods = node.mods || []; World.merchantT = -1;
   FX.clear();
   let compo, size;
   if (kind === 'boss' || kind === 'final') {
@@ -103,8 +103,12 @@ function bossThink(e, dt) {
       let pats = e.bdef.patterns.slice();
       if (e.phase === 1 && e.bossKey !== 'final') pats = pats.filter(p => p !== 'sweep');
       if (World.enemies.filter(x => !x.dead && !x.boss).length >= 3) pats = pats.filter(p => p !== 'summon');
+      // 계층이 오를수록 보스가 새 패턴을 써요: 2계층부터 불비(rain), 3계층부터 탄막 고리(ring). 계층보스는 페이즈 2에서 한 단계 먼저
+      const lvl = e.bossKey === 'final' ? 3 : Run.tier + (e.bossKey === 'tier' && e.phase >= 2 ? 1 : 0);
+      if (lvl < 2) pats = pats.filter(p => p !== 'rain'); if (lvl < 3) pats = pats.filter(p => p !== 'ring');
+      if (e.lastPat && pats.length > 2) pats = pats.filter(p => p !== e.lastPat); // 같은 패턴 연달아 안 씀
       let p = pick(pats); if (d > 420 && R() < 0.6) p = pick(['charge', 'fan']);
-      bossAttack(e, p, tm);
+      e.lastPat = p; bossAttack(e, p, tm);
     }
   }
 }
@@ -118,6 +122,8 @@ function bossAttack(e, p, tm) {
   else if (p === 'fan') e.atk = { name: 'fan', t: 0, phase: 'tele', tele: 0.45 * tm, color: 'white', ang: a };
   else if (p === 'slam') e.atk = { name: 'slam', t: 0, phase: 'tele', tele: 0.75 * tm, color: 'red', ang: a };
   else if (p === 'sweep') e.atk = { name: 'sweep', t: 0, phase: 'tele', tele: 0.85 * tm, color: 'red', ang: a };
+  else if (p === 'rain') e.atk = { name: 'rain', t: 0, phase: 'tele', tele: 0.5 * tm, color: 'red', ang: a };
+  else if (p === 'ring') e.atk = { name: 'ring', t: 0, phase: 'tele', tele: 0.6 * tm, color: 'white', ang: a };
   else if (p === 'summon') e.atk = { name: 'summon', t: 0, phase: 'tele', tele: 0.6 * tm, color: 'white', ang: a, noFlash: true };
   e.atk.D = D; e.atk.tm = tm;
 }
@@ -153,13 +159,20 @@ function bossFire(e, k) {
   if (k.name === 'fan') { const n = e.phase >= 2 ? 11 : 7; for (let i = 0; i < n; i++) { const a = k.ang + (i - (n - 1) / 2) * 0.16; enemyShot(e, a, 380, D * 0.7, 'white'); } }
   if (k.name === 'slam') { addHit(e, { shape: 'circle', r: 240, t: 0.14, dmg: D * 1.6, color: 'red' }); Juice.kick(18); splat(e.x, e.y, '#000', 200, 'crack'); Sfx.boom(); FX.ring(e.x, e.y, e.r, 240, '#ff5a5a', 0.4, 10); }
   if (k.name === 'sweep') { addHit(e, { shape: 'line', len: 800, w: 100, ang: k.ang, t: 0.16, dmg: D * 1.5, color: 'red' }); Juice.kick(14); Sfx.boom(); }
+  if (k.name === 'rain') { // 불비: 내가 서 있는 자리에 차례로 떨어지는 붉은 원 (회피만)
+    const n = e.phase >= 2 ? 6 : 4;
+    for (let i = 0; i < n; i++) later(i * 0.32, () => { if (e.dead || !P.alive) return; const x = P.x + P.vx * 0.25, y = P.y + P.vy * 0.25;
+      World.marks.push({ x, y, t: 0.65, max: 0.65, col: '#ff4a4a', r: 95 });
+      later(0.65, () => { if (e.dead) return; addHit(e, { shape: 'circle', r: 95, t: 0.12, dmg: D * 1.1, color: 'red', x, y, keep: true }); FX.ring(x, y, 10, 95, '#ff5a5a', 0.3, 8); FX.burst(x, y, '#ff7a4a', 14, 300, 0.4, 5); splat(x, y, '#000', 80, 'scorch'); Sfx.boom(); Juice.kick(7); }); }); }
+  if (k.name === 'ring') { // 탄막 고리: 사방으로 퍼지는 흰 탄 (방어로 튕겨 낼 수 있음), 두 겹
+    const n = 14; for (let w = 0; w < (e.phase >= 2 ? 3 : 2); w++) later(w * 0.4, () => { if (e.dead) return; for (let i = 0; i < n; i++) enemyShot(e, k.ang + (i + w * 0.5) / n * Math.PI * 2, 300, D * 0.7, 'white'); Sfx.swing(0.6); }); }
   if (k.name === 'summon') { for (let i = 0; i < 2; i++) { const x = clamp(e.x + rint(-200, 200), 80, World.arena.w - 80), y = clamp(e.y + rint(-150, 150), 80, World.arena.h - 80); World.marks.push({ x, y, t: 0.7, max: 0.7, col: '#ff6b6b' }); later(0.7, () => World.enemies.push(makeEnemy(pick(['grunt', 'bomber', 'wisp']), x, y))); } }
 }
 
 // ───────── 적 공격 판정 ─────────
 function addHit(e, h) { h.src = e; h.done = false; World.hits.push(h); return h; }
 function enemyShot(e, a, sp, dmg, color) {
-  World.projs.push({ owner: 'enemy', src: e, x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: 9, life: 3, dmg, col: color === 'red' ? '#ff5a5a' : '#cfc6ff', color, gen: 0, hitSet: new Set() });
+  World.projs.push({ owner: 'enemy', src: e, x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: 9, life: 3, dmg, col: color === 'red' ? '#ff5a5a' : color === 'gold' ? '#ffd27a' : '#cfc6ff', color, gen: 0, hitSet: new Set() });
 }
 function hitOverlap(h) {
   const e = h.src; const x = h.follow ? e.x : (h.x != null ? h.x : e.x), y = h.follow ? e.y : (h.y != null ? h.y : e.y);
@@ -218,8 +231,8 @@ function updateEnemy(e, dt) {
   let sx = 0, sy = 0; for (const o of World.enemies) { if (o === e || o.dead) continue; const dd = dist(o, e); if (dd < e.r + o.r + 10 && dd > 0) { sx += (e.x - o.x) / dd; sy += (e.y - o.y) / dd; } }
   const T = e.type;
   if (T === 'merchant') { want(-Math.cos(a) + sx * 0.5, -Math.sin(a) + sy * 0.5, sp); e.face = a + Math.PI; if (e.life > 12) { e.dead = true; FX.text(e.x, e.y - 30, '도망쳤다', '#ffd86b'); } moveEnemy(e, dt); return; }
-  if (T === 'wisp' || T === 'healer') {
-    const ideal = T === 'wisp' ? 360 : 420;
+  if (T === 'wisp' || T === 'healer' || T === 'sniper') {
+    const ideal = T === 'wisp' ? 360 : T === 'sniper' ? 540 : 420;
     const dir = d > ideal + 60 ? 1 : d < ideal - 60 ? -1 : 0;
     const sideA = a + Math.PI / 2;
     want(Math.cos(a) * dir + Math.cos(sideA) * 0.4 + sx, Math.sin(a) * dir + Math.sin(sideA) * 0.4 + sy, sp);
@@ -229,7 +242,8 @@ function updateEnemy(e, dt) {
         const hurt = World.enemies.filter(o => !o.dead && o !== e && o.hp < o.maxHp * 0.9 && dist(o, e) < 600).sort((p, q) => p.hp / p.maxHp - q.hp / q.maxHp)[0];
         if (hurt) { e.atk = { name: 'heal', color: null, t: 0, phase: 'tele', tele: 0.6, target: hurt, noFlash: true }; }
         else startAtk(e, 'shot', 'white', 0.35);
-      } else startAtk(e, 'shot', 'white', 0.3);
+      } else if (T === 'sniper') startAtk(e, 'snipe', 'gold', 0.95);
+      else startAtk(e, 'shot', 'white', 0.3);
     }
   } else if (T === 'bomber') {
     want(Math.cos(a) + sx * 0.3, Math.sin(a) + sy * 0.3, sp); e.face = a;
@@ -239,7 +253,7 @@ function updateEnemy(e, dt) {
     if (d > reach) want(Math.cos(a) + sx, Math.sin(a) + sy, sp); else want(sx, sy, sp * 0.5);
     const turn = T === 'shield' ? 2.5 : 10; e.face += clamp(angDiff(e.face, a), -turn * dt, turn * dt);
     if (e.cd <= 0 && d < reach + 20) {
-      if (T === 'grunt') startAtk(e, 'lunge', 'white', 0.3);
+      if (T === 'grunt' || T === 'mite' || T === 'splitter') startAtk(e, 'lunge', 'white', T === 'splitter' ? 0.42 : 0.3);
       else if (T === 'shield') startAtk(e, 'poke', 'white', 0.32);
       else if (T === 'brute') { if (R() < 0.55) startAtk(e, 'swing', 'gold', 0.45); else startAtk(e, 'slam', 'red', 0.6); }
     }
@@ -250,7 +264,8 @@ function enemyAct(e, dt) {
   const k = e.atk; k.t += dt; const D = e.def.dmg * e.dmgMul * (World.mods.includes('chief') && World.enemies.some(c => c.chief && !c.dead && c !== e) ? 1.3 : 1);
   if (k.phase === 'tele') {
     e.vx *= 0.8; e.vy *= 0.8;
-    if (e.type !== 'grunt' || k.t < k.tele * 0.6) { k.ang = angTo(e, P); if (e.type !== 'shield') e.face = k.ang; }
+    const lockAim = e.type === 'grunt' || e.type === 'sniper'; // 예고 후반에는 조준이 고정돼요
+    if (!lockAim || k.t < k.tele * 0.6) { k.ang = angTo(e, P); if (e.type !== 'shield') e.face = k.ang; }
     if (k.t >= k.tele) {
       k.phase = 'act'; k.t = 0;
       if (k.name === 'lunge') addHit(e, { shape: 'body', r: e.r + 8, t: 0.25, dmg: D, color: 'white', follow: true });
@@ -258,6 +273,7 @@ function enemyAct(e, dt) {
       if (k.name === 'swing') { addHit(e, { shape: 'arc', range: e.r + 110, arc: 2.2, ang: k.ang, t: 0.12, dmg: D * 1.2, color: 'gold' }); Sfx.swing(); }
       if (k.name === 'slam') { addHit(e, { shape: 'circle', r: 150, t: 0.12, dmg: D * 1.3, color: 'red' }); Juice.kick(9); splat(e.x, e.y, '#000', 120, 'crack'); FX.ring(e.x, e.y, e.r, 150, '#ff5a5a', 0.35, 8); Sfx.boom(); }
       if (k.name === 'shot') { if (e.elite) { for (let i = -1; i <= 1; i++) enemyShot(e, k.ang + i * 0.22, 330, D, 'white'); } else enemyShot(e, k.ang, 330, D, 'white'); }
+      if (k.name === 'snipe') { const p0 = World.projs.length; enemyShot(e, k.ang, 1050, D * 1.5, 'gold'); World.projs[p0].r = 11; Sfx.crit(); FX.spark(e.x, e.y, k.ang, '#ffd27a', 8, 500); }
       if (k.name === 'heal') { const t = k.target; if (t && !t.dead) { t.hp = Math.min(t.maxHp, t.hp + t.maxHp * 0.25); World.bolts.push({ x1: e.x, y1: e.y, x2: t.x, y2: t.y, life: 0.3, col: '#5fc98a' }); FX.text(t.x, t.y - 30, '+회복', '#5fc98a'); } }
       if (k.name === 'boom') {
         const h = addHit(e, { shape: 'circle', r: 115, t: 0.12, dmg: D, color: 'red', x: e.x, y: e.y, keep: true });
@@ -275,7 +291,7 @@ function enemyAct(e, dt) {
   }
   e.vx *= 0.8; e.vy *= 0.8;
   const rec = e.type === 'brute' ? 0.7 : e.type === 'grunt' ? 0.55 : 0.45;
-  if (k.t >= rec / e.spdMul) { e.atk = null; e.cd = (e.type === 'wisp' ? 1.8 : e.type === 'healer' ? 3.2 : 1.1) * (0.8 + R() * 0.5) / e.spdMul; }
+  if (k.t >= rec / e.spdMul) { e.atk = null; e.cd = (e.type === 'wisp' ? 1.8 : e.type === 'healer' ? 3.2 : e.type === 'sniper' ? 2.4 : 1.1) * (0.8 + R() * 0.5) / e.spdMul; }
 }
 function moveEnemy(e, dt) {
   const spd = Math.hypot(e.vx, e.vy);
@@ -327,6 +343,8 @@ function killEnemy(e, o) {
     return;
   }
   Run.kills++;
+  // 분열체: 죽으면 작은 조각 둘로 갈라져요 (보스 처치·디버그 일괄 처치 때는 안 갈라짐)
+  if (e.type === 'splitter' && !(o && o.wipe)) for (let i = 0; i < 2; i++) { const a = R() * Math.PI * 2; const m = makeEnemy('mite', clamp(e.x + Math.cos(a) * 20, 30, World.arena.w - 30), clamp(e.y + Math.sin(a) * 20, 30, World.arena.h - 30), { elite: e.elite }); m.vx = Math.cos(a) * 420; m.vy = Math.sin(a) * 420; m.kbT = 0.2; m.cd = 0.7 + R() * 0.5; World.enemies.push(m); }
   FX.burst(e.x, e.y, e.def.col, 16, 380, 0.5, 6); FX.ring(e.x, e.y, e.r, e.r + 50, '#ffffff', 0.25, 5);
   FX.shatter(e.x, e.y, e.def.col, 8 + Math.round(e.r / 4), 420, e.r * 0.35); splat(e.x, e.y, e.def.col, e.r * 1.4); Sfx.crunch();
   World.killLog = (World.killLog || []).filter(t => World.t - t < 0.4); World.killLog.push(World.t);
@@ -338,7 +356,7 @@ function killEnemy(e, o) {
     const h = addHit(e, { shape: 'circle', r: 75, t: 0.1, dmg: 8 * scaleFor().dmg, color: 'red', light: true, x: e.x, y: e.y, keep: true });
     h.hurtsEnemies = true; h.enemyDmg = 14; FX.ring(e.x, e.y, 5, 75, '#ffb030', 0.3, 6);
   }
-  if (e.boss) { Juice.slowmo(1.4, 0.2); Juice.kick(24); Juice.screen('#ffffff', 0.2); Juice.impactFrame(0.08, '#ffffff'); Juice.ab(0.3); Juice.punch(0.1); FX.radial(e.x, e.y, '#ffffff', 40, e.r, 12); FX.shatter(e.x, e.y, e.def.col, 30, 700, 14); splat(e.x, e.y, '#000', 220, 'scorch'); Sfx.boom(); FX.text(e.x, e.y - 100, '처치', '#ffffff', true); World.enemies.forEach(o => { if (!o.boss && !o.dead) { o.hp = 0; killEnemy(o); } }); }
+  if (e.boss) { Juice.slowmo(1.4, 0.2); Juice.kick(24); Juice.screen('#ffffff', 0.2); Juice.impactFrame(0.08, '#ffffff'); Juice.ab(0.3); Juice.punch(0.1); FX.radial(e.x, e.y, '#ffffff', 40, e.r, 12); FX.shatter(e.x, e.y, e.def.col, 30, 700, 14); splat(e.x, e.y, '#000', 220, 'scorch'); Sfx.boom(); FX.text(e.x, e.y - 100, '처치', '#ffffff', true); World.enemies.slice().forEach(o => { if (!o.boss && !o.dead) { o.hp = 0; killEnemy(o, { wipe: true }); } }); if (e.bossKey !== 'final') later(0.5, () => heal(Math.round(St.maxHp * 0.2))); }
 }
 function enemiesLeft() { return World.enemies.filter(e => !e.dead && e.type !== 'merchant').length; }
 

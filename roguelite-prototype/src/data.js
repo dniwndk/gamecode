@@ -35,6 +35,9 @@ const ENEMIES = {
   shield: { name: '방패병', hp: 80, spd: 95, r: 22, dmg: 12, col: '#7a8aa0', weak: 'light', res: 'phys', poise: 40, shield: true },
   bomber: { name: '자폭병', hp: 24, spd: 210, r: 16, dmg: 26, col: '#e0b030', weak: 'ice', res: 'fire', poise: 10 },
   healer: { name: '치유사', hp: 50, spd: 85, r: 17, dmg: 6, col: '#5fc98a', weak: 'light', res: null, poise: 15 },
+  sniper: { name: '저격수', hp: 34, spd: 100, r: 15, dmg: 13, col: '#e06fa8', weak: 'phys', res: 'light', poise: 12 },
+  splitter: { name: '분열체', hp: 64, spd: 115, r: 25, dmg: 10, col: '#6fc7b0', weak: 'fire', res: null, poise: 30 },
+  mite: { name: '분열 조각', hp: 14, spd: 215, r: 12, dmg: 6, col: '#9fe0cf', weak: 'fire', res: null, poise: 6 },
   merchant: { name: '보물 상인', hp: 60, spd: 230, r: 16, dmg: 0, col: '#ffd86b', weak: null, res: null, poise: 99 },
 };
 
@@ -53,6 +56,9 @@ const COMPOS = {
     { name: '치유 진영', list: ['healer', 'shield', 'grunt', 'grunt', 'wisp'], size: 'm' },
     { name: '포위', list: ['grunt', 'grunt', 'grunt', 'wisp', 'wisp', 'bomber'], size: 'm', spawn: 'wave' },
     { name: '무거운 선봉', list: ['brute', 'grunt', 'grunt', 'grunt'], size: 'm' },
+    { name: '저격 진지', list: ['sniper', 'sniper', 'shield', 'grunt', 'grunt'], size: 'm' },
+    { name: '분열 무리', list: ['splitter', 'splitter', 'grunt', 'grunt'], size: 'm' },
+    { name: '엄호 사격', list: ['sniper', 'splitter', 'wisp', 'grunt', 'grunt'], size: 'm' },
   ],
   elite: [
     { name: '버티는 진영', list: ['brute', 'shield', 'shield', 'wisp'], size: 'l' },
@@ -61,6 +67,8 @@ const COMPOS = {
     { name: '탄막', list: ['wisp', 'wisp', 'wisp', 'wisp', 'shield'], size: 'l' },
     { name: '혼성 부대', list: ['brute', 'shield', 'healer', 'grunt', 'grunt', 'wisp'], size: 'l', spawn: 'wave' },
     { name: '자폭 돌격', list: ['bomber', 'bomber', 'bomber', 'bomber', 'brute'], size: 'm' },
+    { name: '십자 포화', list: ['sniper', 'sniper', 'sniper', 'brute', 'wisp'], size: 'l' },
+    { name: '끝없는 분열', list: ['splitter', 'splitter', 'splitter', 'healer'], size: 'm' },
   ],
 };
 const ARENA_SIZE = { s: [1500, 840], m: [1900, 1150], l: [2300, 1400] };
@@ -84,7 +92,7 @@ const TIERS = [
 
 // 보스 (설정은 기획자가 나중에 제공 → 지금은 임시 이름·공통 패턴)
 const BOSSES = {
-  mid: { name: '중간보스', hp: 1100, r: 44, col: '#c05050', patterns: ['combo', 'charge', 'fan', 'slam'] },
-  tier: { name: '계층보스', hp: 1900, r: 52, col: '#9a4fd0', patterns: ['combo', 'charge', 'fan', 'slam', 'sweep', 'summon'] },
-  final: { name: '최종 보스', hp: 4200, r: 58, col: '#e0e0f0', patterns: ['combo', 'charge', 'fan', 'slam', 'sweep', 'summon'] },
+  mid: { name: '중간보스', hp: 1100, r: 44, col: '#c05050', patterns: ['combo', 'charge', 'fan', 'slam', 'rain', 'ring'] },
+  tier: { name: '계층보스', hp: 1900, r: 52, col: '#9a4fd0', patterns: ['combo', 'charge', 'fan', 'slam', 'sweep', 'summon', 'rain', 'ring'] },
+  final: { name: '최종 보스', hp: 4200, r: 58, col: '#e0e0f0', patterns: ['combo', 'charge', 'fan', 'slam', 'sweep', 'summon', 'rain', 'ring'] },
 };

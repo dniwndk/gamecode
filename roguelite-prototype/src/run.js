@@ -60,7 +60,8 @@ function nodeKind(n) { return n.type === 'fight' && n.elite ? 'elite' : n.type; 
 function startRun(seedVal, test) {
   newRun(seedVal, test);
   Run.map = genMap(); Run.row = 0; Run.node = null; Run.floor = 0;
-  showMap();
+  // 첫 계약: 1층부터 빌드의 방향이 생기도록 시작할 때 한 장
+  showContracts({ title: '첫 계약', grade: 'gold', cb: showMap });
 }
 function reachable() {
   if (Run.tier === 3 && Run.row === 10) return ['final'];
@@ -124,7 +125,7 @@ function showMap() {
     }
   }
   const side = h('div', 'mapside');
-  side.innerHTML = `<div class="hint">다음 칸을 고르세요. 상점·회복·이벤트 칸은 그 층 전투 보상을 포기해요.<br>일반·정예 층은 축복, 5층마다(보스) 계약을 얻어요.${Run.quest && !Run.quest.done ? `<br><b style="color:#7fffe0">과제: ${QUESTS[Run.quest.k].name} (${Math.floor(Run.quest.n)}/${Run.quest.goal})</b>` : ''}</div>`;
+  side.innerHTML = `<div class="hint">다음 칸을 고르세요. 상점·회복·이벤트 칸은 그 층 전투 보상을 포기해요.<br>일반 층은 축복, 정예 층과 보스는 계약, 저주 전투는 골드 이상 계약을 줘요.${Run.quest && !Run.quest.done ? `<br><b style="color:#7fffe0">과제: ${QUESTS[Run.quest.k].name} (${Math.floor(Run.quest.n)}/${Run.quest.goal})</b>` : ''}</div>`;
   const eb = h('button', 'btn', '계약·태그 보기 (Tab)'); eb.onclick = () => toggleCodex(); side.appendChild(eb);
   p.appendChild(side);
 }
@@ -134,7 +135,7 @@ function showMap() {
 function fightCleared() {
   const n = Run.node; const k = n.type;
   if (k === 'final') { endRun(true); return; }
-  ctOnFloorClear();
+  P.noHit0 = P.noHit; ctOnFloorClear();
   let base = k === 'boss' ? (n.row === 5 ? 40 : 60) : n.elite ? 25 : 15;
   if (n.type === 'curse') base *= 2;
   const heavy = (n.mods || []).some(m => MOD[m].heavy), light = (n.mods || []).some(m => !MOD[m].heavy);
@@ -146,12 +147,15 @@ function fightCleared() {
     queue.push(() => showContracts({ title: n.row === 5 ? '중간보스 보상: 계약' : '계층보스 보상: 계약', cb: next }));
     if (n.row === 10) queue.push(() => showContracts({ prism: true, tier: true, title: '계층보스 보상: 프리즘 계약', cb: next }));
   } else {
-    queue.push(() => showBlessings(heavy ? 4 : 3, next));
-    if (Run.test) queue.push(() => showContracts({ title: '계약 (시험 런: 모든 전투 층)', cb: next }));
+    // 정예 층 = 계약, 저주 전투 = 골드 이상 계약 + 축복, 일반 층 = 축복
+    if (n.type === 'curse') { queue.push(() => showContracts({ title: '저주 전투 보상: 골드 이상 계약', minGold: true, cb: next })); queue.push(() => showBlessings(4, next)); }
+    else if (n.elite) queue.push(() => showContracts({ title: '정예 보상: 계약', cb: next }));
+    else { queue.push(() => showBlessings(heavy ? 4 : 3, next)); if (Run.test) queue.push(() => showContracts({ title: '계약 (시험 런: 모든 전투 층)', cb: next })); }
   }
   // 의식 과제를 끝냈으면 프리즘 계약
   while (Run.questPicks > 0) { Run.questPicks--; queue.push(() => showContracts({ prism: true, title: '과제 보상: 프리즘 계약', cb: next })); }
-  queue.unshift(() => notice('클리어', `${Run.floor}층 클리어 · 파편 +${base}${Run.floorShards ? ` (처치 파편 +${Run.floorShards})` : ''}`, next, true));
+  const flawless = P.noHit0 ? 12 : 0; if (flawless) Run.shards += flawless; // 무피격 보너스
+  queue.unshift(() => notice('클리어', `${Run.floor}층 클리어 · 파편 +${base}${Run.floorShards ? ` (처치 파편 +${Run.floorShards})` : ''}${flawless ? ` · <b style="color:#9ffcff">무피격 +${flawless}</b>` : ''}${World.topRank ? ` · 최고 기세 <b style="color:${RANKS[World.topRank].col}">${RANKS[World.topRank].k}</b>` : ''}`, next, true));
   function next() { const f = queue.shift(); if (f) f(); else afterFloor(); }
   next();
 }
@@ -164,7 +168,7 @@ function notice(title, body, cb, quick) {
   Scene = 'menu'; const p = panel(); topBar(p);
   const c = h('div', 'card-wrap'); c.innerHTML = `<h1>${title}</h1><p class="lead">${body}</p>`;
   const b = h('button', 'btn big', '계속'); b.onclick = cb; c.appendChild(b); p.appendChild(c);
-  if (window.__auto) setTimeout(() => b.isConnected && b.click(), 20);
+  setTimeout(() => window.__auto && b.isConnected && b.click(), 20);
 }
 
 // 카드 고르기 공통 (카드마다 무료 리롤 1회, 그 뒤 화면 공용 무료 리롤(천운 3개), 그 뒤 리롤권)
@@ -187,17 +191,19 @@ function cardPicker({ title, sub, cards, render, reroll, onPick, skipLabel, onSk
   draw();
   if (skipLabel) { const s = h('button', 'btn ghost', skipLabel); s.onclick = onSkip; c.appendChild(s); }
   p.appendChild(c);
-  if (window.__auto) setTimeout(() => { const b = row.querySelector('.card'); b && b.isConnected && b.click(); }, 20);
+  setTimeout(() => { if (!window.__auto) return; const b = row.querySelector('.card'); b && b.isConnected && b.click(); }, 20);
 }
 
 function showBlessings(n, cb) {
-  const pool = () => shuffle(BLESSINGS.slice());
-  const cards = pool().slice(0, n);
+  // 빛나는 축복: 15% 확률로 3장어치
+  const mk = b => ({ b, shiny: R() < 0.15 });
+  const pool = cs => shuffle(BLESSINGS.slice()).filter(x => !(cs || []).some(c => c.b === x));
+  const cards = pool().slice(0, n).map(mk);
   cardPicker({
-    title: '축복', sub: '하나를 고르세요. 같은 축복은 계속 쌓여요.', cards,
-    render: b => `<div class="cname">${b.name}</div><div class="cdesc">${b.desc}</div><div class="cfoot">보유 ${Run.blessings[b.id] || 0}</div>`,
-    reroll: (b, cs) => pool().find(x => !cs.includes(x)),
-    onPick: b => { addBlessing(b.id); cb(); },
+    title: '축복', sub: '하나를 고르세요. 같은 축복은 계속 쌓여요. <b style="color:#ffe9b0">빛나는 축복</b>은 3장어치예요.', cards,
+    render: c => `${c.shiny ? '<div class="grade" style="color:#ffe9b0">✦ 빛나는 축복 ×3</div>' : ''}<div class="cname"${c.shiny ? ' style="color:#ffe9b0"' : ''}>${c.b.name}</div><div class="cdesc">${c.b.desc}${c.shiny ? ' <b>× 3</b>' : ''}</div><div class="cfoot">보유 ${Run.blessings[c.b.id] || 0}</div>`,
+    reroll: (c, cs) => { const x = pool(cs)[0]; return x ? mk(x) : null; },
+    onPick: c => { for (let i = 0; i < (c.shiny ? 3 : 1); i++) addBlessing(c.b.id); cb(); },
     skipLabel: '건너뛰기 (파편 +10)', onSkip: () => { Run.shards += 10; cb(); },
   });
 }
@@ -211,6 +217,9 @@ function showShop() {
   let freeRef = C('regular') ? 1 : 0; let refCost = 20;
   const roll = () => shuffle(BLESSINGS.slice()).slice(0, 3).map(b => ({ kind: 'bless', id: b.id, price: price(40), sold: false })).concat([{ kind: 'heal', price: price(35), sold: false }]);
   let stock = roll();
+  // 계약 한 장 판매 (새로고침해도 그대로)
+  const CPRICE = { silver: 70, gold: 100, prism: 150 };
+  const sale = { c: rollContracts(wpick([['silver', 45], ['gold', 40], ['prism', 15]]), 1, 0)[0], sold: false };
   const p = panel(); const c = h('div', 'wide');
   const draw = () => {
     p.innerHTML = ''; topBar(p); p.appendChild(c); c.innerHTML = '';
@@ -224,6 +233,11 @@ function showShop() {
       b.onclick = () => { Run.shards -= st.price; st.sold = true; if (b0) addBlessing(b0.id); else heal(Math.round(St.maxHp * 0.3)); Sfx.pick(); draw(); };
       row.appendChild(b);
     }
+    if (sale.c) { const sc = sale.c, pr = price(CPRICE[sc.grade]);
+      const b = h('button', 'shopitem wide2' + (sale.sold ? ' sold' : ''), `<div class="iname" style="color:${GRADE[sc.grade].col}">계약: ${sc.name} <small>${GRADE[sc.grade].name}</small></div><div class="dim">${sc.d(Math.min(sc.max, C(sc.id) + 1))}</div><div>${sc.tags.map(t => tagChip(t, true, ' ' + tagN(t))).join(' ')}</div><div class="price">${sale.sold ? '판매됨' : pr + ' 파편'}</div>`);
+      b.disabled = sale.sold || Run.shards < pr || !ctAvail(sc);
+      b.onclick = () => { Run.shards -= pr; sale.sold = true; Sfx.pick(); if (sc.act === 'pick') ctChooseAct(sc, showShopBack); else takeContract(sc.id, sc.act, showShopBack); };
+      row.appendChild(b); }
     shopBox.appendChild(row);
     const row2 = h('div', 'shoprow');
     const rf = h('button', 'btn', freeRef ? '새로고침 (무료)' : `새로고침 (${refCost})`); rf.disabled = !freeRef && Run.shards < refCost;
@@ -243,6 +257,7 @@ function showShop() {
     }
     box.appendChild(list); c.appendChild(box);
   };
+  const showShopBack = () => { Scene = 'menu'; UI.innerHTML = ''; UI.style.pointerEvents = 'auto'; UI.appendChild(p); draw(); };
   draw();
   if (window.__auto) setTimeout(() => { for (const st of stock) if (!st.sold && Run.shards >= st.price + 20 && (st.kind === 'bless' || Run.hp < St.maxHp * 0.7)) { Run.shards -= st.price; st.sold = true; if (st.kind === 'bless') addBlessing(st.id); else heal(Math.round(St.maxHp * 0.3)); } setTimeout(afterFloor, 20); }, 20);
 }
@@ -261,16 +276,21 @@ function showRest() {
   if (window.__auto) setTimeout(() => (Run.hp < St.maxHp * 0.7 ? a : b).click(), 20);
 }
 
-// ───────── 이벤트 (내용 미정 → 임시 3종) ─────────
+// ───────── 이벤트 (내용 미정 → 임시 7종). 선택지 함수가 true를 돌려주면 그 선택지가 다음 화면을 직접 열어요 ─────────
 function showEvent() {
+  const lose = k => { Run.hp = Math.max(1, Run.hp - Math.round(St.maxHp * k)); };
   const evs = [
-    { t: '부서진 제단', d: '피를 바치면 파편이 흘러나와요.', o: [['체력 15% 잃고 파편 60', () => { Run.hp = Math.max(1, Run.hp - Math.round(St.maxHp * 0.15)); Run.shards += 60; }], ['지나치기', () => 0]] },
+    { t: '부서진 제단', d: '피를 바치면 파편이 흘러나와요.', o: [['체력 15% 잃고 파편 60', () => { lose(0.15); Run.shards += 60; }], ['지나치기', () => 0]] },
     { t: '떠도는 상인', d: '포장된 축복 두 개를 팔고 있어요.', o: [['파편 40 내고 무작위 축복 2장', () => { if (Run.shards >= 40) { Run.shards -= 40; const got = [pick(BLESSINGS), pick(BLESSINGS)]; got.forEach(b => addBlessing(b.id)); flashMsg(got.map(b => b.name).join(', ') + ' 획득'); } else flashMsg('파편이 모자라요'); }], ['지나치기', () => 0]] },
     { t: '고요한 샘', d: '맑은 물이 고여 있어요.', o: [['물을 마시기 (체력 20%)', () => { heal(Math.round(St.maxHp * 0.2)); }], ['동전을 던지기 (리롤권 +1)', () => { Run.rerolls = Math.min(5, Run.rerolls + 1); }]] },
+    { t: '속삭이는 계약서', d: '누군가 두고 간 계약서가 피를 원해요.', o: [['체력 20% 잃고 골드 계약 고르기', () => { lose(0.2); showContracts({ title: '속삭이는 계약서', grade: 'gold', cb: afterFloor }); return true; }], ['지나치기', () => 0]] },
+    { t: '피의 서약', d: '더 큰 힘에는 되돌릴 수 없는 값이 따라요.', o: [['최대 체력 -12 (영구), 프리즘 계약 고르기', () => { Run.hpMod = (Run.hpMod || 0) - 12; recalc(); showContracts({ prism: true, title: '피의 서약: 프리즘 계약', cb: afterFloor }); return true; }], ['지나치기', () => 0]] },
+    { t: '도박꾼 까마귀', d: '까마귀가 반짝이는 것을 걸자고 해요.', o: [['파편 30 걸기 (절반 확률로 90)', () => { if (Run.shards < 30) { flashMsg('파편이 모자라요'); return; } Run.shards -= 30; if (R() < 0.5) { Run.shards += 90; flashMsg('이겼어요! 파편 +90'); } else flashMsg('졌어요…'); }], ['지나치기', () => 0]] },
+    { t: '뒤틀린 거울', d: '거울 속의 내가 계약서를 한 장 더 쓰고 있어요.', o: [['맺은 계약 하나를 한 단계 올리기', () => { const up = Run.cts.filter(x => x.lv < CT[x.id].max); if (up.length) { const x = pick(up); x.lv++; recalc(); flashMsg(`${CT[x.id].name} ${x.lv}단계`); } else { Run.rerolls = Math.min(5, Run.rerolls + 2); flashMsg('올릴 계약이 없어 리롤권 +2'); } }], ['무작위 축복 2장', () => { const got = [pick(BLESSINGS), pick(BLESSINGS)]; got.forEach(b => addBlessing(b.id)); flashMsg(got.map(b => b.name).join(', ') + ' 획득'); }]] },
   ];
   const ev = pick(evs); Scene = 'menu'; const p = panel(); topBar(p);
   const c = h('div', 'card-wrap'); c.innerHTML = `<h1>${ev.t}</h1><p class="lead">${ev.d}</p>`;
-  for (const [label, fn] of ev.o) { const b = h('button', 'btn big', label); b.onclick = () => { fn(); afterFloor(); }; c.appendChild(b); }
+  for (const [label, fn] of ev.o) { const b = h('button', 'btn big', label); b.onclick = () => { if (!fn()) afterFloor(); }; c.appendChild(b); }
   p.appendChild(c);
   if (window.__auto) setTimeout(() => c.querySelector('.btn').click(), 20);
 }
@@ -284,7 +304,7 @@ function endRun(win) {
   c.innerHTML = `<h1>${win ? '최종 보스 처치' : '쓰러졌어요'}</h1>
     <p class="lead">${Run.floor}층 · ${Math.floor(Run.time / 60)}분 ${Math.floor(Run.time % 60)}초</p>
     <div class="result">
-      <div>처치 <b>${Run.kills}</b></div><div>방어 <b>${Run.parries}</b> (퍼펙트 ${Run.perfects || 0}, 금색 ${Run.golds})</div><div>최대 한 방 <b>${Run.maxHit}</b></div>
+      <div>처치 <b>${Run.kills}</b></div><div>방어 <b>${Run.parries}</b> (퍼펙트 ${Run.perfects || 0}, 금색 ${Run.golds})</div><div>저스트 회피 <b>${Run.justs || 0}</b></div><div>최고 기세 <b>${RANKS[Run.bestRank || 0].k || '-'}</b></div><div>최대 한 방 <b>${Run.maxHit}</b></div>
     </div>
     <p>맺은 계약 ${Run.cts.length}개: ${list}</p>
     <p>태그: ${tagChips()}</p>`;
@@ -304,11 +324,11 @@ function showTitle() {
     <tr><td>대시 직후 평타</td><td>대시 공격</td></tr><tr><td>마법 (임시: 회전베기)</td><td>Q / U</td></tr><tr><td>궁극기</td><td>R / I</td></tr>
     <tr><td>계약·능력치 창</td><td>Tab</td></tr><tr><td>일시정지·디버그</td><td>Esc · \` (백틱)</td></tr>
   </table>
-  <p class="lead">5층마다 보스를 잡고 <b>계약</b>을 맺어요. <b>행위 계약</b>은 평타·마법·방어·대시·궁극기 중 한 행동을 강화하고, <b>존재 계약</b>은 늘 켜져 있어요.<br>같은 <b>태그</b>의 계약을 2·3·4개 모으면 태그 시너지가 켜져요.</p>
+  <p class="lead">시작할 때, 정예 층(6~9층), 5층마다 보스에서 <b>계약</b>을 맺어요. <b>행위 계약</b>은 평타·마법·방어·대시·궁극기 중 한 행동을 강화하고, <b>존재 계약</b>은 늘 켜져 있어요.<br>같은 <b>태그</b>의 계약을 2·3·4개 모으면 태그 시너지가 켜져요.</p>
   <p class="dim">섬광 색: <b style="color:#fff">흰색</b> 방어 가능 · <b style="color:#ffd27a">금색</b> 강공격, 방어하면 길게 경직 · <b style="color:#ff5a5a">붉은색</b> 방어 불가, 회피만</p>`;
   const b = h('button', 'btn big', '시작'); b.onclick = () => { Sfx.init(); startRun(); }; c.appendChild(b);
   const t = h('button', 'btn', '계약 시험 런 (모든 전투 층에서 계약)'); t.onclick = () => { Sfx.init(); startRun(null, true); }; c.appendChild(t);
-  c.appendChild(h('p', 'dim', '시험 런은 계약과 태그 시너지를 빨리 모아 보기 위한 것이고, 보통 런은 설계서대로 한 런에 계약 9개쯤이에요.'));
+  c.appendChild(h('p', 'dim', '연속 타격으로 <b>기세</b> 등급을 올리면 피해가 늘고, 대시로 공격을 아슬하게 흘리면 <b>저스트 회피</b>(다음 공격 치명)가 떠요.<br>시험 런은 일반 층에서도 계약을 줘서 태그 시너지를 더 빨리 모아 볼 수 있어요.'));
   p.appendChild(c);
 }
 

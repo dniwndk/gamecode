@@ -8,7 +8,7 @@ function newRun(seedVal, test) {
     hp: 100, shards: 0, rerolls: 0,
     blessings: {}, cts: [], tagN: {}, spent: new Set(), test: !!test,
     kills: 0, parries: 0, golds: 0, maxHit: 0, time: 0,
-    upNext: 0, sagaOn: false, iouFloors: 0, swell: 0, soul: 0, quest: null, questPicks: 0, potion: null, history: [],
+    hpMod: 0, bestRank: 0, justs: 0, upNext: 0, sagaOn: false, iouFloors: 0, swell: 0, soul: 0, quest: null, questPicks: 0, potion: null, history: [],
   };
   recalc();
   Run.hp = St.maxHp;
@@ -21,6 +21,7 @@ function recalc() {
   Run.tagN = countTags();
   for (const id in Run.blessings) { const b = BLESSINGS.find(x => x.id === id); for (let i = 0; i < Run.blessings[id]; i++) b.apply(s); }
   ctPassive(s);
+  s.maxHp += Run.hpMod || 0;
   s.parryWin = Math.max(0.067, s.parryWin);
   s.maxHp = Math.max(10, Math.round(s.maxHp * (1 + s.maxHpMul)));
   s.atkSpd = Math.max(0.5, s.atkSpd);
@@ -51,6 +52,23 @@ const SWINGS = [
   { k: 'a3', wind: 0.10, active: 0.10, rec: 0.24, range: 128, arc: 2.8, dmg: 28, poise: 34, kb: 260, lunge: 360 },
 ];
 let gameTime = 0;
+// ───────── 기세: 연속 타격이 쌓이면 등급이 오르고 피해가 늘어요. 맞으면 한 등급 내려가고, 2.5초 동안 못 치면 사라져요 ─────────
+const RANKS = [{ n: 0, k: '', b: 0, col: '#ffffff' }, { n: 6, k: 'D', b: 0.05, col: '#cfe8ff' }, { n: 14, k: 'C', b: 0.1, col: '#9fe8ff' }, { n: 24, k: 'B', b: 0.16, col: '#ffd27a' }, { n: 36, k: 'A', b: 0.24, col: '#ff9a3d' }, { n: 50, k: 'S', b: 0.32, col: '#ff5bd1' }];
+const MOM_T = 2.5;
+function rankIdx() { let i = 0; for (let j = 1; j < RANKS.length; j++) if ((P.hits || 0) >= RANKS[j].n) i = j; return i; }
+function addMomentum(n) {
+  const r0 = rankIdx(); P.hits = (P.hits || 0) + n; P.hitT = MOM_T; P.hitPop = 0.12; const r1 = rankIdx();
+  if (r1 > r0) { const rk = RANKS[r1]; FX.text(P.x, P.y - 84, `기세 ${rk.k} · 피해 +${Math.round(rk.b * 100)}%`, rk.col, true); FX.ring(P.x, P.y, P.r, P.r + 70 + r1 * 14, rk.col, 0.3, 5); Sfx.raise(); if (r1 >= 4) Sfx.gold(); Run.bestRank = Math.max(Run.bestRank || 0, r1); World.topRank = Math.max(World.topRank || 0, r1); }
+}
+// 저스트 회피: 대시 무적으로 실제 공격을 흘리면 시간이 느려지고, 대시가 충전되고, 다음 공격이 반드시 치명(+30%)
+function justDodge() {
+  P.justAt = gameTime; P.justT = 2.5; Run.justs = (Run.justs || 0) + 1;
+  Juice.slowmo(0.55, 0.3); Juice.ab(0.16); Juice.impactFrame(0.04, '#b58cff'); Sfx.raise(); Sfx.gold();
+  FX.text(P.x, P.y - 46, '저스트 회피', '#d7b8ff', true); FX.ring(P.x, P.y, P.r, P.r + 110, '#d7b8ff', 0.35, 6);
+  if (P.dashCharges < St.dashMax) { P.dashCharges++; P.dashRe = 0; }
+  if (!C('forsake')) P.ult = Math.min(1, P.ult + 0.04 * St.ultGain);
+  addMomentum(3);
+}
 function aimAngle() {
   if (Input.bot && Input.bot.aim != null) return Input.bot.aim;
   if (performance.now() - Input.mouseMoved < 4000) { const w = screenToWorld(Input.mx, Input.my); return Math.atan2(w.y - P.y, w.x - P.x); }
@@ -325,6 +343,8 @@ function dealDamage(e, o) {
   const direct = gen === 0 && !o.echo; const pa = direct ? P.act : null;
   let mult = 1 + St.dmg;
   if (P.cycleT > 0) mult += 0.3;
+  mult += RANKS[rankIdx()].b;
+  if (pa && pa.just) mult += 0.3;
   if (grp === 'atk' && C('seal')) mult += 0.4;
   if (grp === 'magic' && Run.soul) mult += 0.01 * Run.soul;
   if (C('finisher') && o.act === 'a3') mult += 0.6;
@@ -352,7 +372,7 @@ function dealDamage(e, o) {
   // 치명: 직접 타격만. 마법은 보석 지팡이가 있어야 치명
   let crit = St.crit + (P.execT > 0 ? 0.1 : 0);
   const canCrit = gen === 0 && (grp !== 'magic' || C('jewel'));
-  const isCrit = !o.raw && (o.counter || o.forceCrit || (canCrit && R() < crit));
+  const isCrit = !o.raw && (o.counter || o.forceCrit || !!(pa && pa.just) || (canCrit && R() < crit));
   if (isCrit) dmg *= St.critDmg + (grp === 'magic' && C('jewel') ? 0.3 : 0);
   // 끊어내기 · 처형 3개
   if (gen <= 1 && !o.raw) {
@@ -374,7 +394,7 @@ function dealDamage(e, o) {
     const ka = o.ang != null ? o.ang : angTo(P, e); Juice.kickDir(ka, o.counter ? 14 : isCrit ? 9 : heavy ? 7 : 4);
     SpriteFX.hit(e, ka, isCrit || o.counter, heavy);
     e.shk = 0.15; e.sqK = heavy ? 0.4 : 0.28; e.sqA = ka;
-    P.hits++; P.hitT = 1.6; P.hitPop = 0.12;
+    addMomentum(1);
     if (perfectHit && !pa.perfectShown) { pa.perfectShown = true; FX.text(e.x, e.y - 60, `퍼펙트 +${Math.round(St.perfectBonus * 100)}%`, '#9ffcff', true); FX.radial(e.x, e.y, '#9ffcff', 16, e.r, 8); FX.ring(e.x, e.y, e.r, e.r + 90, '#9ffcff', 0.3, 6); Juice.impactFrame(0.04, '#9ffcff'); Sfx.gold(); }
     if (o.counter) { Sfx.thud(); Juice.impactFrame(0.04, '#ffd27a'); Juice.ab(0.12); Juice.punch(0.05); FX.radial(e.x, e.y, '#ffd27a', 14, e.r, 7); FX.slash(e.x, e.y, ka + Math.PI / 2, 0.9, e.r + 26, '#ffd27a', 12, 0.2); }
     else if (isCrit) { Sfx.crit(); FX.radial(e.x, e.y, '#fff1a8', 8, e.r, 5); if (dmg > 60) Juice.ab(0.06); }
@@ -441,7 +461,7 @@ function playerHit(h) {
   if (!P.alive) return 'none';
   const parryable = h.color !== 'red' || C('redsteel');
   if (P.parryT > 0 && parryable) { parrySuccess(h); return 'parry'; }
-  if (P.iframe > 0) return 'dodge';
+  if (P.iframe > 0) { if (P.dashAt != null && gameTime - P.dashAt < 0.3 && gameTime - (P.justAt || -9) > 0.8) justDodge(); return 'dodge'; }
   const inUlt = C('unbroken') && ((P.act && P.act.type === 'ult') || P.ultT > 0); // 꺾이지 않는 의식
   let dmg = h.dmg * St.dmgTaken * (inUlt ? 0.7 : 1);
   dmg = Math.max(1, Math.round(dmg));
@@ -452,7 +472,7 @@ function playerHit(h) {
   Run.hp -= left; P.iframe = 0.5; P.hurtT = 0.2;
   // 마법 슈퍼아머: 일반 공격(흰 섬광·일반 투사체)은 피해만 받고 끊기지 않음. 강공격(금색)·방어 불가 공격(붉은색)은 끊김
   const armored = inUlt || (P.act && P.act.type === 'spin' && h.color !== 'gold' && (h.color !== 'red' || h.light)) || left <= 0;
-  Sfx.hurt(); Juice.kick(armored ? 6 : 12); Juice.ab(0.12); P.sqK = armored ? -0.12 : -0.3; P.hits = 0; Juice.hitstop(armored ? 0.03 : 0.06); Juice.screen('#ff3b3b', 0.12);
+  Sfx.hurt(); Juice.kick(armored ? 6 : 12); Juice.ab(0.12); P.sqK = armored ? -0.12 : -0.3; P.hits = RANKS[Math.max(0, rankIdx() - 1)].n; Juice.hitstop(armored ? 0.03 : 0.06); Juice.screen('#ff3b3b', 0.12);
   if (left > 0) { FX.text(P.x, P.y - 30, '-' + left, '#ff6b6b'); FX.burst(P.x, P.y, '#ff5a5a', 14, 260, 0.4, 5); }
   ctOnHurt();
   if (Run.hp <= 0 && ctOnDeath()) return 'hit';
@@ -480,6 +500,7 @@ function startThrust(ang, carry) {
 function usePerfect(act) {
   if (P.speedT > 0) { act.speedBuff = true; P.speedT = 0; }  // 속도의 저주: 대시 뒤 첫 공격
   if (P.revengeT > 0) { act.revenge = true; P.revengeT = 0; } // 되갚는 저주: 맞은 뒤 다음 공격
+  if (P.justT > 0) { act.just = true; P.justT = 0; }           // 저스트 회피: 다음 공격 치명
   if (P.perfect) { act.perfect = true; P.perfect = false; P.perfectT = 0; FX.slash(P.x, P.y, act.ang != null ? act.ang : P.face, 2.4, 90, '#9ffcff', 14, 0.22, P); } }
 function parrySuccess(h) {
   const elapsed = P.act && P.act.type === 'parry' ? P.act.dur - P.parryT : 9;
@@ -488,6 +509,7 @@ function parrySuccess(h) {
   P.parryT = 0; P.act = null; P.counterT = 0.6; P.iframe = Math.max(P.iframe, 0.2);
   P.lastParriedPow = h.dmg; Run.parries++;
   if (P.chainT > 0) P.chainStacks = Math.min(3, P.chainStacks + 1); P.chainT = 4;
+  addMomentum(perfect ? 4 : 2);
   P.ult = Math.min(1, P.ult + 0.08 * St.ultGain);
   const sx = h.src ? lerp(P.x, h.src.x, 0.4) : P.x, sy = h.src ? lerp(P.y, h.src.y, 0.4) : P.y;
   Juice.hitstop(h.color === 'gold' ? 0.2 : 0.1); Juice.punch(h.color === 'gold' ? 0.06 : 0.035); Juice.kick(8); Juice.ab(h.color === 'gold' ? 0.18 : 0.09);

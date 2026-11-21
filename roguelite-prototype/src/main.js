@@ -45,7 +45,7 @@ function drawHUD() {
   else if (P.ult >= 1) { cx.fillStyle = '#ffb36b'; cx.fillText('궁극기 준비 (R)', 30, 102); }
   if (P.ultT > 0) { cx.fillStyle = '#ff9a3d'; cx.fillText(`궁극기 효과 ${P.ultT.toFixed(1)}초`, 200, 102); }
   // 켜진 상태 줄
-  { const tags = []; if (P.cycleT > 0) tags.push('잿불 순환'); if ((P.heat || 0) > 0) tags.push(`달아오름 +${P.heat * 5}%`); if (P.speedT > 0) tags.push('속도의 저주'); if (P.revengeT > 0) tags.push('되갚는 저주'); if (P.execT > 0) tags.push('처형 치명'); if (C('crescendo') && World.t > 15) tags.push('고조');
+  { const tags = []; if (P.cycleT > 0) tags.push('잿불 순환'); if ((P.heat || 0) > 0) tags.push(`달아오름 +${P.heat * 5}%`); if (P.speedT > 0) tags.push('속도의 저주'); if (P.revengeT > 0) tags.push('되갚는 저주'); if (P.execT > 0) tags.push('처형 치명'); if (P.justT > 0) tags.push('저스트: 다음 공격 치명'); if (C('crescendo') && World.t > 15) tags.push('고조');
     if (Run.potion) tags.push(Run.potion === 'big' ? '거대' : '소형'); if (Run.iouFloors > 0) tags.push(`차용증 ${Run.iouFloors}층`);
     cx.font = '700 14px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText(tags.join(' · '), 30, 124); }
   // 태그 시너지 (가진 태그와 개수)
@@ -69,8 +69,10 @@ function drawHUD() {
   if (World.mods.length) { cx.fillStyle = '#d27aff'; cx.fillText('변형자: ' + World.mods.map(m => MOD[m].name).join(', '), W - 30, 88); }
   if (World.info && World.info.compo) { cx.fillStyle = '#9a96a8'; cx.fillText(World.info.compo, W - 30, 108); }
   // 타격 수
-  if (P.hits >= 3) { const k = clamp(P.hitT / 1.6, 0, 1); const pop = 1 + Math.max(0, (P.hitPop || 0)) * 0.6; cx.save(); cx.translate(W - 60, 190); cx.scale(pop, pop); cx.textAlign = 'right'; cx.globalAlpha = 0.4 + k * 0.6;
-    cx.font = '900 46px sans-serif'; cx.fillStyle = P.hits >= 30 ? '#ff9a3d' : P.hits >= 15 ? '#ffd27a' : '#ffffff'; cx.fillText(P.hits, 0, 0); cx.font = '800 16px sans-serif'; cx.fillStyle = '#c9c4d6'; cx.fillText('연속 타격', 0, 22);
+  if (P.hits >= 3) { const k = clamp(P.hitT / MOM_T, 0, 1); const pop = 1 + Math.max(0, (P.hitPop || 0)) * 0.6; const ri = rankIdx(), rk = RANKS[ri], nx = RANKS[ri + 1]; cx.save(); cx.translate(W - 60, 190); cx.scale(pop, pop); cx.textAlign = 'right'; cx.globalAlpha = 0.4 + k * 0.6;
+    cx.font = '900 46px sans-serif'; cx.fillStyle = rk.col; cx.fillText(P.hits, 0, 0);
+    if (ri) { cx.font = '900 64px sans-serif'; cx.fillText(rk.k, -96 - (P.hits >= 100 ? 26 : 0), 2); }
+    cx.font = '800 16px sans-serif'; cx.fillStyle = '#c9c4d6'; cx.fillText(ri ? `기세 · 피해 +${Math.round(rk.b * 100)}%${nx ? ` (다음 ${nx.n})` : ''}` : `기세 (${RANKS[1].n}부터 피해 증가)`, 0, 22);
     cx.fillStyle = '#ffffff33'; cx.fillRect(-110, 30, 110, 4); cx.fillStyle = '#ffd27a'; cx.fillRect(-110 * k, 30, 110 * k, 4); cx.restore(); }
   // 반격 창
   if (P.counterT > 0) { cx.textAlign = 'center'; cx.font = '900 26px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText('반격!', W / 2, H - 150); }
@@ -105,7 +107,7 @@ function toggleDebug() {
   d = h('div', 'dbg'); d.id = 'dbg';
   const btn = (t, f) => { const b = h('button', 'btn small', t); b.onclick = () => { f(); }; d.appendChild(b); };
   btn('무적 켜기/끄기', () => { god = !god; });
-  btn('이 층 즉시 클리어', () => { if (Scene === 'fight') { World.queue = []; World.enemies.forEach(e => { if (!e.dead) { e.hp = 0; killEnemy(e); } }); } });
+  btn('이 층 즉시 클리어', () => { if (Scene === 'fight') { World.queue = []; World.enemies.forEach(e => { if (!e.dead) { e.hp = 0; killEnemy(e, { wipe: true }); } }); } });
   btn('파편 +500', () => { Run.shards += 500; });
   btn('계약 고르기 (실버)', () => { if (Scene !== 'fight') showContracts({ grade: 'silver', cb: showMap }); });
   btn('계약 고르기 (골드)', () => { if (Scene !== 'fight') showContracts({ grade: 'gold', cb: showMap }); });
@@ -212,7 +214,7 @@ function frame(now) {
 window.__proto = {
   get run() { return Run; }, get world() { return World; }, get player() { return P; }, get scene() { return Scene; },
   start(s) { startRun(s); }, god(v) { god = v; }, auto(on) { Input.bot = on ? makeBot() : null; window.__auto = !!on; },
-  clear() { World.queue = []; World.enemies.forEach(e => { if (!e.dead) { e.hp = 0; killEnemy(e); } }); },
+  clear() { World.queue = []; World.enemies.forEach(e => { if (!e.dead) { e.hp = 0; killEnemy(e, { wipe: true }); } }); },
   enter(id) { const n = Run.map.byId[id]; if (n) enterNode(n); }, reach() { return reachable(); },
   start2(s) { startRun(s, true); }, ct(id, act) { takeContract(id, act); if (Scene === 'fight') P.r = 18 * St.size; }, contracts: CONTRACTS, tags: TAGS, get st() { return St; }, C, CA, tagN,
 };
