@@ -1,4 +1,4 @@
-<title>전투 빌드 프로토타입</title>
+<title>마녀 계약 전투 프로토타입</title>
 <style>
 :root { color-scheme: dark; --bg:#0c0b10; --panel:#16141d; --line:#2c2936; --text:#ecebf2; --dim:#8e8aa0; --gold:#ffd27a; --accent:#4fd1c5; }
 * { box-sizing: border-box; }
@@ -83,6 +83,18 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--text); ove
 .csyn2 .have { color:var(--text); font-weight:700; }
 .cstats { width:100%; border-collapse:collapse; font-size:15px; font-variant-numeric:tabular-nums; } .cstats td { padding:5px 4px; border-bottom:1px solid var(--line); } .cstats td:last-child { text-align:right; font-weight:700; }
 .cbl { font-size:15px; margin:4px 0; }
+.kwtag.lit { background:#2a2534; box-shadow:0 0 0 1px currentColor inset; }
+.tagrow { margin-left:6px; }
+.cgroup { margin-bottom:6px; } .ghead { font-weight:800; font-size:16px; margin:4px 0 6px; } .gempty { font-size:14px; margin-bottom:6px; }
+.cgroup .caug { margin-bottom:6px; }
+.tier { font-size:14px; color:var(--dim); margin-top:4px; line-height:1.4; } .tier.on { color:var(--text); }
+.tier .tn { display:inline-block; width:20px; height:20px; line-height:20px; text-align:center; border-radius:50%; background:#2a2633; margin-right:8px; font-weight:800; font-size:12px; }
+.tier.on .tn { background:var(--gold); color:#1a1408; }
+.tcount { font-weight:800; margin:0 6px; }
+.ctgrid { display:flex; flex-direction:column; gap:8px; max-height:420px; overflow:auto; }
+.ctrow { display:grid; grid-template-columns:70px 1fr auto; gap:10px; align-items:center; } .ctwhere { color:var(--dim); font-weight:700; font-size:14px; }
+.card .synhint { margin-top:auto; } .card .synhint > div { margin:3px 0; line-height:1.4; }
+.card { min-height:300px; }
 </style>
 <canvas id="g" width="1600" height="900"></canvas>
 <canvas id="c" width="1600" height="900"></canvas>
@@ -279,7 +291,7 @@ const Sfx = {
 };
 
 // ===== data.js =====
-// ───────── 데이터: 축복, 증강, 인장, 적, 변형자 ─────────
+// ───────── 데이터: 축복, 등급, 적, 변형자 (계약·태그는 contracts.js) ─────────
 // 수치는 설계서(game-design.md)의 기본값을 따르고, 없는 값은 프로토타입용 초안이에요.
 
 const ELEM = {
@@ -301,135 +313,13 @@ const BLESSINGS = [
   { id: 'feet', name: '발놀림', desc: '이동 속도 +3%', apply: s => s.move += 0.03 },
   { id: 'breath', name: '호흡', desc: '대시 쿨다운 -4%', apply: s => s.dashCd *= 0.96 },
   { id: 'ember', name: '잔불', desc: '궁극기 게이지 충전 +5%', apply: s => s.ultGain += 0.05 },
-  { id: 'focus', name: '집중', desc: '패링 판정 +0.01초 (최대 +0.05초)', apply: s => s.parryWin = Math.min(s.parryWinBase + 0.05, s.parryWin + 0.01) },
+  { id: 'focus', name: '집중', desc: '방어 판정 +0.01초 (최대 +0.05초)', apply: s => s.parryWin = Math.min(s.parryWinBase + 0.05, s.parryWin + 0.01) },
 ];
 
-// 7.2 효과형 증강 + 8장 증강 (등급: silver, gold, prism)
 const GRADE = { silver: { name: '실버', col: '#c9d1dc' }, gold: { name: '골드', col: '#f2c14e' }, prism: { name: '프리즘', col: '#e78bff' } };
-const AUGMENTS = [
-  // 효과형 (최대 3단계)
-  { id: 'flame', name: '불길', grade: 'gold', max: 3, tag: '효과', desc: l => `내 공격의 ${[30, 60, 100][l - 1]}%가 화염으로 바뀌고 화상(최대 5중첩)` },
-  { id: 'frost', name: '서리', grade: 'gold', max: 3, tag: '효과', desc: l => `내 공격의 ${[30, 60, 100][l - 1]}%가 냉기, 둔화 5중첩이면 빙결 (보스는 피해 +30%)` },
-  { id: 'thunder', name: '우레', grade: 'gold', max: 3, tag: '효과', desc: l => `내 공격의 ${[30, 60, 100][l - 1]}%가 번개, 가까운 적 ${l}명에게 튐` },
-  { id: 'pierce', name: '꿰뚫기', grade: 'gold', max: 3, tag: '효과', desc: l => `3타·반격이 적을 뚫는 검기를 날림 (위력 ${[50, 80, 110][l - 1]}%)` },
-  { id: 'fork', name: '갈래', grade: 'prism', max: 3, tag: '효과', desc: l => `3타·반격이 양옆으로 검기 ${l}갈래씩 더 냄 (위력 40%)` },
-  { id: 'echo', name: '메아리', grade: 'prism', max: 3, tag: '효과', desc: l => `모든 타격이 ${[25, 40, 55][l - 1]}% 확률로 0.2초 뒤 한 번 더 (위력 50%)` },
-  { id: 'cut', name: '끊어내기', grade: 'prism', max: 3, tag: '효과', desc: l => `체력 ${[15, 20, 25][l - 1]}% 이하 적을 때리면 즉사 (보스는 최대 체력 5%, 3초에 한 번)` },
-  { id: 'brand', name: '낙인', grade: 'gold', max: 3, tag: '효과', desc: l => `타격이 낙인을 쌓고 3중첩이면 터짐 (위력 ${[60, 90, 120][l - 1]}%)` },
-  { id: 'overcharge', name: '덧충전', grade: 'prism', max: 1, tag: '효과', desc: () => '대시·액티브 2회 충전, 처치 시 1회 충전' },
-  // 패링 규칙
-  { id: 'catch', name: '칼날 받이', grade: 'silver', max: 1, tag: '패링', desc: () => '패링 판정 +0.06초' },
-  { id: 'topple', name: '흔들기', grade: 'silver', max: 1, tag: '패링', desc: () => '패링 경직 시간 +50%, 포이즈 피해 +30%' },
-  { id: 'chainparry', name: '연속 응수', grade: 'gold', max: 1, tag: '패링', desc: () => '4초 안에 패링을 이어 성공할 때마다 반격 위력 +30% (최대 3중첩)' },
-  { id: 'repay', name: '되갚음', grade: 'gold', max: 1, tag: '패링', desc: () => '반격이 튕겨 낸 공격 위력의 150%를 추가 피해로 줌' },
-  { id: 'redsteel', name: '붉은 쇠', grade: 'prism', max: 1, tag: '패링', desc: () => '붉은 공격도 패링 가능, 대신 패링 판정 -0.04초' },
-  { id: 'groggyhunt', name: '빈틈 사냥', grade: 'prism', max: 1, tag: '패링', desc: () => '경직·빙결된 적에게 피해 +40%' },
-  // 그 밖의 규칙
-  { id: 'thirst', name: '피의 갈증', grade: 'silver', max: 1, tag: '규칙', desc: () => '적을 처치하면 체력 2 회복' },
-  { id: 'gale', name: '질풍 발', grade: 'silver', max: 1, tag: '규칙', desc: () => '대시 후 1초 동안 이동 +30%, 대시 찌르기 피해 +50%' },
-  { id: 'plate', name: '철갑', grade: 'silver', max: 1, tag: '규칙', desc: () => '받는 피해 -12%' },
-  { id: 'regular', name: '단골 손님', grade: 'silver', max: 1, tag: '규칙', desc: () => '상점 가격 -20%, 상점마다 새로고침 무료 1회' },
-  { id: 'star', name: '별의 문장', grade: 'silver', max: 1, tag: '규칙', desc: () => '다음 증강 선택 카드 1장이 한 등급 위로 나옴' },
-  { id: 'cycle', name: '잿불 순환', grade: 'gold', max: 1, tag: '규칙', desc: () => '궁극기를 쓴 뒤 5초 동안 피해 +30%' },
-  { id: 'finisher', name: '마무리 장인', grade: 'gold', max: 1, tag: '규칙', desc: () => '3타 피해 +60%, 3타 포이즈 피해 2배' },
-  { id: 'fate', name: '운명 저울', grade: 'gold', max: 1, tag: '규칙', desc: () => '치명 확률 +15%, 치명 피해 +50%' },
-  { id: 'moon', name: '달의 예언', grade: 'gold', max: 1, tag: '규칙', desc: () => '다음 증강 선택 카드 3장이 모두 한 등급 위로 나옴' },
-  { id: 'saga', name: '불타는 서사', grade: 'prism', max: 1, tag: '규칙', desc: () => '다음 계층보스 프리즘 증강 화면이 4장, 그 전까지 받는 피해 +10%' },
-];
-const AUG = Object.fromEntries(AUGMENTS.map(a => [a.id, a]));
-
-// 증강 시너지: 두 증강을 함께 가지면 켜져요 (8장)
-const SYNERGIES = [
-  { id: 'thermal', name: '열충격', need: ['flame', 'frost'], desc: '화상 중인 적이 빙결되면 터져 주변에 화염 피해 (화상 중첩 × 12)' },
-  { id: 'overheat', name: '과열 회로', need: ['flame', 'thunder'], desc: '감전된 적이 받는 화상 피해 +50%' },
-  { id: 'supercond', name: '초전도', need: ['frost', 'thunder'], desc: '둔화된 적에게서 번개가 1명 더 튐' },
-  { id: 'bladestorm', name: '검기 폭풍', need: ['pierce', 'fork'], desc: '검기 위력 +30%, 검기가 더 커짐' },
-  { id: 'finisherwave', name: '마무리 검기', need: ['finisher', 'pierce'], desc: '3타 검기 위력 +50%' },
-  { id: 'doublebrand', name: '겹낙인', need: ['echo', 'brand'], desc: '메아리 타격도 낙인을 쌓음' },
-  { id: 'executioner', name: '처형인', need: ['cut', 'groggyhunt'], desc: '경직된 적은 끊어내기 기준 +10%' },
-  { id: 'master', name: '응수의 달인', need: ['chainparry', 'repay'], desc: '연속 응수 2중첩 이상이면 되갚음 150% → 250%' },
-  { id: 'ironwall', name: '철벽', need: ['catch', 'redsteel'], desc: '붉은 쇠의 패링 판정 감소(-0.04초)가 사라짐' },
-  { id: 'galecharge', name: '질풍 충전', need: ['overcharge', 'gale'], desc: '대시 찌르기로 적을 처치하면 회전베기 1회 충전' },
-];
-const SYN = Object.fromEntries(SYNERGIES.map(s => [s.id, s]));
-function synOf(augId) { return SYNERGIES.filter(s => s.need.includes(augId)); }
-
-// 9.2 동작 각인: 자리 7개
-const SLOTS = [
-  { k: 'dash', name: '대시', kind: 'body', links: ['a1'], x: 0, y: 0 },
-  { k: 'a1', name: '1타', kind: 'blade', links: ['dash', 'a2'], x: 1, y: 0 },
-  { k: 'a2', name: '2타', kind: 'blade', links: ['a1', 'a3'], x: 2, y: 0 },
-  { k: 'a3', name: '3타', kind: 'blade', links: ['a2', 'counter'], x: 3, y: 0 },
-  { k: 'counter', name: '반격', kind: 'riposte', links: ['parry', 'a3'], x: 3, y: 1 },
-  { k: 'parry', name: '패링', kind: 'riposte', links: ['counter'], x: 2, y: 1 },
-  { k: 'core', name: '심', kind: 'core', links: ['dash', 'a1', 'a2', 'a3', 'counter', 'parry'], x: 0, y: 1 },
-];
-const SLOT = Object.fromEntries(SLOTS.map(s => [s.k, s]));
-const CHAINS = [ // 이어진 셋 → 끝 동작
-  { seq: ['dash', 'a1', 'a2'], end: 'a2' },
-  { seq: ['a1', 'a2', 'a3'], end: 'a3' },
-  { seq: ['parry', 'counter', 'a3'], end: 'a3' },
-];
-const KIND = { blade: '칼 인장', body: '몸 인장', riposte: '응수 인장', core: '심 인장', wander: '떠돌이 인장' };
-const KIND_SLOTS = { blade: ['a1', 'a2', 'a3'], body: ['dash'], riposte: ['parry', 'counter'], core: ['core'], wander: ['a1', 'a2', 'a3', 'dash', 'parry', 'counter', 'core'] };
-const SLOT_UNLOCK_ORDER = ['a2', 'dash', 'a3', 'counter'];
-
-// 인장 (아이템). 숫자와 이미 있는 상태에만 반응해요. 상태는 증강이 만들어요.
-// base: 늘 걸리는 능력치. at[자리]: 그 자리에 새겼을 때 그 동작에 붙는 효과.
-// 동작 효과 필드: dmg(피해 +비율), crit(치명 +), poise(포이즈 +비율), vs:{burn,chill,shock,elite,stagger}(그 상태의 적에게 피해 +)
-const ITEMS = [
-  { id: 'emberawl', name: '불씨 송곳', kind: 'blade', elem: 'fire', form: '지속', price: 100, base: { firePow: 8 },
-    at: { a1: { vs: { burn: 0.25 } }, a2: { dmg: 0.15 }, a3: { vs: { burn: 0.4 } } } },
-  { id: 'frostawl', name: '서리 송곳', kind: 'blade', elem: 'ice', form: '지속', price: 100, base: { icePow: 8, maxHp: 10 },
-    at: { a1: { crit: 0.2, critVs: 'chill' }, a2: { dmg: 0.15 }, a3: { vs: { chill: 0.4 } } } },
-  { id: 'boltnail', name: '벼락 못', kind: 'blade', elem: 'light', form: '지속', price: 100, base: { lightPow: 8 },
-    at: { a1: { vs: { shock: 0.25 } }, a2: { dmg: 0.15 }, a3: { vs: { shock: 0.4 } } } },
-  { id: 'wristband', name: '연타의 손목띠', kind: 'blade', elem: 'phys', form: '지속', price: 100, base: { atkSpd: 0.1, physDmg: 0.05 },
-    at: { a1: { dmg: 0.2 }, a2: { dmg: 0.25 }, a3: { poise: 0.5 } } },
-  { id: 'weight', name: '무거운 추', kind: 'blade', elem: 'phys', form: '대형', price: 150, base: { physDmg: 0.3, atkSpd: -0.1 },
-    at: { a1: { poise: 0.5 }, a2: { poise: 0.5 }, a3: { poise: 1.0 } } },
-  { id: 'hunter', name: '사냥꾼의 표식', kind: 'wander', elem: 'phys', form: '지속', price: 100, base: { crit: 0.1, physDmg: 0.05 },
-    at: { any: { vs: { elite: 0.15 } } } },
-  { id: 'coin', name: '행운 동전', kind: 'wander', elem: 'none', form: '지속', price: 80, base: { crit: 0.05, shardMul: 0.1 },
-    at: { any: { crit: 0.05 } } },
-  { id: 'rodcloak', name: '피뢰침 망토', kind: 'body', elem: 'light', form: '지속', price: 100, base: { lightPow: 10, move: 0.05 },
-    at: { dash: { vs: { shock: 0.8 } } } },
-  { id: 'sprint', name: '질주 신발', kind: 'body', elem: 'phys', form: '지속', price: 100, base: { move: 0.1 },
-    at: { dash: { dmg: 0.6, dashCd: -0.15 } } },
-  { id: 'frostprint', name: '서리 발자국', kind: 'body', elem: 'ice', form: '지속', price: 100, base: { icePow: 8 },
-    at: { dash: { vs: { chill: 0.8 } } } },
-  { id: 'gauntlet', name: '맞받이 장갑', kind: 'riposte', elem: 'phys', form: '지속', price: 100, base: { maxHp: 10, atkSpd: 0.05 },
-    at: { parry: { guard: 0.3 }, counter: { dmg: 0.4 } } },
-  { id: 'crackham', name: '균열 망치', kind: 'riposte', elem: 'phys', form: '대형', price: 150, base: { poise: 0.5 },
-    at: { parry: { poise: 0.5 }, counter: { vs: { stagger: 0.2 } } } },
-  { id: 'embermirror', name: '잿불 거울', kind: 'riposte', elem: 'fire', form: '지속', price: 100, base: { firePow: 8 },
-    at: { parry: { poise: 0.5, poiseVs: 'burn' }, counter: { vs: { burn: 0.6 } } } },
-  { id: 'crown', name: '잿불 왕관', kind: 'core', elem: 'fire', form: '대형', price: 150, base: { firePow: 40, fireDmg: 0.3 }, at: { core: {} } },
-  { id: 'glass', name: '유리 심장', kind: 'core', elem: 'none', form: '대형', price: 150, base: { dmg: 0.25, maxHpMul: -0.3 }, at: { core: {} } },
-  { id: 'steelcore', name: '강철 심', kind: 'core', elem: 'phys', form: '대형', price: 150, base: { physDmg: 0.25, poise: 0.3 }, at: { core: {} } },
-  { id: 'icecore', name: '얼음 심장', kind: 'core', elem: 'ice', form: '대형', price: 150, base: { icePow: 40, chillAmp: 0.15 }, at: { core: {} } },
-  { id: 'stormcore', name: '뇌정 심장', kind: 'core', elem: 'light', form: '대형', price: 150, base: { lightPow: 40, shockBounce: 1 }, at: { core: {} } },
-];
-const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
-const STAT_NAMES = { firePow: '화염 위력', icePow: '냉기 위력', lightPow: '번개 위력', maxHp: '최대 체력', atkSpd: '공격 속도', physDmg: '물리 피해', crit: '치명', shardMul: '파편 획득', move: '이동 속도', poise: '포이즈 피해', fireDmg: '화염 피해', dmg: '모든 피해', maxHpMul: '최대 체력', chillAmp: '둔화된 적 피해', shockBounce: '번개 튐 횟수' };
-const PCT_STATS = new Set(['atkSpd', 'physDmg', 'crit', 'shardMul', 'move', 'poise', 'fireDmg', 'dmg', 'maxHpMul', 'chillAmp']);
-
-function fmtStat(k, v) { return `${STAT_NAMES[k] || k} ${v >= 0 ? '+' : ''}${PCT_STATS.has(k) ? Math.round(v * 100) + '%' : Math.round(v * 10) / 10}`; }
-const VS_NAME = { burn: '화상 중인 적', chill: '둔화된 적', shock: '감전된 적', elite: '정예·보스', stagger: '경직된 적' };
-function fmtAt(e) {
-  if (!e) return '';
-  const out = [];
-  if (e.dmg) out.push(`피해 +${Math.round(e.dmg * 100)}%`);
-  if (e.crit) out.push(`${e.critVs ? VS_NAME[e.critVs] + '에게 ' : ''}치명 +${Math.round(e.crit * 100)}%`);
-  if (e.poise) out.push(`${e.poiseVs ? VS_NAME[e.poiseVs] + '에게 ' : ''}포이즈 +${Math.round(e.poise * 100)}%`);
-  if (e.dashCd) out.push(`대시 쿨다운 ${Math.round(e.dashCd * 100)}%`);
-  if (e.guard) out.push(`패링 뒤 2초 받는 피해 -${Math.round(e.guard * 100)}%`);
-  if (e.vs) for (const k in e.vs) out.push(`${VS_NAME[k]}에게 피해 +${Math.round(e.vs[k] * 100)}%`);
-  return out.join(', ') || '효과 없음';
-}
 
 // 5.4 적
-// 섬광: white=패링 가능, gold=강공격(패링하면 긴 경직), red=패링 불가
+// 섬광: white=방어 가능, gold=강공격(방어하면 긴 경직), red=방어 불가
 const ENEMIES = {
   grunt: { name: '돌격병', hp: 40, spd: 150, r: 18, dmg: 10, col: '#d65a5a', weak: 'fire', res: null, poise: 20 },
   wisp: { name: '원혼불', hp: 28, spd: 90, r: 15, dmg: 9, col: '#8f7bff', weak: 'phys', res: 'ice', poise: 10 },
@@ -494,86 +384,28 @@ const BOSSES = {
 // ===== combat.js =====
 // ───────── 런 상태와 능력치 계산 ─────────
 let Run = null;
-function newRun(seedVal) {
+function newRun(seedVal, test) {
   if (seedVal != null) seed(seedVal);
   Run = {
     tier: 1, row: 0, floor: 0, node: null, map: null,
     hp: 100, shards: 0, rerolls: 0,
-    blessings: {}, augs: {},
-    engr: { a1: null, a2: null, a3: null, dash: null, parry: null, counter: null, core: null },
-    open: new Set(['a1', 'parry', 'core']),
-    bag: [], bagMax: 2,
-    stones: 0,
+    blessings: {}, cts: [], tagN: {}, spent: new Set(), test: !!test,
     kills: 0, parries: 0, golds: 0, maxHit: 0, time: 0,
-    upNext: 0, sagaOn: false, history: [],
+    upNext: 0, sagaOn: false, iouFloors: 0, swell: 0, soul: 0, quest: null, questPicks: 0, potion: null, history: [],
   };
-  kwInit();
   recalc();
   Run.hp = St.maxHp;
 }
-let St = {}, ActMods = {}, Links = {};
-
-function blankEff() { return { dmg: 0, crit: 0, poise: 0, vs: {}, critCond: [], poiseCond: [], dashCd: 0, guard: 0 }; }
-function addEff(t, e, m) {
-  if (!e) return;
-  if (e.dmg) t.dmg += e.dmg * m;
-  if (e.crit) { if (e.critVs) t.critCond.push({ vs: e.critVs, v: e.crit * m }); else t.crit += e.crit * m; }
-  if (e.poise) { if (e.poiseVs) t.poiseCond.push({ vs: e.poiseVs, v: e.poise * m }); else t.poise += e.poise * m; }
-  if (e.dashCd) t.dashCd += e.dashCd * m;
-  if (e.guard) t.guard += e.guard * m;
-  if (e.vs) for (const k in e.vs) t.vs[k] = (t.vs[k] || 0) + e.vs[k] * m;
-}
-function itemLvMul(inst) { return 1 + 0.5 * (inst.lv || 0); }
+let St = {};
 
 function recalc() {
   const s = { maxHp: 100, dmg: 0, atkSpd: 1, move: 1, dashCd: 0.55, ultGain: 1, parryWin: 0.2, parryWinBase: 0.2, perfectWin: 0.067, perfectBonus: 0.5, crit: 0.05, critDmg: 1.5,
-    firePow: 0, icePow: 0, lightPow: 0, fireDmg: 0, physDmg: 0, poise: 0, staggerMul: 1, shardMul: 0, chillAmp: 0, shockBounce: 0, maxHpMul: 0, dmgTaken: 1 };
-  const A = Run.augs;
-  if (A.catch) { s.parryWin += 0.06; s.parryWinBase += 0.06; }
-  Run.syn = new Set(SYNERGIES.filter(x => x.need.every(n => A[n])).map(x => x.id));
-  if (A.redsteel && !Run.syn.has('ironwall')) { s.parryWin -= 0.04; s.parryWinBase -= 0.04; }
+    poise: 0, staggerMul: 1, shardMul: 0, maxHpMul: 0, dmgTaken: 1, dashSp: 950, spinCd: 6, dashMax: 1, spinMax: 1, size: 1 };
+  Run.tagN = countTags();
   for (const id in Run.blessings) { const b = BLESSINGS.find(x => x.id === id); for (let i = 0; i < Run.blessings[id]; i++) b.apply(s); }
-  if (A.topple) { s.staggerMul += 0.5; s.poise += 0.3; }
-  if (A.plate) s.dmgTaken *= 0.88;
-  if (A.fate) { s.crit += 0.15; s.critDmg += 0.5; }
-  if (Run.sagaOn) s.dmgTaken *= 1.1;
-
-  // 이음: 이어진 두 자리에 같은 계열이면 둘 다 +20%
-  const E = Run.engr; const link = {};
-  for (const sl of SLOTS) link[sl.k] = 1;
-  for (const sl of SLOTS) {
-    const it = E[sl.k]; if (!it) continue; const el = ITEM[it.id].elem; if (el === 'none') continue;
-    for (const o of sl.links) { const jt = E[o]; if (jt && ITEM[jt.id].elem === el) { link[sl.k] = 1.2; } }
-  }
-  // 심 자리 둘 잇기 (심 쪽도 같이 +20%)
-  if (E.core) { const el = ITEM[E.core.id].elem; if (el !== 'none' && SLOTS.some(sl => sl.k !== 'core' && E[sl.k] && ITEM[E[sl.k].id].elem === el)) link.core = 1.2; }
-  Links = link;
-
-  ActMods = {};
-  for (const sl of SLOTS) ActMods[sl.k] = blankEff();
-  for (const sl of SLOTS) {
-    const inst = E[sl.k]; if (!inst) continue;
-    const it = ITEM[inst.id]; const m = itemLvMul(inst) * link[sl.k];
-    for (const k in it.base) s[k] = (s[k] || 0) + it.base[k] * m;
-    const at = it.at[sl.k] || it.at.any;
-    if (sl.k !== 'core') addEff(ActMods[sl.k], at, m);
-  }
-  // 사슬 셋 → 끝 동작에 이음 마무리
-  Run.chains = [];
-  for (const ch of CHAINS) {
-    const its = ch.seq.map(k => E[k]);
-    if (its.every(Boolean)) {
-      const el = ITEM[its[0].id].elem;
-      if (el !== 'none' && its.every(i => ITEM[i.id].elem === el)) {
-        Run.chains.push({ ...ch, elem: el });
-        if (el === 'phys') ActMods[ch.end].poise += 0.6;
-        else ActMods[ch.end].vs[{ fire: 'burn', ice: 'chill', light: 'shock' }[el]] = (ActMods[ch.end].vs[{ fire: 'burn', ice: 'chill', light: 'shock' }[el]] || 0) + 0.4;
-      }
-    }
-  }
-  kwPassive(s);
-  s.dashCd = s.dashCd * (1 + (ActMods.dash.dashCd || 0));
-  s.maxHp = Math.round(s.maxHp * (1 + s.maxHpMul));
+  ctPassive(s);
+  s.parryWin = Math.max(0.067, s.parryWin);
+  s.maxHp = Math.max(10, Math.round(s.maxHp * (1 + s.maxHpMul)));
   s.atkSpd = Math.max(0.5, s.atkSpd);
   St = s;
   if (Run.hp > St.maxHp) Run.hp = St.maxHp;
@@ -584,18 +416,19 @@ const P = {
   x: 0, y: 0, vx: 0, vy: 0, r: 18, face: 0,
   act: null, combo: 0, comboGap: 0, buffer: 0,
   dashT: 0, dashCharges: 1, dashRe: 0, dashAfter: 0, dashDir: 0, iframe: 0, galeT: 0,
-  parryT: 0, parryLock: 0, whiffAt: -9, counterT: 0, guardT: 0, chainStacks: 0, chainT: 0,
+  parryT: 0, parryLock: 0, whiffAt: -9, counterT: 0, chainStacks: 0, chainT: 0,
   spinCharges: 1, spinRe: 0, ult: 0, cycleT: 0, hurtT: 0, alive: true,
-  usedFlash: {},
+  usedFlash: {}, shields: [],
 };
 function resetPlayer(x, y) {
   Object.assign(P, { x, y, vx: 0, vy: 0, act: null, combo: 0, comboGap: 0, buffer: 0, dashT: 0, dashRe: 0, dashAfter: 0, iframe: 0.6, galeT: 0,
-    parryT: 0, parryLock: 0, whiffAt: -9, counterT: 0, guardT: 0, chainStacks: 0, chainT: 0, spinRe: 0, cycleT: 0, hurtT: 0, alive: true, usedFlash: {},
+    parryT: 0, parryLock: 0, whiffAt: -9, counterT: 0, chainStacks: 0, chainT: 0, spinRe: 0, cycleT: 0, hurtT: 0, alive: true, usedFlash: {},
     trail: [], sqK: 0, sqA: 0, hits: 0, hitT: 0, hitPop: 0 });
-  P.dashCharges = Math.max(Run.augs.overcharge ? 2 : 1, St.dashMax || 1); P.spinCharges = Run.augs.overcharge ? 2 : 1;
+  P.dashCharges = St.dashMax; P.spinCharges = St.spinMax; P.r = 18 * St.size; P.lastHit = null;
+  ctOnFloorStart();
 }
 const SWINGS = [
-  // 하데스식: 짧은 선딜·후딜, 타마다 분명한 전진 스텝, 휘두르는 동안 이동 입력은 무시(스텝이 대신), 대시·패링으로 언제든 취소
+  // 하데스식: 짧은 선딜·후딜, 타마다 분명한 전진 스텝, 휘두르는 동안 이동 입력은 무시(스텝이 대신), 대시·방어로 언제든 취소
   { k: 'a1', wind: 0.05, active: 0.08, rec: 0.11, range: 100, arc: 1.9, dmg: 14, poise: 12, kb: 0, lunge: 230 },
   { k: 'a2', wind: 0.05, active: 0.08, rec: 0.11, range: 100, arc: 1.9, dmg: 16, poise: 14, kb: 0, lunge: 240 },
   { k: 'a3', wind: 0.10, active: 0.10, rec: 0.24, range: 128, arc: 2.8, dmg: 28, poise: 34, kb: 260, lunge: 360 },
@@ -618,15 +451,15 @@ function moveInput() {
 function updatePlayer(dt) {
   if (!P.alive) return;
   const mv = moveInput();
-  P.iframe -= dt; P.parryT -= dt; P.parryLock -= dt; P.counterT -= dt; P.guardT -= dt; P.chainT -= dt; P.galeT -= dt; P.cycleT -= dt; P.hurtT -= dt; P.dashAfter -= dt; P.buffer -= dt; P.dashEndGlide = (P.dashEndGlide || 0) - dt;
+  P.iframe -= dt; P.parryT -= dt; P.parryLock -= dt; P.counterT -= dt; P.chainT -= dt; P.galeT -= dt; P.cycleT -= dt; P.hurtT -= dt; P.dashAfter -= dt; P.buffer -= dt; P.dashEndGlide = (P.dashEndGlide || 0) - dt;
   if (P.chainT <= 0) P.chainStacks = 0;
   P.comboGap += dt;
   P.perfectT = (P.perfectT || 0) - dt; if (P.perfectT <= 0) P.perfect = false;
   P.sqK *= Math.exp(-dt * 14); P.hitPop = Math.max(0, P.hitPop - dt); P.hitT -= dt; if (P.hitT <= 0) P.hits = 0;
   for (const t of P.trail) t.life -= dt; P.trail = P.trail.filter(t => t.life > 0);
-  const maxDash = Math.max(Run.augs.overcharge ? 2 : 1, St.dashMax || 1), maxSpin = Run.augs.overcharge ? 2 : 1;
+  const maxDash = St.dashMax, maxSpin = St.spinMax;
   if (P.dashCharges < maxDash) { P.dashRe += dt; if (P.dashRe >= St.dashCd) { P.dashCharges++; P.dashRe = 0; } }
-  if (P.spinCharges < maxSpin) { P.spinRe += dt; if (P.spinRe >= (St.spinCd || 6)) { P.spinCharges++; P.spinRe = 0; } }
+  if (P.spinCharges < maxSpin) { P.spinRe += dt; if (P.spinRe >= St.spinCd) { P.spinCharges++; P.spinRe = 0; } }
 
   const atkPress = Input.hit('mouse0') || Input.hit('j');
   const parryPress = Input.hit('mouse2') || Input.hit('k');
@@ -637,7 +470,7 @@ function updatePlayer(dt) {
   P.parryBuf = (P.parryBuf || 0) - dt; if (parryPress) P.parryBuf = 0.2; // 대시·휘두름 중에 눌러도 0.2초 안에 발동
 
   // 대시
-  // 대시·패링은 평타 어느 단계에서든 취소. 회전베기(Q)는 첫 타가 나간 뒤부터 대시·패링으로 취소 (때리고 빠지기)
+  // 대시·방어는 평타 어느 단계에서든 취소. 마법(Q)은 첫 타가 나간 뒤부터 대시·방어로 취소 (때리고 빠지기)
   const cancelable = !P.act || ['swing', 'thrust', 'parryWhiff'].includes(P.act.type) || P.act.phase === 'rec' || (P.act.type === 'spin' && P.act.h1);
   if (dashPress && P.dashCharges > 0 && P.dashT <= 0 && cancelable) {
     P.dashCharges--; P.dashRe = 0;
@@ -647,26 +480,27 @@ function updatePlayer(dt) {
     // 대시와 공격을 거의 동시에(0.1초 안) 누르면 "대시 공격" 의도로 봐요: 막 시작한 평타는 취소하고 공격 입력을 살려 둬요
     const chord = gameTime - (P.atkAt != null ? P.atkAt : -9) < 0.1;
     if (chord && P.act && P.act.type === 'swing' && (P.act.phase === 'wind' || (P.act.phase === 'active' && P.act.t < 0.03))) P.combo = (P.combo + 2) % 3;
-    P.dashT = 0.16; P.dashX0 = P.x; P.dashY0 = P.y; P.dashAt = gameTime; kwOnDashStart(); P.iframe = Math.max(P.iframe, 0.2); P.act = null; P.dashAfter = 0; P.buffer = chord ? 0.25 : 0;
-    if (Run.augs.gale) P.galeT = 1.16;
+    P.dashX0 = P.x; P.dashY0 = P.y; P.dashAt = gameTime; P.act = null; P.dashAfter = 0; P.buffer = chord ? 0.25 : 0;
+    const blink = ctOnDashStart();
+    if (!blink) { P.dashT = 0.16; P.iframe = Math.max(P.iframe, 0.2); }
     Sfx.dash(); FX.burst(P.x, P.y, '#9fe8ff', 8, 120, 0.3, 5); FX.burst(P.x, P.y + 12, '#8a8296', 10, 160, 0.35, 6);
     P.sqK = 0.45; P.sqA = P.dashDir; FX.ring(P.x, P.y, 6, 40, '#9fe8ff', 0.2, 3);
   }
   if (P.dashT > 0) {
     // 대시 중 공격 → 그 자리에서 바로 대시 찌르기 (대시를 끊고, 대시 방향으로)
     // 대시 중 공격: 0.04초(약 38px) 뒤부터 바로 대시 공격. 대시 속도를 그대로 싣고 미끄러지며 벰 (세피리아식)
-    if (P.buffer > 0 && P.dashT <= 0.12) { P.dashT = 0; startThrust(P.dashDir, St.dashSp || 950); moveBody(P, dt); return; }
-    P.dashT -= dt; const sp = St.dashSp || 950;
+    if (P.buffer > 0 && P.dashT <= 0.12) { P.dashT = 0; startThrust(P.dashDir, St.dashSp); moveBody(P, dt); return; }
+    P.dashT -= dt; const sp = St.dashSp;
     P.vx = Math.cos(P.dashDir) * sp; P.vy = Math.sin(P.dashDir) * sp;
     P.trail.push({ x: P.x, y: P.y, life: 0.22, max: 0.22, col: '#7fe0ff' });
     if (P.dashT <= 0) { // 대시가 끝난 뒤 0.2초 안의 공격도 대시 찌르기
       // 후딜 줄이기: 걷기 속도 아래로 뚝 끊지 않고 걷기보다 조금 빠른 속도로 넘겨서, 이동 키를 누르고 있으면 그대로 이어 걷고 놓으면 짧게 미끄러져 멈춤
-      kwOnDashEnd(); P.dashAfter = 0.2; const keep = 300 * St.move * 1.3; P.vx = Math.cos(P.dashDir) * keep; P.vy = Math.sin(P.dashDir) * keep; P.dashEndGlide = 0.08; }
+      ctOnDashEnd(); P.dashAfter = 0.2; const keep = 300 * St.move * 1.3; P.vx = Math.cos(P.dashDir) * keep; P.vy = Math.sin(P.dashDir) * keep; P.dashEndGlide = 0.08; }
     moveBody(P, dt);
     return;
   }
 
-  // 패링 (공격 후딜 중에도 끊을 수 있음, 궁극기 중 불가)
+  // 방어 (공격 후딜 중에도 끊을 수 있음, 궁극기 중 불가)
   if (P.parryBuf > 0 && cancelable) {
     P.parryBuf = 0;
     // 세키로식 연타 벌칙: 최근 0.5초(30프레임) 안에 누른 횟수만큼 판정이 2프레임씩 줄어 최소 4프레임. 성공하거나 0.5초 지나면 풀림.
@@ -690,7 +524,7 @@ function updatePlayer(dt) {
     }
     a.t += adt;
     if (a.type === 'swing') {
-      const sw = a.sw, sp = St.atkSpd;
+      const sw = a.sw, sp = St.atkSpd + 0.05 * (P.heat || 0);
       const tw = sw.wind / sp, ta = sw.active / sp, tr = sw.rec / sp;
       const sa = a.stepAng != null ? a.stepAng : a.ang;
       if (a.phase === 'wind') { const sv = sw.lunge * 0.5; P.vx = Math.cos(sa) * sv; P.vy = Math.sin(sa) * sv; }
@@ -700,7 +534,7 @@ function updatePlayer(dt) {
         FX.slash(P.x, P.y, a.ang, sw.arc * 1.05, sw.range + P.r - 6, a.counter ? '#ffd27a' : i3 ? '#dff6ff' : '#eef6ff', a.counter ? 16 : i3 ? 14 : 9, i3 ? 0.24 : 0.16, P);
         P.sqK = i3 ? 0.32 : 0.2; P.sqA = a.ang; Juice.kickDir(a.ang, i3 ? 4 : 2);
         if (i3) FX.burst(P.x + Math.cos(a.ang) * 30, P.y + Math.sin(a.ang) * 30 + 10, '#8a8296', 8, 180, 0.3, 5);
-        kwOnSwingStart(a);
+        ctOnSwingStart(a);
       }
       else if (a.phase === 'active') {
         const k = clamp(a.t / ta, 0, 1); const sv = sw.lunge * (1 - k) * 2.4;
@@ -718,23 +552,38 @@ function updatePlayer(dt) {
       P.vx = Math.cos(a.ang) * v; P.vy = Math.sin(a.ang) * v;
       if (k < 0.6) P.trail.push({ x: P.x, y: P.y, life: 0.16, max: 0.16, col: a.counter ? '#ffd27a' : '#9fe8ff' });
       if (a.t <= 0.24) swingHits(a);
-      if (a.t >= 0.32) { P.act = null; P.comboGap = 0.3; kwOnDashEnd(); }
+      if (a.t >= 0.32) { P.act = null; P.comboGap = 0.3; ctOnDashEnd(); }
     } else if (a.type === 'parry') {
       P.vx *= 0.6; P.vy *= 0.6;
-      if (P.parryT <= 0) { // 헛패링
-        P.act = null; // 세키로처럼 헛패링 경직 없음 (대신 연타 벌칙)
+      if (P.parryT <= 0) { // 헛방어
+        P.act = null; // 세키로처럼 헛방어 경직 없음 (대신 연타 벌칙)
       }
     } else if (a.type === 'parryWhiff') {
       P.vx *= 0.6; P.vy *= 0.6; if (a.t >= 0.35) P.act = null;
     } else if (a.type === 'spin') {
       P.vx *= 0.85; P.vy *= 0.85;
-      if (a.t >= 0.05 && !a.h1) { a.h1 = true; spinHit(); kwOnSpin(); }
-      if (a.t >= 0.22 && !a.h2) { a.h2 = true; spinHit(); }
+      if (a.t >= 0.05 && !a.h1) { a.h1 = true; spinHit(a); ctOnMagicCast(); }
+      if (a.t >= 0.22 && !a.h2) { a.h2 = true; spinHit(a); }
       if (a.t >= 0.4) P.act = null;
     } else if (a.type === 'ult') {
       P.vx = 0; P.vy = 0;
-      if (a.t >= 0.25 && !a.done) { a.done = true; ultBurst(); }
+      if (a.t >= 0.25 && !a.done) { a.done = true; ultBurst(a.pow); }
       if (a.t >= 0.55) P.act = null;
+    } else if (a.type === 'blink') {
+      // 칼춤 빗자루: 가까운 적 사이를 차례로 순간이동하며 벰
+      P.vx = 0; P.vy = 0; a.t -= dt;
+      if (a.t <= 0) {
+        const e = a.targets[a.i++];
+        if (e && !e.dead) {
+          const an = angTo(P, e); P.trail.push({ x: P.x, y: P.y, life: 0.25, max: 0.25, col: '#b58cff' });
+          const nx = e.x + Math.cos(an) * (e.r + P.r + 8), ny = e.y + Math.sin(an) * (e.r + P.r + 8);
+          P.x = clamp(nx, P.r, World.arena.w - P.r); P.y = clamp(ny, P.r, World.arena.h - P.r); P.face = an + Math.PI;
+          FX.slash(e.x, e.y, an + Math.PI / 2, 1.6, e.r + 40, '#d7b8ff', 12, 0.2); Sfx.swing(1.4); Sfx.dash();
+          dealDamage(e, { base: POW * 0.6, act: 'dash', gen: 0, ang: an, poise: 16 });
+        }
+        a.t = 0.09;
+        if (a.i >= a.targets.length) { P.act = null; P.dashAfter = 0.2; P.comboGap = 0.3; ctOnDashEnd(); }
+      }
     }
   }
 
@@ -752,22 +601,24 @@ function updatePlayer(dt) {
       let stepAng = ang; if (mv.x || mv.y) { const sx = Math.cos(ang) * 0.7 + mv.x * 0.3, sy = Math.sin(ang) * 0.7 + mv.y * 0.3; stepAng = Math.atan2(sy, sx); }
       P.act = { type: 'swing', sw, phase: 'wind', t: 0, ang, stepAng, hitSet: new Set(), act: sw.k, counter: isCounter };
       usePerfect(P.act);
-      if (isCounter) { kwCounterUsed(); FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
+      if (isCounter) { P.counterT = 0; FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
       P.combo = (P.combo + 1) % 3;
     }
   }
   if (spinPress && P.spinCharges > 0 && (!P.act || P.act.phase === 'rec')) {
-    P.spinCharges--; P.spinRe = 0; P.act = { type: 'spin', t: 0, hitSet: new Set() }; usePerfect(P.act);
+    P.spinCharges--; P.spinRe = 0; P.act = { type: 'spin', t: 0, hitSet: new Set(), x: P.x, y: P.y }; usePerfect(P.act);
     Sfx.swing(); FX.ring(P.x, P.y, 30, 150, '#cfe8ff', 0.3, 6);
   }
-  if (ultPress && P.ult >= 1 && (!P.act || P.act.phase === 'rec')) {
-    P.ult = 0; P.act = { type: 'ult', t: 0 }; P.iframe = 0.7;
+  const again = P.ult2T > 0; // 두 번 외는 주문: 5초 안에 한 번 더 (위력 50%)
+  if (ultPress && (P.ult >= 1 || again) && !C('forsake') && (!P.act || P.act.phase === 'rec')) {
+    if (again) P.ult2T = 0; else P.ult = 0;
+    P.act = { type: 'ult', t: 0, pow: again ? 0.5 : 1 }; P.iframe = 0.7;
     Juice.slowmo(0.25, 0.3); FX.ring(P.x, P.y, 10, 80, '#ff9a3d', 0.25, 8);
   }
 
   // 이동
   if (!P.act || P.act.type === 'parryWhiff' || P.act.type === 'parry') {
-    let sp = 300 * St.move * (P.galeT > 0 ? 1.3 : 1); if (P.act) sp *= 0.35;
+    let sp = 300 * St.move * (P.galeT > 0 || P.hideT > 0 ? 1.3 : 1); if (P.act) sp *= 0.35;
     const rate = P.dashEndGlide > 0 && !(mv.x || mv.y) ? 12 : 22; // 대시 직후 손을 떼면 살짝 미끄러짐, 평소엔 반응 빠르게
     P.vx = lerp(P.vx, mv.x * sp, Math.min(1, dt * rate)); P.vy = lerp(P.vy, mv.y * sp, Math.min(1, dt * rate));
     if (mv.x || mv.y) { if (performance.now() - Input.mouseMoved > 4000 && !(Input.bot && Input.bot.aim != null)) P.face = Math.atan2(mv.y, mv.x); }
@@ -789,7 +640,7 @@ function swingHits(a) {
       if (segDist(e.x, e.y, a.x0, a.y0, tip.x, tip.y) - e.r > a.halfW) continue; }
     else {
       const d = dist(P, e) - e.r;
-      if (d > sw.range + (kwLv('atk', 'wind') ? 60 : 0)) continue;
+      if (d > sw.range * (a.act === 'a3' && C('seal') ? 1.3 : 1)) continue;
       if (Math.abs(angDiff(a.ang, angTo(P, e))) > sw.arc / 2 && d > 20) continue;
     }
     a.hitSet.add(e);
@@ -799,7 +650,7 @@ function swingHits(a) {
       else { FX.spark(e.x, e.y, angTo(e, P), '#b8c8e0', 6, 300); Sfx.parry(); SpriteFX.spawn('hit-spark', e.x, e.y, e.r, { ang: angTo(e, P), scale: 0.8 }); continue; }
     }
     dealDamage(e, { base: sw.dmg, act: a.act, gen: 0, ang: a.ang, kb: sw.kb, poise: sw.poise, counter: a.counter, parried: P.lastParriedPow || 0 });
-    kwOnHit(e, a);
+    if (!isThrust) ctOnAtkHit(e, a, sw.dmg);
   }
 }
 function thrustTip(a) { return { x: P.x + Math.cos(a.ang) * a.reach, y: P.y + Math.sin(a.ang) * a.reach }; }
@@ -808,87 +659,90 @@ function segDist(px, py, ax, ay, bx, by) {
   const t = L > 0 ? clamp(((px - ax) * dx + (py - ay) * dy) / L, 0, 1) : 0;
   return Math.hypot(px - ax - dx * t, py - ay - dy * t);
 }
-function spinHit(mul) {
-  for (const e of World.enemies) {
-    if (e.dead) continue;
-    if (dist(P, e) - e.r < 145) { dealDamage(e, { base: 18 * (mul || 1), act: 'spin', gen: 0, ang: angTo(P, e), kb: 360, poise: 26 }); kwOnHit(e, { type: 'spin' }); }
-  }
+// 마법(임시: 회전베기). 한 번 시전에 두 번 터져요
+function spinHit(a) {
+  const any = magicFx(P.x, P.y, 1);
+  if (any && a && !a.hitDone) { a.hitDone = true; ctOnMagicHit(); }
   Juice.kick(6);
 }
-function ultBurst() {
+// 궁극기(임시): 큰 폭발 + 4초 동안 1초마다 주변에 파동("궁극기 효과 중")
+function ultBurst(pow) {
+  pow = pow || 1;
   Sfx.boom(); Juice.kick(22); Juice.punch(0.06); Juice.screen('#ff9a3d', 0.15);
   FX.ring(P.x, P.y, 20, 360, '#ff9a3d', 0.5, 14); FX.burst(P.x, P.y, '#ffb36b', 60, 600, 0.7, 7);
   for (const e of World.enemies) {
     if (e.dead) continue;
-    if (dist(P, e) - e.r < 340) dealDamage(e, { base: 90, act: 'ult', gen: 0, ang: angTo(P, e), kb: 700, poise: 90 });
+    if (dist(P, e) - e.r < 340) { dealDamage(e, { base: 90 * pow, act: 'ult', gen: 0, ang: angTo(P, e), kb: 700, poise: 90 }); ctOnUltHit(e); }
   }
-  if (Run.augs.cycle) P.cycleT = 5;
+  P.ultT = 4; P.ultTick = 1; P.ultExt = 0; P.ultPow = pow;
+  ctOnUlt(pow);
 }
 // 꿰뚫기·갈래: 3타와 반격이 검기를 날림
 function fireWaves(a) {
-  if (!(a.act === 'a3' || a.counter)) return;
-  const pl = Run.augs.pierce || 0, fl = Run.augs.fork || 0;
-  if (!pl && !fl) return;
-  const storm = Run.syn.has('bladestorm');
+  const big = a.act === 'a3' || a.counter;
+  const pl = C('pierce'), fl = C('fork'), tg = tagN('검기');
+  const size = tg >= 2 ? 1.2 : 1, powK = tg >= 3 ? 1.3 : 1;
   const mk = (ang, pow, pierce) => World.projs.push({ owner: 'player', x: P.x + Math.cos(ang) * 30, y: P.y + Math.sin(ang) * 30, vx: Math.cos(ang) * 900, vy: Math.sin(ang) * 900,
-    r: storm ? 24 : 16, life: 0.55, dmg: (a.sw ? a.sw.dmg : 20) * pow * (storm ? 1.3 : 1), col: '#dff6ff', pierce, hitSet: new Set(), gen: 1, wave: true, act: a.act });
-  if (pl) mk(a.ang, [0.5, 0.8, 1.1][pl - 1] * (a.act === 'a3' && Run.syn.has('finisherwave') ? 1.5 : 1), true);
-  else if (fl) mk(a.ang, 0.4, false);
+    r: 16 * size, life: 0.55, dmg: (a.sw ? a.sw.dmg : 20) * pow * powK, col: '#dff6ff', pierce, hitSet: new Set(), gen: 1, wave: true, grp: 'atk' });
+  if (!big) { if (tg >= 4) mk(a.ang, 0.3, !!pl); return; } // 검기 4개: 1타·2타도 약한 검기
+  if (!pl && !fl && tg < 4) return;
+  if (pl) mk(a.ang, [0.5, 0.8, 1.1][pl - 1], true);
+  else mk(a.ang, fl ? 0.4 : 0.3, false);
   for (let i = 1; i <= fl; i++) { mk(a.ang + 0.35 * i, 0.4, !!pl); mk(a.ang - 0.35 * i, 0.4, !!pl); }
 }
 
 // ───────── 피해 계산 ─────────
-const FLAME = [0, 0.3, 0.6, 1], CUT = [0, 0.15, 0.2, 0.25], ECHO = [0, 0.25, 0.4, 0.55], BRAND = [0, 0.6, 0.9, 1.2];
-function pickElem(o) {
-  if (o.elem) return o.elem;
-  const A = Run.augs; const opts = [];
-  if (A.flame) opts.push(['fire', FLAME[A.flame]]);
-  if (A.frost) opts.push(['ice', FLAME[A.frost]]);
-  if (A.thunder) opts.push(['light', FLAME[A.thunder]]);
-  shuffle(opts);
-  for (const [el, p] of opts) if (R() < p) return el;
-  return 'phys';
-}
+const CUT = [0, 0.15, 0.2, 0.25], ECHO = [0, 0.25, 0.4, 0.55], BRAND = [0, 0.6, 0.9, 1.2];
 function hasVs(e, k) {
   if (k === 'burn') return e.burn > 0;
   if (k === 'chill') return e.chill > 0 || e.frozen > 0;
   if (k === 'shock') return e.shocked > 0;
-  if (k === 'elite') return e.elite || e.boss;
   if (k === 'stagger') return e.staggerT > 0 || e.frozen > 0;
   return false;
 }
+// o: { base, act(a1|a2|a3|spin|dash|ult), grp, gen(0 = 직접 타격), elem, counter, ... }
 function dealDamage(e, o) {
   if (e.dead) return 0;
-  const A = Run.augs; const gen = o.gen || 0;
+  const gen = o.gen || 0; const grp = actGroup(o);
   const elem = pickElem(o);
-  const mods = blankEff();
-  if (o.act && ActMods[o.act]) addEff(mods, ActMods[o.act], 1);
-  if (o.counter) addEff(mods, ActMods.counter, 1);
-  let mult = 1 + St.dmg + mods.dmg;
-  if (elem === 'phys') mult += St.physDmg;
-  if (elem === 'fire') mult += St.fireDmg;
-  for (const k in mods.vs) if (hasVs(e, k)) mult += mods.vs[k];
-  if (hasVs(e, 'chill')) mult += St.chillAmp;
+  const direct = gen === 0 && !o.echo; const pa = direct ? P.act : null;
+  let mult = 1 + St.dmg;
   if (P.cycleT > 0) mult += 0.3;
-  if (A.finisher && o.act === 'a3') mult += 0.6;
-  if (A.gale && o.act === 'dash') mult += 0.5;
-  if (o.counter) { mult *= 2; if (A.chainparry) mult *= 1 + 0.3 * P.chainStacks; }
-  const perfectHit = gen === 0 && P.act && P.act.perfect && !o.echo; if (perfectHit) mult *= 1 + St.perfectBonus;
-  if (A.groggyhunt && hasVs(e, 'stagger')) mult += 0.4;
+  if (grp === 'atk' && C('seal')) mult += 0.4;
+  if (grp === 'magic' && Run.soul) mult += 0.01 * Run.soul;
+  if (C('finisher') && o.act === 'a3') mult += 0.6;
+  if (C('gale') && o.act === 'dash') mult += 0.5;
+  if (C('groggyhunt') && hasVs(e, 'stagger')) mult += 0.4;
+  if (tagN('붕괴') >= 4 && e.staggerT > 0) mult += 0.25;
+  if (e.goldT > 0 && e.staggerT > 0) mult += 0.3;
+  if (tagN('처형') >= 2 && e.hp / e.maxHp <= 0.3) mult += 0.15;
+  if (C('small') && (e.elite || e.boss)) mult += 0.2;
+  if (C('crescendo') && World.t > 15) mult += 0.4;
+  if (tagN('대가') >= 3 && Run.hp < St.maxHp * 0.5) mult += 0.2;
+  if (pa && pa.speedBuff) mult += 0.4;
+  if (pa && pa.revenge) mult += 0.6;
+  if (o.counter) { mult *= 2; if (C('chainparry')) mult *= 1 + 0.3 * P.chainStacks; if (tagN('응수') >= 3) mult *= 1.4; if (C('danger')) mult *= 2.5; }
+  const perfectHit = pa && pa.perfect; if (perfectHit) mult *= 1 + St.perfectBonus;
+  if (e.frog > 0) mult *= 1.2;
+  if (e.curse && gen === 0) { mult *= 1.5; e.curse = false; FX.text(e.x, e.y - e.r - 36, '저주', '#c77dff'); }
   if (e.def.weak === elem) mult *= 1.25; else if (e.def.res === elem) mult *= 0.75;
-  if (A.frost && elem === 'ice' && e.boss && e.chill >= 4) mult *= 1.3;
+  if (elem === 'ice' && e.boss && e.chill >= 4) mult *= 1.3;
   if (World.mods.includes('chief') && e.chief) mult *= 0.8;
+  if (o.raw) mult = 1;
   let dmg = o.base * mult;
-  if (o.counter && A.repay && o.parried) dmg += o.parried * (Run.syn.has('master') && P.chainStacks >= 2 ? 2.5 : 1.5);
-  if (o.burnTick && e.shocked > 0 && Run.syn.has('overheat')) dmg *= 1.5;
-  let crit = St.crit + mods.crit; for (const c of mods.critCond) if (hasVs(e, c.vs)) crit += c.v;
-  const isCrit = o.counter || o.forceCrit || (gen === 0 && R() < crit);
-  if (isCrit) dmg *= St.critDmg;
-  // 끊어내기
-  if (A.cut && gen <= 1) {
-    const th = CUT[A.cut] + (Run.syn.has('executioner') && hasVs(e, 'stagger') ? 0.1 : 0);
-    if (!e.boss && (e.hp - dmg) / e.maxHp <= th && e.hp > 0) { dmg = e.hp; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
-    else if (e.boss && e.hp / e.maxHp <= th && gameTime - (e.cutAt || -9) > 3) { e.cutAt = gameTime; dmg += e.maxHp * 0.05; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
+  if (o.counter && C('repay') && o.parried) dmg += o.parried * 1.5;
+  if (o.burnTick && e.shocked > 0 && tagN('원소') >= 3) dmg *= 1.5 * (tagN('원소') >= 4 ? 1.17 : 1);
+  // 치명: 직접 타격만. 마법은 보석 지팡이가 있어야 치명
+  let crit = St.crit + (P.execT > 0 ? 0.1 : 0);
+  const canCrit = gen === 0 && (grp !== 'magic' || C('jewel'));
+  const isCrit = !o.raw && (o.counter || o.forceCrit || (canCrit && R() < crit));
+  if (isCrit) dmg *= St.critDmg + (grp === 'magic' && C('jewel') ? 0.3 : 0);
+  // 끊어내기 · 처형 3개
+  if (gen <= 1 && !o.raw) {
+    const ex3 = tagN('처형') >= 3;
+    const th = C('cut') ? CUT[C('cut')] + (ex3 ? 0.05 : 0) : 0;
+    if (!e.boss && e.hp > 0 && ((th && (e.hp - dmg) / e.maxHp <= th) || (ex3 && !e.elite && (e.hp - dmg) / e.maxHp <= 0.1))) { if (e.hp - dmg > 0) FX.text(e.x, e.y - 50, th ? '끊어내기' : '처형', '#ff6b6b'); dmg = Math.max(dmg, e.hp); }
+    else if (e.boss && th && e.hp / e.maxHp <= th && gameTime - (e.cutAt || -9) > 3) { e.cutAt = gameTime; dmg += e.maxHp * 0.05; FX.text(e.x, e.y - 50, '끊어내기', '#ff6b6b'); }
   }
   dmg = Math.max(1, Math.round(dmg));
   e.hp -= dmg; e.flash = 0.1;
@@ -896,6 +750,7 @@ function dealDamage(e, o) {
   const col = isCrit ? '#fff1a8' : ELEM[elem].col;
   FX.text(e.x, e.y - e.r - 10, dmg + (isCrit ? '!' : ''), col, isCrit && dmg > 60);
   if (gen === 0) {
+    P.lastHit = e;
     const heavy = o.act === 'a3' || o.act === 'spin' || o.act === 'ult' || o.counter;
     // 히트스톱은 평타 마지막 연격(3타)과 적을 죽이는 공격에만 (처치는 아래 e.hp <= 0에서)
     if (o.act === 'a3' && e.hp > 0) Juice.hitstop(isCrit ? 0.09 : 0.075);
@@ -903,61 +758,58 @@ function dealDamage(e, o) {
     SpriteFX.hit(e, ka, isCrit || o.counter, heavy);
     e.shk = 0.15; e.sqK = heavy ? 0.4 : 0.28; e.sqA = ka;
     P.hits++; P.hitT = 1.6; P.hitPop = 0.12;
-    if (perfectHit && !P.act.perfectShown) { P.act.perfectShown = true; FX.text(e.x, e.y - 60, `퍼펙트 +${Math.round(St.perfectBonus * 100)}%`, '#9ffcff', true); FX.radial(e.x, e.y, '#9ffcff', 16, e.r, 8); FX.ring(e.x, e.y, e.r, e.r + 90, '#9ffcff', 0.3, 6); Juice.impactFrame(0.04, '#9ffcff'); Sfx.gold(); }
+    if (perfectHit && !pa.perfectShown) { pa.perfectShown = true; FX.text(e.x, e.y - 60, `퍼펙트 +${Math.round(St.perfectBonus * 100)}%`, '#9ffcff', true); FX.radial(e.x, e.y, '#9ffcff', 16, e.r, 8); FX.ring(e.x, e.y, e.r, e.r + 90, '#9ffcff', 0.3, 6); Juice.impactFrame(0.04, '#9ffcff'); Sfx.gold(); }
     if (o.counter) { Sfx.thud(); Juice.impactFrame(0.04, '#ffd27a'); Juice.ab(0.12); Juice.punch(0.05); FX.radial(e.x, e.y, '#ffd27a', 14, e.r, 7); FX.slash(e.x, e.y, ka + Math.PI / 2, 0.9, e.r + 26, '#ffd27a', 12, 0.2); }
     else if (isCrit) { Sfx.crit(); FX.radial(e.x, e.y, '#fff1a8', 8, e.r, 5); if (dmg > 60) Juice.ab(0.06); }
     else Sfx.hit(o.act === 'a3' ? 0.75 : o.act === 'a2' ? 1.15 : 1);
     FX.burst(e.x, e.y, e.def.col, heavy ? 10 : 5, heavy ? 360 : 240, 0.35, 4);
     FX.spark(e.x, e.y, o.ang || 0, col, isCrit ? 10 : 6, 420);
-    P.ult = Math.min(1, P.ult + dmg * 0.0009 * St.ultGain);
+    if (!C('forsake')) P.ult = Math.min(1, P.ult + dmg * 0.0009 * St.ultGain);
   }
   // 넉백: 평타는 3타에만 약간(260, 정예 ×0.6). 슈퍼아머(강타수 등, 경직 중 제외)와 보스는 밀리지 않음
-  if (o.kb && !(e.def.armor && !e.groggy && !e.staggerT) && !e.boss) {
+  if (o.kb && !(e.def.armor && !e.staggerT) && !e.boss) {
     const a = o.ang != null ? o.ang : angTo(P, e); const k = o.kb * (e.elite ? 0.6 : 1);
     e.vx += Math.cos(a) * k; e.vy += Math.sin(a) * k; e.kbT = 0.25;
   }
-  // 포이즈·체간
-  let poise = (o.poise || dmg * 0.3) * (1 + St.poise + mods.poise);
-  for (const c of mods.poiseCond) if (hasVs(e, c.vs)) poise *= 1 + c.v;
+  // 포이즈 (쌓이면 짧은 경직)
+  let poise = (o.poise || dmg * 0.3) * (1 + St.poise) * (C('finisher') && o.act === 'a3' ? 2 : 1);
   if (gen === 0 || o.poise) {
     e.poiseDmg += poise;
-    if (e.poiseDmg >= e.def.poise) { e.poiseDmg = 0; e.staggerT = 0.45; e.cancelAttack && e.cancelAttack(); }
+    if (e.poiseDmg >= e.def.poise) { e.poiseDmg = 0; e.staggerT = Math.max(e.staggerT, 0.45); e.cancelAttack && e.cancelAttack(); }
   }
-  // 상태 이상 (증강이 만든 속성일 때만)
-  if (elem === 'fire' && !o.noStatus) { e.burn = Math.min(5, e.burn + 1); e.burnT = 3; }
-  if (elem === 'ice' && !o.noStatus) {
-    e.chillT = 3; e.chill = Math.min(5, e.chill + 1);
-    if (e.chill >= 5 && !e.boss && e.freezeImm <= 0) { e.frozen = 1.5; e.chill = 0; e.freezeImm = 3.5; FX.text(e.x, e.y - 40, '빙결', '#bfefff'); e.cancelAttack && e.cancelAttack();
-      if (Run.syn.has('thermal') && e.burn > 0) { const pw = e.burn * 12; FX.text(e.x, e.y - 64, '열충격', '#ffb36b', true); FX.ring(e.x, e.y, 10, 130, '#ffb36b', 0.35, 8); Sfx.boom(); for (const t of World.enemies) if (!t.dead && dist(t, e) < 130 + t.r) later(0.03, () => dealDamage(t, { base: pw, gen: 2, elem: 'fire', noStatus: true, ang: angTo(e, t), kb: 260 })); } }
-  }
-  if (elem === 'light' && !o.noStatus) {
-    e.shocked = 3;
-    if (gen <= 1 && !o.noLightChain) {
-      const n = (A.thunder || 0) + Math.round(St.shockBounce) + (Run.syn.has('supercond') && (e.chill > 0 || e.frozen > 0) ? 1 : 0);
-      const near = World.enemies.filter(x => !x.dead && x !== e && dist(x, e) < 240).sort((p, q) => dist(p, e) - dist(q, e)).slice(0, n);
-      for (const t of near) {
-        World.bolts.push({ x1: e.x, y1: e.y, x2: t.x, y2: t.y, life: 0.15 }); SpriteFX.bolt(t.x, t.y, t.r);
-        const base = dmg * 0.4 * (1 + St.lightPow / 100);
-        later(0.05, () => dealDamage(t, { base, gen: gen + 1, elem: 'light', ang: angTo(e, t), noStatus: false, noLightChain: true }));
+  // 상태 이상 (계약이 만든 속성일 때만)
+  if (!o.noStatus) {
+    if (elem === 'fire') applySt(e, 'burn', 1);
+    if (elem === 'ice') applySt(e, 'chill', 1);
+    if (elem === 'light') {
+      applySt(e, 'shock');
+      if (gen <= 1 && !o.noLightChain) {
+        const n = (o.elemLv || 0) + (tagN('원소') >= 3 && (e.chill > 0 || e.frozen > 0) ? 1 : 0);
+        const near = World.enemies.filter(x => !x.dead && x !== e && dist(x, e) < 240).sort((p, q) => dist(p, e) - dist(q, e)).slice(0, n);
+        for (const t of near) {
+          World.bolts.push({ x1: e.x, y1: e.y, x2: t.x, y2: t.y, life: 0.15 }); SpriteFX.bolt(t.x, t.y, t.r);
+          later(0.05, () => { dealDamage(t, { base: dmg * 0.4, gen: gen + 1, elem: 'light', ang: angTo(e, t), noStatus: true, noLightChain: true, noBrand: true, noEcho: true, raw: true }); applySt(t, 'shock'); });
+        }
       }
     }
   }
+  if (o.burnTick && C('burnmana')) P.spinRe += 0.2;
   envReact(e, elem, dmg, gen);
   // 낙인
-  if (A.brand && (gen === 0 || (o.echo && Run.syn.has('doublebrand'))) && !o.noBrand) {
+  if (C('brand') && gen === 0 && !o.noBrand) {
     e.brand = (e.brand || 0) + 1;
     if (e.brand >= 3) {
-      e.brand = 0; const pw = BRAND[A.brand];
+      e.brand = 0; const pw = BRAND[C('brand')];
       FX.ring(e.x, e.y, 10, 100, '#ff5bd1', 0.3, 6); Sfx.boom();
-      for (const t of World.enemies) if (!t.dead && dist(t, e) < 100 + t.r) later(0.02, () => dealDamage(t, { base: o.base * pw, gen: 1, ang: angTo(e, t), noBrand: true }));
+      for (const t of World.enemies) if (!t.dead && dist(t, e) < 100 + t.r) later(0.02, () => dealDamage(t, { base: o.base * pw, gen: 1, ang: angTo(e, t), noBrand: true, noEcho: true }));
     }
   }
   // 메아리
-  if (A.echo && gen <= 1 && !o.echo && R() < ECHO[A.echo]) {
-    later(0.2, () => { if (!e.dead) { FX.text(e.x, e.y - 70, '메아리', '#e78bff'); dealDamage(e, { ...o, base: o.base * 0.5, gen: gen + 1, echo: true, counter: false, forceCrit: false, kb: 0 }); } });
+  if (C('echo') && gen <= 1 && !o.echo && !o.noEcho && !o.burnTick && R() < ECHO[C('echo')]) {
+    later(0.2, () => { if (!e.dead) { FX.text(e.x, e.y - 70, '메아리', '#e78bff'); dealDamage(e, { ...o, base: o.base * 0.5, gen: gen + 1, echo: true, counter: false, forceCrit: false, kb: 0, noBrand: true }); } });
   }
   if (e.hp <= 0 && !e.dead) Juice.hitstop(e.boss ? 0.25 : gen === 0 ? (o.act === 'a3' || isCrit || o.counter ? 0.11 : 0.085) : 0.05); // 처치 히트스톱
-  if (e.hp <= 0) { if (o.act === 'dash' && Run.syn.has('galecharge') && P.spinCharges < 2) { P.spinCharges++; FX.text(P.x, P.y - 50, '질풍 충전', '#9fe8ff'); } killEnemy(e); }
+  if (e.hp <= 0) killEnemy(e, o);
   return dmg;
 }
 
@@ -970,18 +822,23 @@ function updateLater(dt) { const run = []; Later = Later.filter(l => { l.t -= dt
 // hit: {dmg, color: 'white'|'gold'|'red', src: 적, proj: 투사체}
 function playerHit(h) {
   if (!P.alive) return 'none';
-  const parryable = h.color !== 'red' || Run.augs.redsteel;
+  const parryable = h.color !== 'red' || C('redsteel');
   if (P.parryT > 0 && parryable) { parrySuccess(h); return 'parry'; }
   if (P.iframe > 0) return 'dodge';
-  if (inFog(P.x, P.y) && R() < 0.5) { FX.text(P.x, P.y - 40, '빗나감', '#cfd8e8'); P.iframe = 0.15; return 'dodge'; }
-  let dmg = h.dmg * St.dmgTaken;
-  if (P.guardT > 0) dmg *= 1 - Math.min(0.6, ActMods.parry.guard);
+  const inUlt = C('unbroken') && ((P.act && P.act.type === 'ult') || P.ultT > 0); // 꺾이지 않는 의식
+  let dmg = h.dmg * St.dmgTaken * (inUlt ? 0.7 : 1);
   dmg = Math.max(1, Math.round(dmg));
-  Run.hp -= dmg; P.iframe = 0.5; P.hurtT = 0.2;
-  // 회전베기 슈퍼아머: 일반 공격(흰 섬광·일반 투사체)은 피해만 받고 끊기지 않음. 강공격(금색)·패링 불가 공격(붉은색)은 끊김
-  const armored = P.act && P.act.type === 'spin' && h.color !== 'gold' && (h.color !== 'red' || h.light);
+  // 보호막이 먼저 깎여요 (먼저 사라질 것부터)
+  let left = dmg;
+  for (const s of (P.shields || []).slice().sort((a, b) => a.t - b.t)) { const use = Math.min(s.v, left); s.v -= use; left -= use; if (left <= 0) break; }
+  if (left < dmg) FX.text(P.x, P.y - 46, `보호막 -${dmg - left}`, '#9fd0ff');
+  Run.hp -= left; P.iframe = 0.5; P.hurtT = 0.2;
+  // 마법 슈퍼아머: 일반 공격(흰 섬광·일반 투사체)은 피해만 받고 끊기지 않음. 강공격(금색)·방어 불가 공격(붉은색)은 끊김
+  const armored = inUlt || (P.act && P.act.type === 'spin' && h.color !== 'gold' && (h.color !== 'red' || h.light)) || left <= 0;
   Sfx.hurt(); Juice.kick(armored ? 6 : 12); Juice.ab(0.12); P.sqK = armored ? -0.12 : -0.3; P.hits = 0; Juice.hitstop(armored ? 0.03 : 0.06); Juice.screen('#ff3b3b', 0.12);
-  FX.text(P.x, P.y - 30, '-' + dmg, '#ff6b6b'); FX.burst(P.x, P.y, '#ff5a5a', 14, 260, 0.4, 5);
+  if (left > 0) { FX.text(P.x, P.y - 30, '-' + left, '#ff6b6b'); FX.burst(P.x, P.y, '#ff5a5a', 14, 260, 0.4, 5); }
+  ctOnHurt();
+  if (Run.hp <= 0 && ctOnDeath()) return 'hit';
   if (armored && Run.hp > 0) { FX.ring(P.x, P.y, P.r + 4, P.r + 26, '#cfe8ff', 0.18, 4); return 'hit'; }
   const a = h.src ? angTo(h.src, P) : (h.proj ? Math.atan2(h.proj.vy, h.proj.vx) : 0);
   P.vx += Math.cos(a) * 320; P.vy += Math.sin(a) * 320;
@@ -995,7 +852,7 @@ function startThrust(ang, carry) {
   const fromDash = P.dashAt != null && gameTime - P.dashAt < 0.6;
   P.act = { type: 'thrust', t: 0, ang, hitSet: new Set(), act: 'dash', counter: isCounter, dmg: 22, poise: 20, kb: 300, reach: 90, halfW: 50,
     x0: fromDash ? P.dashX0 : P.x, y0: fromDash ? P.dashY0 : P.y };
-  if (isCounter) { kwCounterUsed(); FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
+  if (isCounter) { P.counterT = 0; FX.ring(P.x, P.y, 20, 70, '#ffd27a', 0.25, 4); }
   // 관성: 대시 중이면 대시 속도, 대시 직후면 남은 속도로 출발해서 0.2초 동안 줄어들며 멈춤 (따로 내딛는 스텝 없음)
   const sp = Math.max(carry || 0, Math.hypot(P.vx, P.vy), 420); P.act.sp = sp; P.vx = Math.cos(ang) * sp; P.vy = Math.sin(ang) * sp;
   P.iframe = Math.max(P.iframe, 0.08); P.sqK = 0.35; P.sqA = ang;
@@ -1003,14 +860,16 @@ function startThrust(ang, carry) {
   FX.spark(P.x + Math.cos(ang) * 60, P.y + Math.sin(ang) * 60, ang, '#cfefff', 8, 600);
   Juice.kickDir(ang, 3); usePerfect(P.act); Sfx.swing(1.3); Sfx.dash();
 }
-function usePerfect(act) { if (P.perfect) { act.perfect = true; P.perfect = false; P.perfectT = 0; FX.slash(P.x, P.y, act.ang != null ? act.ang : P.face, 2.4, 90, '#9ffcff', 14, 0.22, P); } }
+function usePerfect(act) {
+  if (P.speedT > 0) { act.speedBuff = true; P.speedT = 0; }  // 속도의 저주: 대시 뒤 첫 공격
+  if (P.revengeT > 0) { act.revenge = true; P.revengeT = 0; } // 되갚는 저주: 맞은 뒤 다음 공격
+  if (P.perfect) { act.perfect = true; P.perfect = false; P.perfectT = 0; FX.slash(P.x, P.y, act.ang != null ? act.ang : P.face, 2.4, 90, '#9ffcff', 14, 0.22, P); } }
 function parrySuccess(h) {
   const elapsed = P.act && P.act.type === 'parry' ? P.act.dur - P.parryT : 9;
-  const perfect = elapsed <= St.perfectWin && P.act.clean; // 연타로 줄어든 판정에서는 퍼펙트 없음
+  const perfect = elapsed <= St.perfectWin && !!(P.act && P.act.clean); // 연타로 줄어든 판정에서는 퍼펙트 없음
   P.parryPresses = [];
   P.parryT = 0; P.act = null; P.counterT = 0.6; P.iframe = Math.max(P.iframe, 0.2);
   P.lastParriedPow = h.dmg; Run.parries++;
-  if (ActMods.parry.guard) P.guardT = 2;
   if (P.chainT > 0) P.chainStacks = Math.min(3, P.chainStacks + 1); P.chainT = 4;
   P.ult = Math.min(1, P.ult + 0.08 * St.ultGain);
   const sx = h.src ? lerp(P.x, h.src.x, 0.4) : P.x, sy = h.src ? lerp(P.y, h.src.y, 0.4) : P.y;
@@ -1023,28 +882,27 @@ function parrySuccess(h) {
   SpriteFX.parry(lerp(P.x, h.src ? h.src.x : P.x, 0.4), lerp(P.y, h.src ? h.src.y : P.y, 0.4), h.color === 'gold');
   if (perfect) {
     P.perfect = true; P.perfectT = 2.0; Run.perfects = (Run.perfects || 0) + 1;
-    FX.text(P.x, P.y - 40, h.color === 'gold' ? '퍼펙트 금색 패링' : '퍼펙트 패링', '#9ffcff', true);
+    FX.text(P.x, P.y - 40, h.color === 'gold' ? '퍼펙트 금색 방어' : '퍼펙트 방어', '#9ffcff', true);
     Juice.hitstop(h.color === 'gold' ? 0.26 : 0.16); Juice.slowmo(0.3, 0.35); Juice.impactFrame(0.05, '#9ffcff'); Juice.ab(0.2);
     FX.ring(sx, sy, 10, 120, '#9ffcff', 0.35, 7); FX.radial(sx, sy, '#9ffcff', 20, 12, 7); SpriteFX.parry(sx, sy, true); Sfx.gold(); Sfx.raise();
-  } else FX.text(P.x, P.y - 40, h.color === 'gold' ? '금색 패링' : '패링', h.color === 'gold' ? '#ffd27a' : '#ffffff', h.color === 'gold');
+  } else FX.text(P.x, P.y - 40, h.color === 'gold' ? '금색 방어' : '방어', h.color === 'gold' ? '#ffd27a' : '#ffffff', h.color === 'gold');
   const e = h.src;
   if (h.proj) { // 반사
     const pr = h.proj; const a = e && !e.dead ? angTo(P, e) : Math.atan2(-pr.vy, -pr.vx);
-    pr.owner = 'player'; pr.vx = Math.cos(a) * 820; pr.vy = Math.sin(a) * 820; pr.life = 1.2; pr.gen = 1; pr.hitSet = new Set(); pr.dmg = pr.dmg * 2.2; pr.col = '#ffffff'; pr.act = 'parry';
+    pr.owner = 'player'; pr.vx = Math.cos(a) * 820; pr.vy = Math.sin(a) * 820; pr.life = 1.2; pr.gen = 1; pr.hitSet = new Set(); pr.dmg = pr.dmg * 2.2; pr.col = '#ffffff'; pr.grp = 'guard'; if (C('pierce')) pr.pierce = true;
   }
   if (e && !e.dead) {
-    // 체간·그로기 없음: 패링은 공격을 끊고 경직만 줘요 (금색 = 강공격, 더 길게)
-    const pm = 1 + ActMods.parry.poise; let pc = 1; for (const c of ActMods.parry.poiseCond) if (hasVs(e, c.vs)) pc += c.v;
+    // 체간·그로기 없음: 방어는 공격을 끊고 경직만 줘요 (금색 = 강공격, 더 길게)
     if (!h.proj || h.color === 'gold') {
       const base = e.boss ? (h.color === 'gold' ? 0.8 : 0.3) : (h.color === 'gold' ? 1.2 : 0.6);
-      e.staggerT = base * St.staggerMul * Math.min(1.5, Math.sqrt(pm * pc)); e.poiseDmg = 0;
+      e.staggerT = base * St.staggerMul; e.poiseDmg = 0;
       if (!e.boss) { e.vx += Math.cos(angTo(P, e)) * 260; e.vy += Math.sin(angTo(P, e)) * 260; }
       if (h.color === 'gold') FX.text(e.x, e.y - e.r - 30, '경직', '#ffd27a', true);
     }
     e.cancelAttack && e.cancelAttack();
   }
   if (h.color === 'gold') Run.golds++;
-  kwOnParry(h);
+  ctOnGuard(h, perfect);
 }
 
 function moveBody(b, dt) {
@@ -1062,7 +920,7 @@ function moveBody(b, dt) {
 
 // ===== enemies.js =====
 // ───────── 전투 세계: 아레나, 적, 보스, 투사체 ─────────
-const World = { arena: null, enemies: [], projs: [], fields: [], decoy: null, banner: null, hits: [], bolts: [], marks: [], mods: [], queue: [], waveT: 0, kind: 'fight', over: false, clearT: -1, merchantT: -1, cam: { x: 0, y: 0 }, info: null };
+const World = { arena: null, enemies: [], projs: [], fields: [], summons: [], decoy: null, hits: [], bolts: [], marks: [], mods: [], queue: [], waveT: 0, kind: 'fight', over: false, clearT: -1, merchantT: -1, cam: { x: 0, y: 0 }, info: null };
 
 function makeArena(size) {
   const [w, h] = ARENA_SIZE[size];
@@ -1097,7 +955,7 @@ function makeEnemy(type, x, y, opts = {}) {
 
 function startFight(node) {
   const kind = node.type; World.kind = kind;
-  World.enemies = []; World.projs = []; World.hits = []; World.bolts = []; World.marks = []; World.queue = []; Later = []; World.fields = []; World.decoy = null; World.banner = null;
+  World.enemies = []; World.projs = []; World.hits = []; World.bolts = []; World.marks = []; World.queue = []; Later = []; World.fields = []; World.summons = []; World.decoy = null;
   World.over = false; World.clearT = -1; World.t = 0; World.boss = null; World.mods = node.mods || []; World.merchantT = -1;
   FX.clear();
   let compo, size;
@@ -1253,13 +1111,13 @@ function updateHits(dt) {
 }
 
 // ───────── 적 행동 ─────────
-function chillMul(e) { return e.frozen > 0 ? 0 : (1 - Math.min(0.4, e.chill * 0.08)) * kwSlowMul(e); }
+function chillMul(e) { return e.frozen > 0 ? 0 : (1 - Math.min(0.4, e.chill * 0.08)) * slowMul(e); }
 function startAtk(e, name, color, tele) { e.atk = { name, color, t: 0, phase: 'tele', tele: tele / e.spdMul, ang: angTo(e, e.tgt || P) }; }
 function updateEnemy(e, dt) {
   e.life += dt; e.flash -= dt; e.shk = (e.shk || 0) - dt; e.sqK = (e.sqK || 0) * Math.exp(-dt * 12);
-  if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; dealDamage(e, { base: e.burn * (2 + St.firePow * 0.08), gen: 1, elem: 'fire', noStatus: true, burnTick: true }); } if (e.burnT <= 0) e.burn = 0; }
+  if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; dealDamage(e, { base: e.burn * 2, gen: 1, elem: 'fire', noStatus: true, burnTick: true, noBrand: true }); } if (e.burnT <= 0) e.burn = 0; }
   if (e.chillT > 0) { e.chillT -= dt; if (e.chillT <= 0) e.chill = 0; }
-  e.frozen -= dt; e.freezeImm -= dt; e.shocked -= dt; e.kbT -= dt;
+  e.frozen -= dt; e.freezeImm -= dt; e.shocked -= dt; e.kbT -= dt; if (e.goldT > 0) e.goldT -= dt;
   if (e.shieldDown > 0) { e.shieldDown -= dt; if (e.shieldDown <= 0 && e.def.shield) e.shieldUp = true; }
   if (e.stanceMax && e.groggy <= 0) { e.stanceIdle += dt; if (e.stanceIdle > 3) e.stance = Math.max(0, e.stance - e.stanceMax * 0.1 * dt); }
   if (e.dead) return;
@@ -1268,8 +1126,10 @@ function updateEnemy(e, dt) {
   if (e.frozen > 0 || e.staggerT > 0) { e.staggerT -= dt; e.vx *= Math.exp(-fric * dt); e.vy *= Math.exp(-fric * dt); moveEnemy(e, dt); return; }
   if (e.kbT > 0) { e.vx *= Math.exp(-fric * dt); e.vy *= Math.exp(-fric * dt); moveEnemy(e, dt); return; }
   if (e.boss) { if (e.atk) bossAct(e, dt); else bossThink(e, dt); moveEnemy(e, dt); return; }
+  // 개구리 저주: 공격 못 하고 폴짝거리기만
+  if (e.frog > 0) { e.frog -= dt; if (e.atk) e.cancelAttack(); e.hopT = (e.hopT || 0) - dt; if (e.hopT <= 0) { e.hopT = 0.45; const ha = R() * Math.PI * 2; e.vx = Math.cos(ha) * 150; e.vy = Math.sin(ha) * 150; e.face = ha; } e.vx *= Math.exp(-4 * dt); e.vy *= Math.exp(-4 * dt); moveEnemy(e, dt); return; }
   const sp = e.def.spd * e.spdMul * chillMul(e);
-  const tg = World.decoy ? World.decoy : P; e.tgt = tg; // 복제 분신이 있으면 분신을 노려요
+  const tg = World.decoy ? World.decoy : P; e.tgt = tg; // 허상(환영)이 있으면 환영을 노려요
   const d = dist(e, tg), a = angTo(e, tg);
   if (e.atk) { enemyAct(e, dt); moveEnemy(e, dt); return; }
   e.cd -= dt;
@@ -1379,7 +1239,7 @@ function envReact(e, elem, dmg, gen) {
   }
 }
 
-function killEnemy(e, finisher) {
+function killEnemy(e, o) {
   if (e.dead) return; e.dead = true;
   if (e.type === 'merchant') {
     const s = 30; Run.shards += s; FX.text(e.x, e.y - 30, `파편 +${s}`, '#ffd86b', true);
@@ -1393,9 +1253,7 @@ function killEnemy(e, finisher) {
   if (World.killLog.length >= 3) { const n = World.killLog.length; FX.text(e.x, e.y - 70, `${n}연속 처치`, n >= 5 ? '#ff9a3d' : '#ffd27a', true); Juice.slowmo(0.25, 0.4); Juice.ab(0.08); }
   const sh = Math.round((e.boss ? 0 : e.elite ? 4 : 1 + (R() < 0.4 ? 1 : 0)) * (1 + St.shardMul));
   if (sh) { Run.shards += sh; Run.floorShards = (Run.floorShards || 0) + sh; }
-  if (Run.augs.thirst) Run.hp = Math.min(St.maxHp, Run.hp + 2);
-  if (Run.augs.overcharge) { if (P.dashCharges < 2) P.dashCharges++; }
-  if (e.elite && !e.boss && R() < 0.15) { const it = pick(ITEMS); Run.pendingDrops = (Run.pendingDrops || []).concat(it.id); FX.text(e.x, e.y - 50, `인장: ${it.name}`, '#9fe8ff', true); }
+  ctOnKill(e, o);
   if (World.mods.includes('chainboom') && !e.boss) {
     const h = addHit(e, { shape: 'circle', r: 75, t: 0.1, dmg: 8 * scaleFor().dmg, color: 'red', light: true, x: e.x, y: e.y, keep: true });
     h.hurtsEnemies = true; h.enemyDmg = 14; FX.ring(e.x, e.y, 5, 75, '#ffb030', 0.3, 6);
@@ -1408,6 +1266,7 @@ function enemiesLeft() { return World.enemies.filter(e => !e.dead && e.type !== 
 function updateProjs(dt) {
   const A = World.arena;
   for (const p of World.projs) {
+    if (p.homing) { const t = nearest(p.x, p.y, 520)[0]; if (t) { const sp = Math.hypot(p.vx, p.vy), want = Math.atan2(t.y - p.y, t.x - p.x), cur = Math.atan2(p.vy, p.vx), na = cur + clamp(angDiff(cur, want), -7 * dt, 7 * dt); p.vx = Math.cos(na) * sp; p.vy = Math.sin(na) * sp; } }
     p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
     if (p.x < 0 || p.y < 0 || p.x > A.w || p.y > A.h) p.life = 0;
     for (const pl of A.pillars) if (Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r + p.r) { p.life = 0; FX.burst(p.x, p.y, p.col, 5, 120, 0.2, 3); }
@@ -1422,8 +1281,8 @@ function updateProjs(dt) {
         if (e.dead || p.hitSet.has(e)) continue;
         if (Math.hypot(p.x - e.x, p.y - e.y) < p.r + e.r) {
           p.hitSet.add(e);
-          dealDamage(e, { base: p.dmg, gen: p.gen, act: p.wave ? null : null, ang: Math.atan2(p.vy, p.vx), kb: 180, poise: p.wave ? 10 : 25 });
-          if (!p.pierce) { p.life = 0; break; }
+          dealDamage(e, { base: p.dmg, gen: p.gen, grp: p.grp, ang: Math.atan2(p.vy, p.vx), kb: p.homing ? 0 : 180, poise: p.wave ? 10 : p.homing ? 4 : 25, noEcho: p.homing });
+          if (!p.pierce && !C('pierce')) { p.life = 0; break; }
         }
       }
     }
@@ -1436,7 +1295,7 @@ function updateWorld(dt) {
   World.t = (World.t || 0) + dt;
   for (const m of World.marks) m.t -= dt; World.marks = World.marks.filter(m => m.t > 0);
   for (const e of World.enemies) updateEnemy(e, dt);
-  updateHits(dt); updateProjs(dt); updateFields(dt);
+  updateHits(dt); updateProjs(dt); updateFields(dt); updateContracts(dt);
   for (const b of World.bolts) b.life -= dt; World.bolts = World.bolts.filter(b => b.life > 0);
   // 파상 등장
   if (World.queue.length) { World.waveT += dt; if (enemiesLeft() <= 2 || World.waveT > 8) { World.waveT = 0; spawnGroup(World.queue.shift(), World.kind === 'fight' && Run.node && Run.node.elite, false); } }
@@ -1450,204 +1309,310 @@ function updateWorld(dt) {
   if (World.clearT > 0) { World.clearT -= dt / Juice.scale(); if (World.clearT <= 0) { World.over = true; fightCleared(); } }
 }
 
-// ===== keywords.js =====
-// ───────── 행동 키워드 (설계: game-design/action-keywords.md) ─────────
-// 키워드를 행동 4개(평타·특수공격·패링·대시)에 붙여요. 같은 키워드도 붙인 행동마다 효과가 달라요.
-// 한 행동의 두 칸에 섞이는 두 기본 키워드가 있으면 합성해서 한 칸짜리 합성 키워드가 돼요(물리 현상 기준).
-// 적에게 남은 상태끼리도 같은 합성표로 반응해요(물에 젖은 적 + 전기 = 전도).
+// ===== contracts.js =====
+// ───────── 계약과 태그 시너지 (설계: game-design.md 8장, 계약 시트 contract-seed.json) ─────────
+// 계약 = 행위 계약(행동 하나에 붙어 그 행동을 강화) + 존재 계약(패시브처럼 전체).
+// 시너지는 태그 수(2/3/4)로 켜져요. 같은 계약을 두 행동에 맺어도 태그는 1개로 세요.
 
 const ACTS = [
   { k: 'atk', name: '평타', key: '좌클릭 / J' },
-  { k: 'spin', name: '특수공격', key: 'Q' },
-  { k: 'parry', name: '패링', key: '우클릭 / K' },
+  { k: 'magic', name: '마법', key: 'Q' },
+  { k: 'guard', name: '방어', key: '우클릭 / K' },
   { k: 'dash', name: '대시', key: 'Space' },
+  { k: 'ult', name: '궁극기', key: 'R' },
 ];
 const ACT = Object.fromEntries(ACTS.map(a => [a.k, a]));
-const KW_LV = [0, 1, 1.5, 2];
+const POW = 30;      // "위력 N%"에 기준이 없는 계약이 쓰는 기준 위력
+const ATK_POW = 16;  // "평타 위력" 기준 (1~2타 평균)
+const LV3 = [0, 0.3, 0.6, 1];
 
-// 기본 키워드 8종 (4.3 효과표)
-const KW_BASE = [
-  { id: 'dup', name: '복제', col: '#e3c8ff', phys: '수(개수)', st: null,
-    d: { atk: '한 박자 늦게 잔상이 같은 적을 한 번 더 베요 (50%)', spin: '회전베기가 한 바퀴 더 돌아요 (60%)', parry: '패링 뒤 반격이 2번까지 반격으로 쳐져요', dash: '시작 자리에 분신이 1.2초 남아 적의 주의를 끌어요' },
-    pair: '같은 행동에 다른 키워드가 있으면 그 효과를 한 번 더 내요' },
-  { id: 'fire', name: '화염', col: '#ff8a3d', phys: '열을 더함', st: 'burn',
-    d: { atk: '맞은 적이 화상을 입어요', spin: '회전한 자리에 2초 동안 불 고리가 남아요', parry: '성공 순간 공격자 앞에서 작은 폭발이 나요', dash: '지나간 경로에 불길이 1.5초 남아요' } },
-  { id: 'cold', name: '냉기', col: '#7fd8ff', phys: '열을 뺌', st: 'chill',
-    d: { atk: '냉각이 쌓이고, 3번이면 1초 빙결해요', spin: '회전한 자리에 서리 고리가 남아 둔화시켜요', parry: '성공하면 공격자가 즉시 1초 빙결해요', dash: '경로에 얼음판이 생겨 적이 느려져요' } },
-  { id: 'water', name: '물', col: '#4aa8ff', phys: '액체', st: 'wet',
-    d: { atk: '맞은 적이 젖어요 (다른 원소 반응 준비, 이동 -10%)', spin: '소용돌이가 주변 적을 안으로 끌어당겨요', parry: '성공 순간 주변 적이 젖고 체력을 조금 회복해요', dash: '대시 거리 +30%, 경로의 적이 젖어요' } },
-  { id: 'wind', name: '바람', col: '#a8f0c8', phys: '기체의 흐름', st: null,
-    d: { atk: '검풍으로 사거리 +60, 맞은 적을 살짝 밀어요', spin: '회오리가 적을 바깥으로 날려요', parry: '성공 순간 돌풍이 주변 적 투사체를 날려버려요', dash: '경로의 적을 옆으로 밀고, 대시 쿨다운 -20%' } },
-  { id: 'earth', name: '대지', col: '#c49a5a', phys: '고체와 질량', st: null,
-    d: { atk: '3타가 바닥을 쳐 앞쪽에 충격파를 일으켜요', spin: '회전 중 바위 파편이 사방으로 튀어요', parry: '패링 판정 +2프레임, 받는 피해 -15%', dash: '대시가 끝나는 자리에 착지 충격이 나요' } },
-  { id: 'elec', name: '전기', col: '#ffe45c', phys: '전하', st: 'shock',
-    d: { atk: '번개가 가까운 적에게 튀어요 (등급마다 1명)', spin: '전기장이 생겨 주변 적이 감전돼요', parry: '성공하면 공격자에게 전류가 역류해 마비돼요', dash: '대시가 빨라지고 경로의 적이 감전돼요' } },
-  { id: 'swift', name: '신속', col: '#9ff0ff', phys: '속도와 시간', st: null,
-    d: { atk: '평타 속도 +20%', spin: '회전베기 재사용 시간 -40%', parry: '퍼펙트 패링 구간 +1프레임', dash: '대시를 연달아 2번 쓸 수 있어요' } },
+// 태그 11종 (시트의 tags). t = [2개, 3개, 4개] 효과
+const TAGS = [
+  { name: '원소', hue: 22, t: ['상태 이상 지속 시간 +30%', '반응: 화상 중 빙결 = 폭발, 화상+감전 = 화상 피해 +50%, 둔화·빙결+감전 = 번개 1명 더', '속성 전환 비율 +20%p, 반응 위력 +50%'] },
+  { name: '검기', hue: 205, t: ['검기 크기 +20%', '검기 위력 +30%', '1타·2타도 약한 검기를 날림 (위력 30%)'] },
+  { name: '응수', hue: 48, t: ['방어 판정 +0.03초', '반격 위력 +40%', '방어 성공 시 주변 적에게 충격파 (포이즈 피해, 경직)'] },
+  { name: '붕괴', hue: 282, t: ['포이즈 피해 +20%', '방어 경직 시간 +30%', '경직된 적에게 피해 +25%'] },
+  { name: '처형', hue: 355, t: ['체력 30% 이하 적에게 피해 +15%', '체력 10% 이하 일반 적은 즉사 (끊어내기가 있으면 기준 +5%p)', '처치하면 3초 동안 치명 확률 +10%'] },
+  { name: '질풍', hue: 150, t: ['대시 쿨다운 -15%', '대시로 지나간 적에게 피해', '처치하면 대시 즉시 충전'] },
+  { name: '철벽', hue: 228, t: ['받는 피해 -6%', '층 시작 시 보호막 15', '층마다 한 번, 체력 30% 아래로 떨어지면 2초 무적과 체력 15 회복'] },
+  { name: '천운', hue: 88, t: ['파편 획득 +15%', '계약 화면 무료 리롤 +1', '계약 화면이 25% 확률로 카드 4장'] },
+  { name: '권속', hue: 318, t: ['소환물 지속 시간 +30%', '소환물 수 +1', '소환물이 사라질 때 작게 터짐 (위력 30%)'] },
+  { name: '대가', hue: 255, t: ['대가 계약의 불이익 -25%', '체력 50% 아래일 때 모든 피해 +20%', '대가 계약 1개마다 모든 피해 +8%'] },
+  { name: '의식', hue: 180, t: ['과제 진행 속도 +25%', '과제를 완수하면 파편 +60', '과제 보상이 2장'] },
 ];
-// 1단계 합성 19종 (4.4 합성표). 행동별 모양: 평타=맞은 적 자리, 특수=내 주변 크게, 패링=공격자 자리 크게, 대시=지나간 경로 위
-const KW_COMP = [
-  { id: 'fog', name: '안개', a: 'water', b: 'wind', col: '#cfd8e8', phys: '물방울이 공기에 흩어짐', desc: '안개를 남겨요. 안개 속에 있으면 적이 공격을 못 하고, 내가 안개 속이면 적 공격이 절반 빗나가요' },
-  { id: 'steam', name: '증기', a: 'water', b: 'fire', col: '#f0f0f0', phys: '기화와 팽창', desc: '증기 폭발로 밀어내고 화상을 입혀요' },
-  { id: 'ice', name: '얼음', a: 'water', b: 'cold', col: '#bfefff', phys: '응고', desc: '얼음 가시가 솟아 빙결시켜요' },
-  { id: 'conduct', name: '전도', a: 'water', b: 'elec', col: '#7fc8ff', phys: '물이 전류를 옮김', desc: '주변을 적시고, 젖은 적 전부에게 번개가 퍼져요' },
-  { id: 'mud', name: '진흙', a: 'water', b: 'earth', col: '#8a6a44', phys: '흙과 물이 섞임', desc: '늪 장판이 생겨 크게 둔화시켜요' },
-  { id: 'hotwind', name: '열풍', a: 'fire', b: 'wind', col: '#ffb36b', phys: '산소 공급과 연소 확산', desc: '불길을 퍼뜨리며 밀어내요' },
-  { id: 'lava', name: '용암', a: 'fire', b: 'earth', col: '#ff5a2a', phys: '용융', desc: '오래 남는 용암 장판이 생겨요' },
-  { id: 'thermal', name: '열충격', a: 'fire', b: 'cold', col: '#ffd0a0', phys: '급격한 온도 차로 깨짐', desc: '화상이나 냉각 중인 적을 크게 깨뜨려요' },
-  { id: 'plasma', name: '플라스마', a: 'fire', b: 'elec', col: '#ff9cf0', phys: '이온화된 기체', desc: '적을 꿰뚫는 고열 광선이 나가요' },
-  { id: 'sand', name: '모래폭풍', a: 'wind', b: 'earth', col: '#d9b77a', phys: '침식', desc: '움직이는 모래 소용돌이가 계속 깎아요' },
-  { id: 'blizzard', name: '눈보라', a: 'wind', b: 'cold', col: '#dff4ff', phys: '찬 공기의 흐름', desc: '넓은 범위가 서서히 얼어붙어요' },
-  { id: 'cloud', name: '뇌운', a: 'wind', b: 'elec', col: '#b8a8ff', phys: '공기 마찰과 방전', desc: '구름이 남아 일정 간격으로 낙뢰를 떨어뜨려요' },
-  { id: 'magnet', name: '자력', a: 'earth', b: 'elec', col: '#c0c8d8', phys: '자기장', desc: '적을 한곳으로 끌어모으고 적 투사체를 빨아들여요' },
-  { id: 'permafrost', name: '동토', a: 'earth', b: 'cold', col: '#a8d8e8', phys: '얼어붙은 땅', desc: '오래 남는 결빙 지대가 생겨요' },
-  { id: 'supercond', name: '초전도', a: 'cold', b: 'elec', col: '#9ffcff', phys: '냉각하면 저항이 0', desc: '냉각·빙결·젖은 적 사이로 번개가 끝없이 튀어요 (같은 적은 한 번)' },
-  { id: 'sonic', name: '음속', a: 'swift', b: 'wind', col: '#e8fff4', phys: '소리보다 빠름', desc: '충격파(소닉붐)가 터져 크게 밀어내요' },
-  { id: 'momentum', name: '운동량', a: 'swift', b: 'earth', col: '#e0b070', phys: '질량 × 속도', desc: '최근 이동한 거리만큼 커지는 충돌 피해' },
-  { id: 'friction', name: '마찰열', a: 'swift', b: 'fire', col: '#ff7a50', phys: '빠른 마찰이 열을 냄', desc: '연속 타격이 많을수록 화상이 크게 쌓여요' },
-  { id: 'flash', name: '섬광', a: 'swift', b: 'elec', col: '#fff7a0', phys: '빛의 속도', desc: '번개가 내리꽂히고, 대시에 붙이면 대시가 50% 더 빨라요' },
-];
-const KW = {}; for (const k of KW_BASE) KW[k.id] = { ...k, kind: 'base' }; for (const k of KW_COMP) KW[k.id] = { ...k, kind: 'comp' };
-const KW_FUSE = {}; for (const c of KW_COMP) { KW_FUSE[c.a + '+' + c.b] = c.id; KW_FUSE[c.b + '+' + c.a] = c.id; }
-function fuseOf(a, b) { return KW_FUSE[a + '+' + b] || null; }
-// 적 상태 → 원소 (반응용)
-const ST_ELEM = { burn: 'fire', chill: 'cold', wet: 'water', shock: 'elec' };
-const ST_NAME = { burn: '화상', chill: '냉각', wet: '젖음', shock: '감전' };
+const TAG = Object.fromEntries(TAGS.map(t => [t.name, t]));
+const tagCol = n => `hsl(${TAG[n].hue} 80% 68%)`;
 
-// ───────── 런 상태 ─────────
-function kwInit() {
-  Run.kw = { atk: [null, null], spin: [null, null], parry: [null, null], dash: [null, null] };
-  Run.kwSlots = { atk: 1, spin: 1, parry: 1, dash: 1 };
-  Run.kwBag = []; Run.kwBagMax = 3; Run.kwSeen = new Set();
+// 계약 목록. n = 시트 번호(ct-0NN). act: 붙는 행동 / 'pick' = 맺을 때 고름 / 없으면 존재 계약.
+// d(l) = 단계 l의 설명. lines = 행동을 고르는 계약의 행동별 효과 줄.
+const pct = (arr, l) => arr[l - 1];
+const CONTRACTS = [
+  { n: 1, id: 'flame', name: '불길', act: 'pick', on: ['atk', 'magic', 'guard', 'dash', 'ult'], grade: 'gold', tags: ['원소'], max: 3, d: l => `붙인 행동 공격의 ${pct([30, 60, 100], l)}%가 화염으로 바뀌고 화상 (최대 5중첩)`,
+    lines: { atk: '맞힌 적이 화상을 입어요', magic: '마법을 쓴 자리에 2초 동안 불 고리가 남아요', guard: '방어에 성공하면 공격자 앞에서 불이 터져요', dash: '지나간 길에 불길이 1.5초 남아요', ult: '궁극기에 맞은 적이 화상 3중첩' } },
+  { n: 2, id: 'frost', name: '서리', act: 'pick', on: ['atk', 'magic', 'guard', 'dash', 'ult'], grade: 'gold', tags: ['원소', '철벽'], max: 3, d: l => `붙인 행동 공격의 ${pct([30, 60, 100], l)}%가 냉기, 둔화 5중첩이면 빙결 (빙결 후 2초 면역, 보스는 피해 +30%)`,
+    lines: { atk: '맞힌 적에게 둔화가 쌓여요', magic: '마법을 쓴 자리에 서리 고리가 남아 느려지게 해요', guard: '방어에 성공하면 공격자에게 둔화 3중첩', dash: '지나간 길에 얼음판이 2초 남아요', ult: '궁극기에 맞은 적에게 둔화 3중첩' } },
+  { n: 3, id: 'thunder', name: '우레', act: 'pick', on: ['atk', 'magic', 'guard', 'dash', 'ult'], grade: 'gold', tags: ['원소', '질풍'], max: 3, d: l => `붙인 행동 공격의 ${pct([30, 60, 100], l)}%가 번개, 가까운 적 ${l}명에게 튐 (같은 적에게 다시 안 튐)`,
+    lines: { atk: '맞힌 적에게서 번개가 튀어요', magic: '마법을 쓰면 주변 적이 감전돼요', guard: '방어에 성공하면 공격자에게 전류가 흘러 짧게 경직', dash: '지나간 길의 적이 감전돼요', ult: '궁극기에 맞은 적이 감전되고 번개가 튀어요' } },
+  { n: 4, id: 'pierce', name: '꿰뚫기', act: 'atk', grade: 'gold', tags: ['검기', '질풍'], max: 3, d: l => `3타·반격이 적을 뚫는 검기를 날림 (위력 ${pct([50, 80, 110], l)}%). 내 투사체가 적을 뚫고 지나감` },
+  { n: 5, id: 'fork', name: '갈래', act: 'atk', grade: 'prism', tags: ['검기'], max: 3, d: l => `3타·반격이 양옆으로 검기 ${l}갈래씩 더 냄 (위력 40%, 갈라진 것은 다시 안 갈라짐)` },
+  { n: 6, id: 'finisher', name: '마무리 장인', act: 'atk', grade: 'gold', tags: ['검기', '붕괴'], d: () => '3타 피해 +60%, 3타 포이즈 피해 2배' },
+  { n: 7, id: 'echo', name: '메아리', grade: 'prism', tags: ['검기', '천운'], max: 3, d: l => `모든 타격이 ${pct([25, 40, 55], l)}% 확률로 0.2초 뒤 한 번 더 (위력 50%, 메아리는 다시 메아리 안 됨)` },
+  { n: 8, id: 'cut', name: '끊어내기', grade: 'prism', tags: ['처형'], max: 3, d: l => `체력 ${pct([15, 20, 25], l)}% 이하 적을 때리면 즉사 (보스는 최대 체력 5%, 3초에 한 번)` },
+  { n: 9, id: 'brand', name: '낙인', grade: 'gold', tags: ['처형', '원소'], max: 3, d: l => `타격이 낙인을 쌓고 3중첩이면 터짐 (위력 ${pct([60, 90, 120], l)}%, 터진 낙인은 낙인을 안 쌓음)` },
+  { n: 10, id: 'overcharge', name: '덧충전', act: 'pick', on: ['dash', 'magic'], grade: 'prism', tags: ['질풍'], d: () => '붙인 행동이 2회 충전, 적을 처치하면 1회 충전',
+    lines: { dash: '대시를 2번까지 모아 써요', magic: '마법을 2번까지 모아 써요' } },
+  { n: 11, id: 'cycle', name: '잿불 순환', act: 'ult', grade: 'gold', tags: ['원소'], d: () => '궁극기를 쓴 뒤 5초 동안 피해 +30%' },
+  { n: 12, id: 'catch', name: '칼날 받이', act: 'guard', grade: 'silver', tags: ['응수', '철벽'], d: () => '방어 판정 +0.06초' },
+  { n: 13, id: 'topple', name: '흔들기', act: 'guard', grade: 'silver', tags: ['붕괴'], d: () => '방어 경직 시간 +50%, 포이즈 피해 +30%' },
+  { n: 14, id: 'chainparry', name: '연속 응수', act: 'guard', grade: 'gold', tags: ['응수'], d: () => '4초 안에 방어를 이어 성공할 때마다 반격 위력 +30% (최대 3중첩)' },
+  { n: 15, id: 'repay', name: '되갚음', act: 'guard', grade: 'gold', tags: ['응수', '붕괴'], d: () => '반격이 튕겨 낸 공격 위력의 150%를 추가 피해로 줌' },
+  { n: 16, id: 'redsteel', name: '붉은 쇠', act: 'guard', grade: 'prism', tags: ['응수', '철벽'], d: () => '붉은 공격도 방어 가능, 대신 방어 판정 -0.04초' },
+  { n: 17, id: 'gale', name: '질풍 발', act: 'dash', grade: 'silver', tags: ['질풍'], d: () => '대시 후 1초 동안 이동 +30%, 대시 공격 피해 +50%' },
+  { n: 18, id: 'groggyhunt', name: '빈틈 사냥', grade: 'prism', tags: ['붕괴', '처형'], d: () => '경직·빙결된 적에게 피해 +40%' },
+  { n: 19, id: 'fate', name: '운명 저울', grade: 'gold', tags: ['천운', '처형'], d: () => '치명 확률 +15%, 치명 피해 +50%' },
+  { n: 20, id: 'thirst', name: '피의 갈증', grade: 'silver', tags: ['철벽', '질풍'], d: () => '적을 처치하면 체력 2 회복' },
+  { n: 21, id: 'plate', name: '철갑', grade: 'silver', tags: ['철벽'], d: () => '받는 피해 -12%' },
+  { n: 22, id: 'regular', name: '단골 손님', grade: 'silver', tags: ['천운'], d: () => '상점 가격 -20%, 상점마다 새로고침 무료 1회' },
+  { n: 23, id: 'star', name: '별의 문장', grade: 'silver', tags: ['천운'], d: () => '다음 계약 선택 카드 1장이 한 등급 위로 나옴' },
+  { n: 24, id: 'moon', name: '달의 예언', grade: 'gold', tags: ['천운'], d: () => '다음 계약 선택 카드 3장이 모두 한 등급 위로 나옴' },
+  { n: 25, id: 'saga', name: '불타는 서사', grade: 'prism', tags: ['천운'], d: () => '다음 계층보스 프리즘 계약 화면이 4장, 그 전까지 받는 피해 +10%' },
+  // 26 수집가, 27 확장 가방: 아이템·각인 방식이 정해지지 않아 프로토타입에서는 뺐어요.
+  { n: 28, id: 'fourth', name: '넷째 박자', act: 'atk', grade: 'silver', tags: ['검기'], d: () => '평타가 4번째로 맞을 때마다 추가 피해 60%, 적 경직 0.3초' },
+  { n: 29, id: 'shadowhand', name: '그림자 손', act: 'atk', grade: 'gold', tags: ['검기', '권속'], d: () => '평타를 휘두를 때마다 그림자 손이 같은 방향을 한 번 더 할퀴어요 (위력 40%)' },
+  { n: 30, id: 'thirdcurse', name: '세 번째 저주', act: 'atk', grade: 'silver', tags: ['처형'], d: () => '3타에 맞은 적에게 저주 표식. 표식 있는 적이 다음에 받는 공격 +50%' },
+  { n: 31, id: 'spellnail', name: '주문 깃든 손톱', act: 'atk', grade: 'gold', tags: ['원소'], d: () => '3타가 마법의 효과를 30% 크기로 맞은 자리에 한 번 더 남겨요' },
+  { n: 32, id: 'sparkjump', name: '튀는 불씨', act: 'atk', grade: 'silver', tags: ['원소'], d: () => '평타 적중 시 20% 확률로 가까운 적 2명에게 번개가 튀어요' },
+  { n: 33, id: 'heatup', name: '달아오름', act: 'atk', grade: 'silver', tags: ['질풍'], d: () => '평타를 이어 칠수록 공격 속도 최대 +30%. 대시·방어로 끊어도 유지, 2초 동안 안 치면 사라져요' },
+  { n: 34, id: 'seal', name: '마법 봉인', act: 'atk', grade: 'prism', tags: ['검기', '대가'], d: () => '마법 재사용 시간 2배. 대신 평타 피해 +40%, 평타 속도 +15%, 3타 범위 +30%' },
+  { n: 35, id: 'reecho', name: '되울림 주문', act: 'magic', grade: 'prism', tags: ['원소'], d: () => '마법이 0.4초 뒤 같은 자리에서 위력 60%로 한 번 더 나가요 (되울림은 다시 되울리지 않음)' },
+  { n: 36, id: 'homing', name: '추적 부적', act: 'magic', grade: 'gold', tags: ['원소', '권속'], d: () => '마법이 적을 맞히면 유도 부적 3발이 날아가요 (각 15%)' },
+  { n: 37, id: 'frog', name: '개구리 저주', act: 'magic', grade: 'prism', tags: ['붕괴'], d: () => '마법에 맞은 일반·정예 적이 1.5초 개구리로 변해요 (공격 못 함, 받는 피해 +20%). 보스는 0.3초 경직' },
+  { n: 38, id: 'bees', name: '벌 떼 부르기', act: 'magic', grade: 'gold', tags: ['권속'], d: () => '마법을 쓰면 벌 3마리가 4초 동안 가까운 적을 쏘아요 (1초마다 평타 위력 10%)' },
+  { n: 39, id: 'burnmana', name: '타오르는 마력', act: 'magic', grade: 'gold', tags: ['원소'], d: () => '화상 피해를 줄 때마다 마법 재사용 시간 -0.2초' },
+  { n: 40, id: 'jewel', name: '보석 지팡이', act: 'magic', grade: 'gold', tags: ['천운'], d: () => '마법도 치명타가 나고, 마법 치명 피해 +30%' },
+  { n: 41, id: 'quickspell', name: '속주문', act: 'magic', grade: 'silver', tags: ['질풍'], d: () => '마법 재사용 시간 -25%' },
+  { n: 42, id: 'soulbottle', name: '영혼 병', act: 'magic', grade: 'gold', tags: ['처형'], d: () => '마법으로 적을 처치할 때마다 이번 런 동안 마법 피해 +1%. 상한 없음' },
+  { n: 43, id: 'barrier', name: '단단한 결계', act: 'guard', grade: 'silver', tags: ['철벽'], d: () => '방어에 성공하면 보호막 8 (3초)' },
+  { n: 44, id: 'bloodmirror', name: '피 거울', act: 'guard', grade: 'gold', tags: ['철벽', '응수'], d: () => '방어에 성공하면 튕긴 공격 위력의 30%만큼 체력 회복' },
+  { n: 45, id: 'mirror', name: '거울 결계', act: 'guard', grade: 'gold', tags: ['응수'], d: () => '방어로 튕긴 투사체가 2갈래로 갈라지고, 근접 공격을 막으면 공격자에게 칼바람이 날아가요 (위력 50%)' },
+  { n: 46, id: 'shadowhide', name: '그림자 숨기', act: 'guard', grade: 'gold', tags: ['응수', '질풍'], d: () => '퍼펙트 방어에 성공하면 1초 무적, 이동 속도 +30%' },
+  { n: 47, id: 'danger', name: '위험한 결계', act: 'guard', grade: 'prism', tags: ['응수', '대가'], d: () => '방어 판정이 4프레임 줄어요. 대신 방어 뒤 반격 위력 +150%' },
+  { n: 48, id: 'revenge', name: '되갚는 저주', act: 'guard', grade: 'silver', tags: ['응수'], d: () => '방어에 실패해 맞으면 2초 동안 다음 공격 +60%' },
+  { n: 49, id: 'goldcatch', name: '금빛 낚아채기', act: 'guard', grade: 'gold', tags: ['응수', '붕괴'], d: () => '금색(강공격)을 막으면 적 경직 +0.6초, 경직 동안 그 적에게 주는 피해 +30%' },
+  { n: 50, id: 'emberstep', name: '불씨 발자국', act: 'dash', grade: 'gold', tags: ['원소'], d: () => '대시로 지나간 길에 룬이 남아 1초 뒤 터져요 (위력 50%)' },
+  { n: 51, id: 'broomdance', name: '칼춤 빗자루', act: 'dash', grade: 'prism', tags: ['질풍', '검기'], d: () => '대시가 가까운 적 3명 사이를 차례로 순간이동하며 베요 (무적 유지, 각 60%)' },
+  { n: 52, id: 'lightflight', name: '가벼운 비행', act: 'dash', grade: 'gold', tags: ['질풍'], d: () => '대시 충전 +1' },
+  { n: 53, id: 'speedcurse', name: '속도의 저주', act: 'dash', grade: 'silver', tags: ['질풍'], d: () => '대시 뒤 1초 동안 이동 +30%, 그동안 첫 공격 +40%' },
+  { n: 54, id: 'illusion', name: '허상', act: 'dash', grade: 'gold', tags: ['권속'], d: () => '대시를 시작한 자리에 환영이 남아 1.5초 동안 적을 끌고, 사라질 때 터져요 (위력 40%)' },
+  { n: 55, id: 'escape', name: '빗자루 도주', act: 'dash', grade: 'silver', tags: ['철벽'], d: () => '체력이 30% 아래로 떨어지면 대시가 바로 충전되고 보호막 15. 층마다 한 번' },
+  { n: 56, id: 'doublecast', name: '두 번 외는 주문', act: 'ult', grade: 'prism', tags: ['천운'], d: () => '궁극기를 쓴 뒤 5초 안에 한 번 더 쓸 수 있어요 (두 번째는 위력 50%)' },
+  { n: 57, id: 'unbroken', name: '꺾이지 않는 의식', act: 'ult', grade: 'silver', tags: ['철벽'], d: () => '궁극기를 쓰는 동안 어떤 공격에도 끊기지 않고 (붉은색 포함) 받는 피해 -30%' },
+  { n: 58, id: 'fullmoon', name: '만월', act: 'ult', grade: 'gold', tags: ['처형'], d: () => '궁극기 효과 중 적을 처치하면 효과 시간 +1초 (최대 +5초)' },
+  { n: 59, id: 'frozenspell', name: '얼어붙은 주문', act: 'ult', grade: 'gold', tags: ['원소'], d: () => '궁극기에 맞은 적이 1.5초 빙결 (보스는 0.5초 경직)' },
+  { n: 60, id: 'overflow', name: '넘치는 마력', act: 'ult', grade: 'gold', tags: ['질풍'], d: () => '궁극기를 쓰면 마법과 대시가 바로 충전돼요' },
+  { n: 61, id: 'forsake', name: '의식 포기', act: 'ult', grade: 'prism', tags: ['대가'], d: () => '궁극기를 쓸 수 없어요. 대신 모든 피해 +25%, 마법 재사용 -30%' },
+  { n: 62, id: 'giant', name: '거인화', grade: 'prism', tags: ['철벽'], d: () => '몸집 +30%, 최대 체력 +35%, 피해 +15%. 대신 대시 거리 -15%' },
+  { n: 63, id: 'small', name: '작은 마녀', grade: 'gold', tags: ['처형'], d: () => '몸이 작아지고 이동 +10%. 정예·보스에게 주는 피해 +20%' },
+  { n: 64, id: 'potion', name: '불안정한 약', grade: 'gold', tags: ['천운'], d: () => '층을 시작할 때마다 무작위로 거대 (체력 +30%) 또는 소형 (이동·공격 속도 +15%)' },
+  { n: 65, id: 'glasssoul', name: '유리 영혼', grade: 'prism', tags: ['대가'], d: () => '최대 체력이 60%로 줄고, 모든 피해 +40%' },
+  { n: 66, id: 'secondwind', name: '두 번째 숨', grade: 'prism', tags: ['철벽'], d: () => '런에서 한 번, 죽으면 체력 40%로 일어나요. 쓰면 이 계약은 사라져요' },
+  { n: 67, id: 'iou', name: '악마의 차용증', grade: 'gold', tags: ['대가'], d: () => '맺는 즉시 계약 1장을 더 골라요. 대신 다음 3층 동안 받는 피해 +25%' },
+  { n: 68, id: 'pandora', name: '판도라의 솥', grade: 'prism', tags: ['천운'], d: () => '맺는 순간 무작위 계약 3개를 얻어요 (같은 등급, 고를 수 없음)' },
+  { n: 69, id: 'transmute', name: '변성', grade: 'gold', tags: ['천운'], d: () => '맺으면 사라지고, 한 등급 위 무작위 계약 2개로 바뀌어요' },
+  { n: 70, id: 'bloodring', name: '피의 고리', grade: 'gold', tags: ['철벽'], d: () => '체력을 회복할 때마다 회복량만큼 가까운 적에게 피해' },
+  { n: 71, id: 'bomb', name: '봉인된 폭탄', grade: 'silver', tags: ['붕괴'], d: () => '층 시작 3초 뒤 내 주변에 큰 폭발 (위력 200%, 적 경직)' },
+  { n: 72, id: 'quest', name: '의식 과제', grade: 'gold', tags: ['의식'], d: () => '맺을 때 과제 하나가 정해져요 (방어 30번 / 무피격으로 층 3번 / 대시 공격으로 20명 처치). 완수하면 프리즘 계약 1장' },
+  { n: 73, id: 'crescendo', name: '고조', grade: 'gold', tags: ['처형'], d: () => '전투가 시작되고 15초 뒤부터 모든 피해 +40%' },
+  { n: 74, id: 'calm', name: '고요한 결계', grade: 'silver', tags: ['철벽'], d: () => '4초 동안 안 맞으면 최대 체력 10%짜리 보호막' },
+  { n: 75, id: 'interest', name: '마녀의 이자', grade: 'silver', tags: ['천운'], d: () => '층을 시작할 때마다 가진 파편의 10%를 더 받아요 (한 번에 최대 20)' },
+  { n: 76, id: 'swell', name: '부풀어 오르는 몸', grade: 'gold', tags: ['철벽'], d: () => '층을 깰 때마다 최대 체력 +3, 상한 없음' },
+  { n: 77, id: 'crow', name: '사역마 까마귀', grade: 'gold', tags: ['권속'], d: () => '까마귀가 따라다니며 내가 마지막으로 때린 적을 1초마다 쪼아요 (평타 위력 15%)' },
+];
+for (const c of CONTRACTS) { c.max = c.max || 1; c.kind = c.act ? 'act' : 'exist'; }
+const CT = Object.fromEntries(CONTRACTS.map(c => [c.id, c]));
+const QUESTS = { guard: { name: '방어 30번 성공', goal: 30 }, nohit: { name: '무피격으로 층 3번 클리어', goal: 3 }, dashkill: { name: '대시 공격으로 20명 처치', goal: 20 } };
+
+// ───────── 보유 계약 조회 ─────────
+function C(id) { let l = 0; for (const c of Run.cts) if (c.id === id) l = Math.max(l, c.lv); return l; }            // 가진 단계 (어느 행동이든)
+function CA(id, act) { for (const c of Run.cts) if (c.id === id && c.act === act) return c.lv; return 0; }            // 그 행동에 붙인 단계
+function tagN(t) { return (Run.tagN && Run.tagN[t]) || 0; }
+function countTags() { const n = {}; const seen = new Set(); for (const c of Run.cts) { if (seen.has(c.id)) continue; seen.add(c.id); for (const t of CT[c.id].tags) n[t] = (n[t] || 0) + 1; } return n; }
+function debtK() { return tagN('대가') >= 2 ? 0.75 : 1; }            // 대가 2개: 불이익 -25%
+function sumN(base) { return base + (tagN('권속') >= 3 ? 1 : 0); }   // 권속 3개: 소환물 수 +1
+function sumDur(t) { return t * (tagN('권속') >= 2 ? 1.3 : 1); }     // 권속 2개: 지속 +30%
+function ctOf(act) { return Run.cts.filter(c => (c.act || null) === act); }
+function actLabel(c) { return c.act ? ACT[c.act].name : '존재'; }
+
+// 능력치에 반영 (recalc에서 호출)
+function ctPassive(s) {
+  const dk = debtK();
+  if (C('catch')) { s.parryWin += 0.06; s.parryWinBase += 0.06; }
+  if (C('redsteel')) { s.parryWin -= 0.04; s.parryWinBase -= 0.04; }
+  if (C('danger')) { s.parryWin -= 0.067 * dk; s.parryWinBase -= 0.067 * dk; }
+  if (tagN('응수') >= 2) { s.parryWin += 0.03; s.parryWinBase += 0.03; }
+  if (C('topple')) { s.staggerMul += 0.5; s.poise += 0.3; }
+  if (tagN('붕괴') >= 2) s.poise += 0.2;
+  if (tagN('붕괴') >= 3) s.staggerMul += 0.3;
+  if (C('plate')) s.dmgTaken *= 0.88;
+  if (tagN('철벽') >= 2) s.dmgTaken *= 0.94;
+  if (Run.sagaOn) s.dmgTaken *= 1.1;
+  if (Run.iouFloors > 0) s.dmgTaken *= 1 + 0.25 * dk;
+  if (C('fate')) { s.crit += 0.15; s.critDmg += 0.5; }
+  if (tagN('천운') >= 2) s.shardMul += 0.15;
+  if (tagN('질풍') >= 2) s.dashCd *= 0.85;
+  s.dashMax = 1 + (CA('overcharge', 'dash') ? 1 : 0) + (C('lightflight') ? 1 : 0);
+  s.spinMax = 1 + (CA('overcharge', 'magic') ? 1 : 0);
+  if (C('quickspell')) s.spinCd *= 0.75;
+  if (C('seal')) { s.spinCd *= 1 + 1 * dk; s.atkSpd += 0.15; }
+  if (C('forsake')) { s.dmg += 0.25; s.spinCd *= 0.7; }
+  if (C('giant')) { s.size *= 1.3; s.maxHpMul += 0.35; s.dmg += 0.15; s.dashSp *= 0.85; }
+  if (C('small')) { s.size *= 0.75; s.move += 0.1; }
+  if (C('potion') && Run.potion === 'big') { s.size *= 1.2; s.maxHpMul += 0.3; }
+  if (C('potion') && Run.potion === 'small') { s.size *= 0.85; s.move += 0.15; s.atkSpd += 0.15; }
+  if (C('glasssoul')) { s.maxHpMul -= 0.4 * dk; s.dmg += 0.4; }
+  if (tagN('대가') >= 4) s.dmg += 0.08 * Run.cts.filter(c => CT[c.id].tags.includes('대가')).length;
+  s.maxHp += Run.swell || 0;
 }
-function kwAll(act) { return Run.kw ? Run.kw[act].filter(Boolean) : []; }
-function kwLv(act, id) { let l = 0; for (const k of kwAll(act)) if (k.id === id) l = Math.max(l, k.lv); return l; }
-function kwOwned() { const out = []; if (!Run.kw) return out; for (const a of ACTS) Run.kw[a.k].forEach((k, i) => k && out.push({ ...k, act: a.k, i })); for (const k of Run.kwBag) out.push({ ...k, act: 'bag' }); return out; }
-// 합성 가능한 행동 목록
-function kwFusable(act) { const [x, y] = Run.kw[act]; return x && y && KW[x.id].kind === 'base' && KW[y.id].kind === 'base' ? fuseOf(x.id, y.id) : null; }
-function kwFuse(act) {
-  const id = kwFusable(act); if (!id) return false;
-  const [x, y] = Run.kw[act]; const lv = Math.min(3, Math.ceil((x.lv + y.lv) / 2));
-  Run.kw[act] = [{ id, lv }, null]; recalc(); return id;
+
+// ───────── 계약 맺기 ─────────
+// 맺을 수 있는 계약인지 (등급·단계·한 번뿐인 계약)
+function ctAvail(c) {
+  if (Run.spent.has(c.id)) return false;
+  if (c.act === 'pick') return c.on.some(a => CA(c.id, a) < c.max);
+  return C(c.id) < c.max;
 }
-// 상점 분리: 합성 키워드 → 재료 둘 (가방으로)
-function kwSplit(act, i) {
-  const k = Run.kw[act][i]; if (!k || KW[k.id].kind !== 'comp') return false;
-  const c = KW[k.id]; Run.kw[act][i] = { id: c.a, lv: k.lv };
-  const other = { id: c.b, lv: k.lv };
-  const j = Run.kw[act].findIndex((s, n) => !s && n < Run.kwSlots[act]); if (j >= 0) Run.kw[act][j] = other; else Run.kwBag.push(other);
-  recalc(); return true;
-}
-// 키워드 얻기: 가진 것이면 등급 +1 (최대 3), 아니면 자리에 붙이기
-function kwGain(id, act) {
-  for (const a of ACTS) for (const k of Run.kw[a.k]) if (k && k.id === id) { k.lv = Math.min(3, k.lv + 1); recalc(); return { up: true, act: a.k }; }
-  for (const k of Run.kwBag) if (k.id === id) { k.lv = Math.min(3, k.lv + 1); return { up: true, act: 'bag' }; }
-  const inst = { id, lv: 1 };
-  if (act && act !== 'bag') {
-    const slots = Run.kw[act]; const i = slots.findIndex((s, n) => !s && n < Run.kwSlots[act]);
-    if (i >= 0) { slots[i] = inst; recalc(); return { act }; }
+function ctPool(grade, skip) { return CONTRACTS.filter(c => c.grade === grade && ctAvail(c) && !(skip || []).includes(c)); }
+function upGrade(g) { return g === 'silver' ? 'gold' : 'prism'; }
+function rollContracts(grade, n, upCount) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const g = i < upCount ? upGrade(grade) : grade;
+    let pool = ctPool(g, out);
+    if (!pool.length) pool = CONTRACTS.filter(c => ctAvail(c) && !out.includes(c));
+    if (pool.length) out.push(pick(pool));
   }
-  if (Run.kwBag.length < Run.kwBagMax) { Run.kwBag.push(inst); return { act: 'bag' }; }
-  return { lost: true };
+  return shuffle(out);
+}
+function ctAdd(id, act) {
+  const c = CT[id]; act = c.kind === 'act' ? act || c.act : null;
+  const own = Run.cts.find(x => x.id === id && x.act === act);
+  if (own) own.lv = Math.min(c.max, own.lv + 1); else Run.cts.push({ id, act, lv: 1 });
+}
+// 무작위로 얻는 계약(판도라·변성): 행동을 고르는 계약은 가능한 행동 중 무작위
+function ctRandom(grade, n, skipIds) {
+  const got = [];
+  for (let i = 0; i < n; i++) {
+    const pool = ctPool(grade).filter(c => !skipIds.includes(c.id) && !got.includes(c) && !['pandora', 'transmute', 'iou'].includes(c.id));
+    if (!pool.length) break; const c = pick(pool); got.push(c);
+    ctAdd(c.id, c.act === 'pick' ? pick(c.on.filter(a => CA(c.id, a) < c.max)) : c.act); ctOnTake(c.id);
+  }
+  return got;
+}
+// 맺는 순간 한 번 일어나는 일
+function ctOnTake(id) {
+  if (id === 'star') Run.upNext = Math.max(Run.upNext, 1);
+  if (id === 'moon') Run.upNext = 3;
+  if (id === 'saga') Run.sagaOn = true;
+  if (id === 'iou') Run.iouFloors = 3;
+  if (id === 'quest' && !Run.quest) { const k = pick(Object.keys(QUESTS)); Run.quest = { k, n: 0, goal: QUESTS[k].goal, done: false }; }
+}
+function takeContract(id, act, cb) {
+  const before = Object.assign({}, Run.tagN); const hpBefore = St.maxHp;
+  const c = CT[id]; let msg = null, extra = false;
+  if (id === 'transmute') {
+    const got = ctRandom(upGrade(c.grade), 2, []);
+    msg = ['변성', got.length ? `${got.map(x => `<b>${x.name}</b>`).join(', ')}(으)로 바뀌었어요.` : '바뀔 계약이 없어요.'];
+  } else {
+    ctAdd(id, act); ctOnTake(id);
+    if (id === 'pandora') { const got = ctRandom(c.grade, 3, ['pandora']); msg = ['판도라의 솥', got.length ? `${got.map(x => `<b>${x.name}</b>`).join(', ')}을(를) 얻었어요.` : '나올 계약이 없어요.']; }
+    if (id === 'quest' && Run.quest && !Run.quest.done) msg = ['의식 과제', `과제: <b>${QUESTS[Run.quest.k].name}</b>. 완수하면 프리즘 계약을 골라요.`];
+    if (id === 'iou') extra = true;
+  }
+  recalc();
+  if (St.maxHp > hpBefore) Run.hp = Math.min(St.maxHp, Run.hp + (St.maxHp - hpBefore));
+  for (const t of TAGS) { const a = before[t.name] || 0, b = tagN(t.name); for (const th of [2, 3, 4]) if (a < th && b >= th) setTimeout(() => flashMsg(`태그 시너지: ${t.name} ${th}개 · ${t.t[th - 2]}`), 60 + th * 30); }
+  if (!cb) return;
+  const go = () => extra ? showContracts({ title: '악마의 차용증: 계약 한 장 더', cb }) : cb();
+  if (msg) notice(msg[0], msg[1], go); else go();
+}
+// 파기 (상점). 맺는 순간 끝난 효과는 되돌리지 않아요.
+function ctRemove(inst) { const i = Run.cts.indexOf(inst); if (i >= 0) Run.cts.splice(i, 1); if (inst.id === 'quest' && Run.quest && !Run.quest.done) Run.quest = null; if (inst.id === 'saga') Run.sagaOn = false; recalc(); }
+
+// ───────── 과제 (의식 과제) ─────────
+function questAdd(k, v) {
+  const q = Run.quest; if (!q || q.done || q.k !== k) return;
+  q.n += (v || 1) * (tagN('의식') >= 2 ? 1.25 : 1);
+  if (q.n >= q.goal) {
+    q.done = true; Run.questPicks = (Run.questPicks || 0) + (tagN('의식') >= 4 ? 2 : 1);
+    if (tagN('의식') >= 3) Run.shards += 60;
+    if (Scene === 'fight') FX.text(P.x, P.y - 70, '과제 완수', '#7fffe0', true); Sfx.gold();
+  }
 }
 
-// ───────── 능력치에 반영되는 키워드 (recalc 마지막에 호출) ─────────
-function kwPassive(s) {
-  s.dashSp = 950; s.spinCd = 6; s.dashMax = 1;
-  if (!Run.kw) return;
-  const L = (a, id) => KW_LV[kwLv(a, id)] || 0;
-  s.atkSpd += 0.2 * L('atk', 'swift');
-  s.spinCd *= 1 - 0.4 * Math.min(1.5, L('spin', 'swift'));
-  s.perfectWin += 0.017 * L('parry', 'swift');
-  if (kwLv('dash', 'swift')) s.dashMax = 2;
-  s.dashCd *= 1 - 0.2 * Math.min(1.5, L('dash', 'wind'));
-  if (kwLv('parry', 'earth')) { s.parryWin += 0.033; s.parryWinBase += 0.033; s.dmgTaken *= 1 - 0.15 * Math.min(1.5, L('parry', 'earth')); }
-  if (kwLv('dash', 'water')) s.dashSp *= 1.3;
-  if (kwLv('dash', 'elec')) s.dashSp *= 1.25;
-  if (kwLv('dash', 'flash')) s.dashSp *= 1.5;
+// ───────── 보호막·회복 ─────────
+function shieldTotal() { let v = 0; for (const s of P.shields || []) v += s.v; return v; }
+function addShield(v, t, key) {
+  P.shields = P.shields || [];
+  if (key) { const s = P.shields.find(x => x.key === key); if (s) { s.v = Math.max(s.v, v); return; } }
+  P.shields.push({ v, t: t || 1e9, key }); FX.text(P.x, P.y - 54, `보호막 +${Math.round(v)}`, '#9fd0ff'); FX.ring(P.x, P.y, P.r + 4, P.r + 30, '#9fd0ff', 0.25, 4);
+}
+function heal(v) {
+  v = Math.min(v, St.maxHp - Run.hp); if (v <= 0) return 0;
+  Run.hp += v;
+  if (Scene === 'fight' && World.arena) {
+    FX.text(P.x, P.y - 50, '+' + Math.round(v), '#7fe0a0');
+    if (C('bloodring')) { const t = nearest(P.x, P.y, 420)[0]; if (t) { World.bolts.push({ x1: P.x, y1: P.y, x2: t.x, y2: t.y, life: 0.2, col: '#ff5a7a' }); ctDmg(t, v, 'phys', { raw: true }); } }
+  }
+  return v;
 }
 
-// ───────── 전투: 상태 이상과 반응 ─────────
-function kwDmg(e, base, elem, extra) {
-  if (!e || e.dead) return;
-  dealDamage(e, Object.assign({ base, gen: 1, elem: elem || 'phys', noStatus: true, kwFx: true, ang: angTo(P, e) }, extra || {}));
+// ───────── 상태 이상 ─────────
+function stDur() { return 3 * (tagN('원소') >= 2 ? 1.3 : 1); }
+function reactK() { return tagN('원소') >= 4 ? 1.5 : 1; }
+function applySt(e, st, amt) {
+  if (!e || e.dead) return; amt = amt || 1;
+  if (st === 'burn') { e.burn = Math.min(5, e.burn + amt); e.burnT = stDur(); }
+  if (st === 'chill') { e.chillT = stDur(); e.chill = Math.min(5, e.chill + amt); if (e.chill >= 5) freezeE(e, 1.5); }
+  if (st === 'shock') e.shocked = stDur();
 }
-function hasSt(e, st) {
-  if (st === 'burn') return e.burn > 0; if (st === 'chill') return e.chill > 0 || e.frozen > 0;
-  if (st === 'wet') return (e.wet || 0) > 0; if (st === 'shock') return e.shocked > 0; return false;
-}
-function clearSt(e, st) { if (st === 'burn') e.burn = 0; if (st === 'chill') { e.chill = 0; } if (st === 'wet') e.wet = 0; if (st === 'shock') e.shocked = 0; }
 function freezeE(e, t) {
-  if (e.boss) { e.staggerT = Math.max(e.staggerT || 0, 0.3); return; }
-  if (e.freezeImm > 0) return;
+  if (e.boss) { e.staggerT = Math.max(e.staggerT || 0, 0.5); e.cancelAttack && e.cancelAttack(); return false; }
+  if (e.freezeImm > 0) return false;
   e.frozen = t; e.chill = 0; e.freezeImm = t + 2; FX.text(e.x, e.y - 40, '빙결', '#bfefff'); e.cancelAttack && e.cancelAttack();
-}
-// 상태 걸기. 다른 원소 상태가 이미 있으면 합성표대로 반응해요(0.5초에 한 번)
-function kwStatus(e, st, amt, s, noReact) {
-  if (!e || e.dead || !st) return;
-  if (!noReact && (e.reactCd || 0) <= gameTime) {
-    for (const other of ['burn', 'chill', 'wet', 'shock']) {
-      if (other === st || !hasSt(e, other)) continue;
-      const cid = fuseOf(ST_ELEM[st], ST_ELEM[other]);
-      if (cid) { e.reactCd = gameTime + 0.5; clearSt(e, other); kwReact(cid, e, s || 1, `${ST_NAME[other]} + ${KW[KW_BASE.find(b => b.st === st).id].name}`); return; }
-    }
+  // 원소 3개 반응: 화상 중인 적이 빙결되면 터져요
+  if (tagN('원소') >= 3 && e.burn > 0) {
+    const pw = e.burn * 12 * reactK(); FX.text(e.x, e.y - 64, '열충격', '#ffb36b', true); FX.ring(e.x, e.y, 10, 130, '#ffb36b', 0.35, 8); Sfx.boom();
+    for (const t2 of World.enemies) if (!t2.dead && dist(t2, e) < 130 + t2.r) later(0.03, () => dealDamage(t2, { base: pw, gen: 2, elem: 'fire', noStatus: true, ang: angTo(e, t2), kb: 260 }));
   }
-  amt = amt || 1;
-  if (st === 'burn') { e.burn = Math.min(5, e.burn + amt); e.burnT = 3; }
-  if (st === 'chill') { e.chill = Math.min(5, e.chill + amt); e.chillT = 3; if (e.chill >= 3) freezeE(e, 1); }
-  if (st === 'wet') { e.wet = 4; }
-  if (st === 'shock') { e.shocked = 3; }
+  return true;
 }
-function kwReact(cid, e, s, how) {
-  const c = KW[cid];
-  firstFx(cid, e.x, e.y);
-  FX.text(e.x, e.y - e.r - 46, c.name, c.col, true);
-  if (how) FX.text(e.x, e.y - e.r - 72, how, '#c9c4d6');
-  Juice.hitstop(0.06); Juice.kick(6);
-  compFx(cid, e.x, e.y, 0.9 * s, { act: 'react', ang: angTo(P, e), e });
-}
-// 첫 합성(반응)은 크게 알려요
-function firstFx(cid, x, y) {
-  if (!Run.kwSeen || Run.kwSeen.has(cid)) return; Run.kwSeen.add(cid);
-  const c = KW[cid]; Juice.slowmo(0.35, 0.3); Juice.impactFrame(0.04, c.col);
-  World.banner = { t: 1.8, max: 1.8, name: c.name, sub: `${KW[c.a].name} + ${KW[c.b].name} = ${c.name} · ${c.phys}`, col: c.col };
+// 계약 효과가 주는 피해 (타격 연출 없음, 메아리·낙인 대상 아님)
+function ctDmg(e, base, elem, extra) {
+  if (!e || e.dead) return;
+  dealDamage(e, Object.assign({ base, gen: 1, elem: elem || 'phys', noStatus: true, noBrand: true, noEcho: true, ang: angTo(P, e) }, extra || {}));
 }
 
-// ───────── 장판 ─────────
-const FIELD_COL = { fire: '#ff8a3d', frost: '#bfefff', wet: '#4aa8ff', mud: '#8a6a44', lava: '#ff5a2a', sand: '#d9b77a', fog: '#cfd8e8', cloud: '#b8a8ff' };
-function addField(type, x, y, r, dur, s, extra) {
-  const same = World.fields.filter(f => f.type === type); if (same.length >= 6) World.fields.splice(World.fields.indexOf(same[0]), 1);
-  World.fields.push(Object.assign({ type, x, y, r, t: dur, max: dur, s: s || 1, tick: 0, vx: 0, vy: 0 }, extra || {}));
+// ───────── 장판 (불길·서리) ─────────
+const FIELD_COL = { fire: '#ff8a3d', frost: '#bfefff' };
+function addField(type, x, y, r, dur, s) {
+  const same = World.fields.filter(f => f.type === type); if (same.length >= 8) World.fields.splice(World.fields.indexOf(same[0]), 1);
+  World.fields.push({ type, x, y, r, t: dur, max: dur, s: s || 1, tick: 0 });
 }
-function inFog(x, y) { for (const f of World.fields) if (f.type === 'fog' && Math.hypot(x - f.x, y - f.y) < f.r) return true; return false; }
 function updateFields(dt) {
-  if (World.decoy) { World.decoy.t -= dt; if (World.decoy.t <= 0) World.decoy = null; }
-  if (World.banner) { World.banner.t -= dt; if (World.banner.t <= 0) World.banner = null; }
-  P.moved = (P.moved || 0) * Math.exp(-dt * 1.5) + Math.hypot(P.vx, P.vy) * dt;
   for (const f of World.fields) {
-    f.t -= dt; f.x += f.vx * dt; f.y += f.vy * dt; f.tick -= dt;
-    const tick = f.tick <= 0; if (tick) f.tick = f.type === 'cloud' ? 0.6 : 0.5;
+    f.t -= dt; f.tick -= dt; const tick = f.tick <= 0; if (tick) f.tick = 0.5;
     for (const e of World.enemies) {
       if (e.dead || Math.hypot(e.x - f.x, e.y - f.y) > f.r + e.r) continue;
-      if (f.type === 'mud') { e.kwSlowT = 0.2; e.kwSlow = 0.45; }
-      if (f.type === 'frost') { e.kwSlowT = 0.2; e.kwSlow = 0.7; }
-      if (f.type === 'fog') { e.cd = Math.max(e.cd || 0, 0.15); }
+      if (f.type === 'frost') { e.slowT = 0.2; e.slowK = 0.7; }
       if (!tick) continue;
-      if (f.type === 'fire') kwStatus(e, 'burn', 1, f.s, true);
-      if (f.type === 'frost') kwStatus(e, 'chill', 1, f.s, true);
-      if (f.type === 'wet') kwStatus(e, 'wet', 1, f.s, true);
-      if (f.type === 'lava') { kwDmg(e, 4 * f.s, 'fire'); kwStatus(e, 'burn', 1, f.s, true); }
-      if (f.type === 'sand') kwDmg(e, 4 * f.s, 'earth');
-    }
-    if (tick && f.type === 'cloud') {
-      const t = World.enemies.filter(e => !e.dead && Math.hypot(e.x - f.x, e.y - f.y) < f.r).sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y))[0];
-      if (t) { World.bolts.push({ x1: t.x, y1: t.y - 400, x2: t.x, y2: t.y, life: 0.18 }); SpriteFX.bolt(t.x, t.y, t.r); kwDmg(t, 12 * f.s, 'light'); kwStatus(t, 'shock', 1, f.s, true); Sfx.hit(1.4); }
+      if (f.type === 'fire') { ctDmg(e, 3 * f.s, 'fire'); applySt(e, 'burn', 1); }
+      if (f.type === 'frost') applySt(e, 'chill', 1);
     }
   }
   World.fields = World.fields.filter(f => f.t > 0);
-  for (const e of World.enemies) { e.kwSlowT = (e.kwSlowT || 0) - dt; if ((e.wet || 0) > 0) e.wet -= dt; }
+  for (const e of World.enemies) e.slowT = (e.slowT || 0) - dt;
 }
-function kwSlowMul(e) { return (e.kwSlowT || 0) > 0 ? e.kwSlow : (e.wet || 0) > 0 ? 0.9 : 1; }
+function slowMul(e) { return (e.slowT || 0) > 0 ? e.slowK : 1; }
 
 // ───────── 효과 도구 ─────────
 function burst(x, y, r, dmg, elem, opts) {
@@ -1656,312 +1621,296 @@ function burst(x, y, r, dmg, elem, opts) {
   for (const e of World.enemies) {
     if (e.dead || Math.hypot(e.x - x, e.y - y) > r + e.r) continue;
     const a = Math.atan2(e.y - y, e.x - x);
-    if (dmg) kwDmg(e, dmg, elem, { ang: a, kb: opts.kb || 0 });
-    if (opts.st) kwStatus(e, opts.st, opts.amt || 1, 1, true);
-    if (opts.freeze) freezeE(e, opts.freeze);
-    if (opts.push && !e.boss && !(e.def.armor && !e.staggerT)) { e.vx += Math.cos(a) * opts.push; e.vy += Math.sin(a) * opts.push; e.kbT = 0.25; }
-    if (opts.pull && !e.boss) { e.vx -= Math.cos(a) * opts.pull; e.vy -= Math.sin(a) * opts.pull; e.kbT = 0.3; }
+    if (dmg) ctDmg(e, dmg, elem, { ang: a, kb: opts.kb || 0, act: opts.act, poise: opts.poise });
+    if (opts.st) applySt(e, opts.st, opts.amt || 1);
+    if (opts.stagger) { e.staggerT = Math.max(e.staggerT || 0, e.boss ? opts.stagger * 0.5 : opts.stagger); e.cancelAttack && e.cancelAttack(); }
   }
 }
-function zap(from, t, dmg) { World.bolts.push({ x1: from.x, y1: from.y, x2: t.x, y2: t.y, life: 0.15 }); SpriteFX.bolt(t.x, t.y, t.r); kwDmg(t, dmg, 'light'); }
-function nearest(x, y, r, skip) { return World.enemies.filter(e => !e.dead && !(skip && skip.has(e)) && Math.hypot(e.x - x, e.y - y) < r).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y)); }
+function zap(from, t, dmg, extra) { World.bolts.push({ x1: from.x, y1: from.y, x2: t.x, y2: t.y, life: 0.15 }); SpriteFX.bolt(t.x, t.y, t.r); ctDmg(t, dmg, 'light', Object.assign({ noLightChain: true }, extra || {})); applySt(t, 'shock'); }
+function nearest(x, y, r, skip) { return World.enemies.filter(e => !e.dead && e.type !== 'merchant' && !(skip && skip.has(e)) && Math.hypot(e.x - x, e.y - y) < r + e.r).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y)); }
 function pathPts(c, n) { const out = []; for (let i = 0; i < n; i++) { const k = (i + 0.5) / n; out.push({ x: lerp(c.x0, c.x1, k), y: lerp(c.y0, c.y1, k) }); } return out; }
+const LS = [0, 1, 1.5, 2]; // 단계별 부가 효과 크기
 
-// ───────── 합성 키워드의 현상 (한 점에서, 크기 s) ─────────
-function compFx(id, x, y, s, ctx) {
-  const ang = ctx.ang != null ? ctx.ang : P.face;
-  const c = KW[id]; const col = c.col;
-  switch (id) {
-    case 'fog': addField('fog', x, y, 110 * Math.sqrt(s), 3.5, s); FX.burst(x, y, col, 20, 200, 0.6, 9); break;
-    case 'steam': burst(x, y, 110 * Math.sqrt(s), 14 * s, 'fire', { col, push: 320, st: 'burn' }); FX.burst(x, y, '#ffffff', 26, 260, 0.8, 10); break;
-    case 'ice': burst(x, y, 85 * Math.sqrt(s), 12 * s, 'ice', { col, freeze: 1 }); for (let i = 0; i < 6; i++) FX.spark(x, y, i, '#dff8ff', 6, 300); break;
-    case 'conduct': {
-      burst(x, y, 100 * Math.sqrt(s), 0, null, { col: '#4aa8ff', st: 'wet' });
-      for (const e of World.enemies) if (!e.dead && (e.wet || 0) > 0 && Math.hypot(e.x - x, e.y - y) < 460) { zap({ x, y }, e, 12 * s); kwStatus(e, 'shock', 1, 1, true); }
-      Sfx.hit(1.5); break;
-    }
-    case 'mud': addField('mud', x, y, 100 * Math.sqrt(s), 3.5, s); break;
-    case 'hotwind': addField('fire', x, y, 90 * Math.sqrt(s), 2.5, s, { vx: Math.cos(ang) * 90, vy: Math.sin(ang) * 90 }); burst(x, y, 100 * Math.sqrt(s), 6 * s, 'fire', { col, push: 260, st: 'burn', amt: 2 }); break;
-    case 'lava': addField('lava', x, y, 75 * Math.sqrt(s), 4, s); FX.burst(x, y, col, 16, 200, 0.5, 7); break;
-    case 'thermal': {
-      FX.ring(x, y, 8, 110 * Math.sqrt(s), col, 0.35, 8); Sfx.boom();
-      for (const e of World.enemies) if (!e.dead && Math.hypot(e.x - x, e.y - y) < 110 * Math.sqrt(s) + e.r) { const hot = e.burn > 0 || e.chill > 0 || e.frozen > 0 || ctx.e === e; kwDmg(e, (10 + (hot ? 26 : 0)) * s, 'fire', { kb: 200 }); if (hot) FX.text(e.x, e.y - 30, '파쇄', col); }
-      break;
-    }
-    case 'plasma': {
-      const len = 340, w = 46; FX.slash(x, y, ang, 0.12, len, col, 18, 0.25);
-      for (let i = 0; i < 10; i++) FX.spark(x + Math.cos(ang) * len * i / 10, y + Math.sin(ang) * len * i / 10, ang, col, 2, 200);
-      for (const e of World.enemies) { if (e.dead) continue; const t = (e.x - x) * Math.cos(ang) + (e.y - y) * Math.sin(ang); const d = Math.abs(-(e.x - x) * Math.sin(ang) + (e.y - y) * Math.cos(ang)); if (t > -e.r && t < len && d < w / 2 + e.r) { kwDmg(e, 18 * s, 'fire'); kwStatus(e, 'burn', 1, 1, true); } }
-      break;
-    }
-    case 'sand': addField('sand', x, y, 85 * Math.sqrt(s), 3, s, { vx: Math.cos(ang) * 80, vy: Math.sin(ang) * 80 }); break;
-    case 'blizzard': addField('frost', x, y, 150 * Math.sqrt(s), 3, s); FX.burst(x, y, '#ffffff', 24, 300, 0.7, 4); break;
-    case 'cloud': addField('cloud', x, y, 210, 3, s); break;
-    case 'magnet': {
-      burst(x, y, 280, 0, null, { col, pull: 520 });
-      for (const p of World.projs) if (p.owner === 'enemy' && Math.hypot(p.x - x, p.y - y) < 240) { p.life = 0; FX.spark(p.x, p.y, 0, col, 4, 200); }
-      break;
-    }
-    case 'permafrost': addField('frost', x, y, 110 * Math.sqrt(s), 5, s); break;
-    case 'supercond': {
-      const hit = new Set(); let cur = { x, y }; let first = nearest(x, y, 260)[0];
-      if (first) { hit.add(first); zap(cur, first, 14 * s); kwStatus(first, 'chill', 1, 1, true); cur = first; }
-      for (let i = 0; i < 8 && first; i++) {
-        const nx = World.enemies.filter(e => !e.dead && !hit.has(e) && (e.chill > 0 || e.frozen > 0 || (e.wet || 0) > 0) && dist(e, cur) < 300).sort((a, b) => dist(a, cur) - dist(b, cur))[0];
-        if (!nx) break; hit.add(nx); const from = cur; later(0.05 * (i + 1), () => { zap(from, nx, 14 * s); kwStatus(nx, 'chill', 1, 1, true); }); cur = nx;
-      }
-      break;
-    }
-    case 'sonic': burst(x, y, 150 * Math.sqrt(s), 10 * s, 'wind', { col, push: 520 }); FX.ring(x, y, 20, 220, '#ffffff', 0.25, 3); Juice.punch(0.03); break;
-    case 'momentum': { const m = Math.min(2.5, (P.moved || 0) / 300); burst(x, y, 95, (8 + 14 * m) * s, 'earth', { col, kb: 300 }); FX.text(x, y - 60, `운동량 ×${(1 + m).toFixed(1)}`, col); break; }
-    case 'friction': { const n = 1 + Math.min(4, Math.floor((P.hits || 0) / 4)); burst(x, y, 90 * Math.sqrt(s), 5 * s, 'fire', { col, st: 'burn', amt: n }); break; }
-    case 'flash': { const t = nearest(x, y, 200)[0]; const tx = t ? t.x : x, ty = t ? t.y : y; World.bolts.push({ x1: tx, y1: ty - 500, x2: tx, y2: ty, life: 0.2 }); SpriteFX.bolt(tx, ty, 30); burst(tx, ty, 70 * Math.sqrt(s), 20 * s, 'light', { col, st: 'shock' }); break; }
-  }
+// ───────── 어느 행동의 공격인가 ─────────
+function actGroup(o) {
+  if (o.grp) return o.grp;
+  const a = o.act; if (!a) return null;
+  if (a === 'a1' || a === 'a2' || a === 'a3') return 'atk';
+  if (a === 'spin') return 'magic'; if (a === 'dash') return 'dash'; if (a === 'ult') return 'ult'; if (a === 'guard') return 'guard';
+  return null;
 }
-
-// ───────── 기본 키워드의 행동별 효과 ─────────
-// ctx: { act, e(맞은 적), a(동작), x0,y0,x1,y1(대시 경로), h(패링한 공격), s }
-function baseFx(id, act, ctx, s) {
-  const e = ctx.e;
-  if (act === 'atk' || act === 'dash-hit' || act === 'spin-hit') {
-    if (!e || e.dead) return;
-    if (id === 'fire') kwStatus(e, 'burn', 1, s);
-    if (id === 'cold') kwStatus(e, 'chill', 1, s);
-    if (id === 'water') kwStatus(e, 'wet', 1, s);
-    if (id === 'elec') {
-      kwStatus(e, 'shock', 1, s);
-      if (act === 'atk') { const n = kwLv('atk', 'elec'); for (const t of nearest(e.x, e.y, 230, new Set([e])).slice(0, n)) { zap(e, t, 7 * s); kwStatus(t, 'shock', 1, s, true); } }
-    }
-    if (act === 'atk' && id === 'wind' && !e.boss && !(e.def.armor && !e.staggerT)) { const a = angTo(P, e); e.vx += Math.cos(a) * 140; e.vy += Math.sin(a) * 140; e.kbT = 0.2; }
-    if (act === 'atk' && id === 'dup' && !ctx.echo) {
-      const base = (ctx.a && ctx.a.sw ? ctx.a.sw.dmg : 14) * 0.5 * s;
-      later(0.12, () => { if (e.dead) return; FX.slash(e.x - Math.cos(ctx.a.ang) * 40, e.y - Math.sin(ctx.a.ang) * 40, ctx.a.ang + Math.PI / 2, 1.2, 60, '#e3c8ff', 9, 0.16); kwDmg(e, base, 'phys'); Sfx.hit(1.2); });
-    }
-    return;
+// 속성 전환: 그 행동에 붙인 불길·서리·우레의 비율대로 (반격은 방어에 붙인 것도)
+function pickElem(o) {
+  if (o.elem) return o.elem;
+  const g = actGroup(o); if (!g) return 'phys';
+  const add = tagN('원소') >= 4 ? 0.2 : 0; const opts = [];
+  for (const [id, el] of [['flame', 'fire'], ['frost', 'ice'], ['thunder', 'light']]) {
+    const lv = Math.max(CA(id, g), o.counter ? CA(id, 'guard') : 0);
+    if (lv) opts.push([el, g === 'ult' ? 1 : LV3[lv] + add, lv]);
   }
-  if (act === 'atk-start') { // 3타 시작
-    if (id === 'earth' && ctx.a.act === 'a3') { const x = P.x + Math.cos(ctx.a.ang) * 90, y = P.y + Math.sin(ctx.a.ang) * 90; later(0.06, () => { burst(x, y, 110, 14 * s, 'earth', { col: '#c49a5a', kb: 260 }); splat(x, y, '#000', 90, 'crack'); Juice.kick(8); }); }
-    return;
-  }
-  if (act === 'spin') {
-    if (id === 'fire') addField('fire', P.x, P.y, 150, 2, s);
-    if (id === 'cold') addField('frost', P.x, P.y, 150, 2.5, s);
-    if (id === 'water') { burst(P.x, P.y, 240, 0, null, { col: '#4aa8ff', pull: 380, st: 'wet' }); }
-    if (id === 'wind') burst(P.x, P.y, 210, 0, null, { col: '#a8f0c8', push: 480 });
-    if (id === 'earth') for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; World.projs.push({ owner: 'player', x: P.x + Math.cos(a) * 30, y: P.y + Math.sin(a) * 30, vx: Math.cos(a) * 620, vy: Math.sin(a) * 620, r: 12, life: 0.45, dmg: 8 * s, col: '#c49a5a', pierce: false, hitSet: new Set(), gen: 1, act: 'spin' }); }
-    if (id === 'elec') { FX.ring(P.x, P.y, 20, 170, '#ffe45c', 0.25, 4); for (const t of nearest(P.x, P.y, 170)) { zap(P, t, 6 * s); kwStatus(t, 'shock', 1, s, true); } }
-    if (id === 'dup') later(0.18, () => { if (!P.alive) return; spinHit(0.6); FX.ring(P.x, P.y, 30, 150, '#e3c8ff', 0.3, 6); Sfx.swing(); });
-    return;
-  }
-  if (act === 'parry') {
-    const src = ctx.h && ctx.h.src && !ctx.h.src.dead ? ctx.h.src : null;
-    const px = src ? src.x : P.x + Math.cos(P.face) * 60, py = src ? src.y : P.y + Math.sin(P.face) * 60;
-    if (id === 'fire') burst(lerp(P.x, px, 0.6), lerp(P.y, py, 0.6), 100, 16 * s, 'fire', { col: '#ff8a3d', st: 'burn', amt: 2 });
-    if (id === 'cold' && src) freezeE(src, 1);
-    if (id === 'water') { burst(P.x, P.y, 200, 0, null, { col: '#4aa8ff', st: 'wet' }); Run.hp = Math.min(St.maxHp, Run.hp + 3 * s); FX.text(P.x, P.y - 50, '+' + Math.round(3 * s), '#7fe0a0'); }
-    if (id === 'wind') { for (const p of World.projs) if (p.owner === 'enemy' && Math.hypot(p.x - P.x, p.y - P.y) < 320) { p.life = 0; FX.spark(p.x, p.y, 0, '#a8f0c8', 4, 200); } burst(P.x, P.y, 180, 0, null, { col: '#a8f0c8', push: 420 }); }
-    if (id === 'elec' && src) { zap(P, src, 12 * s); kwStatus(src, 'shock', 1, s, true); src.staggerT = Math.max(src.staggerT || 0, src.boss ? 0.2 : 0.4 + 0.2 * s); FX.text(src.x, src.y - 50, '마비', '#ffe45c'); }
-    if (id === 'dup') P.counterExtra = 1;
-    return;
-  }
-  if (act === 'dash-start') {
-    if (id === 'dup') { World.decoy = { x: P.x, y: P.y, t: 1.2 * s, max: 1.2 * s }; FX.ring(P.x, P.y, 10, 50, '#e3c8ff', 0.3, 4); }
-    return;
-  }
-  if (act === 'dash-end') {
-    const pts = pathPts(ctx, 3);
-    if (id === 'fire') for (const p of pts) addField('fire', p.x, p.y, 55, 1.5, s);
-    if (id === 'cold') for (const p of pts) addField('frost', p.x, p.y, 60, 2, s);
-    if (id === 'water') for (const p of pts) addField('wet', p.x, p.y, 60, 2.5, s);
-    const segHit = (r, fn) => { for (const e of World.enemies) if (!e.dead && segDist(e.x, e.y, ctx.x0, ctx.y0, ctx.x1, ctx.y1) < r + e.r) fn(e); };
-    if (id === 'wind') { const side = Math.atan2(ctx.y1 - ctx.y0, ctx.x1 - ctx.x0) + Math.PI / 2; segHit(90, e => { if (e.boss) return; const sgn = Math.sign((e.x - ctx.x0) * Math.cos(side) + (e.y - ctx.y0) * Math.sin(side)) || 1; e.vx += Math.cos(side) * 380 * sgn; e.vy += Math.sin(side) * 380 * sgn; e.kbT = 0.25; }); }
-    if (id === 'earth') { burst(ctx.x1, ctx.y1, 100, 12 * s, 'earth', { col: '#c49a5a', kb: 250 }); splat(ctx.x1, ctx.y1, '#000', 80, 'crack'); Juice.kick(6); }
-    if (id === 'elec') { segHit(60, e => { zap({ x: ctx.x0, y: ctx.y0 }, e, 8 * s); kwStatus(e, 'shock', 1, s); }); }
-    return;
-  }
+  shuffle(opts);
+  for (const [el, p, lv] of opts) if (R() < p) { o.elemLv = lv; return el; }
+  return 'phys';
 }
 
 // ───────── 행동별 훅 (combat.js에서 불러요) ─────────
-function kwRun(act, phase, ctx) {
-  if (!Run.kw) return;
-  const list = kwAll(act); if (!list.length) return;
-  const dup = list.find(k => k.id === 'dup'); const others = list.filter(k => k.id !== 'dup');
-  const fire = (k, mul, c) => {
-    const s = KW_LV[k.lv] * (mul || 1);
-    if (KW[k.id].kind === 'base') baseFx(k.id, phase, c || ctx, s);
-    else compPhase(k.id, act, phase, c || ctx, s);
-  };
-  for (const k of others) fire(k, 1);
-  if (dup) {
-    if (others.length) { // 복제: 짝 키워드 효과를 한 번 더 (60%)
-      if (ctx.echo || phase === 'dash-start') return;
-      later(0.12, () => { const c2 = Object.assign({}, ctx, { echo: true }); for (const k of others) fire(k, 0.6, c2); });
-    } else fire(dup, 1);
+// 평타: 휘두르기 시작
+function ctOnSwingStart(a) {
+  if (C('heatup')) { P.heat = Math.min(6, (P.heat || 0) + 1); P.heatT = 2; }
+  if (C('shadowhand')) {
+    const n = sumN(1);
+    for (let i = 0; i < n; i++) later(0.12 + i * 0.09, () => {
+      if (!P.alive) return; const sw = a.sw;
+      FX.slash(P.x, P.y, a.ang, sw.arc * 0.9, sw.range + P.r + 14, '#b58cff', 10, 0.18);
+      for (const e of World.enemies) { if (e.dead) continue; const d = dist(P, e) - e.r; if (d > sw.range + 14 || (Math.abs(angDiff(a.ang, angTo(P, e))) > sw.arc / 2 && d > 20)) continue; ctDmg(e, sw.dmg * 0.4, null, { grp: 'atk', elem: null, noStatus: false, ang: a.ang }); }
+    });
   }
 }
-// 합성 키워드: 행동마다 현상이 나는 자리와 크기만 달라요
-function compPhase(id, act, phase, ctx, s) {
-  if (phase === 'atk') { // 한 번 휘두를 때 첫 적중에서 한 번
-    if (!ctx.a || (ctx.a.kwDone && !ctx.echo)) return; ctx.a.kwDone = true;
-    const e = ctx.e; compFx(id, e.x, e.y, s * (ctx.a.act === 'a3' ? 1.2 : 0.75), { act, ang: ctx.a.ang, e }); return;
-  }
-  if (phase === 'spin') { compFx(id, P.x, P.y, s * 1.3, { act, ang: P.face }); return; }
-  if (phase === 'parry') {
-    const src = ctx.h && ctx.h.src && !ctx.h.src.dead ? ctx.h.src : null;
-    compFx(id, src ? src.x : P.x, src ? src.y : P.y, s * 1.3, { act, ang: src ? angTo(P, src) : P.face, e: src }); return;
-  }
-  if (phase === 'dash-end') {
-    const ang = Math.atan2(ctx.y1 - ctx.y0, ctx.x1 - ctx.x0);
-    const fieldLike = ['fog', 'mud', 'lava', 'permafrost', 'blizzard', 'hotwind', 'sand'].includes(id);
-    const pts = fieldLike ? pathPts(ctx, 2) : [{ x: ctx.x1, y: ctx.y1 }];
-    for (const p of pts) compFx(id, p.x, p.y, s * (fieldLike ? 0.7 : 1.1), { act, ang }); return;
-  }
-  if (phase === 'dash-hit' || phase === 'spin-hit') { // 합성 키워드도 맞은 적에게 재료 상태를 남겨요
-    const c = KW[id]; const e = ctx.e; if (!e || e.dead) return;
-    for (const m of [c.a, c.b]) { const st = KW[m].st; if (st) kwStatus(e, st, 1, s, true); }
+// 평타가 적에게 맞음 (dmg = 방금 준 피해)
+function ctOnAtkHit(e, a, base) {
+  if (C('fourth')) { P.beat = (P.beat || 0) + 1; if (P.beat >= 4) { P.beat = 0; FX.text(e.x, e.y - e.r - 34, '넷째 박자', '#cfe8ff'); ctDmg(e, base * 0.6, 'phys', { ang: a.ang }); if (!e.dead) { e.staggerT = Math.max(e.staggerT || 0, e.boss ? 0.15 : 0.3); e.cancelAttack && e.cancelAttack(); } } }
+  if (C('sparkjump') && R() < 0.2) for (const t of nearest(e.x, e.y, 260, new Set([e])).slice(0, 2)) zap(e, t, base * 0.4);
+  if (a.act === 'a3') {
+    if (C('thirdcurse') && !e.dead) { e.curse = true; }
+    if (C('spellnail') && !a.nailDone) { a.nailDone = true; magicFx(e.x, e.y, 0.3, true); }
   }
 }
-function kwOnHit(e, a) {
-  if (!Run.kw || !e) return;
-  const act = a.type === 'thrust' ? 'dash' : a.type === 'spin' ? 'spin' : 'atk';
-  const phase = act === 'dash' ? 'dash-hit' : act === 'spin' ? 'spin-hit' : 'atk';
-  kwRun(act, phase, { e, a });
+// 마법: 한 번 터질 때 (x, y 중심, s = 크기·위력 비율). mini = 주문 깃든 손톱이 남긴 작은 것
+function magicFx(x, y, s, mini) {
+  const r = 145 * (mini ? 0.7 : 1); let any = false;
+  for (const e of World.enemies) {
+    if (e.dead || Math.hypot(e.x - x, e.y - y) - e.r > r) continue; any = true;
+    const o = { base: 18 * s, act: 'spin', gen: mini || s < 1 ? 1 : 0, ang: Math.atan2(e.y - y, e.x - x), kb: mini ? 0 : 360, poise: 26 * s };
+    dealDamage(e, o);
+    if (C('frog') && !e.dead) { if (e.boss) { e.staggerT = Math.max(e.staggerT || 0, 0.3); e.cancelAttack && e.cancelAttack(); } else if (!(e.frog > 0)) { e.frog = 1.5; e.cancelAttack && e.cancelAttack(); FX.text(e.x, e.y - e.r - 30, '개굴', '#8fe07a'); FX.burst(e.x, e.y, '#8fe07a', 10, 200, 0.4, 5); } }
+  }
+  if (mini) { FX.ring(x, y, 10, r, '#d7b8ff', 0.25, 5); }
+  // 붙인 원소 줄
+  const fl = CA('flame', 'magic'), fr = CA('frost', 'magic'), th = CA('thunder', 'magic');
+  if (fl) addField('fire', x, y, r * 0.95, 2 * (mini ? 0.6 : 1), LS[fl] * s);
+  if (fr) addField('frost', x, y, r * 0.95, 2.5 * (mini ? 0.6 : 1), LS[fr] * s);
+  if (th) { FX.ring(x, y, 20, r + 30, '#ffe45c', 0.25, 4); for (const t of nearest(x, y, r + 30)) zap({ x, y }, t, 6 * LS[th] * s); }
+  return any;
 }
-function kwOnSwingStart(a) { kwRun('atk', 'atk-start', { a }); }
-function kwOnSpin() { kwRun('spin', 'spin', {}); }
-function kwOnParry(h) { kwRun('parry', 'parry', { h }); }
-function kwOnDashStart() { P.kwDash = { x0: P.x, y0: P.y }; kwRun('dash', 'dash-start', {}); }
-function kwOnDashEnd() { if (!P.kwDash) return; const c = { x0: P.kwDash.x0, y0: P.kwDash.y0, x1: P.x, y1: P.y }; P.kwDash = null; kwRun('dash', 'dash-end', c); }
-function kwCounterUsed() { if (P.counterExtra > 0) { P.counterExtra--; P.counterT = 0.6; FX.text(P.x, P.y - 40, '반격 한 번 더', '#e3c8ff'); } else P.counterT = 0; }
+// 마법 시전 (Q). 첫 타가 나갈 때 한 번
+function ctOnMagicCast() {
+  const x = P.x, y = P.y;
+  if (C('reecho')) later(0.4, () => { if (!P.alive) return; FX.ring(x, y, 30, 150, '#d7b8ff', 0.3, 6); FX.text(x, y - 60, '되울림', '#d7b8ff'); Sfx.swing(); magicFx(x, y, 0.6); });
+  if (C('bees')) { const n = sumN(3); for (let i = 0; i < n; i++) World.summons.push({ type: 'bee', t: sumDur(4), tick: 1 + i * 0.15, ph: i / n * Math.PI * 2 }); FX.text(P.x, P.y - 60, '벌 떼', '#ffe45c'); }
+}
+// 마법이 적을 맞힘 (시전당 한 번)
+function ctOnMagicHit() {
+  if (C('homing')) { const n = sumN(3); for (let i = 0; i < n; i++) { const a = P.face + (i - (n - 1) / 2) * 0.7; World.projs.push({ owner: 'player', x: P.x, y: P.y, vx: Math.cos(a) * 520, vy: Math.sin(a) * 520, r: 9, life: 2.2, dmg: 18 * 0.15, col: '#ffb3f0', pierce: false, hitSet: new Set(), gen: 1, homing: true, grp: 'magic' }); } }
+}
+// 방어 성공
+function ctOnGuard(h, perfect) {
+  const src = h.src && !h.src.dead ? h.src : null;
+  questAdd('guard');
+  if (C('barrier')) addShield(8, 3);
+  if (C('bloodmirror')) heal(h.dmg * 0.3);
+  if (perfect && C('shadowhide')) { P.iframe = Math.max(P.iframe, 1); P.hideT = 1; FX.text(P.x, P.y - 64, '그림자 숨기', '#b58cff'); }
+  if (h.color === 'gold' && C('goldcatch') && src) { src.staggerT += 0.6; src.goldT = src.staggerT; FX.text(src.x, src.y - src.r - 50, '낚아챔', '#ffd27a'); }
+  if (C('mirror')) {
+    if (h.proj) { const p = h.proj; const a = Math.atan2(p.vy, p.vx); const sp = Math.hypot(p.vx, p.vy); p.vx = Math.cos(a - 0.2) * sp; p.vy = Math.sin(a - 0.2) * sp; World.projs.push(Object.assign({}, p, { vx: Math.cos(a + 0.2) * sp, vy: Math.sin(a + 0.2) * sp, hitSet: new Set() })); }
+    else if (src) { const a = angTo(P, src); World.projs.push({ owner: 'player', x: P.x + Math.cos(a) * 30, y: P.y + Math.sin(a) * 30, vx: Math.cos(a) * 900, vy: Math.sin(a) * 900, r: 16, life: 0.6, dmg: POW * 0.5, col: '#ffe9b0', pierce: true, hitSet: new Set(), gen: 1, wave: true, grp: 'guard' }); }
+  }
+  if (tagN('응수') >= 4) { burst(P.x, P.y, 190, 6, 'phys', { col: '#ffd27a', poise: 40, stagger: 0.35 }); }
+  // 붙인 원소 줄
+  const px = src ? lerp(P.x, src.x, 0.6) : P.x + Math.cos(P.face) * 60, py = src ? lerp(P.y, src.y, 0.6) : P.y + Math.sin(P.face) * 60;
+  const fl = CA('flame', 'guard'), fr = CA('frost', 'guard'), th = CA('thunder', 'guard');
+  if (fl) burst(px, py, 100, POW * 0.5 * LS[fl], 'fire', { col: '#ff8a3d', st: 'burn', amt: 2 });
+  if (fr && src) { applySt(src, 'chill', 3); FX.ring(src.x, src.y, 10, 60, '#7fd8ff', 0.25, 4); }
+  if (th && src) { zap(P, src, POW * 0.4 * LS[th]); if (!src.dead) { src.staggerT = Math.max(src.staggerT || 0, src.boss ? 0.2 : 0.4); FX.text(src.x, src.y - 50, '마비', '#ffe45c'); } }
+}
+// 대시 시작. true를 돌려주면 보통 대시 대신 다른 동작(칼춤 빗자루)이 나가요
+function ctOnDashStart() {
+  P.dashPath = { x0: P.x, y0: P.y };
+  if (C('illusion')) { const t = sumDur(1.5); World.decoy = { x: P.x, y: P.y, t, max: t }; FX.ring(P.x, P.y, 10, 50, '#e3c8ff', 0.3, 4); }
+  if (C('gale') || C('speedcurse')) P.galeT = 1.16;
+  if (C('speedcurse')) P.speedT = 1.16;
+  if (C('broomdance')) {
+    const ts = nearest(P.x, P.y, 460).slice(0, 3);
+    if (ts.length) { P.act = { type: 'blink', t: 0.09, i: 0, targets: ts, x0: P.x, y0: P.y }; P.iframe = Math.max(P.iframe, 0.12 * ts.length + 0.3); return true; }
+  }
+  return false;
+}
+function ctOnDashEnd() {
+  const c0 = P.dashPath; if (!c0) return; P.dashPath = null;
+  const c = { x0: c0.x0, y0: c0.y0, x1: P.x, y1: P.y };
+  const segHit = (r, fn) => { for (const e of World.enemies) if (!e.dead && segDist(e.x, e.y, c.x0, c.y0, c.x1, c.y1) < r + e.r) fn(e); };
+  if (tagN('질풍') >= 3) segHit(34, e => ctDmg(e, POW * 0.5, null, { grp: 'dash', elem: null, noStatus: false, ang: Math.atan2(c.y1 - c.y0, c.x1 - c.x0) }));
+  if (C('emberstep')) for (const p of pathPts(c, 3)) { World.marks.push({ x: p.x, y: p.y, t: 1, max: 1, col: '#ff8a3d' }); later(1, () => { burst(p.x, p.y, 80, POW * 0.5, 'fire', { col: '#ff8a3d' }); Sfx.boom(); }); }
+  const fl = CA('flame', 'dash'), fr = CA('frost', 'dash'), th = CA('thunder', 'dash');
+  if (fl) for (const p of pathPts(c, 3)) addField('fire', p.x, p.y, 55, 1.5, LS[fl]);
+  if (fr) for (const p of pathPts(c, 3)) addField('frost', p.x, p.y, 60, 2, LS[fr]);
+  if (th) segHit(60, e => zap({ x: c.x0, y: c.y0 }, e, POW * 0.25 * LS[th]));
+}
+// 궁극기
+function ctOnUlt(power) {
+  if (C('cycle')) P.cycleT = 5;
+  if (C('overflow')) { P.dashCharges = St.dashMax; P.dashRe = 0; P.spinCharges = St.spinMax; P.spinRe = 0; FX.text(P.x, P.y - 70, '넘치는 마력', '#9fe8ff'); }
+  if (C('doublecast') && power >= 1) P.ult2T = 5;
+}
+function ctOnUltHit(e) {
+  if (e.dead) return;
+  if (C('frozenspell')) { if (e.boss) { e.staggerT = Math.max(e.staggerT || 0, 0.5); e.cancelAttack && e.cancelAttack(); } else { e.freezeImm = 0; freezeE(e, 1.5); } }
+  if (CA('flame', 'ult')) applySt(e, 'burn', 2);
+  if (CA('frost', 'ult')) applySt(e, 'chill', 2);
+}
+// 적 처치 (o = 죽인 공격)
+function ctOnKill(e, o) {
+  o = o || {}; const g = actGroup(o);
+  if (C('thirst')) heal(2);
+  if (CA('overcharge', 'dash') && P.dashCharges < St.dashMax) P.dashCharges++;
+  if (CA('overcharge', 'magic') && P.spinCharges < St.spinMax) P.spinCharges++;
+  if (tagN('질풍') >= 4 && P.dashCharges < St.dashMax) { P.dashCharges = St.dashMax; P.dashRe = 0; }
+  if (tagN('처형') >= 4) P.execT = 3;
+  if (C('fullmoon') && P.ultT > 0 && (P.ultExt || 0) < 5) { P.ultT += 1; P.ultExt = (P.ultExt || 0) + 1; FX.text(P.x, P.y - 70, '만월 +1초', '#ffe9b0'); }
+  if (C('soulbottle') && g === 'magic') { Run.soul = (Run.soul || 0) + 1; FX.text(e.x, e.y - 50, `영혼 ${Run.soul}`, '#b58cff'); }
+  if (g === 'dash' && o.gen === 0) questAdd('dashkill');
+}
+// 층 시작 (플레이어를 놓은 뒤)
+function ctOnFloorStart() {
+  World.summons = []; P.shields = []; P.escapeUsed = false; P.wallUsed = false; P.calmT = 0; P.noHit = true; P.heat = 0; P.beat = 0; P.ultT = 0; P.ult2T = 0; P.execT = 0; P.speedT = 0; P.revengeT = 0; P.hideT = 0;
+  if (C('potion')) { const hp0 = St.maxHp; Run.potion = R() < 0.5 ? 'big' : 'small'; recalc(); if (St.maxHp > hp0) Run.hp += St.maxHp - hp0; P.r = 18 * St.size; later(0.4, () => FX.text(P.x, P.y - 60, Run.potion === 'big' ? '불안정한 약: 거대' : '불안정한 약: 소형', '#c8ff9a', true)); }
+  if (tagN('철벽') >= 3) addShield(15);
+  if (C('interest')) { const v = Math.min(20, Math.floor(Run.shards * 0.1)); if (v > 0) { Run.shards += v; later(0.5, () => FX.text(P.x, P.y - 40, `이자 +${v}`, '#ffd86b')); } }
+  if (C('bomb')) later(3, () => { if (!P.alive) return; FX.text(P.x, P.y - 70, '봉인된 폭탄', '#ff9a3d', true); Sfx.boom(); Juice.kick(16); splat(P.x, P.y, '#000', 180, 'scorch'); burst(P.x, P.y, 280, POW * 2, 'fire', { col: '#ff9a3d', kb: 420, stagger: 0.8 }); });
+  if (C('crow')) for (let i = 0; i < sumN(1); i++) World.summons.push({ type: 'crow', t: 1e9, tick: 1 + i * 0.5, x: P.x, y: P.y, ph: i * 2 });
+}
+// 층 클리어
+function ctOnFloorClear() {
+  if (C('swell')) { Run.swell = (Run.swell || 0) + 3; Run.hp += 3; }
+  if (Run.iouFloors > 0) Run.iouFloors--;
+  if (P.noHit) questAdd('nohit');
+  if (C('potion')) { Run.potion = null; }
+  recalc();
+}
+// 플레이어가 피해를 받은 뒤
+function ctOnHurt() {
+  P.noHit = false; P.calmT = 0;
+  if (C('revenge')) { P.revengeT = 2; FX.text(P.x, P.y - 56, '되갚는 저주', '#ff9a9a'); }
+  if (Run.hp > 0 && Run.hp < St.maxHp * 0.3) {
+    if (C('escape') && !P.escapeUsed) { P.escapeUsed = true; P.dashCharges = St.dashMax; P.dashRe = 0; addShield(15); FX.text(P.x, P.y - 78, '빗자루 도주', '#9fe8ff', true); }
+    if (tagN('철벽') >= 4 && !P.wallUsed) { P.wallUsed = true; P.iframe = Math.max(P.iframe, 2); heal(15); FX.text(P.x, P.y - 92, '철벽', '#9fd0ff', true); FX.ring(P.x, P.y, 20, 120, '#9fd0ff', 0.4, 8); }
+  }
+}
+// 죽을 때: 두 번째 숨. true면 살아나요
+function ctOnDeath() {
+  const inst = Run.cts.find(c => c.id === 'secondwind'); if (!inst) return false;
+  Run.cts.splice(Run.cts.indexOf(inst), 1); Run.spent.add('secondwind'); recalc();
+  Run.hp = Math.round(St.maxHp * 0.4); P.iframe = 2; Juice.slowmo(0.8, 0.3); Juice.screen('#ffffff', 0.25); Sfx.gold();
+  FX.text(P.x, P.y - 70, '두 번째 숨', '#ffffff', true); FX.ring(P.x, P.y, 20, 260, '#ffffff', 0.5, 10); burst(P.x, P.y, 220, 0, null, { col: '#ffffff', stagger: 0.8 });
+  return true;
+}
+// 매 틱: 소환물, 궁극기 효과, 보호막, 타이머
+function updateContracts(dt) {
+  if (World.decoy) { World.decoy.t -= dt; if (World.decoy.t <= 0) { const d = World.decoy; World.decoy = null; burst(d.x, d.y, 110, POW * 0.4, 'phys', { col: '#e3c8ff' }); if (tagN('권속') >= 4) burst(d.x, d.y, 80, POW * 0.3, 'phys', { col: '#ff9ae0' }); } }
+  for (const k of ['heatT', 'execT', 'speedT', 'revengeT', 'hideT', 'ult2T']) P[k] = (P[k] || 0) - dt;
+  if (P.heatT <= 0) P.heat = 0;
+  for (const s of P.shields || []) s.t -= dt; P.shields = (P.shields || []).filter(s => s.t > 0 && s.v > 0);
+  if (C('calm') && P.alive) { P.calmT = (P.calmT || 0) + dt; if (P.calmT >= 4) { P.calmT = 0; const v = Math.round(St.maxHp * 0.1); const s = P.shields.find(x => x.key === 'calm'); if (!s || s.v < v) addShield(v, 1e9, 'calm'); } }
+  // 궁극기 효과 (임시): 쓴 뒤 4초 동안 1초마다 주변에 의식의 파동
+  if (P.ultT > 0) {
+    P.ultT -= dt; P.ultTick = (P.ultTick || 0) - dt;
+    if (P.ultTick <= 0) { P.ultTick = 1; FX.ring(P.x, P.y, 20, 220, '#ff9a3d', 0.35, 6); for (const e of World.enemies) if (!e.dead && dist(P, e) - e.r < 220) { dealDamage(e, { base: POW * 0.4 * (P.ultPow || 1), act: 'ult', gen: 1, ang: angTo(P, e), noEcho: true }); ctOnUltHit(e); } }
+    if (P.ultT <= 0) { P.ultExt = 0; }
+  }
+  // 소환물
+  for (const s of World.summons) {
+    s.t -= dt; s.tick -= dt; s.ph += dt * 3;
+    if (s.type === 'bee') {
+      s.x = P.x + Math.cos(s.ph) * 46; s.y = P.y + Math.sin(s.ph) * 46;
+      if (s.tick <= 0) { s.tick = 1; const t = nearest(P.x, P.y, 380)[0]; if (t) { World.bolts.push({ x1: s.x, y1: s.y, x2: t.x, y2: t.y, life: 0.12, col: '#ffe45c' }); ctDmg(t, ATK_POW * 0.1, 'phys', { grp: 'magic' }); } }
+      if (s.t <= 0 && tagN('권속') >= 4) burst(s.x, s.y, 70, POW * 0.3, 'phys', { col: '#ff9ae0' });
+    }
+    if (s.type === 'crow') {
+      const t = P.lastHit && !P.lastHit.dead ? P.lastHit : null;
+      const tx = t ? t.x + Math.cos(s.ph) * (t.r + 14) : P.x + Math.cos(s.ph) * 60, ty = t ? t.y + Math.sin(s.ph) * (t.r + 14) : P.y + Math.sin(s.ph) * 60;
+      s.x = lerp(s.x, tx, Math.min(1, dt * 6)); s.y = lerp(s.y, ty, Math.min(1, dt * 6));
+      if (s.tick <= 0) { s.tick = 1; if (t && Math.hypot(s.x - t.x, s.y - t.y) < t.r + 60) { FX.spark(t.x, t.y, s.ph, '#b9a8ff', 4, 200); ctDmg(t, ATK_POW * 0.15, 'phys'); } }
+    }
+  }
+  World.summons = World.summons.filter(s => s.t > 0);
+}
+// 소환물·보호막 그리기 (2D 겹침 레이어)
+function drawSummons() {
+  for (const s of World.summons || []) {
+    if (s.x == null) continue; const q = proj(s.x, s.y, s.type === 'crow' ? 70 : 40 + Math.sin(s.ph * 3) * 8);
+    if (s.type === 'bee') { cx.fillStyle = '#ffe45c'; cx.beginPath(); cx.arc(q.x, q.y, 5 * q.s, 0, Math.PI * 2); cx.fill(); cx.fillStyle = '#2b2410'; cx.fillRect(q.x - 1.5 * q.s, q.y - 4 * q.s, 3 * q.s, 8 * q.s); }
+    if (s.type === 'crow') { cx.fillStyle = '#3a2d5c'; cx.strokeStyle = '#b9a8ff'; cx.lineWidth = 2; const w = (10 + Math.sin(s.ph * 4) * 6) * q.s; cx.beginPath(); cx.moveTo(q.x - 14 * q.s, q.y - w); cx.lineTo(q.x, q.y); cx.lineTo(q.x + 14 * q.s, q.y - w); cx.lineTo(q.x, q.y + 6 * q.s); cx.closePath(); cx.fill(); cx.stroke(); }
+  }
+  for (const e of World.enemies) {
+    if (e.dead) continue;
+    if (e.curse) { const q = proj(e.x, e.y, e.r * 2 + 30); cx.fillStyle = '#c77dff'; cx.font = `900 ${Math.round(20 * q.s)}px sans-serif`; cx.textAlign = 'center'; cx.fillText('✶', q.x, q.y); }
+    if (e.frog > 0) { const q = proj(e.x, e.y, e.r * 2 + 30); cx.fillStyle = '#8fe07a'; cx.font = `900 ${Math.round(18 * q.s)}px sans-serif`; cx.textAlign = 'center'; cx.fillText('개굴', q.x, q.y); }
+  }
+  if (shieldTotal() > 0) { const q = proj(P.x, P.y, 26); cx.strokeStyle = '#9fd0ff'; cx.globalAlpha = 0.7; cx.lineWidth = 3; cx.beginPath(); cx.ellipse(q.x, q.y, (P.r + 16) * q.s, (P.r + 22) * q.s, 0, 0, Math.PI * 2); cx.stroke(); cx.globalAlpha = 1; }
+  if (P.ultT > 0) { const q = proj(P.x, P.y, 2); cx.strokeStyle = '#ff9a3d'; cx.globalAlpha = 0.5; cx.lineWidth = 3; cx.beginPath(); cx.ellipse(q.x, q.y, 220 * q.s, 220 * q.s * 0.62, 0, 0, Math.PI * 2); cx.stroke(); cx.globalAlpha = 1; }
+}
 
-// ───────── 화면: 키워드 카드, 행동 자리 ─────────
-function kwTag(k, small) {
-  const d = KW[k.id];
-  return `<span class="kwtag${small ? ' sm' : ''}" style="border-color:${d.col};color:${d.col}">${d.name}${k.lv > 1 ? ' ' + '★'.repeat(k.lv - 1) : ''}</span>`;
+// ───────── 화면: 계약 카드 ─────────
+function tagChip(name, small, extra) { return `<span class="kwtag${small ? ' sm' : ''}" style="border-color:${tagCol(name)};color:${tagCol(name)}">${name}${extra || ''}</span>`; }
+function gradeHead(c, act) { return `<div class="grade" style="color:${GRADE[c.grade].col}">${GRADE[c.grade].name} · ${c.kind === 'act' ? '행위 계약 · ' + (act ? ACT[act].name : c.act === 'pick' ? '행동 선택' : ACT[c.act].name) : '존재 계약'}</div>`; }
+// 태그 미리 보기: "원소 2→3" + 새로 켜지는 단계
+function tagPreview(c) {
+  const owned = C(c.id) > 0;
+  return '<div class="synhint">' + c.tags.map(t => {
+    const a = tagN(t), b = owned ? a : a + 1; const th = [2, 3, 4].find(x => a < x && b >= x);
+    const next = [2, 3, 4].find(x => x > b);
+    return `<div class="${th ? 'on' : ''}">${tagChip(t, true)} ${owned ? `${a}개 (이미 셈)` : `${a} → ${b}`}${th ? ` · <b>${th}개 효과 켜짐</b>: ${TAG[t].t[th - 2]}` : next ? ` <span class="dim">· ${next}개: ${TAG[t].t[next - 2]}</span>` : ''}</div>`;
+  }).join('') + '</div>';
 }
-function kwDescFor(id, act) {
-  const d = KW[id];
-  if (d.kind === 'comp') {
-    const where = { atk: '맞힌 적 자리에서 (휘두를 때 한 번)', spin: '내 주변에서 크게', parry: '패링한 적 자리에서 크게', dash: '지나간 경로 위에서' }[act] || '';
-    return `${d.desc}<br><span class="dim">${act ? ACT[act].name + ': ' + where : '행동마다 나는 자리가 달라요'}</span>`;
-  }
-  return act ? d.d[act] : ACTS.map(a => `<b>${a.name}</b> ${d.d[a.k]}`).join('<br>');
+function ctCardHtml(c) {
+  const lvNow = c.act === 'pick' ? Math.max(0, ...c.on.map(a => CA(c.id, a))) : C(c.id);
+  const l = c.act === 'pick' ? 1 : Math.min(c.max, lvNow + 1);
+  return `${gradeHead(c)}<div class="cname">${c.name}${c.max > 1 && c.act !== 'pick' ? ` <small>${l}단계</small>` : ''}${lvNow && c.act === 'pick' ? ' <small>보유</small>' : ''}</div><div class="cdesc">${c.d(l)}</div>${tagPreview(c)}`;
 }
-// 보상: 키워드 카드 3장 → 고르면 붙일 행동을 골라요
-function kwPool() {
-  const owned = new Set(kwOwned().map(k => k.id));
-  return KW_BASE.filter(k => !owned.has(k.id) || kwOwned().some(o => o.id === k.id && o.lv < 3));
-}
-function showKeywordReward(n, cb, title) {
-  const cards = shuffle(kwPool()).slice(0, n);
+// 계약 고르기 화면. opt: { prism, title, cb, grade }
+function showContracts(opt) {
+  opt = opt || {}; const cb = opt.cb;
+  let grade, n = 3;
+  if (opt.prism) { grade = 'prism'; if (opt.tier && Run.sagaOn) { n = 4; Run.sagaOn = false; recalc(); } }
+  else { const t = Run.tier; grade = opt.grade || wpick(t === 1 ? [['silver', 60], ['gold', 30], ['prism', 10]] : t === 2 ? [['silver', 40], ['gold', 40], ['prism', 20]] : [['silver', 25], ['gold', 45], ['prism', 30]]); }
+  if (n === 3 && tagN('천운') >= 4 && R() < 0.25) n = 4;
+  const up = opt.prism ? 0 : (Run.upNext || 0); if (!opt.prism) Run.upNext = 0;
+  const cards = rollContracts(grade, n, up);
+  if (!cards.length) { Run.rerolls = Math.min(5, Run.rerolls + 1); notice('맺을 계약이 없어요', '대신 리롤권 1개를 받았어요.', cb); return; }
+  const skipN = opt.prism ? 2 : 1;
   cardPicker({
-    title: title || '키워드', sub: '하나를 고르세요. 이미 가진 키워드면 등급이 올라요(최대 ★★).', cards,
-    render: k => { const own = kwOwned().find(o => o.id === k.id); return `<div class="grade" style="color:${k.col}">기본 키워드 · ${k.phys}</div><div class="cname" style="color:${k.col}">${k.name}${own ? ` <small>등급 올리기 → ${own.lv + 1}</small>` : ''}</div><div class="cdesc kwd">${kwDescFor(k.id)}</div>`; },
-    reroll: (k, cs) => shuffle(kwPool()).find(x => !cs.includes(x)),
-    onPick: k => { const own = kwOwned().find(o => o.id === k.id); if (own) { kwGain(k.id); flashMsg(`${k.name} 등급 ${own.lv + 1}`); cb(); } else kwPlace(k.id, cb); },
-    skipLabel: '건너뛰기 (파편 +15)', onSkip: () => { Run.shards += 15; cb(); },
+    title: opt.title || (opt.prism ? '프리즘 계약' : '계약'), sub: opt.prism ? '가장 강한 계약이에요. 하나를 고르세요.' : `${GRADE[grade].name} 등급 계약 중 하나를 고르세요. 카드 아래에 태그가 몇 개째가 되는지 보여요.`, cards,
+    extraFree: tagN('천운') >= 3 ? 1 : 0,
+    render: ctCardHtml,
+    reroll: (c, cs) => { const pool = ctPool(c.grade, cs); return pool.length ? pick(pool) : null; },
+    onPick: c => { if (c.act === 'pick') ctChooseAct(c, cb); else takeContract(c.id, c.act, cb); },
+    skipLabel: `취소 (리롤권 +${skipN})`, onSkip: () => { Run.rerolls = Math.min(5, Run.rerolls + skipN); cb(); },
   });
 }
-// 새 키워드를 어느 행동에 붙일지
-function kwPlace(id, cb) {
+// 행동을 고르는 계약: 어느 행동에 맺을지
+function ctChooseAct(c, cb) {
   Scene = 'menu'; const p = panel(); topBar(p);
-  const c = h('div', 'card-wrap'); const d = KW[id];
-  c.innerHTML = `<h1 style="color:${d.col}">${d.name}</h1><p class="lead">어느 행동에 붙일까요? 같은 키워드도 행동마다 효과가 달라요.</p>`;
+  const w = h('div', 'card-wrap'); w.innerHTML = `<h1 style="color:${GRADE[c.grade].col}">${c.name}</h1><p class="lead">어느 행동에 맺을까요? 맺은 뒤에는 옮길 수 없어요. 같은 행동에 다시 맺으면 단계가 올라요.</p>`;
   const row = h('div', 'kwplace');
-  for (const a of ACTS) {
-    const free = Run.kw[a.k].findIndex((s, i) => !s && i < Run.kwSlots[a.k]) >= 0;
-    const cur = kwAll(a.k);
-    const other = cur.find(k => KW[k.id].kind === 'base' && fuseOf(k.id, id));
-    const b = h('button', 'card kwact' + (free ? '' : ' full'));
-    b.innerHTML = `<div class="cname">${a.name}</div><div class="cdesc kwd">${d.kind === 'comp' ? kwDescFor(id, a.k) : d.d[a.k]}</div>
-      <div class="cfoot">${cur.map(k => kwTag(k, true)).join(' ') || '<span class="dim">비어 있음</span>'} ${free ? '' : '<br><span class="dim">칸이 가득 참</span>'}</div>
-      ${other && free ? `<div class="synhint"><div class="on">✦ ${KW[other.id].name} + ${d.name} → 합성하면 <b>${KW[fuseOf(other.id, id)].name}</b></div></div>` : ''}`;
-    b.disabled = !free; b.onclick = () => { kwGain(id, a.k); Sfx.pick(); cb(); };
+  for (const a of c.on) {
+    const lv = CA(c.id, a); const full = lv >= c.max;
+    const b = h('button', 'card kwact' + (full ? ' full' : ''));
+    b.innerHTML = `<div class="cname">${ACT[a].name}${lv ? ` <small>${full ? '최대' : lv + 1 + '단계로'}</small>` : ''}</div><div class="cdesc kwd">${c.lines[a]}<br><span class="dim">${c.d(Math.min(c.max, lv + 1))}</span></div>
+      <div class="cfoot">${ctOf(a).map(x => `<span class="chip">${CT[x.id].name}${x.lv > 1 ? ' ' + x.lv : ''}</span>`).join('') || '<span class="dim">이 행동에 맺은 계약 없음</span>'}</div>`;
+    b.disabled = full; b.onclick = () => { Sfx.pick(); takeContract(c.id, a, cb); };
     row.appendChild(b);
   }
-  c.appendChild(row);
-  const g = h('button', 'btn ghost', `가방에 넣기 (${Run.kwBag.length}/${Run.kwBagMax})`); g.disabled = Run.kwBag.length >= Run.kwBagMax; g.onclick = () => { kwGain(id, 'bag'); cb(); }; c.appendChild(g);
-  const x = h('button', 'btn ghost', '버리고 파편 +15'); x.onclick = () => { Run.shards += 15; cb(); }; c.appendChild(x);
-  p.appendChild(c);
-  if (window.__auto) setTimeout(() => { const b = row.querySelector('.card:not([disabled])') || (g.disabled ? x : g); b.click(); }, 20);
+  w.appendChild(row); p.appendChild(w);
+  if (window.__auto) setTimeout(() => { const b = row.querySelector('.card:not([disabled])'); b && b.isConnected && b.click(); }, 20);
 }
-// 둘째 칸 열기 (중간보스)
-function kwOpenSlot(cb, title) {
-  const cand = ACTS.filter(a => Run.kwSlots[a.k] < 2);
-  if (!cand.length) { Run.shards += 40; notice('칸이 모두 열려 있어요', '대신 파편 40을 받았어요.', cb); return; }
-  Scene = 'menu'; const p = panel(); topBar(p);
-  const c = h('div', 'card-wrap'); c.innerHTML = `<h1>${title || '행동 칸 열기'}</h1><p class="lead">한 행동의 둘째 칸을 열어요. 두 칸에 섞이는 키워드가 들어가면 합성할 수 있어요.</p>`;
-  const row = h('div', 'kwplace');
-  for (const a of cand) { const b = h('button', 'card kwact'); b.innerHTML = `<div class="cname">${a.name}</div><div class="cfoot">${kwAll(a.k).map(k => kwTag(k, true)).join(' ') || '<span class="dim">비어 있음</span>'}</div>`; b.onclick = () => { Run.kwSlots[a.k] = 2; Sfx.pick(); cb(); }; row.appendChild(b); }
-  c.appendChild(row); p.appendChild(c);
-  if (window.__auto) setTimeout(() => row.querySelector('.card').click(), 20);
+// 계약 한 줄 (계약 창·상점)
+function ctLine(inst) {
+  const c = CT[inst.id];
+  return `<div class="caug" style="border-color:${GRADE[c.grade].col}"><div class="cname2">${c.name}${c.max > 1 ? ` <small>${inst.lv}단계</small>` : ''} <span class="tagrow">${c.tags.map(t => tagChip(t, true)).join(' ')}</span></div>
+    <div class="cdesc2">${c.d(inst.lv)}${c.lines && inst.act ? `<br><span class="dim">${ACT[inst.act].name}: ${c.lines[inst.act]}</span>` : ''}</div></div>`;
 }
-// 계층보스: 합성 키워드 바로 얻기
-function showCompReward(cb) {
-  const owned = new Set(kwOwned().map(k => k.id));
-  const pool = () => shuffle(KW_COMP.filter(k => !owned.has(k.id)));
-  const cards = pool().slice(0, 3);
-  cardPicker({
-    title: '계층보스 보상: 합성 키워드', sub: '재료 없이 합성 키워드를 바로 얻어요. 한 칸만 차지해요.', cards,
-    render: k => `<div class="grade" style="color:${k.col}">합성 · ${KW[k.a].name} + ${KW[k.b].name}</div><div class="cname" style="color:${k.col}">${k.name}</div><div class="cdesc kwd">${k.desc}<br><span class="dim">${k.phys}</span></div>`,
-    reroll: (k, cs) => pool().find(x => !cs.includes(x)),
-    onPick: k => kwPlace(k.id, cb),
-    skipLabel: '건너뛰기 (리롤권 +2)', onSkip: () => { Run.rerolls = Math.min(5, Run.rerolls + 2); cb(); },
-  });
-}
-// 행동 키워드 판: 옮기기·합성 (편집은 전투 밖에서만)
-let KwSel = null;
-function kwPanel(container, editable, extra) {
-  const box = h('div', 'engrave kwpanel');
-  const draw = () => {
-    recalc(); box.innerHTML = '';
-    box.appendChild(h('div', 'etitle', `행동 키워드 ${editable ? '<span class="dim">키워드를 누른 뒤 다른 칸을 누르면 옮겨요</span>' : '<span class="dim">(지도·상점·회복 칸에서 바꿀 수 있어요)</span>'}`));
-    const grid = h('div', 'kwgrid');
-    for (const a of ACTS) {
-      const col = h('div', 'kwcol'); col.appendChild(h('div', 'kwhead', `${a.name} <span class="dim">${a.key}</span>`));
-      for (let i = 0; i < 2; i++) {
-        const k = Run.kw[a.k][i]; const open = i < Run.kwSlots[a.k];
-        const sel = KwSel && KwSel.act === a.k && KwSel.i === i;
-        const el = h('button', 'kwslot' + (open ? '' : ' locked') + (sel ? ' sel' : ''));
-        if (k) { const d = KW[k.id]; el.style.borderColor = d.col; el.innerHTML = `${kwTag(k)}<div class="kwd">${kwDescFor(k.id, a.k)}</div>`; }
-        else el.innerHTML = `<div class="dim">${open ? '빈 칸' : '잠김 (중간보스·상점에서 열기)'}</div>`;
-        el.onclick = () => { if (!editable || !open) return; kwClick(a.k, i); draw(); };
-        col.appendChild(el);
-      }
-      const fu = kwFusable(a.k);
-      if (fu) { const fb = h('button', 'btn small fuse', `합성 → ${KW[fu].name}`); fb.style.borderColor = KW[fu].col; fb.title = KW[fu].desc; fb.disabled = !editable; fb.onclick = () => { const id = kwFuse(a.k); if (id) { flashMsg(`${KW[KW[id].a].name} + ${KW[KW[id].b].name} = ${KW[id].name}`); Sfx.gold(); } KwSel = null; draw(); }; col.appendChild(fb); }
-      grid.appendChild(col);
-    }
-    box.appendChild(grid);
-    const bag = h('div', 'bag'); bag.appendChild(h('span', 'lbl', `가방 ${Run.kwBag.length}/${Run.kwBagMax}`));
-    Run.kwBag.forEach((k, i) => { const b = h('button', 'bagitem' + (KwSel && KwSel.act === 'bag' && KwSel.i === i ? ' sel' : ''), kwTag(k)); b.onclick = () => { if (!editable) return; kwClick('bag', i); draw(); }; bag.appendChild(b); });
-    if (editable && KwSel && KwSel.act !== 'bag' && Run.kwBag.length < Run.kwBagMax) { const ub = h('button', 'btn small', '가방으로 빼기'); ub.onclick = () => { Run.kwBag.push(Run.kw[KwSel.act][KwSel.i]); Run.kw[KwSel.act][KwSel.i] = null; KwSel = null; draw(); }; bag.appendChild(ub); }
-    if (extra) extra(bag, draw);
-    box.appendChild(bag);
-  };
-  draw(); container.appendChild(box); return draw;
-}
-function kwGet(act, i) { return act === 'bag' ? Run.kwBag[i] : Run.kw[act][i]; }
-function kwSet(act, i, v) { if (act === 'bag') { if (v) Run.kwBag[i] = v; else Run.kwBag.splice(i, 1); } else Run.kw[act][i] = v || null; }
-function kwClick(act, i) {
-  if (!KwSel) { if (kwGet(act, i)) KwSel = { act, i }; return; }
-  if (KwSel.act === act && KwSel.i === i) { KwSel = null; return; }
-  const a = kwGet(KwSel.act, KwSel.i), b = kwGet(act, i);
-  if (KwSel.act === 'bag' && act === 'bag') { KwSel = null; return; }
-  if (act === 'bag') { Run.kwBag[i] = a; kwSet(KwSel.act, KwSel.i, b); }
-  else if (KwSel.act === 'bag') { Run.kw[act][i] = a; if (b) Run.kwBag[KwSel.i] = b; else Run.kwBag.splice(KwSel.i, 1); }
-  else { Run.kw[act][i] = a; Run.kw[KwSel.act][KwSel.i] = b || null; }
-  KwSel = null; Sfx.pick(); recalc();
-}
-function showKwOnly() {
-  Scene = 'menu'; const p = panel(); topBar(p); const c = h('div', 'wide');
-  kwPanel(c, true); const b = h('button', 'btn', '지도로'); b.onclick = () => { KwSel = null; showMap(); }; c.appendChild(b); p.appendChild(c);
-}
-// 자동 진행(봇): 합성 가능한 건 합성
-function autoKw() { for (const a of ACTS) if (kwFusable(a.k)) kwFuse(a.k); for (let i = Run.kwBag.length - 1; i >= 0; i--) { for (const a of ACTS) { const j = Run.kw[a.k].findIndex((s, n) => !s && n < Run.kwSlots[a.k]); if (j >= 0) { Run.kw[a.k][j] = Run.kwBag.splice(i, 1)[0]; break; } } } recalc(); }
 
 // ===== run.js =====
-// ───────── 런 진행: 지도, 보상, 상점, 회복, 이벤트, 동작 각인 화면 ─────────
+// ───────── 런 진행: 지도, 보상(축복·계약), 상점, 회복, 이벤트, 계약 창 ─────────
 let Scene = 'title';
 const UI = document.getElementById('ui');
 const h = (tag, cls, html) => { const el = document.createElement(tag); if (cls) el.className = cls; if (html != null) el.innerHTML = html; return el; };
@@ -2019,8 +1968,8 @@ function genMap() {
 }
 function nodeKind(n) { return n.type === 'fight' && n.elite ? 'elite' : n.type; }
 
-function startRun(seedVal) {
-  newRun(seedVal);
+function startRun(seedVal, test) {
+  newRun(seedVal, test);
   Run.map = genMap(); Run.row = 0; Run.node = null; Run.floor = 0;
   showMap();
 }
@@ -2044,14 +1993,22 @@ function enterFinal() {
   clearUI(); Scene = 'fight'; startFight({ type: 'final', mods: [] });
 }
 
+// 태그 진행 칩: 가진 태그와 개수 (2개 이상이면 켜진 것)
+function tagChips() {
+  const out = TAGS.filter(t => tagN(t.name) > 0).sort((a, b) => tagN(b.name) - tagN(a.name)).map(t => { const n = tagN(t.name); return `<span class="kwtag sm${n >= 2 ? ' lit' : ''}" style="border-color:${tagCol(t.name)};color:${tagCol(t.name)}">${t.name} ${n}</span>`; }).join(' ');
+  return out || '<span class="dim">없음</span>';
+}
 function topBar(p) {
   const bar = h('div', 'topbar');
-  const aug = ACTS.map(a => `<span class="chip">${a.name}: ${kwAll(a.k).map(k => kwTag(k, true)).join(' ') || '<span class="dim">-</span>'}</span>`).join('');
+  const acts = ACTS.map(a => `<span class="chip">${a.name}: ${ctOf(a.k).map(c => CT[c.id].name + (c.lv > 1 ? ' ' + c.lv : '')).join(', ') || '<span class="dim">-</span>'}</span>`).join('');
+  const ex = ctOf(null).map(c => CT[c.id].name + (c.lv > 1 ? ' ' + c.lv : '')).join(', ');
   const bl = Object.entries(Run.blessings).map(([k, c]) => `<span class="chip">${BLESSINGS.find(b => b.id === k).name}×${c}</span>`).join('') || '<span class="dim">없음</span>';
   bar.innerHTML = `<div class="stats"><b>${Run.floor ? Run.floor + '층' : '출발'}</b> · ${TIERS[Run.tier - 1].name}
-    <span class="hp">체력 ${Math.ceil(Run.hp)}/${St.maxHp}</span><span class="sh">파편 ${Run.shards}</span><span>리롤권 ${Run.rerolls}</span></div>
-    <div class="row"><span class="lbl">키워드</span>${aug}</div><div class="row"><span class="lbl">축복</span>${bl}</div>`;
-  const cb = h('button', 'btn small codexbtn', '키워드·능력치 (Tab)'); cb.onclick = () => toggleCodex(); bar.appendChild(cb);
+    <span class="hp">체력 ${Math.ceil(Run.hp)}/${St.maxHp}</span><span class="sh">파편 ${Run.shards}</span><span>리롤권 ${Run.rerolls}</span>${Run.test ? '<span class="dim">계약 시험 런</span>' : ''}</div>
+    <div class="row"><span class="lbl">행위 계약</span>${acts}</div>
+    <div class="row"><span class="lbl">존재 계약</span>${ex ? `<span class="chip">${ex}</span>` : '<span class="dim">없음</span>'} <span class="lbl" style="margin-left:14px">태그</span>${tagChips()}</div>
+    <div class="row"><span class="lbl">축복</span>${bl}</div>`;
+  const cb = h('button', 'btn small codexbtn', '계약·능력치 (Tab)'); cb.onclick = () => toggleCodex(); bar.appendChild(cb);
   p.appendChild(bar);
 }
 
@@ -2078,30 +2035,33 @@ function showMap() {
     }
   }
   const side = h('div', 'mapside');
-  side.innerHTML = `<div class="hint">다음 칸을 고르세요. 상점·회복·이벤트 칸은 그 층 전투 보상을 포기해요.<br>칸 위 글자는 층 변형자예요.</div>`;
-  const eb = h('button', 'btn', '행동 키워드 (옮기기·합성)'); eb.onclick = () => showKwOnly(); side.appendChild(eb);
+  side.innerHTML = `<div class="hint">다음 칸을 고르세요. 상점·회복·이벤트 칸은 그 층 전투 보상을 포기해요.<br>일반·정예 층은 축복, 5층마다(보스) 계약을 얻어요.${Run.quest && !Run.quest.done ? `<br><b style="color:#7fffe0">과제: ${QUESTS[Run.quest.k].name} (${Math.floor(Run.quest.n)}/${Run.quest.goal})</b>` : ''}</div>`;
+  const eb = h('button', 'btn', '계약·태그 보기 (Tab)'); eb.onclick = () => toggleCodex(); side.appendChild(eb);
   p.appendChild(side);
 }
 
 // ───────── 전투 클리어 → 보상 ─────────
+// 설계서 6.1: 일반·정예·저주 층 = 축복 3택1 / 중간보스(5층) = 계약 3택1 / 계층보스(10층) = 계약 3택1 + 프리즘 계약 3택1
 function fightCleared() {
   const n = Run.node; const k = n.type;
   if (k === 'final') { endRun(true); return; }
+  ctOnFloorClear();
   let base = k === 'boss' ? (n.row === 5 ? 40 : 60) : n.elite ? 25 : 15;
   if (n.type === 'curse') base *= 2;
   const heavy = (n.mods || []).some(m => MOD[m].heavy), light = (n.mods || []).some(m => !MOD[m].heavy);
   if (heavy) base *= 1.5; else if (light) base *= 1.2;
   base = Math.round(base * (1 + St.shardMul));
   Run.shards += base;
-  const queue = []; Run.pendingDrops = [];
-  // 보상 (행동 키워드): 일반 층 = 키워드 3택1, 정예 = + 축복, 중간보스 = 칸 열기 + 키워드, 계층보스 = 합성 키워드
+  const queue = [];
   if (k === 'boss') {
-    if (n.row === 5) { queue.push(() => kwOpenSlot(next, '중간보스 보상: 행동 칸 열기')); queue.push(() => showKeywordReward(3, next)); }
-    else { queue.push(() => showCompReward(next)); queue.push(() => kwOpenSlot(next, '계층보스 보상: 행동 칸 열기')); }
+    queue.push(() => showContracts({ title: n.row === 5 ? '중간보스 보상: 계약' : '계층보스 보상: 계약', cb: next }));
+    if (n.row === 10) queue.push(() => showContracts({ prism: true, tier: true, title: '계층보스 보상: 프리즘 계약', cb: next }));
   } else {
-    queue.push(() => showKeywordReward(heavy ? 4 : 3, next));
-    if (n.elite) queue.push(() => showBlessings(3, next));
+    queue.push(() => showBlessings(heavy ? 4 : 3, next));
+    if (Run.test) queue.push(() => showContracts({ title: '계약 (시험 런: 모든 전투 층)', cb: next }));
   }
+  // 의식 과제를 끝냈으면 프리즘 계약
+  while (Run.questPicks > 0) { Run.questPicks--; queue.push(() => showContracts({ prism: true, title: '과제 보상: 프리즘 계약', cb: next })); }
   queue.unshift(() => notice('클리어', `${Run.floor}층 클리어 · 파편 +${base}${Run.floorShards ? ` (처치 파편 +${Run.floorShards})` : ''}`, next, true));
   function next() { const f = queue.shift(); if (f) f(); else afterFloor(); }
   next();
@@ -2118,27 +2078,27 @@ function notice(title, body, cb, quick) {
   if (window.__auto) setTimeout(() => b.isConnected && b.click(), 20);
 }
 
-// 카드 고르기 공통 (무료 리롤 1회씩, 이후 리롤권)
-function cardPicker({ title, sub, cards, render, reroll, onPick, skipLabel, onSkip }) {
+// 카드 고르기 공통 (카드마다 무료 리롤 1회, 그 뒤 화면 공용 무료 리롤(천운 3개), 그 뒤 리롤권)
+function cardPicker({ title, sub, cards, render, reroll, onPick, skipLabel, onSkip, extraFree }) {
   Scene = 'menu'; const p = panel(); topBar(p);
   const c = h('div', 'card-wrap'); c.innerHTML = `<h1>${title}</h1><p class="lead">${sub}</p>`;
   const row = h('div', 'cards'); c.appendChild(row);
-  const free = cards.map(() => true);
+  const free = cards.map(() => true); let bonus = extraFree || 0;
   const draw = () => {
     row.innerHTML = '';
     cards.forEach((cd, i) => {
       const box = h('div', 'cardbox');
       const el = h('button', 'card'); el.innerHTML = render(cd); el.onclick = () => onPick(cd); box.appendChild(el);
-      const rr = h('button', 'btn small', free[i] ? '무료 리롤' : `리롤권 사용 (${Run.rerolls})`);
-      rr.disabled = !free[i] && Run.rerolls <= 0;
-      rr.onclick = () => { const nc = reroll(cd, cards); if (!nc) return; if (free[i]) free[i] = false; else Run.rerolls--; cards[i] = nc; draw(); };
+      const rr = h('button', 'btn small', free[i] ? '무료 리롤' : bonus > 0 ? `무료 리롤 (천운 ${bonus})` : `리롤권 사용 (${Run.rerolls})`);
+      rr.disabled = !free[i] && bonus <= 0 && Run.rerolls <= 0;
+      rr.onclick = () => { const nc = reroll(cd, cards); if (!nc) { flashMsg('다시 뽑을 카드가 없어요'); return; } if (free[i]) free[i] = false; else if (bonus > 0) bonus--; else Run.rerolls--; cards[i] = nc; draw(); };
       box.appendChild(rr); row.appendChild(box);
     });
   };
   draw();
   if (skipLabel) { const s = h('button', 'btn ghost', skipLabel); s.onclick = onSkip; c.appendChild(s); }
   p.appendChild(c);
-  if (window.__auto) setTimeout(() => { const b = row.querySelector('.card'); b && b.click(); }, 20);
+  if (window.__auto) setTimeout(() => { const b = row.querySelector('.card'); b && b.isConnected && b.click(); }, 20);
 }
 
 function showBlessings(n, cb) {
@@ -2148,203 +2108,80 @@ function showBlessings(n, cb) {
     title: '축복', sub: '하나를 고르세요. 같은 축복은 계속 쌓여요.', cards,
     render: b => `<div class="cname">${b.name}</div><div class="cdesc">${b.desc}</div><div class="cfoot">보유 ${Run.blessings[b.id] || 0}</div>`,
     reroll: (b, cs) => pool().find(x => !cs.includes(x)),
-    onPick: b => { Run.blessings[b.id] = (Run.blessings[b.id] || 0) + 1; recalc(); if (b.id === 'tough') Run.hp += 6; cb(); },
+    onPick: b => { addBlessing(b.id); cb(); },
     skipLabel: '건너뛰기 (파편 +10)', onSkip: () => { Run.shards += 10; cb(); },
   });
 }
+function addBlessing(id) { Run.blessings[id] = (Run.blessings[id] || 0) + 1; recalc(); if (id === 'tough') Run.hp = Math.min(St.maxHp, Run.hp + 6); }
+function flashMsg(t) { const ts = document.querySelectorAll('.toast'); if (ts.length >= 3) ts[0].remove(); const n = Math.min(2, ts.length); const m = h('div', 'toast', t); m.style.top = (12 + n * 6) + '%'; document.body.appendChild(m); setTimeout(() => m.remove(), 2400); }
 
-function augPool(grade) { return AUGMENTS.filter(a => a.grade === grade && (Run.augs[a.id] || 0) < a.max); }
-function upGrade(g) { return g === 'silver' ? 'gold' : 'prism'; }
-function rollAugs(grade, n, upCount, needEffect) {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    let g = i < upCount ? upGrade(grade) : grade;
-    let pool = augPool(g).filter(a => !out.includes(a));
-    if (needEffect && i === 0) { const ef = pool.filter(a => a.tag === '효과'); if (ef.length) pool = ef; }
-    if (!pool.length) pool = AUGMENTS.filter(a => (Run.augs[a.id] || 0) < a.max && !out.includes(a));
-    if (pool.length) out.push(pick(pool));
-  }
-  return shuffle(out);
-}
-function showAugments(prism, cb) {
-  let grade, n = 3;
-  if (prism) { grade = 'prism'; if (Run.sagaOn) { n = 4; Run.sagaOn = false; } }
-  else { const t = Run.tier; grade = wpick(t === 1 ? [['silver', 60], ['gold', 30], ['prism', 10]] : t === 2 ? [['silver', 40], ['gold', 40], ['prism', 20]] : [['silver', 25], ['gold', 45], ['prism', 30]]); }
-  const up = Run.upNext || 0; Run.upNext = 0;
-  const cards = rollAugs(grade, n, up, prism);
-  cardPicker({
-    title: prism ? '계층보스 보상: 프리즘 증강' : '증강', sub: prism ? '예전 키워드 자리예요. 가장 강한 증강 중 하나를 고르세요.' : `${GRADE[grade].name} 등급 증강 중 하나를 고르세요.`, cards,
-    render: a => { const l = (Run.augs[a.id] || 0) + 1; return `<div class="grade" style="color:${GRADE[a.grade].col}">${GRADE[a.grade].name} · ${a.tag}</div><div class="cname">${a.name}${a.max > 1 ? ` <small>${l}단계</small>` : ''}</div><div class="cdesc">${a.desc(l)}</div>${synHint(a.id)}`; },
-    reroll: (a, cs) => { const pool = augPool(a.grade).filter(x => !cs.includes(x)); return pool.length ? pick(pool) : null; },
-    onPick: a => { takeAug(a.id); cb(); },
-    skipLabel: `건너뛰기 (리롤권 +${prism ? 2 : 1})`, onSkip: () => { Run.rerolls = Math.min(5, Run.rerolls + (prism ? 2 : 1)); cb(); },
-  });
-}
-function takeAug(id) {
-  const before = new Set(Run.syn || []);
-  Run.augs[id] = (Run.augs[id] || 0) + 1;
-  if (id === 'star') Run.upNext = Math.max(Run.upNext, 1);
-  if (id === 'moon') Run.upNext = 3;
-  if (id === 'saga') Run.sagaOn = true;
-  recalc();
-  for (const s of Run.syn) if (!before.has(s)) setTimeout(() => flashMsg(`시너지 완성: ${SYN[s].name}`), 50);
-}
-
-// ───────── 인장 얻기 ─────────
-function giveItem(id, cb) {
-  if (Run.bag.length < Run.bagMax) { Run.bag.push({ id, lv: 0 }); notice('인장 획득', `<b>${ITEM[id].name}</b>을(를) 보조 가방에 넣었어요. 상점·회복 칸에서 각인할 수 있어요.`, cb); }
-  else { Run.shards += Math.round(ITEM[id].price * 0.6); notice('가방이 가득 참', `<b>${ITEM[id].name}</b>을(를) 파편 ${Math.round(ITEM[id].price * 0.6)}로 바꿨어요.`, cb); }
-}
-
-// ───────── 동작 각인 화면 ─────────
-let Sel = null; // {from:'bag'|'slot', i|k}
-function itemTip(inst, slotK) {
-  const it = ITEM[inst.id]; const lv = inst.lv || 0;
-  const base = Object.entries(it.base).map(([k, v]) => fmtStat(k, v * (1 + 0.5 * lv))).join(', ');
-  const slots = KIND_SLOTS[it.kind].filter(k => k !== 'core' || it.kind === 'core');
-  let at = '';
-  if (it.kind === 'core') at = '<div>심: 기본 효과만, 같은 계열 인장과 둘씩 이어짐</div>';
-  else if (it.at.any) at = `<div>어느 자리든: ${fmtAt(it.at.any)}</div>`;
-  else at = slots.map(k => `<div class="${k === slotK ? 'on' : ''}">${SLOT[k].name}: ${fmtAt(it.at[k])}</div>`).join('');
-  return `<div class="tipname" style="color:${ELEM[it.elem].col}">${it.name}${lv ? ' +' + lv : ''}</div><div class="dim">${KIND[it.kind]} · ${ELEM[it.elem].name} · ${it.form}</div><div>${base}</div><div class="tipat">${at}</div>`;
-}
-function engravePanel(container, editable, extra) {
-  const box = h('div', 'engrave');
-  const draw = () => {
-    recalc(); box.innerHTML = '';
-    box.appendChild(h('div', 'etitle', `동작 각인 ${editable ? '' : '<span class="dim">(상점·회복 칸에서만 바꿀 수 있어요)</span>'}`));
-    const grid = h('div', 'egrid');
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'elinks'); svg.setAttribute('viewBox', '0 0 800 300');
-    const pos = s => ({ x: 100 + s.x * 200, y: 75 + s.y * 150 });
-    const drawn = new Set();
-    for (const s of SLOTS) for (const o of s.links) {
-      if (s.k === 'core' || o === 'core') continue;
-      const key = [s.k, o].sort().join(); if (drawn.has(key)) continue; drawn.add(key);
-      const a = pos(s), b = pos(SLOT[o]); const E = Run.engr;
-      const same = E[s.k] && E[o] && ITEM[E[s.k].id].elem === ITEM[E[o].id].elem && ITEM[E[o].id].elem !== 'none';
-      const l = document.createElementNS(svg.namespaceURI, 'line'); l.setAttribute('x1', a.x); l.setAttribute('y1', a.y); l.setAttribute('x2', b.x); l.setAttribute('y2', b.y);
-      l.setAttribute('class', 'elink' + (same ? ' lit' : '')); if (same) l.style.stroke = ELEM[ITEM[E[o].id].elem].col; svg.appendChild(l);
-    }
-    grid.appendChild(svg);
-    for (const s of SLOTS) {
-      const ps = pos(s); const inst = Run.engr[s.k]; const open = Run.open.has(s.k);
-      const el = h('button', 'slot' + (open ? '' : ' locked') + (Sel && Sel.from === 'slot' && Sel.k === s.k ? ' sel' : ''));
-      el.style.left = (ps.x / 8) + '%'; el.style.top = (ps.y / 3) + '%';
-      const kindName = { blade: '칼', body: '몸', riposte: '응수', core: '핵심' }[s.kind];
-      if (inst) { const it = ITEM[inst.id]; el.style.borderColor = ELEM[it.elem].col; el.innerHTML = `<div class="sname">${s.name}</div><div class="iname" style="color:${ELEM[it.elem].col}">${it.name}${inst.lv ? ' +' + inst.lv : ''}</div>${Links[s.k] > 1 ? '<div class="linkb">이음 +20%</div>' : ''}`; }
-      else el.innerHTML = `<div class="sname">${s.name}</div><div class="dim">${open ? kindName + ' 자리' : '잠김'}</div>`;
-      el.onmouseenter = () => { tip.innerHTML = inst ? itemTip(inst, s.k) : `<b>${s.name}</b> (${kindName})<br><span class="dim">이어진 자리: ${s.k === 'core' ? '모든 자리 (둘씩)' : s.links.filter(x => x !== 'core').map(x => SLOT[x].name).join(', ')}</span>`; };
-      el.onclick = () => {
-        if (!editable || !open) return;
-        if (Sel && Sel.from === 'bag') {
-          const it = Run.bag[Sel.i]; if (!KIND_SLOTS[ITEM[it.id].kind].includes(s.k)) { flashMsg('이 인장은 그 자리에 못 들어가요'); return; }
-          Run.bag.splice(Sel.i, 1); if (inst) Run.bag.push(inst); Run.engr[s.k] = it; Sel = null; Sfx.pick(); draw(); return;
-        }
-        if (Sel && Sel.from === 'slot') {
-          if (Sel.k === s.k) { Sel = null; draw(); return; }
-          const a = Run.engr[Sel.k];
-          if (a && !KIND_SLOTS[ITEM[a.id].kind].includes(s.k)) { flashMsg('그 자리 종류와 맞지 않아요'); return; }
-          if (inst && !KIND_SLOTS[ITEM[inst.id].kind].includes(Sel.k)) { flashMsg('바꿀 인장이 원래 자리와 맞지 않아요'); return; }
-          Run.engr[s.k] = a; Run.engr[Sel.k] = inst; Sel = null; Sfx.pick(); draw(); return;
-        }
-        if (inst) { Sel = { from: 'slot', k: s.k }; draw(); }
-      };
-      grid.appendChild(el);
-    }
-    box.appendChild(grid);
-    const chains = (Run.chains || []).map(c => `<span class="chip" style="border-color:${ELEM[c.elem].col}">사슬 ${c.seq.map(k => SLOT[k].name).join('→')} : ${SLOT[c.end].name}에 이음 마무리</span>`).join('');
-    box.appendChild(h('div', 'chains', chains || '<span class="dim">이어진 세 자리를 같은 계열로 채우면 사슬 끝 동작에 이음 마무리 보너스가 붙어요.</span>'));
-    const bag = h('div', 'bag'); bag.appendChild(h('span', 'lbl', `보조 가방 ${Run.bag.length}/${Run.bagMax}`));
-    Run.bag.forEach((inst, i) => {
-      const it = ITEM[inst.id]; const b = h('button', 'bagitem' + (Sel && Sel.from === 'bag' && Sel.i === i ? ' sel' : ''), `${it.name}${inst.lv ? ' +' + inst.lv : ''}<small>${KIND[it.kind]}</small>`);
-      b.style.borderColor = ELEM[it.elem].col; b.onmouseenter = () => { tip.innerHTML = itemTip(inst); };
-      b.onclick = () => { if (!editable) return; Sel = Sel && Sel.from === 'bag' && Sel.i === i ? null : { from: 'bag', i }; draw(); };
-      bag.appendChild(b);
-    });
-    if (editable && Sel && Sel.from === 'slot' && Run.bag.length < Run.bagMax) { const ub = h('button', 'btn small', '가방으로 빼기'); ub.onclick = () => { Run.bag.push(Run.engr[Sel.k]); Run.engr[Sel.k] = null; Sel = null; draw(); }; bag.appendChild(ub); }
-    if (editable && Sel && Run.stones > 0 && Sel.from === 'slot') { const sb = h('button', 'btn small', `각인석 사용 (${Run.stones})`); sb.onclick = () => useStone(Sel.k, draw); bag.appendChild(sb); }
-    if (extra) extra(bag, draw);
-    box.appendChild(bag);
-    const tip = h('div', 'tip', '<span class="dim">인장이나 자리에 마우스를 올리면 설명이 나와요. 가방 인장을 누른 뒤 자리를 누르면 각인돼요.</span>'); box.appendChild(tip);
-  };
-  draw(); container.appendChild(box); return draw;
-}
-function useStone(k, draw) {
-  const ks = [k, ...SLOT[k].links.filter(x => x !== 'core' || k === 'core')].slice(0, k === 'core' ? 1 : 9);
-  let any = false;
-  for (const x of ks) { const inst = Run.engr[x]; if (inst && (inst.lv || 0) < 2) { inst.lv = (inst.lv || 0) + 1; any = true; } }
-  if (!any) { flashMsg('올릴 수 있는 인장이 없어요 (최대 +2)'); return; }
-  Run.stones--; Sel = null; Sfx.gold(); draw();
-}
-function flashMsg(t) { const m = h('div', 'toast', t); document.body.appendChild(m); setTimeout(() => m.remove(), 1400); }
-function showEngraveOnly() {
-  Scene = 'menu'; const p = panel(); topBar(p); const c = h('div', 'wide');
-  engravePanel(c, false); const b = h('button', 'btn', '지도로'); b.onclick = showMap; c.appendChild(b); p.appendChild(c);
-}
-
-// ───────── 상점 ─────────
+// ───────── 상점: 축복·회복을 팔고, 계약을 파기해요 (아이템은 방식이 정해지지 않아 없음) ─────────
 function showShop() {
-  Scene = 'menu'; KwSel = null;
-  let freeRef = 0; let refCost = 20;
-  const roll = () => { const owned = new Set(kwOwned().map(k => k.id)); const base = shuffle(KW_BASE.slice()).slice(0, 3).map(k => ({ id: k.id, price: owned.has(k.id) ? 50 : 60, sold: false })); const comp = shuffle(KW_COMP.filter(k => !owned.has(k.id)))[0]; if (comp) base.push({ id: comp.id, price: 160, sold: false }); return base; };
+  Scene = 'menu';
+  const disc = C('regular') ? 0.8 : 1; const price = v => Math.round(v * disc);
+  let freeRef = C('regular') ? 1 : 0; let refCost = 20;
+  const roll = () => shuffle(BLESSINGS.slice()).slice(0, 3).map(b => ({ kind: 'bless', id: b.id, price: price(40), sold: false })).concat([{ kind: 'heal', price: price(35), sold: false }]);
   let stock = roll();
-  const p = panel(); topBar(p); const c = h('div', 'wide'); p.appendChild(c);
-  const shopBox = h('div', 'shop'); c.appendChild(shopBox);
-  let redrawE;
+  const p = panel(); const c = h('div', 'wide');
   const draw = () => {
-    shopBox.innerHTML = '<h2>상점 <span class="dim">— 이 층 전투 보상은 없어요. 산 키워드는 가방으로 가거나, 가진 것이면 등급이 올라요</span></h2>';
+    p.innerHTML = ''; topBar(p); p.appendChild(c); c.innerHTML = '';
+    const shopBox = h('div', 'shop'); c.appendChild(shopBox);
+    shopBox.innerHTML = `<h2>상점 <span class="dim">— 이 층 전투 보상은 없어요${disc < 1 ? ' · 단골 손님 -20%' : ''}</span></h2>`;
     const row = h('div', 'shoprow');
     for (const st of stock) {
-      const d = KW[st.id]; const own = kwOwned().find(o => o.id === st.id);
-      const b = h('button', 'shopitem' + (st.sold ? ' sold' : ''), `<div class="iname" style="color:${d.col}">${d.name}${own ? ' ↑' : ''}</div><div class="dim">${d.kind === 'comp' ? '합성 · ' + KW[d.a].name + ' + ' + KW[d.b].name : '기본 · ' + d.phys}</div><div class="price">${st.sold ? '판매됨' : st.price + ' 파편'}</div>`);
-      b.title = d.kind === 'comp' ? d.desc : ACTS.map(a => a.name + ': ' + d.d[a.k]).join('\n');
-      b.disabled = st.sold || Run.shards < st.price || (!own && Run.kwBag.length >= Run.kwBagMax);
-      b.onclick = () => { Run.shards -= st.price; st.sold = true; kwGain(st.id, 'bag'); Sfx.pick(); draw(); redrawE(); };
+      const b0 = st.kind === 'bless' ? BLESSINGS.find(x => x.id === st.id) : null;
+      const b = h('button', 'shopitem' + (st.sold ? ' sold' : ''), `<div class="iname">${b0 ? '축복: ' + b0.name : '회복 물약'}</div><div class="dim">${b0 ? b0.desc : '체력 30% 회복'}</div><div class="price">${st.sold ? '판매됨' : st.price + ' 파편'}</div>`);
+      b.disabled = st.sold || Run.shards < st.price || (st.kind === 'heal' && Run.hp >= St.maxHp);
+      b.onclick = () => { Run.shards -= st.price; st.sold = true; if (b0) addBlessing(b0.id); else heal(Math.round(St.maxHp * 0.3)); Sfx.pick(); draw(); };
       row.appendChild(b);
     }
     shopBox.appendChild(row);
     const row2 = h('div', 'shoprow');
-    const lock = ACTS.filter(a => Run.kwSlots[a.k] < 2);
-    for (const a of lock) { const ob = h('button', 'btn', `${a.name} 둘째 칸 열기 (120)`); ob.disabled = Run.shards < 120; ob.onclick = () => { Run.shards -= 120; Run.kwSlots[a.k] = 2; draw(); redrawE(); }; row2.appendChild(ob); }
     const rf = h('button', 'btn', freeRef ? '새로고침 (무료)' : `새로고침 (${refCost})`); rf.disabled = !freeRef && Run.shards < refCost;
     rf.onclick = () => { if (freeRef) freeRef--; else { Run.shards -= refCost; refCost += 10; } stock = roll(); draw(); }; row2.appendChild(rf);
-    const lv = h('button', 'btn ghost', '상점 나가기'); lv.onclick = () => { KwSel = null; afterFloor(); }; row2.appendChild(lv);
+    const lv = h('button', 'btn ghost', '상점 나가기'); lv.onclick = () => afterFloor(); row2.appendChild(lv);
     shopBox.appendChild(row2);
-    p.querySelector('.topbar') && p.querySelector('.topbar').remove(); topBar(p); p.insertBefore(p.lastChild, p.firstChild);
+    // 계약 파기
+    const cost = price(30);
+    const box = h('div', 'engrave'); box.appendChild(h('div', 'etitle', `계약 파기 <span class="dim">맺은 계약은 옮길 수 없고, 여기서 파기만 할 수 있어요 (${cost} 파편). 태그 수도 함께 줄어요.</span>`));
+    const list = h('div', 'ctgrid');
+    if (!Run.cts.length) list.appendChild(h('div', 'dim', '맺은 계약이 없어요.'));
+    for (const inst of Run.cts) {
+      const item = h('div', 'ctrow'); item.innerHTML = `<div class="ctwhere">${actLabel(inst)}</div>` + ctLine(inst);
+      const rb = h('button', 'btn small', `파기 (${cost})`); rb.disabled = Run.shards < cost;
+      rb.onclick = () => { Run.shards -= cost; ctRemove(inst); flashMsg(`${CT[inst.id].name} 파기`); draw(); };
+      item.appendChild(rb); list.appendChild(item);
+    }
+    box.appendChild(list); c.appendChild(box);
   };
-  redrawE = kwPanel(c, true, (bag, re) => {
-    if (KwSel && KwSel.act !== 'bag') { const k = Run.kw[KwSel.act][KwSel.i]; if (k && KW[k.id].kind === 'comp') { const sb = h('button', 'btn small', `분리: ${KW[KW[k.id].a].name} + ${KW[KW[k.id].b].name} (40)`); sb.disabled = Run.shards < 40; sb.onclick = () => { if (kwSplit(KwSel.act, KwSel.i)) Run.shards -= 40; KwSel = null; re(); draw(); }; bag.appendChild(sb); } }
-    if (KwSel && KwSel.act === 'bag') { const sb = h('button', 'btn small', '팔기 (+25)'); sb.onclick = () => { Run.kwBag.splice(KwSel.i, 1); Run.shards += 25; KwSel = null; re(); draw(); }; bag.appendChild(sb); }
-  });
   draw();
-  if (window.__auto) setTimeout(() => autoShop(stock, draw, redrawE), 20);
+  if (window.__auto) setTimeout(() => { for (const st of stock) if (!st.sold && Run.shards >= st.price + 20 && (st.kind === 'bless' || Run.hp < St.maxHp * 0.7)) { Run.shards -= st.price; st.sold = true; if (st.kind === 'bless') addBlessing(st.id); else heal(Math.round(St.maxHp * 0.3)); } setTimeout(afterFloor, 20); }, 20);
 }
 
 // ───────── 회복 ─────────
 function showRest() {
-  Scene = 'menu'; KwSel = null; const p = panel(); topBar(p); const c = h('div', 'wide'); p.appendChild(c);
+  Scene = 'menu'; const p = panel(); topBar(p); const c = h('div', 'wide'); p.appendChild(c);
   const box = h('div', 'shop'); box.innerHTML = '<h2>회복 <span class="dim">— 둘 중 하나</span></h2>';
   const row = h('div', 'shoprow');
-  const heal = Math.round(St.maxHp * 0.4);
-  const a = h('button', 'btn big', `체력 ${heal} 회복`); a.onclick = () => { Run.hp = Math.min(St.maxHp, Run.hp + heal); KwSel = null; afterFloor(); };
+  const amt = Math.round(St.maxHp * 0.4);
+  const a = h('button', 'btn big', `체력 ${amt} 회복`); a.onclick = () => { heal(amt); afterFloor(); };
   const owned = Object.keys(Run.blessings);
   const b = h('button', 'btn big', owned.length ? '축복 1개 강화 (한 장 더)' : '축복 1장 받기');
-  b.onclick = () => { const id = owned.length ? pick(owned) : pick(BLESSINGS).id; Run.blessings[id] = (Run.blessings[id] || 0) + 1; recalc(); flashMsg(`${BLESSINGS.find(x => x.id === id).name} +1`); KwSel = null; afterFloor(); };
+  b.onclick = () => { const id = owned.length ? pick(owned) : pick(BLESSINGS).id; addBlessing(id); flashMsg(`${BLESSINGS.find(x => x.id === id).name} +1`); afterFloor(); };
   row.appendChild(a); row.appendChild(b); box.appendChild(row); c.appendChild(box);
-  kwPanel(c, true);
-  if (window.__auto) setTimeout(() => { autoEngrave(); (Run.hp < St.maxHp * 0.7 ? a : b).click(); }, 20);
+  if (window.__auto) setTimeout(() => (Run.hp < St.maxHp * 0.7 ? a : b).click(), 20);
 }
 
 // ───────── 이벤트 (내용 미정 → 임시 3종) ─────────
 function showEvent() {
   const evs = [
-    { t: '부서진 제단', d: '피를 바치면 파편이 흘러나와요.', o: [['체력 15% 잃고 파편 60', () => { Run.hp = Math.max(1, Run.hp - St.maxHp * 0.15); Run.shards += 60; }], ['지나치기', () => 0]] },
-    { t: '떠도는 상인', d: '포장된 키워드 하나를 팔고 있어요.', o: [['파편 40 내고 무작위 기본 키워드', () => { if (Run.shards >= 40) { Run.shards -= 40; const k = pick(KW_BASE); const r = kwGain(k.id, 'bag'); flashMsg(r.lost ? '가방이 가득 차서 잃었어요' : `${k.name} 획득`); } }], ['지나치기', () => 0]] },
-    { t: '빛나는 결정', d: '원소가 응축된 결정이 박혀 있어요.', o: [['가진 키워드 하나 등급 +1', () => { const own = kwOwned().filter(k => k.lv < 3 && k.act !== 'bag'); if (own.length) { const k = pick(own); const ref = Run.kw[k.act][k.i]; ref.lv++; recalc(); flashMsg(`${KW[k.id].name} 등급 ${ref.lv}`); } else Run.shards += 30; }], ['그 자리에서 쉬기 (체력 20%)', () => { Run.hp = Math.min(St.maxHp, Run.hp + St.maxHp * 0.2); }]] },
+    { t: '부서진 제단', d: '피를 바치면 파편이 흘러나와요.', o: [['체력 15% 잃고 파편 60', () => { Run.hp = Math.max(1, Run.hp - Math.round(St.maxHp * 0.15)); Run.shards += 60; }], ['지나치기', () => 0]] },
+    { t: '떠도는 상인', d: '포장된 축복 두 개를 팔고 있어요.', o: [['파편 40 내고 무작위 축복 2장', () => { if (Run.shards >= 40) { Run.shards -= 40; const got = [pick(BLESSINGS), pick(BLESSINGS)]; got.forEach(b => addBlessing(b.id)); flashMsg(got.map(b => b.name).join(', ') + ' 획득'); } else flashMsg('파편이 모자라요'); }], ['지나치기', () => 0]] },
+    { t: '고요한 샘', d: '맑은 물이 고여 있어요.', o: [['물을 마시기 (체력 20%)', () => { heal(Math.round(St.maxHp * 0.2)); }], ['동전을 던지기 (리롤권 +1)', () => { Run.rerolls = Math.min(5, Run.rerolls + 1); }]] },
   ];
   const ev = pick(evs); Scene = 'menu'; const p = panel(); topBar(p);
   const c = h('div', 'card-wrap'); c.innerHTML = `<h1>${ev.t}</h1><p class="lead">${ev.d}</p>`;
-  for (const [label, fn] of ev.o) { const b = h('button', 'btn big', label); b.onclick = () => { fn(); if (Run.pendingEvent) { const id = Run.pendingEvent; Run.pendingEvent = null; giveItem(id, afterFloor); } else afterFloor(); }; c.appendChild(b); }
+  for (const [label, fn] of ev.o) { const b = h('button', 'btn big', label); b.onclick = () => { fn(); afterFloor(); }; c.appendChild(b); }
   p.appendChild(c);
   if (window.__auto) setTimeout(() => c.querySelector('.btn').click(), 20);
 }
@@ -2354,42 +2191,39 @@ function endRun(win) {
   if (Scene === 'result') return;
   Scene = 'result'; const p = panel();
   const c = h('div', 'card-wrap');
-  const eng = ACTS.map(a => `${a.name}: ${kwAll(a.k).map(k => KW[k.id].name + (k.lv > 1 ? '★'.repeat(k.lv - 1) : '')).join(' + ') || '-'}`).join(' · ');
+  const list = Run.cts.map(x => `${CT[x.id].name}${x.lv > 1 ? ' ' + x.lv : ''}${x.act ? `(${ACT[x.act].name})` : ''}`).join(' · ') || '없음';
   c.innerHTML = `<h1>${win ? '최종 보스 처치' : '쓰러졌어요'}</h1>
     <p class="lead">${Run.floor}층 · ${Math.floor(Run.time / 60)}분 ${Math.floor(Run.time % 60)}초</p>
     <div class="result">
-      <div>처치 <b>${Run.kills}</b></div><div>패링 <b>${Run.parries}</b> (퍼펙트 ${Run.perfects || 0}, 금색 ${Run.golds})</div><div>최대 한 방 <b>${Run.maxHit}</b></div>
+      <div>처치 <b>${Run.kills}</b></div><div>방어 <b>${Run.parries}</b> (퍼펙트 ${Run.perfects || 0}, 금색 ${Run.golds})</div><div>최대 한 방 <b>${Run.maxHit}</b></div>
     </div>
-    <p>행동 키워드: ${eng}</p>
-    <p>발견한 합성: ${[...(Run.kwSeen || [])].map(id => KW[id].name).join(', ') || '없음'}</p>`;
-  const b = h('button', 'btn big', '다시 시작'); b.onclick = () => startRun(); c.appendChild(b);
+    <p>맺은 계약 ${Run.cts.length}개: ${list}</p>
+    <p>태그: ${tagChips()}</p>`;
+  const b = h('button', 'btn big', '다시 시작'); b.onclick = () => startRun(null, Run.test); c.appendChild(b);
+  const t = h('button', 'btn', '처음 화면'); t.onclick = showTitle; c.appendChild(t);
   p.appendChild(c);
-  window.__lastResult = { win, floor: Run.floor, kills: Run.kills, parries: Run.parries, perfects: Run.perfects || 0, time: Run.time };
+  window.__lastResult = { win, floor: Run.floor, kills: Run.kills, parries: Run.parries, perfects: Run.perfects || 0, time: Run.time, contracts: Run.cts.length };
 }
 
 function showTitle() {
   Scene = 'title'; const p = panel(); const c = h('div', 'card-wrap title');
-  c.innerHTML = `<h1>전투 빌드 프로토타입</h1>
-  <p class="lead">30층 + 31층 최종 보스 · 한 층에 전투 한 번 · 회피와 패링이 핵심</p>
+  c.innerHTML = `<h1>마녀 계약 전투 프로토타입</h1>
+  <p class="lead">30층 + 31층 최종 보스 · 한 층에 전투 한 번 · 회피(대시)와 방어가 핵심</p>
   <table class="keys">
-    <tr><td>이동</td><td>WASD</td></tr><tr><td>공격 (3타 콤보)</td><td>마우스 왼쪽 / J</td></tr>
-    <tr><td>패링</td><td>마우스 오른쪽 / K</td></tr><tr><td>대시</td><td>Space / L / Shift</td></tr>
-    <tr><td>대시 직후 공격</td><td>대시 찌르기</td></tr><tr><td>회전베기 (액티브)</td><td>Q / U</td></tr><tr><td>궁극기</td><td>R / I</td></tr>
-    <tr><td>키워드·능력치 창</td><td>Tab</td></tr><tr><td>일시정지·디버그</td><td>Esc · \` (백틱)</td></tr>
+    <tr><td>이동</td><td>WASD</td></tr><tr><td>평타 (3타 콤보)</td><td>마우스 왼쪽 / J</td></tr>
+    <tr><td>방어</td><td>마우스 오른쪽 / K</td></tr><tr><td>대시</td><td>Space / L / Shift</td></tr>
+    <tr><td>대시 직후 평타</td><td>대시 공격</td></tr><tr><td>마법 (임시: 회전베기)</td><td>Q / U</td></tr><tr><td>궁극기</td><td>R / I</td></tr>
+    <tr><td>계약·능력치 창</td><td>Tab</td></tr><tr><td>일시정지·디버그</td><td>Esc · \` (백틱)</td></tr>
   </table>
-  <p class="lead">층을 깰 때마다 <b>키워드</b>를 얻어 평타·특수공격·패링·대시에 붙여요. 같은 키워드도 행동마다 효과가 다르고, 한 행동의 두 칸에 섞이는 키워드가 있으면 합성돼요(물 + 바람 = 안개).</p>
-  <p class="dim">섬광 색: <b style="color:#fff">흰색</b> 패링 가능 · <b style="color:#ffd27a">금색</b> 강공격, 패링하면 길게 경직 · <b style="color:#ff5a5a">붉은색</b> 패링 불가, 회피만</p>`;
-  const b = h('button', 'btn big', '시작'); b.onclick = () => { Sfx.init(); startRun(); }; c.appendChild(b); p.appendChild(c);
+  <p class="lead">5층마다 보스를 잡고 <b>계약</b>을 맺어요. <b>행위 계약</b>은 평타·마법·방어·대시·궁극기 중 한 행동을 강화하고, <b>존재 계약</b>은 늘 켜져 있어요.<br>같은 <b>태그</b>의 계약을 2·3·4개 모으면 태그 시너지가 켜져요.</p>
+  <p class="dim">섬광 색: <b style="color:#fff">흰색</b> 방어 가능 · <b style="color:#ffd27a">금색</b> 강공격, 방어하면 길게 경직 · <b style="color:#ff5a5a">붉은색</b> 방어 불가, 회피만</p>`;
+  const b = h('button', 'btn big', '시작'); b.onclick = () => { Sfx.init(); startRun(); }; c.appendChild(b);
+  const t = h('button', 'btn', '계약 시험 런 (모든 전투 층에서 계약)'); t.onclick = () => { Sfx.init(); startRun(null, true); }; c.appendChild(t);
+  c.appendChild(h('p', 'dim', '시험 런은 계약과 태그 시너지를 빨리 모아 보기 위한 것이고, 보통 런은 설계서대로 한 런에 계약 9개쯤이에요.'));
+  p.appendChild(c);
 }
 
-// ───────── 증강 창 (Tab): 보유 증강, 효과, 시너지, 능력치 ─────────
-function synHint(augId) {
-  const list = synOf(augId); if (!list.length) return '';
-  return '<div class="synhint">' + list.map(s => {
-    const other = s.need.find(n => n !== augId); const has = !!Run.augs[other];
-    return `<div class="${has ? 'on' : ''}">✦ ${s.name}: ${AUG[other].name}${has ? ' 보유 중, 고르면 완성' : '와 함께'}</div>`;
-  }).join('') + '</div>';
-}
+// ───────── 계약 창 (Tab): 맺은 계약, 태그 시너지, 능력치 ─────────
 let codexPrevPause = false;
 function toggleCodex() {
   const old = document.getElementById('codex');
@@ -2398,43 +2232,41 @@ function toggleCodex() {
   if (Scene === 'fight') { codexPrevPause = paused; paused = true; }
   recalc();
   const o = h('div', 'codex'); o.id = 'codex';
-  const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
-  // 1) 행동 키워드
-  const augHtml = ACTS.map(a => {
-    const ks = kwAll(a.k);
-    return `<div class="caug"><div class="cname2">${a.name} <small class="dim">${a.key} · 칸 ${Run.kwSlots[a.k]}/2</small></div>
-      ${ks.map(k => `<div class="kwline">${kwTag(k)} <span class="cdesc2">${kwDescFor(k.id, a.k)}</span></div>`).join('') || '<div class="dim">키워드 없음</div>'}
-      ${kwFusable(a.k) ? `<div class="csyn on">✦ 합성 가능: ${KW[kwFusable(a.k)].name} (지도 화면에서)</div>` : ''}</div>`;
-  }).join('') + (Run.kwBag.length ? `<div class="caug"><div class="cname2">가방</div>${Run.kwBag.map(k => kwTag(k)).join(' ')}</div>` : '');
-  // 2) 합성표 (가진 기본 키워드가 들어간 것 먼저)
-  const have = new Set(kwOwned().map(k => k.id));
-  const rel = KW_COMP.slice().sort((x, y) => (have.has(y.a) + have.has(y.b)) - (have.has(x.a) + have.has(x.b)));
-  const synHtml = `<div class="dim" style="margin-bottom:6px">적에게 남은 상태끼리도 같은 표로 반응해요: 젖음·화상·냉각·감전</div>` + rel.map(c => {
-    const on = have.has(c.a) && have.has(c.b); const seen = Run.kwSeen && Run.kwSeen.has(c.id);
-    return `<div class="csyn2 ${on ? 'on' : ''}"><div><b style="color:${c.col}">${seen ? '✦ ' : ''}${c.name}</b> <span class="dim"><span class="${have.has(c.a) ? 'have' : ''}">${KW[c.a].name}</span> + <span class="${have.has(c.b) ? 'have' : ''}">${KW[c.b].name}</span> · ${c.phys}</span></div><div class="cdesc2">${c.desc}</div></div>`;
+  const pc = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
+  // 1) 계약: 행동별 + 존재
+  const groups = ACTS.map(a => [a.name + ` <small class="dim">${a.key}</small>`, ctOf(a.k)]).concat([['존재 계약 <small class="dim">늘 켜짐</small>', ctOf(null)]]);
+  const ctHtml = groups.map(([name, list]) => `<div class="cgroup"><div class="ghead">${name} <span class="dim">${list.length}</span></div>${list.map(ctLine).join('') || '<div class="dim gempty">없음</div>'}</div>`).join('');
+  // 2) 태그 시너지: 가진 태그 먼저, 단계별 켜짐 표시
+  const tagHtml = TAGS.slice().sort((a, b) => tagN(b.name) - tagN(a.name)).map(t => {
+    const n = tagN(t.name);
+    const who = [...new Set(Run.cts.filter(c => CT[c.id].tags.includes(t.name)).map(c => CT[c.id].name))].join(', ');
+    return `<div class="csyn2 ${n >= 2 ? 'on' : ''}" style="${n ? `border-left:4px solid ${tagCol(t.name)}` : ''}"><div><b style="color:${tagCol(t.name)}">${t.name}</b> <span class="tcount">${n}개</span> <span class="dim">${who}</span></div>
+      ${t.t.map((d, i) => `<div class="tier ${n >= i + 2 ? 'on' : ''}"><span class="tn">${i + 2}</span>${d}</div>`).join('')}</div>`;
   }).join('');
-  const owned = kwOwned();
-  // 3) 능력치 (축복·인장·증강 모두 반영된 값)
-  const A = Run.augs;
-  const conv = [['flame', '화염'], ['frost', '냉기'], ['thunder', '번개']].filter(([k]) => A[k]).map(([k, n]) => `${n} ${Math.round(FLAME[A[k]] * 100)}%`).join(', ');
+  // 3) 능력치
+  const q = Run.quest;
   const stats = [
-    ['최대 체력', `${St.maxHp} (현재 ${Math.ceil(Run.hp)})`], ['모든 피해', pct(St.dmg)], ['물리 피해', pct(St.physDmg)], ['화염 피해', pct(St.fireDmg)],
-    ['공격 속도', pct(St.atkSpd - 1)], ['이동 속도', pct(St.move - 1)], ['치명 확률', Math.round(St.crit * 100) + '%'], ['치명 피해', '×' + St.critDmg.toFixed(2)],
-    ['대시 쿨다운', St.dashCd.toFixed(2) + '초'], ['패링 판정', St.parryWin.toFixed(2) + '초'], ['퍼펙트 패링', `앞 ${St.perfectWin.toFixed(2)}초, 다음 공격 +${Math.round(St.perfectBonus * 100)}%`], ['포이즈 피해', pct(St.poise)], ['패링 경직', '×' + St.staggerMul.toFixed(2)], ['궁극기 충전', '×' + St.ultGain.toFixed(2)],
-    ['받는 피해', '×' + St.dmgTaken.toFixed(2)], ['화염·냉기·번개 위력', `${Math.round(St.firePow)} · ${Math.round(St.icePow)} · ${Math.round(St.lightPow)}`], ['파편 획득', pct(St.shardMul)], ['속성 전환', conv || '없음 (모두 물리)'],
+    ['최대 체력', `${St.maxHp} (현재 ${Math.ceil(Run.hp)})`], ['모든 피해', pc(St.dmg)], ['공격 속도', pc(St.atkSpd - 1)], ['이동 속도', pc(St.move - 1)],
+    ['치명 확률', Math.round(St.crit * 100) + '%'], ['치명 피해', '×' + St.critDmg.toFixed(2)],
+    ['대시', `${St.dashMax}회 · ${St.dashCd.toFixed(2)}초`], ['마법', `${St.spinMax}회 · ${St.spinCd.toFixed(1)}초`],
+    ['방어 판정', St.parryWin.toFixed(2) + '초'], ['퍼펙트 방어', `앞 ${St.perfectWin.toFixed(2)}초, 다음 공격 +${Math.round(St.perfectBonus * 100)}%`], ['포이즈 피해', pc(St.poise)], ['방어 경직', '×' + St.staggerMul.toFixed(2)],
+    ['궁극기 충전', C('forsake') ? '쓸 수 없음' : '×' + St.ultGain.toFixed(2)], ['받는 피해', '×' + St.dmgTaken.toFixed(2)], ['파편 획득', pc(St.shardMul)], ['몸집', '×' + St.size.toFixed(2)],
   ];
+  if (Run.soul) stats.push(['영혼 병', `마법 피해 +${Run.soul}%`]);
+  if (Run.swell) stats.push(['부풀어 오르는 몸', `최대 체력 +${Run.swell}`]);
+  if (Run.iouFloors > 0) stats.push(['악마의 차용증', `남은 ${Run.iouFloors}층 받는 피해 증가`]);
   const bl = Object.entries(Run.blessings).map(([id, c]) => { const b = BLESSINGS.find(x => x.id === id); return `<div class="cbl"><b>${b.name} ×${c}</b> <span class="dim">${b.desc} × ${c}</span></div>`; }).join('') || '<p class="dim">고른 축복이 없어요.</p>';
   o.innerHTML = `<div class="codex-in">
-    <div class="codex-head"><h2>행동 키워드 · 능력치</h2><span class="dim">Tab 또는 Esc로 닫기${Scene === 'fight' ? ' · 여는 동안 전투가 멈춰요' : ''}</span></div>
+    <div class="codex-head"><h2>계약 · 태그 시너지 · 능력치</h2><span class="dim">Tab 또는 Esc로 닫기${Scene === 'fight' ? ' · 여는 동안 전투가 멈춰요' : ''}</span></div>
     <div class="codex-cols">
-      <section><h3>행동 키워드 <span class="dim">${owned.length}개</span></h3><div class="clist">${augHtml}</div></section>
-      <section><h3>합성표 <span class="dim">발견 ${Run.kwSeen ? Run.kwSeen.size : 0}/19</span></h3><div class="clist">${synHtml}</div></section>
+      <section><h3>맺은 계약 <span class="dim">${Run.cts.length}개</span></h3><div class="clist">${ctHtml}</div></section>
+      <section><h3>태그 시너지 <span class="dim">같은 태그 2 · 3 · 4개</span></h3><div class="clist">${tagHtml}</div></section>
       <section><h3>능력치</h3><table class="cstats">${stats.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>
+        ${q ? `<h3>의식 과제</h3><div class="cbl"><b>${QUESTS[q.k].name}</b> <span class="dim">${q.done ? '완수' : `${Math.floor(q.n)} / ${q.goal}`}</span></div>` : ''}
         <h3>고른 축복</h3>${bl}</section>
     </div></div>`;
   o.onclick = e => { if (e.target === o) toggleCodex(); };
   UI.appendChild(o); UI.style.pointerEvents = 'auto';
-  o.addEventListener('remove', () => 0);
 }
 
 // ===== render3d.js =====
@@ -2570,19 +2402,18 @@ function paintDynamic() {
   const A = G3.arena, g = G3.dynCx; g.setTransform(G3.DYN, 0, 0, G3.DYN, 0, 0); g.clearRect(0, 0, A.w, A.h);
   for (const m of World.marks) { const k = 1 - m.t / m.max; g.strokeStyle = m.col; g.globalAlpha = 0.4 + k * 0.6; g.lineWidth = 4; g.beginPath(); g.arc(m.x, m.y, 34 - k * 14, 0, Math.PI * 2); g.stroke(); }
   g.globalAlpha = 1;
-  // 키워드 장판 (불길·서리·물·진흙·용암·모래·안개·뇌운)
+  // 계약 장판 (불길·서리)
   for (const f of World.fields || []) {
     const k = Math.min(1, f.t / 0.4, (f.max - f.t) / 0.15 + 0.2); const col = FIELD_COL[f.type] || '#fff';
-    g.globalAlpha = (f.type === 'fog' ? 0.42 : f.type === 'cloud' ? 0.16 : 0.3) * k; g.fillStyle = col;
+    g.globalAlpha = 0.3 * k; g.fillStyle = col;
     g.beginPath(); g.arc(f.x, f.y, f.r, 0, Math.PI * 2); g.fill();
-    g.globalAlpha = 0.6 * k; g.strokeStyle = col; g.lineWidth = f.type === 'cloud' ? 2 : 3; g.setLineDash(f.type === 'cloud' ? [10, 10] : []);
-    g.beginPath(); g.arc(f.x, f.y, f.r * (f.type === 'fire' || f.type === 'lava' ? 0.92 + Math.sin(performance.now() / 90) * 0.06 : 1), 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+    g.globalAlpha = 0.6 * k; g.strokeStyle = col; g.lineWidth = 3;
+    g.beginPath(); g.arc(f.x, f.y, f.r * (f.type === 'fire' ? 0.92 + Math.sin(performance.now() / 90) * 0.06 : 1), 0, Math.PI * 2); g.stroke();
   }
   if (World.decoy) { const d = World.decoy; g.globalAlpha = 0.5 + 0.3 * Math.sin(performance.now() / 60); g.fillStyle = '#e3c8ff'; g.beginPath(); g.arc(d.x, d.y, 18, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#e3c8ff'; g.lineWidth = 3; g.beginPath(); g.arc(d.x, d.y, 30, 0, Math.PI * 2 * d.t / d.max); g.stroke(); }
   g.globalAlpha = 1;
   for (const e of World.enemies) {
     if (e.dead) continue;
-    if ((e.wet || 0) > 0) { g.fillStyle = '#4aa8ff'; g.globalAlpha = 0.35; g.beginPath(); g.arc(e.x, e.y, e.r + 4, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
     if (e.shocked > 0) { g.strokeStyle = '#ffe45c'; g.lineWidth = 2; g.globalAlpha = 0.5 + 0.5 * Math.random(); g.beginPath(); g.arc(e.x, e.y, e.r + 9, Math.random() * 6, Math.random() * 6 + 1.2); g.stroke(); g.globalAlpha = 1; }
     if (e.burn > 0) { g.strokeStyle = '#ff8a3d'; g.lineWidth = 3; g.globalAlpha = 0.7; g.beginPath(); g.arc(e.x, e.y, e.r + 3, 0, Math.PI * 2 * Math.min(1, e.burn / 5)); g.stroke(); g.globalAlpha = 1; }
     const t = e.atk && e.atk.phase === 'tele' && !e.atk.noFlash ? e.atk : null;
@@ -2652,10 +2483,11 @@ function syncEnemies() {
     const shx = e.shk > 0 ? (R() - 0.5) * 10 * e.shk / 0.15 : 0, shz = e.shk > 0 ? (R() - 0.5) * 10 * e.shk / 0.15 : 0;
     const wind = t ? 1 + 0.14 * clamp(t.t / t.tele, 0, 1) : 1; const sq = e.sqK || 0;
     g.position.set(e.x + shx, g.userData.float ? Math.sin(performance.now() / 300 + e.x) * 6 : 0, e.y + shz);
-    g.scale.set((1 + sq) * wind, (1 - sq * 0.7) * wind, (1 + sq) * wind);
+    const fk = e.frog > 0 ? 0.55 : 1; g.scale.set((1 + sq) * wind, (1 - sq * 0.7) * wind * fk, (1 + sq) * wind);
     g.rotation.y = -e.face;
     const m = g.userData.mat;
     if (e.flash > 0) { m.emissive.set(0xffffff); m.emissiveIntensity = 1; m.color.set(0xffffff); }
+    else if (e.frog > 0) { m.color.set(0x6fcf5a); m.emissive.set(0x2a7a20); m.emissiveIntensity = 0.3; }
     else if (e.frozen > 0) { m.color.set(0xbfefff); m.emissive.set(0x7fd8ff); m.emissiveIntensity = 0.3; }
     else if (e.groggy > 0) { m.color.copy(g.userData.baseCol); m.emissive.set(0xffd27a); m.emissiveIntensity = 0.5 + Math.sin(performance.now() / 90) * 0.3; }
     else if (t) { m.color.copy(g.userData.baseCol); m.emissive.set(COLMAP[t.color]); m.emissiveIntensity = 0.25 + Math.sin(performance.now() / 40) * 0.2; }
@@ -2684,7 +2516,7 @@ function syncPlayer() {
   const g = G3.player, a = P.act;
   g.visible = P.alive || World.clearT >= 0;
   g.position.set(P.x, 0, P.y);
-  const sq = P.sqK || 0; g.scale.set(1 + sq, 1 - sq * 0.6, 1 + sq);
+  const sq = P.sqK || 0, ps = P.r / 18; g.scale.set((1 + sq) * ps, (1 - sq * 0.6) * ps, (1 + sq) * ps);
   g.rotation.y = -(P.face || 0);
   const fa = a && a.ang != null ? a.ang : P.face; g.userData.sword.rotation.y = -(fa - P.face);
   g.userData.sword.position.x = 0;
@@ -2744,7 +2576,7 @@ function drawFX3() {
   }
   cx.globalAlpha = 1;
 }
-// 적 머리 위 표시 (체력·체간·그로기·낙인·섬광 느낌표)
+// 적 머리 위 표시 (체력·낙인·섬광 느낌표)
 function drawEnemyTags() {
   for (const e of World.enemies) {
     if (e.dead) continue; const g = G3.enemyMeshes.get(e); const top = g ? g.userData.h + 8 : e.r * 2;
@@ -2771,7 +2603,7 @@ function drawWorld() {
   G3.renderer.render(G3.scene, G3.cam);
   // 위에 겹치는 2D 레이어
   cx.clearRect(0, 0, W, H);
-  drawEnemyTags(); drawFX3();
+  drawEnemyTags(); drawSummons(); drawFX3();
   if (Juice.chroma > 0) { const o = 3 + Juice.chroma * 60; cx.save(); cx.globalCompositeOperation = 'screen'; cx.globalAlpha = 0.35; cx.drawImage(gl, -o, 0); cx.drawImage(gl, o, 0); cx.restore(); }
   if (World.mods.includes('dark')) {
     const q = proj(P.x, P.y, 20); const g = cx.createRadialGradient(q.x, q.y, 200 * q.s, q.x, q.y, 470 * q.s); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.9)');
@@ -2887,16 +2719,33 @@ window.stampDecal = stampDecal;
 function bar(x, y, w, hgt, k, col, bg) { cx.fillStyle = bg || '#0008'; cx.fillRect(x, y, w, hgt); cx.fillStyle = col; cx.fillRect(x, y, w * clamp(k, 0, 1), hgt); }
 function drawHUD() {
   cx.textAlign = 'left'; cx.font = '700 18px sans-serif';
-  // 체력·궁극기
-  bar(30, 28, 340, 18, Run.hp / St.maxHp, '#e05555'); cx.fillStyle = '#fff'; cx.fillText(`${Math.ceil(Run.hp)} / ${St.maxHp}`, 38, 44);
-  bar(30, 52, 340, 10, P.ult, P.ult >= 1 ? '#ffb36b' : '#a86a3a');
-  const md = Math.max(Run.augs.overcharge ? 2 : 1, St.dashMax || 1);
+  // 체력·보호막·궁극기
+  bar(30, 28, 340, 18, Run.hp / St.maxHp, '#e05555'); cx.fillStyle = '#fff';
+  const shv = shieldTotal(); if (shv > 0) { cx.fillStyle = '#9fd0ff'; cx.fillRect(30, 24, 340 * clamp(shv / St.maxHp, 0, 1), 4); cx.fillStyle = '#fff'; }
+  cx.fillText(`${Math.ceil(Run.hp)} / ${St.maxHp}${shv > 0 ? `  (+${Math.ceil(shv)})` : ''}`, 38, 44);
+  const noUlt = C('forsake');
+  bar(30, 52, 340, 10, noUlt ? 0 : P.ult, P.ult >= 1 ? '#ffb36b' : '#a86a3a');
+  const md = St.dashMax;
   for (let i = 0; i < md; i++) { cx.fillStyle = i < P.dashCharges ? '#9fe8ff' : '#33404a'; cx.fillRect(30 + i * 26, 70, 20, 8); }
   cx.fillStyle = '#ccc'; cx.font = '600 14px sans-serif'; cx.fillText('대시', 30 + md * 26 + 4, 79);
-  const ms = Run.augs.overcharge ? 2 : 1;
-  for (let i = 0; i < ms; i++) { cx.fillStyle = i < P.spinCharges ? '#cfe8ff' : '#33404a'; cx.fillRect(150 + i * 26, 70, 20, 8); }
-  cx.fillText('회전베기 (Q)', 150 + ms * 26 + 4, 79);
-  if (P.ult >= 1) { cx.fillStyle = '#ffb36b'; cx.font = '800 16px sans-serif'; cx.fillText('궁극기 준비 (R)', 30, 102); }
+  const ms = St.spinMax, mx0 = 30 + md * 26 + 50;
+  for (let i = 0; i < ms; i++) { cx.fillStyle = i < P.spinCharges ? '#d7b8ff' : '#33404a'; cx.fillRect(mx0 + i * 26, 70, 20, 8); }
+  if (P.spinCharges < ms) { cx.fillStyle = '#d7b8ff88'; cx.fillRect(mx0 + P.spinCharges * 26, 70, 20 * clamp(P.spinRe / St.spinCd, 0, 1), 8); }
+  cx.fillStyle = '#ccc'; cx.fillText('마법 (Q)', mx0 + ms * 26 + 4, 79);
+  cx.font = '800 16px sans-serif';
+  if (noUlt) { cx.fillStyle = '#8e8aa0'; cx.fillText('궁극기 없음 (의식 포기)', 30, 102); }
+  else if (P.ult2T > 0) { cx.fillStyle = '#ffe9b0'; cx.fillText(`한 번 더 (R) ${P.ult2T.toFixed(1)}초`, 30, 102); }
+  else if (P.ult >= 1) { cx.fillStyle = '#ffb36b'; cx.fillText('궁극기 준비 (R)', 30, 102); }
+  if (P.ultT > 0) { cx.fillStyle = '#ff9a3d'; cx.fillText(`궁극기 효과 ${P.ultT.toFixed(1)}초`, 200, 102); }
+  // 켜진 상태 줄
+  { const tags = []; if (P.cycleT > 0) tags.push('잿불 순환'); if ((P.heat || 0) > 0) tags.push(`달아오름 +${P.heat * 5}%`); if (P.speedT > 0) tags.push('속도의 저주'); if (P.revengeT > 0) tags.push('되갚는 저주'); if (P.execT > 0) tags.push('처형 치명'); if (C('crescendo') && World.t > 15) tags.push('고조');
+    if (Run.potion) tags.push(Run.potion === 'big' ? '거대' : '소형'); if (Run.iouFloors > 0) tags.push(`차용증 ${Run.iouFloors}층`);
+    cx.font = '700 14px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText(tags.join(' · '), 30, 124); }
+  // 태그 시너지 (가진 태그와 개수)
+  { let y = 150; cx.font = '800 14px sans-serif';
+    for (const t of TAGS) { const n = tagN(t.name); if (!n) continue; cx.globalAlpha = n >= 2 ? 1 : 0.5; cx.fillStyle = tagCol(t.name); cx.fillText(`${t.name} ${n}`, 30, y); cx.fillStyle = '#ffffff'; for (let i = 0; i < 3; i++) { cx.globalAlpha = n >= i + 2 ? 1 : 0.18; cx.fillRect(84 + i * 12, y - 9, 8, 8); } y += 20; }
+    cx.globalAlpha = 1;
+    const q = Run.quest; if (q && !q.done) { cx.fillStyle = '#7fffe0'; cx.fillText(`과제: ${QUESTS[q.k].name} ${Math.floor(q.n)}/${q.goal}`, 30, y + 4); } }
   // 화면 밖 적 표시
   for (const e of World.enemies) {
     if (e.dead) continue; const q = proj(e.x, e.y, 20), sx = q.x, sy = q.y;
@@ -2919,20 +2768,19 @@ function drawHUD() {
   // 반격 창
   if (P.counterT > 0) { cx.textAlign = 'center'; cx.font = '900 26px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText('반격!', W / 2, H - 150); }
   if (P.perfect) { cx.textAlign = 'center'; cx.font = '900 22px sans-serif'; cx.fillStyle = '#9ffcff'; cx.fillText(`퍼펙트: 다음 공격 +${Math.round(St.perfectBonus * 100)}%`, W / 2, H - 178); cx.fillStyle = '#9ffcff55'; cx.fillRect(W / 2 - 90, H - 170, 180, 4); cx.fillStyle = '#9ffcff'; cx.fillRect(W / 2 - 90, H - 170, 180 * clamp(P.perfectT / 2, 0, 1), 4); }
-  if (P.chainStacks > 0 && Run.augs.chainparry) { cx.textAlign = 'center'; cx.font = '700 16px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText(`연속 응수 ${P.chainStacks}`, W / 2, H - 125); }
-  // 행동 키워드 줄
-  const curAct = P.act ? (P.act.type === 'swing' ? 'atk' : P.act.type === 'thrust' ? 'dash' : P.act.type === 'parry' ? 'parry' : P.act.type === 'spin' ? 'spin' : null) : (P.dashT > 0 ? 'dash' : null);
+  if (P.chainStacks > 0 && C('chainparry')) { cx.textAlign = 'center'; cx.font = '700 16px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText(`연속 응수 ${P.chainStacks}`, W / 2, H - 125); }
+  // 행동별 계약 줄
+  const curAct = P.act ? ({ swing: 'atk', thrust: 'dash', blink: 'dash', parry: 'guard', spin: 'magic', ult: 'ult' })[P.act.type] : (P.dashT > 0 ? 'dash' : null);
   ACTS.forEach((ac, i) => {
-    const bw = 170, x = W / 2 - 2 * (bw + 8) + i * (bw + 8), y = H - 66; const ks = kwAll(ac.k);
+    const bw = 190, x = W / 2 - 2.5 * (bw + 8) + 4 + i * (bw + 8), y = H - 66; const ks = ctOf(ac.k);
     cx.fillStyle = curAct === ac.k ? '#2b3a48' : '#14121add'; cx.fillRect(x, y, bw, 50);
-    cx.strokeStyle = ks.length ? KW[ks[0].id].col : '#444'; cx.lineWidth = ks.length > 1 ? 3 : 1.5; cx.strokeRect(x, y, bw, 50);
+    cx.strokeStyle = ks.length ? GRADE[CT[ks[0].id].grade].col : '#444'; cx.lineWidth = ks.length > 1 ? 3 : 1.5; cx.strokeRect(x, y, bw, 50);
     cx.textAlign = 'center'; cx.font = '700 13px sans-serif'; cx.fillStyle = '#aaa'; cx.fillText(`${ac.name} · ${ac.key}`, x + bw / 2, y + 17);
-    cx.font = '800 14px sans-serif';
-    if (!ks.length) { cx.fillStyle = '#555'; cx.fillText('키워드 없음', x + bw / 2, y + 38); }
-    else { const parts = ks.map(k => ({ t: KW[k.id].name + (k.lv > 1 ? '★'.repeat(k.lv - 1) : ''), c: KW[k.id].col })); const tw = parts.reduce((s, p) => s + cx.measureText(p.t).width, 0) + (parts.length - 1) * 10; let px = x + bw / 2 - tw / 2; cx.textAlign = 'left'; for (const p of parts) { cx.fillStyle = p.c; cx.fillText(p.t, px, y + 38); px += cx.measureText(p.t).width + 10; } }
+    cx.font = '800 13px sans-serif';
+    if (!ks.length) { cx.fillStyle = '#555'; cx.fillText('계약 없음', x + bw / 2, y + 38); }
+    else { let t = ks.map(k => CT[k.id].name + (k.lv > 1 ? k.lv : '')).join(' · '); if (cx.measureText(t).width > bw - 12) t = `${CT[ks[0].id].name} 외 ${ks.length - 1}`; cx.fillStyle = GRADE[CT[ks[0].id].grade].col; cx.fillText(t, x + bw / 2, y + 38); }
   });
-  // 첫 합성·반응 알림
-  if (World.banner) { const bn = World.banner, k = Math.min(1, bn.t / 0.3, (bn.max - bn.t) / 0.15); cx.save(); cx.globalAlpha = k; cx.textAlign = 'center'; cx.font = '900 54px sans-serif'; cx.fillStyle = bn.col; cx.fillText(bn.name, W / 2, H * 0.3); cx.font = '700 20px sans-serif'; cx.fillStyle = '#e6e3ee'; cx.fillText(bn.sub, W / 2, H * 0.3 + 34); cx.font = '600 14px sans-serif'; cx.fillStyle = '#9a96a8'; cx.fillText('새 합성 발견', W / 2, H * 0.3 - 52); cx.restore(); }
+  { const ex = ctOf(null); if (ex.length) { cx.textAlign = 'center'; cx.font = '700 13px sans-serif'; cx.fillStyle = '#b9b4c8'; let t = '존재: ' + ex.map(k => CT[k.id].name + (k.lv > 1 ? k.lv : '')).join(' · '); if (cx.measureText(t).width > 980) t = `존재 계약 ${ex.length}개 (Tab)`; cx.fillText(t, W / 2, H - 74); } }
   // 보스 바
   const b = World.boss;
   if (b && !b.dead) {
@@ -2940,7 +2788,7 @@ function drawHUD() {
     cx.textAlign = 'center'; cx.font = '800 20px sans-serif'; cx.fillStyle = '#fff'; cx.fillText(b.title + (b.phase > 1 ? ` · 페이즈 ${b.phase}` : ''), W / 2, y - 6);
     bar(x, y, w, 16, b.hp / b.maxHp, '#d04848');
   }
-  if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 300, 79); }
+  if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 384, 44); }
   if (paused) { cx.fillStyle = '#000a'; cx.fillRect(0, 0, W, H); cx.textAlign = 'center'; cx.fillStyle = '#fff'; cx.font = '900 48px sans-serif'; cx.fillText('일시정지', W / 2, H / 2); cx.font = '600 18px sans-serif'; cx.fillText('Esc로 계속', W / 2, H / 2 + 40); }
 }
 
@@ -2952,10 +2800,10 @@ function toggleDebug() {
   btn('무적 켜기/끄기', () => { god = !god; });
   btn('이 층 즉시 클리어', () => { if (Scene === 'fight') { World.queue = []; World.enemies.forEach(e => { if (!e.dead) { e.hp = 0; killEnemy(e); } }); } });
   btn('파편 +500', () => { Run.shards += 500; });
-  btn('무작위 기본 키워드 (가방)', () => { const k = pick(KW_BASE); const r = kwGain(k.id, 'bag'); flashMsg(r.lost ? '가방이 가득 참' : k.name); });
-  btn('무작위 합성 키워드 (가방)', () => { const k = pick(KW_COMP); const r = kwGain(k.id, 'bag'); flashMsg(r.lost ? '가방이 가득 참' : k.name); });
-  btn('행동 칸 모두 열기', () => { ACTS.forEach(a => Run.kwSlots[a.k] = 2); recalc(); });
-  btn('키워드 판 열기 (전투 밖)', () => { if (Scene !== 'fight') showKwOnly(); });
+  btn('계약 고르기 (실버)', () => { if (Scene !== 'fight') showContracts({ grade: 'silver', cb: showMap }); });
+  btn('계약 고르기 (골드)', () => { if (Scene !== 'fight') showContracts({ grade: 'gold', cb: showMap }); });
+  btn('계약 고르기 (프리즘)', () => { if (Scene !== 'fight') showContracts({ prism: true, cb: showMap }); });
+  btn('계약 목록에서 맺기', () => ctBrowser());
   btn('체력 가득', () => { Run.hp = St.maxHp; });
   btn('궁극기 가득', () => { P.ult = 1; });
   btn('닫기', () => d.remove());
@@ -2991,7 +2839,7 @@ function makeBot() {
     for (const p of World.projs) if (p.owner === 'enemy' && Math.hypot(p.x - P.x, p.y - P.y) < 70) threat = { proj: p, left: 0, color: p.color };
     if (threat && gameTime - this.lastParry > 0.25) {
       const col = threat.proj ? threat.color : threat.e.atk.color;
-      if (col === 'red' && !Run.augs.redsteel) { this.pressed.add(' '); const away = angTo(threat.e || P, P) + (R() - 0.5); this.down.add(Math.cos(away) > 0 ? 'd' : 'a'); this.down.add(Math.sin(away) > 0 ? 's' : 'w'); }
+      if (col === 'red' && !C('redsteel')) { this.pressed.add(' '); const away = angTo(threat.e || P, P) + (R() - 0.5); this.down.add(Math.cos(away) > 0 ? 'd' : 'a'); this.down.add(Math.sin(away) > 0 ? 's' : 'w'); }
       else { this.pressed.add('k'); if (threat.e) this.aim = angTo(P, threat.e); }
       this.lastParry = gameTime; return;
     }
@@ -3003,12 +2851,26 @@ function makeBot() {
   } };
   return bot;
 }
-function autoEngrave() { autoKw(); }
-function autoShop(stock, draw, redraw) {
-  for (const s of stock) { if (!s.sold && Run.shards >= s.price + 20) { Run.shards -= s.price; s.sold = true; kwGain(s.id, ACTS.find(a => Run.kw[a.k].some((x, n) => !x && n < Run.kwSlots[a.k]))?.k || 'bag'); } }
-  const lock = ACTS.find(a => Run.kwSlots[a.k] < 2); if (lock && Run.shards >= 120) { Run.shards -= 120; Run.kwSlots[lock.k] = 2; }
-  autoKw();
-  setTimeout(() => { KwSel = null; afterFloor(); }, 20);
+// 디버그: 계약 전체 목록에서 바로 맺기 (전투 중에도 가능, 여는 동안 멈춤)
+function ctBrowser() {
+  const old = document.getElementById('ctb'); if (old) { old.remove(); return; }
+  if (!Run) return;
+  const o = h('div', 'codex'); o.id = 'ctb'; o.style.position = 'fixed'; o.style.zIndex = 40;
+  const box = h('div', 'codex-in'); o.appendChild(box);
+  const draw = () => {
+    box.innerHTML = `<div class="codex-head"><h2>계약 목록 (디버그)</h2><span class="dim">누르면 바로 맺어요. 행동을 고르는 계약은 행동 버튼을 눌러요.</span></div>`;
+    const x = h('button', 'btn small', '닫기'); x.onclick = () => o.remove(); box.querySelector('.codex-head').appendChild(x);
+    const list = h('div', 'ctgrid'); list.style.maxHeight = 'none'; list.style.flex = '1';
+    for (const c of CONTRACTS) {
+      const row = h('div', 'ctrow'); const lv = C(c.id);
+      row.innerHTML = `<div class="ctwhere">${c.kind === 'act' ? (c.act === 'pick' ? '선택' : ACT[c.act].name) : '존재'}</div><div class="caug" style="border-color:${GRADE[c.grade].col}"><div class="cname2">${c.name} <small>${GRADE[c.grade].name}${lv ? ' · 보유 ' + lv : ''}</small> <span class="tagrow">${c.tags.map(t => tagChip(t, true)).join(' ')}</span></div><div class="cdesc2">${c.d(Math.min(c.max, lv + 1))}</div></div>`;
+      const bs = h('div', '');
+      for (const a of (c.act === 'pick' ? c.on : [c.act || null])) { const b = h('button', 'btn small', c.act === 'pick' ? ACT[a].name : '맺기'); b.disabled = c.act === 'pick' ? CA(c.id, a) >= c.max : lv >= c.max; b.onclick = () => { takeContract(c.id, a); if (Scene === 'fight') { P.r = 18 * St.size; if (c.id === 'crow') World.summons.push({ type: 'crow', t: 1e9, tick: 1, x: P.x, y: P.y, ph: 0 }); } draw(); }; bs.appendChild(b); }
+      row.appendChild(bs); list.appendChild(row);
+    }
+    box.appendChild(list);
+  };
+  draw(); document.body.appendChild(o);
 }
 
 // ───────── 루프 ─────────
@@ -3019,7 +2881,7 @@ function frame(now) {
   if (Input.bot) Input.bot.think();
   let stepped = Scene !== 'fight'; // 히트스톱·일시정지 동안 누른 키는 버리지 않고 다음 틱에 넘겨요
   if (Scene === 'fight' && World.arena) {
-    if (!paused) {
+    if (!paused && !document.getElementById('ctb')) {
       if (Juice.stop > 0) Juice.stop -= rdt;
       else {
         stepped = true;
@@ -3034,7 +2896,7 @@ function frame(now) {
       }
       updateCam(rdt);
     }
-    if (World.arena) { drawWorld(); drawHUD(); }
+    if (World.arena && !(window.__norender && (window.__frameN = (window.__frameN || 0) + 1) % 30)) { drawWorld(); drawHUD(); } // __norender: 검증용, 30프레임에 한 번만 그림
   } else drawIdle();
   if (stepped) Input.endFrame();
   requestAnimationFrame(frame);
@@ -3045,8 +2907,7 @@ window.__proto = {
   start(s) { startRun(s); }, god(v) { god = v; }, auto(on) { Input.bot = on ? makeBot() : null; window.__auto = !!on; },
   clear() { World.queue = []; World.enemies.forEach(e => { if (!e.dead) { e.hp = 0; killEnemy(e); } }); },
   enter(id) { const n = Run.map.byId[id]; if (n) enterNode(n); }, reach() { return reachable(); },
-  aug(id) { takeAug(id); }, item(id, slot) { Run.open.add(slot); Run.engr[slot] = { id, lv: 0 }; recalc(); },
-  kw(act, i, id, lv) { if (Run.kwSlots[act] <= i) Run.kwSlots[act] = i + 1; Run.kw[act][i] = id ? { id, lv: lv || 1 } : null; recalc(); },
+  start2(s) { startRun(s, true); }, ct(id, act) { takeContract(id, act); if (Scene === 'fight') P.r = 18 * St.size; }, contracts: CONTRACTS, tags: TAGS, get st() { return St; }, C, CA, tagN,
 };
 fit(); showTitle(); requestAnimationFrame(frame);
 

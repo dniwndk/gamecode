@@ -26,16 +26,33 @@ window.stampDecal = stampDecal;
 function bar(x, y, w, hgt, k, col, bg) { cx.fillStyle = bg || '#0008'; cx.fillRect(x, y, w, hgt); cx.fillStyle = col; cx.fillRect(x, y, w * clamp(k, 0, 1), hgt); }
 function drawHUD() {
   cx.textAlign = 'left'; cx.font = '700 18px sans-serif';
-  // 체력·궁극기
-  bar(30, 28, 340, 18, Run.hp / St.maxHp, '#e05555'); cx.fillStyle = '#fff'; cx.fillText(`${Math.ceil(Run.hp)} / ${St.maxHp}`, 38, 44);
-  bar(30, 52, 340, 10, P.ult, P.ult >= 1 ? '#ffb36b' : '#a86a3a');
-  const md = Math.max(Run.augs.overcharge ? 2 : 1, St.dashMax || 1);
+  // 체력·보호막·궁극기
+  bar(30, 28, 340, 18, Run.hp / St.maxHp, '#e05555'); cx.fillStyle = '#fff';
+  const shv = shieldTotal(); if (shv > 0) { cx.fillStyle = '#9fd0ff'; cx.fillRect(30, 24, 340 * clamp(shv / St.maxHp, 0, 1), 4); cx.fillStyle = '#fff'; }
+  cx.fillText(`${Math.ceil(Run.hp)} / ${St.maxHp}${shv > 0 ? `  (+${Math.ceil(shv)})` : ''}`, 38, 44);
+  const noUlt = C('forsake');
+  bar(30, 52, 340, 10, noUlt ? 0 : P.ult, P.ult >= 1 ? '#ffb36b' : '#a86a3a');
+  const md = St.dashMax;
   for (let i = 0; i < md; i++) { cx.fillStyle = i < P.dashCharges ? '#9fe8ff' : '#33404a'; cx.fillRect(30 + i * 26, 70, 20, 8); }
   cx.fillStyle = '#ccc'; cx.font = '600 14px sans-serif'; cx.fillText('대시', 30 + md * 26 + 4, 79);
-  const ms = Run.augs.overcharge ? 2 : 1;
-  for (let i = 0; i < ms; i++) { cx.fillStyle = i < P.spinCharges ? '#cfe8ff' : '#33404a'; cx.fillRect(150 + i * 26, 70, 20, 8); }
-  cx.fillText('회전베기 (Q)', 150 + ms * 26 + 4, 79);
-  if (P.ult >= 1) { cx.fillStyle = '#ffb36b'; cx.font = '800 16px sans-serif'; cx.fillText('궁극기 준비 (R)', 30, 102); }
+  const ms = St.spinMax, mx0 = 30 + md * 26 + 50;
+  for (let i = 0; i < ms; i++) { cx.fillStyle = i < P.spinCharges ? '#d7b8ff' : '#33404a'; cx.fillRect(mx0 + i * 26, 70, 20, 8); }
+  if (P.spinCharges < ms) { cx.fillStyle = '#d7b8ff88'; cx.fillRect(mx0 + P.spinCharges * 26, 70, 20 * clamp(P.spinRe / St.spinCd, 0, 1), 8); }
+  cx.fillStyle = '#ccc'; cx.fillText('마법 (Q)', mx0 + ms * 26 + 4, 79);
+  cx.font = '800 16px sans-serif';
+  if (noUlt) { cx.fillStyle = '#8e8aa0'; cx.fillText('궁극기 없음 (의식 포기)', 30, 102); }
+  else if (P.ult2T > 0) { cx.fillStyle = '#ffe9b0'; cx.fillText(`한 번 더 (R) ${P.ult2T.toFixed(1)}초`, 30, 102); }
+  else if (P.ult >= 1) { cx.fillStyle = '#ffb36b'; cx.fillText('궁극기 준비 (R)', 30, 102); }
+  if (P.ultT > 0) { cx.fillStyle = '#ff9a3d'; cx.fillText(`궁극기 효과 ${P.ultT.toFixed(1)}초`, 200, 102); }
+  // 켜진 상태 줄
+  { const tags = []; if (P.cycleT > 0) tags.push('잿불 순환'); if ((P.heat || 0) > 0) tags.push(`달아오름 +${P.heat * 5}%`); if (P.speedT > 0) tags.push('속도의 저주'); if (P.revengeT > 0) tags.push('되갚는 저주'); if (P.execT > 0) tags.push('처형 치명'); if (C('crescendo') && World.t > 15) tags.push('고조');
+    if (Run.potion) tags.push(Run.potion === 'big' ? '거대' : '소형'); if (Run.iouFloors > 0) tags.push(`차용증 ${Run.iouFloors}층`);
+    cx.font = '700 14px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText(tags.join(' · '), 30, 124); }
+  // 태그 시너지 (가진 태그와 개수)
+  { let y = 150; cx.font = '800 14px sans-serif';
+    for (const t of TAGS) { const n = tagN(t.name); if (!n) continue; cx.globalAlpha = n >= 2 ? 1 : 0.5; cx.fillStyle = tagCol(t.name); cx.fillText(`${t.name} ${n}`, 30, y); cx.fillStyle = '#ffffff'; for (let i = 0; i < 3; i++) { cx.globalAlpha = n >= i + 2 ? 1 : 0.18; cx.fillRect(84 + i * 12, y - 9, 8, 8); } y += 20; }
+    cx.globalAlpha = 1;
+    const q = Run.quest; if (q && !q.done) { cx.fillStyle = '#7fffe0'; cx.fillText(`과제: ${QUESTS[q.k].name} ${Math.floor(q.n)}/${q.goal}`, 30, y + 4); } }
   // 화면 밖 적 표시
   for (const e of World.enemies) {
     if (e.dead) continue; const q = proj(e.x, e.y, 20), sx = q.x, sy = q.y;
@@ -58,20 +75,19 @@ function drawHUD() {
   // 반격 창
   if (P.counterT > 0) { cx.textAlign = 'center'; cx.font = '900 26px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText('반격!', W / 2, H - 150); }
   if (P.perfect) { cx.textAlign = 'center'; cx.font = '900 22px sans-serif'; cx.fillStyle = '#9ffcff'; cx.fillText(`퍼펙트: 다음 공격 +${Math.round(St.perfectBonus * 100)}%`, W / 2, H - 178); cx.fillStyle = '#9ffcff55'; cx.fillRect(W / 2 - 90, H - 170, 180, 4); cx.fillStyle = '#9ffcff'; cx.fillRect(W / 2 - 90, H - 170, 180 * clamp(P.perfectT / 2, 0, 1), 4); }
-  if (P.chainStacks > 0 && Run.augs.chainparry) { cx.textAlign = 'center'; cx.font = '700 16px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText(`연속 응수 ${P.chainStacks}`, W / 2, H - 125); }
-  // 행동 키워드 줄
-  const curAct = P.act ? (P.act.type === 'swing' ? 'atk' : P.act.type === 'thrust' ? 'dash' : P.act.type === 'parry' ? 'parry' : P.act.type === 'spin' ? 'spin' : null) : (P.dashT > 0 ? 'dash' : null);
+  if (P.chainStacks > 0 && C('chainparry')) { cx.textAlign = 'center'; cx.font = '700 16px sans-serif'; cx.fillStyle = '#ffd27a'; cx.fillText(`연속 응수 ${P.chainStacks}`, W / 2, H - 125); }
+  // 행동별 계약 줄
+  const curAct = P.act ? ({ swing: 'atk', thrust: 'dash', blink: 'dash', parry: 'guard', spin: 'magic', ult: 'ult' })[P.act.type] : (P.dashT > 0 ? 'dash' : null);
   ACTS.forEach((ac, i) => {
-    const bw = 170, x = W / 2 - 2 * (bw + 8) + i * (bw + 8), y = H - 66; const ks = kwAll(ac.k);
+    const bw = 190, x = W / 2 - 2.5 * (bw + 8) + 4 + i * (bw + 8), y = H - 66; const ks = ctOf(ac.k);
     cx.fillStyle = curAct === ac.k ? '#2b3a48' : '#14121add'; cx.fillRect(x, y, bw, 50);
-    cx.strokeStyle = ks.length ? KW[ks[0].id].col : '#444'; cx.lineWidth = ks.length > 1 ? 3 : 1.5; cx.strokeRect(x, y, bw, 50);
+    cx.strokeStyle = ks.length ? GRADE[CT[ks[0].id].grade].col : '#444'; cx.lineWidth = ks.length > 1 ? 3 : 1.5; cx.strokeRect(x, y, bw, 50);
     cx.textAlign = 'center'; cx.font = '700 13px sans-serif'; cx.fillStyle = '#aaa'; cx.fillText(`${ac.name} · ${ac.key}`, x + bw / 2, y + 17);
-    cx.font = '800 14px sans-serif';
-    if (!ks.length) { cx.fillStyle = '#555'; cx.fillText('키워드 없음', x + bw / 2, y + 38); }
-    else { const parts = ks.map(k => ({ t: KW[k.id].name + (k.lv > 1 ? '★'.repeat(k.lv - 1) : ''), c: KW[k.id].col })); const tw = parts.reduce((s, p) => s + cx.measureText(p.t).width, 0) + (parts.length - 1) * 10; let px = x + bw / 2 - tw / 2; cx.textAlign = 'left'; for (const p of parts) { cx.fillStyle = p.c; cx.fillText(p.t, px, y + 38); px += cx.measureText(p.t).width + 10; } }
+    cx.font = '800 13px sans-serif';
+    if (!ks.length) { cx.fillStyle = '#555'; cx.fillText('계약 없음', x + bw / 2, y + 38); }
+    else { let t = ks.map(k => CT[k.id].name + (k.lv > 1 ? k.lv : '')).join(' · '); if (cx.measureText(t).width > bw - 12) t = `${CT[ks[0].id].name} 외 ${ks.length - 1}`; cx.fillStyle = GRADE[CT[ks[0].id].grade].col; cx.fillText(t, x + bw / 2, y + 38); }
   });
-  // 첫 합성·반응 알림
-  if (World.banner) { const bn = World.banner, k = Math.min(1, bn.t / 0.3, (bn.max - bn.t) / 0.15); cx.save(); cx.globalAlpha = k; cx.textAlign = 'center'; cx.font = '900 54px sans-serif'; cx.fillStyle = bn.col; cx.fillText(bn.name, W / 2, H * 0.3); cx.font = '700 20px sans-serif'; cx.fillStyle = '#e6e3ee'; cx.fillText(bn.sub, W / 2, H * 0.3 + 34); cx.font = '600 14px sans-serif'; cx.fillStyle = '#9a96a8'; cx.fillText('새 합성 발견', W / 2, H * 0.3 - 52); cx.restore(); }
+  { const ex = ctOf(null); if (ex.length) { cx.textAlign = 'center'; cx.font = '700 13px sans-serif'; cx.fillStyle = '#b9b4c8'; let t = '존재: ' + ex.map(k => CT[k.id].name + (k.lv > 1 ? k.lv : '')).join(' · '); if (cx.measureText(t).width > 980) t = `존재 계약 ${ex.length}개 (Tab)`; cx.fillText(t, W / 2, H - 74); } }
   // 보스 바
   const b = World.boss;
   if (b && !b.dead) {
@@ -79,7 +95,7 @@ function drawHUD() {
     cx.textAlign = 'center'; cx.font = '800 20px sans-serif'; cx.fillStyle = '#fff'; cx.fillText(b.title + (b.phase > 1 ? ` · 페이즈 ${b.phase}` : ''), W / 2, y - 6);
     bar(x, y, w, 16, b.hp / b.maxHp, '#d04848');
   }
-  if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 300, 79); }
+  if (god) { cx.textAlign = 'left'; cx.fillStyle = '#7fe0a0'; cx.font = '700 14px sans-serif'; cx.fillText('무적', 384, 44); }
   if (paused) { cx.fillStyle = '#000a'; cx.fillRect(0, 0, W, H); cx.textAlign = 'center'; cx.fillStyle = '#fff'; cx.font = '900 48px sans-serif'; cx.fillText('일시정지', W / 2, H / 2); cx.font = '600 18px sans-serif'; cx.fillText('Esc로 계속', W / 2, H / 2 + 40); }
 }
 
@@ -91,10 +107,10 @@ function toggleDebug() {
   btn('무적 켜기/끄기', () => { god = !god; });
   btn('이 층 즉시 클리어', () => { if (Scene === 'fight') { World.queue = []; World.enemies.forEach(e => { if (!e.dead) { e.hp = 0; killEnemy(e); } }); } });
   btn('파편 +500', () => { Run.shards += 500; });
-  btn('무작위 기본 키워드 (가방)', () => { const k = pick(KW_BASE); const r = kwGain(k.id, 'bag'); flashMsg(r.lost ? '가방이 가득 참' : k.name); });
-  btn('무작위 합성 키워드 (가방)', () => { const k = pick(KW_COMP); const r = kwGain(k.id, 'bag'); flashMsg(r.lost ? '가방이 가득 참' : k.name); });
-  btn('행동 칸 모두 열기', () => { ACTS.forEach(a => Run.kwSlots[a.k] = 2); recalc(); });
-  btn('키워드 판 열기 (전투 밖)', () => { if (Scene !== 'fight') showKwOnly(); });
+  btn('계약 고르기 (실버)', () => { if (Scene !== 'fight') showContracts({ grade: 'silver', cb: showMap }); });
+  btn('계약 고르기 (골드)', () => { if (Scene !== 'fight') showContracts({ grade: 'gold', cb: showMap }); });
+  btn('계약 고르기 (프리즘)', () => { if (Scene !== 'fight') showContracts({ prism: true, cb: showMap }); });
+  btn('계약 목록에서 맺기', () => ctBrowser());
   btn('체력 가득', () => { Run.hp = St.maxHp; });
   btn('궁극기 가득', () => { P.ult = 1; });
   btn('닫기', () => d.remove());
@@ -130,7 +146,7 @@ function makeBot() {
     for (const p of World.projs) if (p.owner === 'enemy' && Math.hypot(p.x - P.x, p.y - P.y) < 70) threat = { proj: p, left: 0, color: p.color };
     if (threat && gameTime - this.lastParry > 0.25) {
       const col = threat.proj ? threat.color : threat.e.atk.color;
-      if (col === 'red' && !Run.augs.redsteel) { this.pressed.add(' '); const away = angTo(threat.e || P, P) + (R() - 0.5); this.down.add(Math.cos(away) > 0 ? 'd' : 'a'); this.down.add(Math.sin(away) > 0 ? 's' : 'w'); }
+      if (col === 'red' && !C('redsteel')) { this.pressed.add(' '); const away = angTo(threat.e || P, P) + (R() - 0.5); this.down.add(Math.cos(away) > 0 ? 'd' : 'a'); this.down.add(Math.sin(away) > 0 ? 's' : 'w'); }
       else { this.pressed.add('k'); if (threat.e) this.aim = angTo(P, threat.e); }
       this.lastParry = gameTime; return;
     }
@@ -142,12 +158,26 @@ function makeBot() {
   } };
   return bot;
 }
-function autoEngrave() { autoKw(); }
-function autoShop(stock, draw, redraw) {
-  for (const s of stock) { if (!s.sold && Run.shards >= s.price + 20) { Run.shards -= s.price; s.sold = true; kwGain(s.id, ACTS.find(a => Run.kw[a.k].some((x, n) => !x && n < Run.kwSlots[a.k]))?.k || 'bag'); } }
-  const lock = ACTS.find(a => Run.kwSlots[a.k] < 2); if (lock && Run.shards >= 120) { Run.shards -= 120; Run.kwSlots[lock.k] = 2; }
-  autoKw();
-  setTimeout(() => { KwSel = null; afterFloor(); }, 20);
+// 디버그: 계약 전체 목록에서 바로 맺기 (전투 중에도 가능, 여는 동안 멈춤)
+function ctBrowser() {
+  const old = document.getElementById('ctb'); if (old) { old.remove(); return; }
+  if (!Run) return;
+  const o = h('div', 'codex'); o.id = 'ctb'; o.style.position = 'fixed'; o.style.zIndex = 40;
+  const box = h('div', 'codex-in'); o.appendChild(box);
+  const draw = () => {
+    box.innerHTML = `<div class="codex-head"><h2>계약 목록 (디버그)</h2><span class="dim">누르면 바로 맺어요. 행동을 고르는 계약은 행동 버튼을 눌러요.</span></div>`;
+    const x = h('button', 'btn small', '닫기'); x.onclick = () => o.remove(); box.querySelector('.codex-head').appendChild(x);
+    const list = h('div', 'ctgrid'); list.style.maxHeight = 'none'; list.style.flex = '1';
+    for (const c of CONTRACTS) {
+      const row = h('div', 'ctrow'); const lv = C(c.id);
+      row.innerHTML = `<div class="ctwhere">${c.kind === 'act' ? (c.act === 'pick' ? '선택' : ACT[c.act].name) : '존재'}</div><div class="caug" style="border-color:${GRADE[c.grade].col}"><div class="cname2">${c.name} <small>${GRADE[c.grade].name}${lv ? ' · 보유 ' + lv : ''}</small> <span class="tagrow">${c.tags.map(t => tagChip(t, true)).join(' ')}</span></div><div class="cdesc2">${c.d(Math.min(c.max, lv + 1))}</div></div>`;
+      const bs = h('div', '');
+      for (const a of (c.act === 'pick' ? c.on : [c.act || null])) { const b = h('button', 'btn small', c.act === 'pick' ? ACT[a].name : '맺기'); b.disabled = c.act === 'pick' ? CA(c.id, a) >= c.max : lv >= c.max; b.onclick = () => { takeContract(c.id, a); if (Scene === 'fight') { P.r = 18 * St.size; if (c.id === 'crow') World.summons.push({ type: 'crow', t: 1e9, tick: 1, x: P.x, y: P.y, ph: 0 }); } draw(); }; bs.appendChild(b); }
+      row.appendChild(bs); list.appendChild(row);
+    }
+    box.appendChild(list);
+  };
+  draw(); document.body.appendChild(o);
 }
 
 // ───────── 루프 ─────────
@@ -158,7 +188,7 @@ function frame(now) {
   if (Input.bot) Input.bot.think();
   let stepped = Scene !== 'fight'; // 히트스톱·일시정지 동안 누른 키는 버리지 않고 다음 틱에 넘겨요
   if (Scene === 'fight' && World.arena) {
-    if (!paused) {
+    if (!paused && !document.getElementById('ctb')) {
       if (Juice.stop > 0) Juice.stop -= rdt;
       else {
         stepped = true;
@@ -173,7 +203,7 @@ function frame(now) {
       }
       updateCam(rdt);
     }
-    if (World.arena) { drawWorld(); drawHUD(); }
+    if (World.arena && !(window.__norender && (window.__frameN = (window.__frameN || 0) + 1) % 30)) { drawWorld(); drawHUD(); } // __norender: 검증용, 30프레임에 한 번만 그림
   } else drawIdle();
   if (stepped) Input.endFrame();
   requestAnimationFrame(frame);
@@ -184,7 +214,6 @@ window.__proto = {
   start(s) { startRun(s); }, god(v) { god = v; }, auto(on) { Input.bot = on ? makeBot() : null; window.__auto = !!on; },
   clear() { World.queue = []; World.enemies.forEach(e => { if (!e.dead) { e.hp = 0; killEnemy(e); } }); },
   enter(id) { const n = Run.map.byId[id]; if (n) enterNode(n); }, reach() { return reachable(); },
-  aug(id) { takeAug(id); }, item(id, slot) { Run.open.add(slot); Run.engr[slot] = { id, lv: 0 }; recalc(); },
-  kw(act, i, id, lv) { if (Run.kwSlots[act] <= i) Run.kwSlots[act] = i + 1; Run.kw[act][i] = id ? { id, lv: lv || 1 } : null; recalc(); },
+  start2(s) { startRun(s, true); }, ct(id, act) { takeContract(id, act); if (Scene === 'fight') P.r = 18 * St.size; }, contracts: CONTRACTS, tags: TAGS, get st() { return St; }, C, CA, tagN,
 };
 fit(); showTitle(); requestAnimationFrame(frame);

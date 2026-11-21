@@ -131,19 +131,18 @@ function paintDynamic() {
   const A = G3.arena, g = G3.dynCx; g.setTransform(G3.DYN, 0, 0, G3.DYN, 0, 0); g.clearRect(0, 0, A.w, A.h);
   for (const m of World.marks) { const k = 1 - m.t / m.max; g.strokeStyle = m.col; g.globalAlpha = 0.4 + k * 0.6; g.lineWidth = 4; g.beginPath(); g.arc(m.x, m.y, 34 - k * 14, 0, Math.PI * 2); g.stroke(); }
   g.globalAlpha = 1;
-  // 키워드 장판 (불길·서리·물·진흙·용암·모래·안개·뇌운)
+  // 계약 장판 (불길·서리)
   for (const f of World.fields || []) {
     const k = Math.min(1, f.t / 0.4, (f.max - f.t) / 0.15 + 0.2); const col = FIELD_COL[f.type] || '#fff';
-    g.globalAlpha = (f.type === 'fog' ? 0.42 : f.type === 'cloud' ? 0.16 : 0.3) * k; g.fillStyle = col;
+    g.globalAlpha = 0.3 * k; g.fillStyle = col;
     g.beginPath(); g.arc(f.x, f.y, f.r, 0, Math.PI * 2); g.fill();
-    g.globalAlpha = 0.6 * k; g.strokeStyle = col; g.lineWidth = f.type === 'cloud' ? 2 : 3; g.setLineDash(f.type === 'cloud' ? [10, 10] : []);
-    g.beginPath(); g.arc(f.x, f.y, f.r * (f.type === 'fire' || f.type === 'lava' ? 0.92 + Math.sin(performance.now() / 90) * 0.06 : 1), 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+    g.globalAlpha = 0.6 * k; g.strokeStyle = col; g.lineWidth = 3;
+    g.beginPath(); g.arc(f.x, f.y, f.r * (f.type === 'fire' ? 0.92 + Math.sin(performance.now() / 90) * 0.06 : 1), 0, Math.PI * 2); g.stroke();
   }
   if (World.decoy) { const d = World.decoy; g.globalAlpha = 0.5 + 0.3 * Math.sin(performance.now() / 60); g.fillStyle = '#e3c8ff'; g.beginPath(); g.arc(d.x, d.y, 18, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#e3c8ff'; g.lineWidth = 3; g.beginPath(); g.arc(d.x, d.y, 30, 0, Math.PI * 2 * d.t / d.max); g.stroke(); }
   g.globalAlpha = 1;
   for (const e of World.enemies) {
     if (e.dead) continue;
-    if ((e.wet || 0) > 0) { g.fillStyle = '#4aa8ff'; g.globalAlpha = 0.35; g.beginPath(); g.arc(e.x, e.y, e.r + 4, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
     if (e.shocked > 0) { g.strokeStyle = '#ffe45c'; g.lineWidth = 2; g.globalAlpha = 0.5 + 0.5 * Math.random(); g.beginPath(); g.arc(e.x, e.y, e.r + 9, Math.random() * 6, Math.random() * 6 + 1.2); g.stroke(); g.globalAlpha = 1; }
     if (e.burn > 0) { g.strokeStyle = '#ff8a3d'; g.lineWidth = 3; g.globalAlpha = 0.7; g.beginPath(); g.arc(e.x, e.y, e.r + 3, 0, Math.PI * 2 * Math.min(1, e.burn / 5)); g.stroke(); g.globalAlpha = 1; }
     const t = e.atk && e.atk.phase === 'tele' && !e.atk.noFlash ? e.atk : null;
@@ -213,10 +212,11 @@ function syncEnemies() {
     const shx = e.shk > 0 ? (R() - 0.5) * 10 * e.shk / 0.15 : 0, shz = e.shk > 0 ? (R() - 0.5) * 10 * e.shk / 0.15 : 0;
     const wind = t ? 1 + 0.14 * clamp(t.t / t.tele, 0, 1) : 1; const sq = e.sqK || 0;
     g.position.set(e.x + shx, g.userData.float ? Math.sin(performance.now() / 300 + e.x) * 6 : 0, e.y + shz);
-    g.scale.set((1 + sq) * wind, (1 - sq * 0.7) * wind, (1 + sq) * wind);
+    const fk = e.frog > 0 ? 0.55 : 1; g.scale.set((1 + sq) * wind, (1 - sq * 0.7) * wind * fk, (1 + sq) * wind);
     g.rotation.y = -e.face;
     const m = g.userData.mat;
     if (e.flash > 0) { m.emissive.set(0xffffff); m.emissiveIntensity = 1; m.color.set(0xffffff); }
+    else if (e.frog > 0) { m.color.set(0x6fcf5a); m.emissive.set(0x2a7a20); m.emissiveIntensity = 0.3; }
     else if (e.frozen > 0) { m.color.set(0xbfefff); m.emissive.set(0x7fd8ff); m.emissiveIntensity = 0.3; }
     else if (e.groggy > 0) { m.color.copy(g.userData.baseCol); m.emissive.set(0xffd27a); m.emissiveIntensity = 0.5 + Math.sin(performance.now() / 90) * 0.3; }
     else if (t) { m.color.copy(g.userData.baseCol); m.emissive.set(COLMAP[t.color]); m.emissiveIntensity = 0.25 + Math.sin(performance.now() / 40) * 0.2; }
@@ -245,7 +245,7 @@ function syncPlayer() {
   const g = G3.player, a = P.act;
   g.visible = P.alive || World.clearT >= 0;
   g.position.set(P.x, 0, P.y);
-  const sq = P.sqK || 0; g.scale.set(1 + sq, 1 - sq * 0.6, 1 + sq);
+  const sq = P.sqK || 0, ps = P.r / 18; g.scale.set((1 + sq) * ps, (1 - sq * 0.6) * ps, (1 + sq) * ps);
   g.rotation.y = -(P.face || 0);
   const fa = a && a.ang != null ? a.ang : P.face; g.userData.sword.rotation.y = -(fa - P.face);
   g.userData.sword.position.x = 0;
@@ -305,7 +305,7 @@ function drawFX3() {
   }
   cx.globalAlpha = 1;
 }
-// 적 머리 위 표시 (체력·체간·그로기·낙인·섬광 느낌표)
+// 적 머리 위 표시 (체력·낙인·섬광 느낌표)
 function drawEnemyTags() {
   for (const e of World.enemies) {
     if (e.dead) continue; const g = G3.enemyMeshes.get(e); const top = g ? g.userData.h + 8 : e.r * 2;
@@ -332,7 +332,7 @@ function drawWorld() {
   G3.renderer.render(G3.scene, G3.cam);
   // 위에 겹치는 2D 레이어
   cx.clearRect(0, 0, W, H);
-  drawEnemyTags(); drawFX3();
+  drawEnemyTags(); drawSummons(); drawFX3();
   if (Juice.chroma > 0) { const o = 3 + Juice.chroma * 60; cx.save(); cx.globalCompositeOperation = 'screen'; cx.globalAlpha = 0.35; cx.drawImage(gl, -o, 0); cx.drawImage(gl, o, 0); cx.restore(); }
   if (World.mods.includes('dark')) {
     const q = proj(P.x, P.y, 20); const g = cx.createRadialGradient(q.x, q.y, 200 * q.s, q.x, q.y, 470 * q.s); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.9)');

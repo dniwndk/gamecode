@@ -1,6 +1,6 @@
 'use strict';
 // ───────── 전투 세계: 아레나, 적, 보스, 투사체 ─────────
-const World = { arena: null, enemies: [], projs: [], fields: [], decoy: null, banner: null, hits: [], bolts: [], marks: [], mods: [], queue: [], waveT: 0, kind: 'fight', over: false, clearT: -1, merchantT: -1, cam: { x: 0, y: 0 }, info: null };
+const World = { arena: null, enemies: [], projs: [], fields: [], summons: [], decoy: null, hits: [], bolts: [], marks: [], mods: [], queue: [], waveT: 0, kind: 'fight', over: false, clearT: -1, merchantT: -1, cam: { x: 0, y: 0 }, info: null };
 
 function makeArena(size) {
   const [w, h] = ARENA_SIZE[size];
@@ -35,7 +35,7 @@ function makeEnemy(type, x, y, opts = {}) {
 
 function startFight(node) {
   const kind = node.type; World.kind = kind;
-  World.enemies = []; World.projs = []; World.hits = []; World.bolts = []; World.marks = []; World.queue = []; Later = []; World.fields = []; World.decoy = null; World.banner = null;
+  World.enemies = []; World.projs = []; World.hits = []; World.bolts = []; World.marks = []; World.queue = []; Later = []; World.fields = []; World.summons = []; World.decoy = null;
   World.over = false; World.clearT = -1; World.t = 0; World.boss = null; World.mods = node.mods || []; World.merchantT = -1;
   FX.clear();
   let compo, size;
@@ -191,13 +191,13 @@ function updateHits(dt) {
 }
 
 // ───────── 적 행동 ─────────
-function chillMul(e) { return e.frozen > 0 ? 0 : (1 - Math.min(0.4, e.chill * 0.08)) * kwSlowMul(e); }
+function chillMul(e) { return e.frozen > 0 ? 0 : (1 - Math.min(0.4, e.chill * 0.08)) * slowMul(e); }
 function startAtk(e, name, color, tele) { e.atk = { name, color, t: 0, phase: 'tele', tele: tele / e.spdMul, ang: angTo(e, e.tgt || P) }; }
 function updateEnemy(e, dt) {
   e.life += dt; e.flash -= dt; e.shk = (e.shk || 0) - dt; e.sqK = (e.sqK || 0) * Math.exp(-dt * 12);
-  if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; dealDamage(e, { base: e.burn * (2 + St.firePow * 0.08), gen: 1, elem: 'fire', noStatus: true, burnTick: true }); } if (e.burnT <= 0) e.burn = 0; }
+  if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; dealDamage(e, { base: e.burn * 2, gen: 1, elem: 'fire', noStatus: true, burnTick: true, noBrand: true }); } if (e.burnT <= 0) e.burn = 0; }
   if (e.chillT > 0) { e.chillT -= dt; if (e.chillT <= 0) e.chill = 0; }
-  e.frozen -= dt; e.freezeImm -= dt; e.shocked -= dt; e.kbT -= dt;
+  e.frozen -= dt; e.freezeImm -= dt; e.shocked -= dt; e.kbT -= dt; if (e.goldT > 0) e.goldT -= dt;
   if (e.shieldDown > 0) { e.shieldDown -= dt; if (e.shieldDown <= 0 && e.def.shield) e.shieldUp = true; }
   if (e.stanceMax && e.groggy <= 0) { e.stanceIdle += dt; if (e.stanceIdle > 3) e.stance = Math.max(0, e.stance - e.stanceMax * 0.1 * dt); }
   if (e.dead) return;
@@ -206,8 +206,10 @@ function updateEnemy(e, dt) {
   if (e.frozen > 0 || e.staggerT > 0) { e.staggerT -= dt; e.vx *= Math.exp(-fric * dt); e.vy *= Math.exp(-fric * dt); moveEnemy(e, dt); return; }
   if (e.kbT > 0) { e.vx *= Math.exp(-fric * dt); e.vy *= Math.exp(-fric * dt); moveEnemy(e, dt); return; }
   if (e.boss) { if (e.atk) bossAct(e, dt); else bossThink(e, dt); moveEnemy(e, dt); return; }
+  // 개구리 저주: 공격 못 하고 폴짝거리기만
+  if (e.frog > 0) { e.frog -= dt; if (e.atk) e.cancelAttack(); e.hopT = (e.hopT || 0) - dt; if (e.hopT <= 0) { e.hopT = 0.45; const ha = R() * Math.PI * 2; e.vx = Math.cos(ha) * 150; e.vy = Math.sin(ha) * 150; e.face = ha; } e.vx *= Math.exp(-4 * dt); e.vy *= Math.exp(-4 * dt); moveEnemy(e, dt); return; }
   const sp = e.def.spd * e.spdMul * chillMul(e);
-  const tg = World.decoy ? World.decoy : P; e.tgt = tg; // 복제 분신이 있으면 분신을 노려요
+  const tg = World.decoy ? World.decoy : P; e.tgt = tg; // 허상(환영)이 있으면 환영을 노려요
   const d = dist(e, tg), a = angTo(e, tg);
   if (e.atk) { enemyAct(e, dt); moveEnemy(e, dt); return; }
   e.cd -= dt;
@@ -317,7 +319,7 @@ function envReact(e, elem, dmg, gen) {
   }
 }
 
-function killEnemy(e, finisher) {
+function killEnemy(e, o) {
   if (e.dead) return; e.dead = true;
   if (e.type === 'merchant') {
     const s = 30; Run.shards += s; FX.text(e.x, e.y - 30, `파편 +${s}`, '#ffd86b', true);
@@ -331,9 +333,7 @@ function killEnemy(e, finisher) {
   if (World.killLog.length >= 3) { const n = World.killLog.length; FX.text(e.x, e.y - 70, `${n}연속 처치`, n >= 5 ? '#ff9a3d' : '#ffd27a', true); Juice.slowmo(0.25, 0.4); Juice.ab(0.08); }
   const sh = Math.round((e.boss ? 0 : e.elite ? 4 : 1 + (R() < 0.4 ? 1 : 0)) * (1 + St.shardMul));
   if (sh) { Run.shards += sh; Run.floorShards = (Run.floorShards || 0) + sh; }
-  if (Run.augs.thirst) Run.hp = Math.min(St.maxHp, Run.hp + 2);
-  if (Run.augs.overcharge) { if (P.dashCharges < 2) P.dashCharges++; }
-  if (e.elite && !e.boss && R() < 0.15) { const it = pick(ITEMS); Run.pendingDrops = (Run.pendingDrops || []).concat(it.id); FX.text(e.x, e.y - 50, `인장: ${it.name}`, '#9fe8ff', true); }
+  ctOnKill(e, o);
   if (World.mods.includes('chainboom') && !e.boss) {
     const h = addHit(e, { shape: 'circle', r: 75, t: 0.1, dmg: 8 * scaleFor().dmg, color: 'red', light: true, x: e.x, y: e.y, keep: true });
     h.hurtsEnemies = true; h.enemyDmg = 14; FX.ring(e.x, e.y, 5, 75, '#ffb030', 0.3, 6);
@@ -346,6 +346,7 @@ function enemiesLeft() { return World.enemies.filter(e => !e.dead && e.type !== 
 function updateProjs(dt) {
   const A = World.arena;
   for (const p of World.projs) {
+    if (p.homing) { const t = nearest(p.x, p.y, 520)[0]; if (t) { const sp = Math.hypot(p.vx, p.vy), want = Math.atan2(t.y - p.y, t.x - p.x), cur = Math.atan2(p.vy, p.vx), na = cur + clamp(angDiff(cur, want), -7 * dt, 7 * dt); p.vx = Math.cos(na) * sp; p.vy = Math.sin(na) * sp; } }
     p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
     if (p.x < 0 || p.y < 0 || p.x > A.w || p.y > A.h) p.life = 0;
     for (const pl of A.pillars) if (Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r + p.r) { p.life = 0; FX.burst(p.x, p.y, p.col, 5, 120, 0.2, 3); }
@@ -360,8 +361,8 @@ function updateProjs(dt) {
         if (e.dead || p.hitSet.has(e)) continue;
         if (Math.hypot(p.x - e.x, p.y - e.y) < p.r + e.r) {
           p.hitSet.add(e);
-          dealDamage(e, { base: p.dmg, gen: p.gen, act: p.wave ? null : null, ang: Math.atan2(p.vy, p.vx), kb: 180, poise: p.wave ? 10 : 25 });
-          if (!p.pierce) { p.life = 0; break; }
+          dealDamage(e, { base: p.dmg, gen: p.gen, grp: p.grp, ang: Math.atan2(p.vy, p.vx), kb: p.homing ? 0 : 180, poise: p.wave ? 10 : p.homing ? 4 : 25, noEcho: p.homing });
+          if (!p.pierce && !C('pierce')) { p.life = 0; break; }
         }
       }
     }
@@ -374,7 +375,7 @@ function updateWorld(dt) {
   World.t = (World.t || 0) + dt;
   for (const m of World.marks) m.t -= dt; World.marks = World.marks.filter(m => m.t > 0);
   for (const e of World.enemies) updateEnemy(e, dt);
-  updateHits(dt); updateProjs(dt); updateFields(dt);
+  updateHits(dt); updateProjs(dt); updateFields(dt); updateContracts(dt);
   for (const b of World.bolts) b.life -= dt; World.bolts = World.bolts.filter(b => b.life > 0);
   // 파상 등장
   if (World.queue.length) { World.waveT += dt; if (enemiesLeft() <= 2 || World.waveT > 8) { World.waveT = 0; spawnGroup(World.queue.shift(), World.kind === 'fight' && Run.node && Run.node.elite, false); } }

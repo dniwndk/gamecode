@@ -1,5 +1,5 @@
 'use strict';
-// ───────── 런 진행: 지도, 보상, 상점, 회복, 이벤트, 동작 각인 화면 ─────────
+// ───────── 런 진행: 지도, 보상(축복·계약), 상점, 회복, 이벤트, 계약 창 ─────────
 let Scene = 'title';
 const UI = document.getElementById('ui');
 const h = (tag, cls, html) => { const el = document.createElement(tag); if (cls) el.className = cls; if (html != null) el.innerHTML = html; return el; };
@@ -57,8 +57,8 @@ function genMap() {
 }
 function nodeKind(n) { return n.type === 'fight' && n.elite ? 'elite' : n.type; }
 
-function startRun(seedVal) {
-  newRun(seedVal);
+function startRun(seedVal, test) {
+  newRun(seedVal, test);
   Run.map = genMap(); Run.row = 0; Run.node = null; Run.floor = 0;
   showMap();
 }
@@ -82,14 +82,22 @@ function enterFinal() {
   clearUI(); Scene = 'fight'; startFight({ type: 'final', mods: [] });
 }
 
+// 태그 진행 칩: 가진 태그와 개수 (2개 이상이면 켜진 것)
+function tagChips() {
+  const out = TAGS.filter(t => tagN(t.name) > 0).sort((a, b) => tagN(b.name) - tagN(a.name)).map(t => { const n = tagN(t.name); return `<span class="kwtag sm${n >= 2 ? ' lit' : ''}" style="border-color:${tagCol(t.name)};color:${tagCol(t.name)}">${t.name} ${n}</span>`; }).join(' ');
+  return out || '<span class="dim">없음</span>';
+}
 function topBar(p) {
   const bar = h('div', 'topbar');
-  const aug = ACTS.map(a => `<span class="chip">${a.name}: ${kwAll(a.k).map(k => kwTag(k, true)).join(' ') || '<span class="dim">-</span>'}</span>`).join('');
+  const acts = ACTS.map(a => `<span class="chip">${a.name}: ${ctOf(a.k).map(c => CT[c.id].name + (c.lv > 1 ? ' ' + c.lv : '')).join(', ') || '<span class="dim">-</span>'}</span>`).join('');
+  const ex = ctOf(null).map(c => CT[c.id].name + (c.lv > 1 ? ' ' + c.lv : '')).join(', ');
   const bl = Object.entries(Run.blessings).map(([k, c]) => `<span class="chip">${BLESSINGS.find(b => b.id === k).name}×${c}</span>`).join('') || '<span class="dim">없음</span>';
   bar.innerHTML = `<div class="stats"><b>${Run.floor ? Run.floor + '층' : '출발'}</b> · ${TIERS[Run.tier - 1].name}
-    <span class="hp">체력 ${Math.ceil(Run.hp)}/${St.maxHp}</span><span class="sh">파편 ${Run.shards}</span><span>리롤권 ${Run.rerolls}</span></div>
-    <div class="row"><span class="lbl">키워드</span>${aug}</div><div class="row"><span class="lbl">축복</span>${bl}</div>`;
-  const cb = h('button', 'btn small codexbtn', '키워드·능력치 (Tab)'); cb.onclick = () => toggleCodex(); bar.appendChild(cb);
+    <span class="hp">체력 ${Math.ceil(Run.hp)}/${St.maxHp}</span><span class="sh">파편 ${Run.shards}</span><span>리롤권 ${Run.rerolls}</span>${Run.test ? '<span class="dim">계약 시험 런</span>' : ''}</div>
+    <div class="row"><span class="lbl">행위 계약</span>${acts}</div>
+    <div class="row"><span class="lbl">존재 계약</span>${ex ? `<span class="chip">${ex}</span>` : '<span class="dim">없음</span>'} <span class="lbl" style="margin-left:14px">태그</span>${tagChips()}</div>
+    <div class="row"><span class="lbl">축복</span>${bl}</div>`;
+  const cb = h('button', 'btn small codexbtn', '계약·능력치 (Tab)'); cb.onclick = () => toggleCodex(); bar.appendChild(cb);
   p.appendChild(bar);
 }
 
@@ -116,30 +124,33 @@ function showMap() {
     }
   }
   const side = h('div', 'mapside');
-  side.innerHTML = `<div class="hint">다음 칸을 고르세요. 상점·회복·이벤트 칸은 그 층 전투 보상을 포기해요.<br>칸 위 글자는 층 변형자예요.</div>`;
-  const eb = h('button', 'btn', '행동 키워드 (옮기기·합성)'); eb.onclick = () => showKwOnly(); side.appendChild(eb);
+  side.innerHTML = `<div class="hint">다음 칸을 고르세요. 상점·회복·이벤트 칸은 그 층 전투 보상을 포기해요.<br>일반·정예 층은 축복, 5층마다(보스) 계약을 얻어요.${Run.quest && !Run.quest.done ? `<br><b style="color:#7fffe0">과제: ${QUESTS[Run.quest.k].name} (${Math.floor(Run.quest.n)}/${Run.quest.goal})</b>` : ''}</div>`;
+  const eb = h('button', 'btn', '계약·태그 보기 (Tab)'); eb.onclick = () => toggleCodex(); side.appendChild(eb);
   p.appendChild(side);
 }
 
 // ───────── 전투 클리어 → 보상 ─────────
+// 설계서 6.1: 일반·정예·저주 층 = 축복 3택1 / 중간보스(5층) = 계약 3택1 / 계층보스(10층) = 계약 3택1 + 프리즘 계약 3택1
 function fightCleared() {
   const n = Run.node; const k = n.type;
   if (k === 'final') { endRun(true); return; }
+  ctOnFloorClear();
   let base = k === 'boss' ? (n.row === 5 ? 40 : 60) : n.elite ? 25 : 15;
   if (n.type === 'curse') base *= 2;
   const heavy = (n.mods || []).some(m => MOD[m].heavy), light = (n.mods || []).some(m => !MOD[m].heavy);
   if (heavy) base *= 1.5; else if (light) base *= 1.2;
   base = Math.round(base * (1 + St.shardMul));
   Run.shards += base;
-  const queue = []; Run.pendingDrops = [];
-  // 보상 (행동 키워드): 일반 층 = 키워드 3택1, 정예 = + 축복, 중간보스 = 칸 열기 + 키워드, 계층보스 = 합성 키워드
+  const queue = [];
   if (k === 'boss') {
-    if (n.row === 5) { queue.push(() => kwOpenSlot(next, '중간보스 보상: 행동 칸 열기')); queue.push(() => showKeywordReward(3, next)); }
-    else { queue.push(() => showCompReward(next)); queue.push(() => kwOpenSlot(next, '계층보스 보상: 행동 칸 열기')); }
+    queue.push(() => showContracts({ title: n.row === 5 ? '중간보스 보상: 계약' : '계층보스 보상: 계약', cb: next }));
+    if (n.row === 10) queue.push(() => showContracts({ prism: true, tier: true, title: '계층보스 보상: 프리즘 계약', cb: next }));
   } else {
-    queue.push(() => showKeywordReward(heavy ? 4 : 3, next));
-    if (n.elite) queue.push(() => showBlessings(3, next));
+    queue.push(() => showBlessings(heavy ? 4 : 3, next));
+    if (Run.test) queue.push(() => showContracts({ title: '계약 (시험 런: 모든 전투 층)', cb: next }));
   }
+  // 의식 과제를 끝냈으면 프리즘 계약
+  while (Run.questPicks > 0) { Run.questPicks--; queue.push(() => showContracts({ prism: true, title: '과제 보상: 프리즘 계약', cb: next })); }
   queue.unshift(() => notice('클리어', `${Run.floor}층 클리어 · 파편 +${base}${Run.floorShards ? ` (처치 파편 +${Run.floorShards})` : ''}`, next, true));
   function next() { const f = queue.shift(); if (f) f(); else afterFloor(); }
   next();
@@ -156,27 +167,27 @@ function notice(title, body, cb, quick) {
   if (window.__auto) setTimeout(() => b.isConnected && b.click(), 20);
 }
 
-// 카드 고르기 공통 (무료 리롤 1회씩, 이후 리롤권)
-function cardPicker({ title, sub, cards, render, reroll, onPick, skipLabel, onSkip }) {
+// 카드 고르기 공통 (카드마다 무료 리롤 1회, 그 뒤 화면 공용 무료 리롤(천운 3개), 그 뒤 리롤권)
+function cardPicker({ title, sub, cards, render, reroll, onPick, skipLabel, onSkip, extraFree }) {
   Scene = 'menu'; const p = panel(); topBar(p);
   const c = h('div', 'card-wrap'); c.innerHTML = `<h1>${title}</h1><p class="lead">${sub}</p>`;
   const row = h('div', 'cards'); c.appendChild(row);
-  const free = cards.map(() => true);
+  const free = cards.map(() => true); let bonus = extraFree || 0;
   const draw = () => {
     row.innerHTML = '';
     cards.forEach((cd, i) => {
       const box = h('div', 'cardbox');
       const el = h('button', 'card'); el.innerHTML = render(cd); el.onclick = () => onPick(cd); box.appendChild(el);
-      const rr = h('button', 'btn small', free[i] ? '무료 리롤' : `리롤권 사용 (${Run.rerolls})`);
-      rr.disabled = !free[i] && Run.rerolls <= 0;
-      rr.onclick = () => { const nc = reroll(cd, cards); if (!nc) return; if (free[i]) free[i] = false; else Run.rerolls--; cards[i] = nc; draw(); };
+      const rr = h('button', 'btn small', free[i] ? '무료 리롤' : bonus > 0 ? `무료 리롤 (천운 ${bonus})` : `리롤권 사용 (${Run.rerolls})`);
+      rr.disabled = !free[i] && bonus <= 0 && Run.rerolls <= 0;
+      rr.onclick = () => { const nc = reroll(cd, cards); if (!nc) { flashMsg('다시 뽑을 카드가 없어요'); return; } if (free[i]) free[i] = false; else if (bonus > 0) bonus--; else Run.rerolls--; cards[i] = nc; draw(); };
       box.appendChild(rr); row.appendChild(box);
     });
   };
   draw();
   if (skipLabel) { const s = h('button', 'btn ghost', skipLabel); s.onclick = onSkip; c.appendChild(s); }
   p.appendChild(c);
-  if (window.__auto) setTimeout(() => { const b = row.querySelector('.card'); b && b.click(); }, 20);
+  if (window.__auto) setTimeout(() => { const b = row.querySelector('.card'); b && b.isConnected && b.click(); }, 20);
 }
 
 function showBlessings(n, cb) {
@@ -186,203 +197,80 @@ function showBlessings(n, cb) {
     title: '축복', sub: '하나를 고르세요. 같은 축복은 계속 쌓여요.', cards,
     render: b => `<div class="cname">${b.name}</div><div class="cdesc">${b.desc}</div><div class="cfoot">보유 ${Run.blessings[b.id] || 0}</div>`,
     reroll: (b, cs) => pool().find(x => !cs.includes(x)),
-    onPick: b => { Run.blessings[b.id] = (Run.blessings[b.id] || 0) + 1; recalc(); if (b.id === 'tough') Run.hp += 6; cb(); },
+    onPick: b => { addBlessing(b.id); cb(); },
     skipLabel: '건너뛰기 (파편 +10)', onSkip: () => { Run.shards += 10; cb(); },
   });
 }
+function addBlessing(id) { Run.blessings[id] = (Run.blessings[id] || 0) + 1; recalc(); if (id === 'tough') Run.hp = Math.min(St.maxHp, Run.hp + 6); }
+function flashMsg(t) { const ts = document.querySelectorAll('.toast'); if (ts.length >= 3) ts[0].remove(); const n = Math.min(2, ts.length); const m = h('div', 'toast', t); m.style.top = (12 + n * 6) + '%'; document.body.appendChild(m); setTimeout(() => m.remove(), 2400); }
 
-function augPool(grade) { return AUGMENTS.filter(a => a.grade === grade && (Run.augs[a.id] || 0) < a.max); }
-function upGrade(g) { return g === 'silver' ? 'gold' : 'prism'; }
-function rollAugs(grade, n, upCount, needEffect) {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    let g = i < upCount ? upGrade(grade) : grade;
-    let pool = augPool(g).filter(a => !out.includes(a));
-    if (needEffect && i === 0) { const ef = pool.filter(a => a.tag === '효과'); if (ef.length) pool = ef; }
-    if (!pool.length) pool = AUGMENTS.filter(a => (Run.augs[a.id] || 0) < a.max && !out.includes(a));
-    if (pool.length) out.push(pick(pool));
-  }
-  return shuffle(out);
-}
-function showAugments(prism, cb) {
-  let grade, n = 3;
-  if (prism) { grade = 'prism'; if (Run.sagaOn) { n = 4; Run.sagaOn = false; } }
-  else { const t = Run.tier; grade = wpick(t === 1 ? [['silver', 60], ['gold', 30], ['prism', 10]] : t === 2 ? [['silver', 40], ['gold', 40], ['prism', 20]] : [['silver', 25], ['gold', 45], ['prism', 30]]); }
-  const up = Run.upNext || 0; Run.upNext = 0;
-  const cards = rollAugs(grade, n, up, prism);
-  cardPicker({
-    title: prism ? '계층보스 보상: 프리즘 증강' : '증강', sub: prism ? '예전 키워드 자리예요. 가장 강한 증강 중 하나를 고르세요.' : `${GRADE[grade].name} 등급 증강 중 하나를 고르세요.`, cards,
-    render: a => { const l = (Run.augs[a.id] || 0) + 1; return `<div class="grade" style="color:${GRADE[a.grade].col}">${GRADE[a.grade].name} · ${a.tag}</div><div class="cname">${a.name}${a.max > 1 ? ` <small>${l}단계</small>` : ''}</div><div class="cdesc">${a.desc(l)}</div>${synHint(a.id)}`; },
-    reroll: (a, cs) => { const pool = augPool(a.grade).filter(x => !cs.includes(x)); return pool.length ? pick(pool) : null; },
-    onPick: a => { takeAug(a.id); cb(); },
-    skipLabel: `건너뛰기 (리롤권 +${prism ? 2 : 1})`, onSkip: () => { Run.rerolls = Math.min(5, Run.rerolls + (prism ? 2 : 1)); cb(); },
-  });
-}
-function takeAug(id) {
-  const before = new Set(Run.syn || []);
-  Run.augs[id] = (Run.augs[id] || 0) + 1;
-  if (id === 'star') Run.upNext = Math.max(Run.upNext, 1);
-  if (id === 'moon') Run.upNext = 3;
-  if (id === 'saga') Run.sagaOn = true;
-  recalc();
-  for (const s of Run.syn) if (!before.has(s)) setTimeout(() => flashMsg(`시너지 완성: ${SYN[s].name}`), 50);
-}
-
-// ───────── 인장 얻기 ─────────
-function giveItem(id, cb) {
-  if (Run.bag.length < Run.bagMax) { Run.bag.push({ id, lv: 0 }); notice('인장 획득', `<b>${ITEM[id].name}</b>을(를) 보조 가방에 넣었어요. 상점·회복 칸에서 각인할 수 있어요.`, cb); }
-  else { Run.shards += Math.round(ITEM[id].price * 0.6); notice('가방이 가득 참', `<b>${ITEM[id].name}</b>을(를) 파편 ${Math.round(ITEM[id].price * 0.6)}로 바꿨어요.`, cb); }
-}
-
-// ───────── 동작 각인 화면 ─────────
-let Sel = null; // {from:'bag'|'slot', i|k}
-function itemTip(inst, slotK) {
-  const it = ITEM[inst.id]; const lv = inst.lv || 0;
-  const base = Object.entries(it.base).map(([k, v]) => fmtStat(k, v * (1 + 0.5 * lv))).join(', ');
-  const slots = KIND_SLOTS[it.kind].filter(k => k !== 'core' || it.kind === 'core');
-  let at = '';
-  if (it.kind === 'core') at = '<div>심: 기본 효과만, 같은 계열 인장과 둘씩 이어짐</div>';
-  else if (it.at.any) at = `<div>어느 자리든: ${fmtAt(it.at.any)}</div>`;
-  else at = slots.map(k => `<div class="${k === slotK ? 'on' : ''}">${SLOT[k].name}: ${fmtAt(it.at[k])}</div>`).join('');
-  return `<div class="tipname" style="color:${ELEM[it.elem].col}">${it.name}${lv ? ' +' + lv : ''}</div><div class="dim">${KIND[it.kind]} · ${ELEM[it.elem].name} · ${it.form}</div><div>${base}</div><div class="tipat">${at}</div>`;
-}
-function engravePanel(container, editable, extra) {
-  const box = h('div', 'engrave');
-  const draw = () => {
-    recalc(); box.innerHTML = '';
-    box.appendChild(h('div', 'etitle', `동작 각인 ${editable ? '' : '<span class="dim">(상점·회복 칸에서만 바꿀 수 있어요)</span>'}`));
-    const grid = h('div', 'egrid');
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'elinks'); svg.setAttribute('viewBox', '0 0 800 300');
-    const pos = s => ({ x: 100 + s.x * 200, y: 75 + s.y * 150 });
-    const drawn = new Set();
-    for (const s of SLOTS) for (const o of s.links) {
-      if (s.k === 'core' || o === 'core') continue;
-      const key = [s.k, o].sort().join(); if (drawn.has(key)) continue; drawn.add(key);
-      const a = pos(s), b = pos(SLOT[o]); const E = Run.engr;
-      const same = E[s.k] && E[o] && ITEM[E[s.k].id].elem === ITEM[E[o].id].elem && ITEM[E[o].id].elem !== 'none';
-      const l = document.createElementNS(svg.namespaceURI, 'line'); l.setAttribute('x1', a.x); l.setAttribute('y1', a.y); l.setAttribute('x2', b.x); l.setAttribute('y2', b.y);
-      l.setAttribute('class', 'elink' + (same ? ' lit' : '')); if (same) l.style.stroke = ELEM[ITEM[E[o].id].elem].col; svg.appendChild(l);
-    }
-    grid.appendChild(svg);
-    for (const s of SLOTS) {
-      const ps = pos(s); const inst = Run.engr[s.k]; const open = Run.open.has(s.k);
-      const el = h('button', 'slot' + (open ? '' : ' locked') + (Sel && Sel.from === 'slot' && Sel.k === s.k ? ' sel' : ''));
-      el.style.left = (ps.x / 8) + '%'; el.style.top = (ps.y / 3) + '%';
-      const kindName = { blade: '칼', body: '몸', riposte: '응수', core: '핵심' }[s.kind];
-      if (inst) { const it = ITEM[inst.id]; el.style.borderColor = ELEM[it.elem].col; el.innerHTML = `<div class="sname">${s.name}</div><div class="iname" style="color:${ELEM[it.elem].col}">${it.name}${inst.lv ? ' +' + inst.lv : ''}</div>${Links[s.k] > 1 ? '<div class="linkb">이음 +20%</div>' : ''}`; }
-      else el.innerHTML = `<div class="sname">${s.name}</div><div class="dim">${open ? kindName + ' 자리' : '잠김'}</div>`;
-      el.onmouseenter = () => { tip.innerHTML = inst ? itemTip(inst, s.k) : `<b>${s.name}</b> (${kindName})<br><span class="dim">이어진 자리: ${s.k === 'core' ? '모든 자리 (둘씩)' : s.links.filter(x => x !== 'core').map(x => SLOT[x].name).join(', ')}</span>`; };
-      el.onclick = () => {
-        if (!editable || !open) return;
-        if (Sel && Sel.from === 'bag') {
-          const it = Run.bag[Sel.i]; if (!KIND_SLOTS[ITEM[it.id].kind].includes(s.k)) { flashMsg('이 인장은 그 자리에 못 들어가요'); return; }
-          Run.bag.splice(Sel.i, 1); if (inst) Run.bag.push(inst); Run.engr[s.k] = it; Sel = null; Sfx.pick(); draw(); return;
-        }
-        if (Sel && Sel.from === 'slot') {
-          if (Sel.k === s.k) { Sel = null; draw(); return; }
-          const a = Run.engr[Sel.k];
-          if (a && !KIND_SLOTS[ITEM[a.id].kind].includes(s.k)) { flashMsg('그 자리 종류와 맞지 않아요'); return; }
-          if (inst && !KIND_SLOTS[ITEM[inst.id].kind].includes(Sel.k)) { flashMsg('바꿀 인장이 원래 자리와 맞지 않아요'); return; }
-          Run.engr[s.k] = a; Run.engr[Sel.k] = inst; Sel = null; Sfx.pick(); draw(); return;
-        }
-        if (inst) { Sel = { from: 'slot', k: s.k }; draw(); }
-      };
-      grid.appendChild(el);
-    }
-    box.appendChild(grid);
-    const chains = (Run.chains || []).map(c => `<span class="chip" style="border-color:${ELEM[c.elem].col}">사슬 ${c.seq.map(k => SLOT[k].name).join('→')} : ${SLOT[c.end].name}에 이음 마무리</span>`).join('');
-    box.appendChild(h('div', 'chains', chains || '<span class="dim">이어진 세 자리를 같은 계열로 채우면 사슬 끝 동작에 이음 마무리 보너스가 붙어요.</span>'));
-    const bag = h('div', 'bag'); bag.appendChild(h('span', 'lbl', `보조 가방 ${Run.bag.length}/${Run.bagMax}`));
-    Run.bag.forEach((inst, i) => {
-      const it = ITEM[inst.id]; const b = h('button', 'bagitem' + (Sel && Sel.from === 'bag' && Sel.i === i ? ' sel' : ''), `${it.name}${inst.lv ? ' +' + inst.lv : ''}<small>${KIND[it.kind]}</small>`);
-      b.style.borderColor = ELEM[it.elem].col; b.onmouseenter = () => { tip.innerHTML = itemTip(inst); };
-      b.onclick = () => { if (!editable) return; Sel = Sel && Sel.from === 'bag' && Sel.i === i ? null : { from: 'bag', i }; draw(); };
-      bag.appendChild(b);
-    });
-    if (editable && Sel && Sel.from === 'slot' && Run.bag.length < Run.bagMax) { const ub = h('button', 'btn small', '가방으로 빼기'); ub.onclick = () => { Run.bag.push(Run.engr[Sel.k]); Run.engr[Sel.k] = null; Sel = null; draw(); }; bag.appendChild(ub); }
-    if (editable && Sel && Run.stones > 0 && Sel.from === 'slot') { const sb = h('button', 'btn small', `각인석 사용 (${Run.stones})`); sb.onclick = () => useStone(Sel.k, draw); bag.appendChild(sb); }
-    if (extra) extra(bag, draw);
-    box.appendChild(bag);
-    const tip = h('div', 'tip', '<span class="dim">인장이나 자리에 마우스를 올리면 설명이 나와요. 가방 인장을 누른 뒤 자리를 누르면 각인돼요.</span>'); box.appendChild(tip);
-  };
-  draw(); container.appendChild(box); return draw;
-}
-function useStone(k, draw) {
-  const ks = [k, ...SLOT[k].links.filter(x => x !== 'core' || k === 'core')].slice(0, k === 'core' ? 1 : 9);
-  let any = false;
-  for (const x of ks) { const inst = Run.engr[x]; if (inst && (inst.lv || 0) < 2) { inst.lv = (inst.lv || 0) + 1; any = true; } }
-  if (!any) { flashMsg('올릴 수 있는 인장이 없어요 (최대 +2)'); return; }
-  Run.stones--; Sel = null; Sfx.gold(); draw();
-}
-function flashMsg(t) { const m = h('div', 'toast', t); document.body.appendChild(m); setTimeout(() => m.remove(), 1400); }
-function showEngraveOnly() {
-  Scene = 'menu'; const p = panel(); topBar(p); const c = h('div', 'wide');
-  engravePanel(c, false); const b = h('button', 'btn', '지도로'); b.onclick = showMap; c.appendChild(b); p.appendChild(c);
-}
-
-// ───────── 상점 ─────────
+// ───────── 상점: 축복·회복을 팔고, 계약을 파기해요 (아이템은 방식이 정해지지 않아 없음) ─────────
 function showShop() {
-  Scene = 'menu'; KwSel = null;
-  let freeRef = 0; let refCost = 20;
-  const roll = () => { const owned = new Set(kwOwned().map(k => k.id)); const base = shuffle(KW_BASE.slice()).slice(0, 3).map(k => ({ id: k.id, price: owned.has(k.id) ? 50 : 60, sold: false })); const comp = shuffle(KW_COMP.filter(k => !owned.has(k.id)))[0]; if (comp) base.push({ id: comp.id, price: 160, sold: false }); return base; };
+  Scene = 'menu';
+  const disc = C('regular') ? 0.8 : 1; const price = v => Math.round(v * disc);
+  let freeRef = C('regular') ? 1 : 0; let refCost = 20;
+  const roll = () => shuffle(BLESSINGS.slice()).slice(0, 3).map(b => ({ kind: 'bless', id: b.id, price: price(40), sold: false })).concat([{ kind: 'heal', price: price(35), sold: false }]);
   let stock = roll();
-  const p = panel(); topBar(p); const c = h('div', 'wide'); p.appendChild(c);
-  const shopBox = h('div', 'shop'); c.appendChild(shopBox);
-  let redrawE;
+  const p = panel(); const c = h('div', 'wide');
   const draw = () => {
-    shopBox.innerHTML = '<h2>상점 <span class="dim">— 이 층 전투 보상은 없어요. 산 키워드는 가방으로 가거나, 가진 것이면 등급이 올라요</span></h2>';
+    p.innerHTML = ''; topBar(p); p.appendChild(c); c.innerHTML = '';
+    const shopBox = h('div', 'shop'); c.appendChild(shopBox);
+    shopBox.innerHTML = `<h2>상점 <span class="dim">— 이 층 전투 보상은 없어요${disc < 1 ? ' · 단골 손님 -20%' : ''}</span></h2>`;
     const row = h('div', 'shoprow');
     for (const st of stock) {
-      const d = KW[st.id]; const own = kwOwned().find(o => o.id === st.id);
-      const b = h('button', 'shopitem' + (st.sold ? ' sold' : ''), `<div class="iname" style="color:${d.col}">${d.name}${own ? ' ↑' : ''}</div><div class="dim">${d.kind === 'comp' ? '합성 · ' + KW[d.a].name + ' + ' + KW[d.b].name : '기본 · ' + d.phys}</div><div class="price">${st.sold ? '판매됨' : st.price + ' 파편'}</div>`);
-      b.title = d.kind === 'comp' ? d.desc : ACTS.map(a => a.name + ': ' + d.d[a.k]).join('\n');
-      b.disabled = st.sold || Run.shards < st.price || (!own && Run.kwBag.length >= Run.kwBagMax);
-      b.onclick = () => { Run.shards -= st.price; st.sold = true; kwGain(st.id, 'bag'); Sfx.pick(); draw(); redrawE(); };
+      const b0 = st.kind === 'bless' ? BLESSINGS.find(x => x.id === st.id) : null;
+      const b = h('button', 'shopitem' + (st.sold ? ' sold' : ''), `<div class="iname">${b0 ? '축복: ' + b0.name : '회복 물약'}</div><div class="dim">${b0 ? b0.desc : '체력 30% 회복'}</div><div class="price">${st.sold ? '판매됨' : st.price + ' 파편'}</div>`);
+      b.disabled = st.sold || Run.shards < st.price || (st.kind === 'heal' && Run.hp >= St.maxHp);
+      b.onclick = () => { Run.shards -= st.price; st.sold = true; if (b0) addBlessing(b0.id); else heal(Math.round(St.maxHp * 0.3)); Sfx.pick(); draw(); };
       row.appendChild(b);
     }
     shopBox.appendChild(row);
     const row2 = h('div', 'shoprow');
-    const lock = ACTS.filter(a => Run.kwSlots[a.k] < 2);
-    for (const a of lock) { const ob = h('button', 'btn', `${a.name} 둘째 칸 열기 (120)`); ob.disabled = Run.shards < 120; ob.onclick = () => { Run.shards -= 120; Run.kwSlots[a.k] = 2; draw(); redrawE(); }; row2.appendChild(ob); }
     const rf = h('button', 'btn', freeRef ? '새로고침 (무료)' : `새로고침 (${refCost})`); rf.disabled = !freeRef && Run.shards < refCost;
     rf.onclick = () => { if (freeRef) freeRef--; else { Run.shards -= refCost; refCost += 10; } stock = roll(); draw(); }; row2.appendChild(rf);
-    const lv = h('button', 'btn ghost', '상점 나가기'); lv.onclick = () => { KwSel = null; afterFloor(); }; row2.appendChild(lv);
+    const lv = h('button', 'btn ghost', '상점 나가기'); lv.onclick = () => afterFloor(); row2.appendChild(lv);
     shopBox.appendChild(row2);
-    p.querySelector('.topbar') && p.querySelector('.topbar').remove(); topBar(p); p.insertBefore(p.lastChild, p.firstChild);
+    // 계약 파기
+    const cost = price(30);
+    const box = h('div', 'engrave'); box.appendChild(h('div', 'etitle', `계약 파기 <span class="dim">맺은 계약은 옮길 수 없고, 여기서 파기만 할 수 있어요 (${cost} 파편). 태그 수도 함께 줄어요.</span>`));
+    const list = h('div', 'ctgrid');
+    if (!Run.cts.length) list.appendChild(h('div', 'dim', '맺은 계약이 없어요.'));
+    for (const inst of Run.cts) {
+      const item = h('div', 'ctrow'); item.innerHTML = `<div class="ctwhere">${actLabel(inst)}</div>` + ctLine(inst);
+      const rb = h('button', 'btn small', `파기 (${cost})`); rb.disabled = Run.shards < cost;
+      rb.onclick = () => { Run.shards -= cost; ctRemove(inst); flashMsg(`${CT[inst.id].name} 파기`); draw(); };
+      item.appendChild(rb); list.appendChild(item);
+    }
+    box.appendChild(list); c.appendChild(box);
   };
-  redrawE = kwPanel(c, true, (bag, re) => {
-    if (KwSel && KwSel.act !== 'bag') { const k = Run.kw[KwSel.act][KwSel.i]; if (k && KW[k.id].kind === 'comp') { const sb = h('button', 'btn small', `분리: ${KW[KW[k.id].a].name} + ${KW[KW[k.id].b].name} (40)`); sb.disabled = Run.shards < 40; sb.onclick = () => { if (kwSplit(KwSel.act, KwSel.i)) Run.shards -= 40; KwSel = null; re(); draw(); }; bag.appendChild(sb); } }
-    if (KwSel && KwSel.act === 'bag') { const sb = h('button', 'btn small', '팔기 (+25)'); sb.onclick = () => { Run.kwBag.splice(KwSel.i, 1); Run.shards += 25; KwSel = null; re(); draw(); }; bag.appendChild(sb); }
-  });
   draw();
-  if (window.__auto) setTimeout(() => autoShop(stock, draw, redrawE), 20);
+  if (window.__auto) setTimeout(() => { for (const st of stock) if (!st.sold && Run.shards >= st.price + 20 && (st.kind === 'bless' || Run.hp < St.maxHp * 0.7)) { Run.shards -= st.price; st.sold = true; if (st.kind === 'bless') addBlessing(st.id); else heal(Math.round(St.maxHp * 0.3)); } setTimeout(afterFloor, 20); }, 20);
 }
 
 // ───────── 회복 ─────────
 function showRest() {
-  Scene = 'menu'; KwSel = null; const p = panel(); topBar(p); const c = h('div', 'wide'); p.appendChild(c);
+  Scene = 'menu'; const p = panel(); topBar(p); const c = h('div', 'wide'); p.appendChild(c);
   const box = h('div', 'shop'); box.innerHTML = '<h2>회복 <span class="dim">— 둘 중 하나</span></h2>';
   const row = h('div', 'shoprow');
-  const heal = Math.round(St.maxHp * 0.4);
-  const a = h('button', 'btn big', `체력 ${heal} 회복`); a.onclick = () => { Run.hp = Math.min(St.maxHp, Run.hp + heal); KwSel = null; afterFloor(); };
+  const amt = Math.round(St.maxHp * 0.4);
+  const a = h('button', 'btn big', `체력 ${amt} 회복`); a.onclick = () => { heal(amt); afterFloor(); };
   const owned = Object.keys(Run.blessings);
   const b = h('button', 'btn big', owned.length ? '축복 1개 강화 (한 장 더)' : '축복 1장 받기');
-  b.onclick = () => { const id = owned.length ? pick(owned) : pick(BLESSINGS).id; Run.blessings[id] = (Run.blessings[id] || 0) + 1; recalc(); flashMsg(`${BLESSINGS.find(x => x.id === id).name} +1`); KwSel = null; afterFloor(); };
+  b.onclick = () => { const id = owned.length ? pick(owned) : pick(BLESSINGS).id; addBlessing(id); flashMsg(`${BLESSINGS.find(x => x.id === id).name} +1`); afterFloor(); };
   row.appendChild(a); row.appendChild(b); box.appendChild(row); c.appendChild(box);
-  kwPanel(c, true);
-  if (window.__auto) setTimeout(() => { autoEngrave(); (Run.hp < St.maxHp * 0.7 ? a : b).click(); }, 20);
+  if (window.__auto) setTimeout(() => (Run.hp < St.maxHp * 0.7 ? a : b).click(), 20);
 }
 
 // ───────── 이벤트 (내용 미정 → 임시 3종) ─────────
 function showEvent() {
   const evs = [
-    { t: '부서진 제단', d: '피를 바치면 파편이 흘러나와요.', o: [['체력 15% 잃고 파편 60', () => { Run.hp = Math.max(1, Run.hp - St.maxHp * 0.15); Run.shards += 60; }], ['지나치기', () => 0]] },
-    { t: '떠도는 상인', d: '포장된 키워드 하나를 팔고 있어요.', o: [['파편 40 내고 무작위 기본 키워드', () => { if (Run.shards >= 40) { Run.shards -= 40; const k = pick(KW_BASE); const r = kwGain(k.id, 'bag'); flashMsg(r.lost ? '가방이 가득 차서 잃었어요' : `${k.name} 획득`); } }], ['지나치기', () => 0]] },
-    { t: '빛나는 결정', d: '원소가 응축된 결정이 박혀 있어요.', o: [['가진 키워드 하나 등급 +1', () => { const own = kwOwned().filter(k => k.lv < 3 && k.act !== 'bag'); if (own.length) { const k = pick(own); const ref = Run.kw[k.act][k.i]; ref.lv++; recalc(); flashMsg(`${KW[k.id].name} 등급 ${ref.lv}`); } else Run.shards += 30; }], ['그 자리에서 쉬기 (체력 20%)', () => { Run.hp = Math.min(St.maxHp, Run.hp + St.maxHp * 0.2); }]] },
+    { t: '부서진 제단', d: '피를 바치면 파편이 흘러나와요.', o: [['체력 15% 잃고 파편 60', () => { Run.hp = Math.max(1, Run.hp - Math.round(St.maxHp * 0.15)); Run.shards += 60; }], ['지나치기', () => 0]] },
+    { t: '떠도는 상인', d: '포장된 축복 두 개를 팔고 있어요.', o: [['파편 40 내고 무작위 축복 2장', () => { if (Run.shards >= 40) { Run.shards -= 40; const got = [pick(BLESSINGS), pick(BLESSINGS)]; got.forEach(b => addBlessing(b.id)); flashMsg(got.map(b => b.name).join(', ') + ' 획득'); } else flashMsg('파편이 모자라요'); }], ['지나치기', () => 0]] },
+    { t: '고요한 샘', d: '맑은 물이 고여 있어요.', o: [['물을 마시기 (체력 20%)', () => { heal(Math.round(St.maxHp * 0.2)); }], ['동전을 던지기 (리롤권 +1)', () => { Run.rerolls = Math.min(5, Run.rerolls + 1); }]] },
   ];
   const ev = pick(evs); Scene = 'menu'; const p = panel(); topBar(p);
   const c = h('div', 'card-wrap'); c.innerHTML = `<h1>${ev.t}</h1><p class="lead">${ev.d}</p>`;
-  for (const [label, fn] of ev.o) { const b = h('button', 'btn big', label); b.onclick = () => { fn(); if (Run.pendingEvent) { const id = Run.pendingEvent; Run.pendingEvent = null; giveItem(id, afterFloor); } else afterFloor(); }; c.appendChild(b); }
+  for (const [label, fn] of ev.o) { const b = h('button', 'btn big', label); b.onclick = () => { fn(); afterFloor(); }; c.appendChild(b); }
   p.appendChild(c);
   if (window.__auto) setTimeout(() => c.querySelector('.btn').click(), 20);
 }
@@ -392,42 +280,39 @@ function endRun(win) {
   if (Scene === 'result') return;
   Scene = 'result'; const p = panel();
   const c = h('div', 'card-wrap');
-  const eng = ACTS.map(a => `${a.name}: ${kwAll(a.k).map(k => KW[k.id].name + (k.lv > 1 ? '★'.repeat(k.lv - 1) : '')).join(' + ') || '-'}`).join(' · ');
+  const list = Run.cts.map(x => `${CT[x.id].name}${x.lv > 1 ? ' ' + x.lv : ''}${x.act ? `(${ACT[x.act].name})` : ''}`).join(' · ') || '없음';
   c.innerHTML = `<h1>${win ? '최종 보스 처치' : '쓰러졌어요'}</h1>
     <p class="lead">${Run.floor}층 · ${Math.floor(Run.time / 60)}분 ${Math.floor(Run.time % 60)}초</p>
     <div class="result">
-      <div>처치 <b>${Run.kills}</b></div><div>패링 <b>${Run.parries}</b> (퍼펙트 ${Run.perfects || 0}, 금색 ${Run.golds})</div><div>최대 한 방 <b>${Run.maxHit}</b></div>
+      <div>처치 <b>${Run.kills}</b></div><div>방어 <b>${Run.parries}</b> (퍼펙트 ${Run.perfects || 0}, 금색 ${Run.golds})</div><div>최대 한 방 <b>${Run.maxHit}</b></div>
     </div>
-    <p>행동 키워드: ${eng}</p>
-    <p>발견한 합성: ${[...(Run.kwSeen || [])].map(id => KW[id].name).join(', ') || '없음'}</p>`;
-  const b = h('button', 'btn big', '다시 시작'); b.onclick = () => startRun(); c.appendChild(b);
+    <p>맺은 계약 ${Run.cts.length}개: ${list}</p>
+    <p>태그: ${tagChips()}</p>`;
+  const b = h('button', 'btn big', '다시 시작'); b.onclick = () => startRun(null, Run.test); c.appendChild(b);
+  const t = h('button', 'btn', '처음 화면'); t.onclick = showTitle; c.appendChild(t);
   p.appendChild(c);
-  window.__lastResult = { win, floor: Run.floor, kills: Run.kills, parries: Run.parries, perfects: Run.perfects || 0, time: Run.time };
+  window.__lastResult = { win, floor: Run.floor, kills: Run.kills, parries: Run.parries, perfects: Run.perfects || 0, time: Run.time, contracts: Run.cts.length };
 }
 
 function showTitle() {
   Scene = 'title'; const p = panel(); const c = h('div', 'card-wrap title');
-  c.innerHTML = `<h1>전투 빌드 프로토타입</h1>
-  <p class="lead">30층 + 31층 최종 보스 · 한 층에 전투 한 번 · 회피와 패링이 핵심</p>
+  c.innerHTML = `<h1>마녀 계약 전투 프로토타입</h1>
+  <p class="lead">30층 + 31층 최종 보스 · 한 층에 전투 한 번 · 회피(대시)와 방어가 핵심</p>
   <table class="keys">
-    <tr><td>이동</td><td>WASD</td></tr><tr><td>공격 (3타 콤보)</td><td>마우스 왼쪽 / J</td></tr>
-    <tr><td>패링</td><td>마우스 오른쪽 / K</td></tr><tr><td>대시</td><td>Space / L / Shift</td></tr>
-    <tr><td>대시 직후 공격</td><td>대시 찌르기</td></tr><tr><td>회전베기 (액티브)</td><td>Q / U</td></tr><tr><td>궁극기</td><td>R / I</td></tr>
-    <tr><td>키워드·능력치 창</td><td>Tab</td></tr><tr><td>일시정지·디버그</td><td>Esc · \` (백틱)</td></tr>
+    <tr><td>이동</td><td>WASD</td></tr><tr><td>평타 (3타 콤보)</td><td>마우스 왼쪽 / J</td></tr>
+    <tr><td>방어</td><td>마우스 오른쪽 / K</td></tr><tr><td>대시</td><td>Space / L / Shift</td></tr>
+    <tr><td>대시 직후 평타</td><td>대시 공격</td></tr><tr><td>마법 (임시: 회전베기)</td><td>Q / U</td></tr><tr><td>궁극기</td><td>R / I</td></tr>
+    <tr><td>계약·능력치 창</td><td>Tab</td></tr><tr><td>일시정지·디버그</td><td>Esc · \` (백틱)</td></tr>
   </table>
-  <p class="lead">층을 깰 때마다 <b>키워드</b>를 얻어 평타·특수공격·패링·대시에 붙여요. 같은 키워드도 행동마다 효과가 다르고, 한 행동의 두 칸에 섞이는 키워드가 있으면 합성돼요(물 + 바람 = 안개).</p>
-  <p class="dim">섬광 색: <b style="color:#fff">흰색</b> 패링 가능 · <b style="color:#ffd27a">금색</b> 강공격, 패링하면 길게 경직 · <b style="color:#ff5a5a">붉은색</b> 패링 불가, 회피만</p>`;
-  const b = h('button', 'btn big', '시작'); b.onclick = () => { Sfx.init(); startRun(); }; c.appendChild(b); p.appendChild(c);
+  <p class="lead">5층마다 보스를 잡고 <b>계약</b>을 맺어요. <b>행위 계약</b>은 평타·마법·방어·대시·궁극기 중 한 행동을 강화하고, <b>존재 계약</b>은 늘 켜져 있어요.<br>같은 <b>태그</b>의 계약을 2·3·4개 모으면 태그 시너지가 켜져요.</p>
+  <p class="dim">섬광 색: <b style="color:#fff">흰색</b> 방어 가능 · <b style="color:#ffd27a">금색</b> 강공격, 방어하면 길게 경직 · <b style="color:#ff5a5a">붉은색</b> 방어 불가, 회피만</p>`;
+  const b = h('button', 'btn big', '시작'); b.onclick = () => { Sfx.init(); startRun(); }; c.appendChild(b);
+  const t = h('button', 'btn', '계약 시험 런 (모든 전투 층에서 계약)'); t.onclick = () => { Sfx.init(); startRun(null, true); }; c.appendChild(t);
+  c.appendChild(h('p', 'dim', '시험 런은 계약과 태그 시너지를 빨리 모아 보기 위한 것이고, 보통 런은 설계서대로 한 런에 계약 9개쯤이에요.'));
+  p.appendChild(c);
 }
 
-// ───────── 증강 창 (Tab): 보유 증강, 효과, 시너지, 능력치 ─────────
-function synHint(augId) {
-  const list = synOf(augId); if (!list.length) return '';
-  return '<div class="synhint">' + list.map(s => {
-    const other = s.need.find(n => n !== augId); const has = !!Run.augs[other];
-    return `<div class="${has ? 'on' : ''}">✦ ${s.name}: ${AUG[other].name}${has ? ' 보유 중, 고르면 완성' : '와 함께'}</div>`;
-  }).join('') + '</div>';
-}
+// ───────── 계약 창 (Tab): 맺은 계약, 태그 시너지, 능력치 ─────────
 let codexPrevPause = false;
 function toggleCodex() {
   const old = document.getElementById('codex');
@@ -436,41 +321,39 @@ function toggleCodex() {
   if (Scene === 'fight') { codexPrevPause = paused; paused = true; }
   recalc();
   const o = h('div', 'codex'); o.id = 'codex';
-  const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
-  // 1) 행동 키워드
-  const augHtml = ACTS.map(a => {
-    const ks = kwAll(a.k);
-    return `<div class="caug"><div class="cname2">${a.name} <small class="dim">${a.key} · 칸 ${Run.kwSlots[a.k]}/2</small></div>
-      ${ks.map(k => `<div class="kwline">${kwTag(k)} <span class="cdesc2">${kwDescFor(k.id, a.k)}</span></div>`).join('') || '<div class="dim">키워드 없음</div>'}
-      ${kwFusable(a.k) ? `<div class="csyn on">✦ 합성 가능: ${KW[kwFusable(a.k)].name} (지도 화면에서)</div>` : ''}</div>`;
-  }).join('') + (Run.kwBag.length ? `<div class="caug"><div class="cname2">가방</div>${Run.kwBag.map(k => kwTag(k)).join(' ')}</div>` : '');
-  // 2) 합성표 (가진 기본 키워드가 들어간 것 먼저)
-  const have = new Set(kwOwned().map(k => k.id));
-  const rel = KW_COMP.slice().sort((x, y) => (have.has(y.a) + have.has(y.b)) - (have.has(x.a) + have.has(x.b)));
-  const synHtml = `<div class="dim" style="margin-bottom:6px">적에게 남은 상태끼리도 같은 표로 반응해요: 젖음·화상·냉각·감전</div>` + rel.map(c => {
-    const on = have.has(c.a) && have.has(c.b); const seen = Run.kwSeen && Run.kwSeen.has(c.id);
-    return `<div class="csyn2 ${on ? 'on' : ''}"><div><b style="color:${c.col}">${seen ? '✦ ' : ''}${c.name}</b> <span class="dim"><span class="${have.has(c.a) ? 'have' : ''}">${KW[c.a].name}</span> + <span class="${have.has(c.b) ? 'have' : ''}">${KW[c.b].name}</span> · ${c.phys}</span></div><div class="cdesc2">${c.desc}</div></div>`;
+  const pc = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
+  // 1) 계약: 행동별 + 존재
+  const groups = ACTS.map(a => [a.name + ` <small class="dim">${a.key}</small>`, ctOf(a.k)]).concat([['존재 계약 <small class="dim">늘 켜짐</small>', ctOf(null)]]);
+  const ctHtml = groups.map(([name, list]) => `<div class="cgroup"><div class="ghead">${name} <span class="dim">${list.length}</span></div>${list.map(ctLine).join('') || '<div class="dim gempty">없음</div>'}</div>`).join('');
+  // 2) 태그 시너지: 가진 태그 먼저, 단계별 켜짐 표시
+  const tagHtml = TAGS.slice().sort((a, b) => tagN(b.name) - tagN(a.name)).map(t => {
+    const n = tagN(t.name);
+    const who = [...new Set(Run.cts.filter(c => CT[c.id].tags.includes(t.name)).map(c => CT[c.id].name))].join(', ');
+    return `<div class="csyn2 ${n >= 2 ? 'on' : ''}" style="${n ? `border-left:4px solid ${tagCol(t.name)}` : ''}"><div><b style="color:${tagCol(t.name)}">${t.name}</b> <span class="tcount">${n}개</span> <span class="dim">${who}</span></div>
+      ${t.t.map((d, i) => `<div class="tier ${n >= i + 2 ? 'on' : ''}"><span class="tn">${i + 2}</span>${d}</div>`).join('')}</div>`;
   }).join('');
-  const owned = kwOwned();
-  // 3) 능력치 (축복·인장·증강 모두 반영된 값)
-  const A = Run.augs;
-  const conv = [['flame', '화염'], ['frost', '냉기'], ['thunder', '번개']].filter(([k]) => A[k]).map(([k, n]) => `${n} ${Math.round(FLAME[A[k]] * 100)}%`).join(', ');
+  // 3) 능력치
+  const q = Run.quest;
   const stats = [
-    ['최대 체력', `${St.maxHp} (현재 ${Math.ceil(Run.hp)})`], ['모든 피해', pct(St.dmg)], ['물리 피해', pct(St.physDmg)], ['화염 피해', pct(St.fireDmg)],
-    ['공격 속도', pct(St.atkSpd - 1)], ['이동 속도', pct(St.move - 1)], ['치명 확률', Math.round(St.crit * 100) + '%'], ['치명 피해', '×' + St.critDmg.toFixed(2)],
-    ['대시 쿨다운', St.dashCd.toFixed(2) + '초'], ['패링 판정', St.parryWin.toFixed(2) + '초'], ['퍼펙트 패링', `앞 ${St.perfectWin.toFixed(2)}초, 다음 공격 +${Math.round(St.perfectBonus * 100)}%`], ['포이즈 피해', pct(St.poise)], ['패링 경직', '×' + St.staggerMul.toFixed(2)], ['궁극기 충전', '×' + St.ultGain.toFixed(2)],
-    ['받는 피해', '×' + St.dmgTaken.toFixed(2)], ['화염·냉기·번개 위력', `${Math.round(St.firePow)} · ${Math.round(St.icePow)} · ${Math.round(St.lightPow)}`], ['파편 획득', pct(St.shardMul)], ['속성 전환', conv || '없음 (모두 물리)'],
+    ['최대 체력', `${St.maxHp} (현재 ${Math.ceil(Run.hp)})`], ['모든 피해', pc(St.dmg)], ['공격 속도', pc(St.atkSpd - 1)], ['이동 속도', pc(St.move - 1)],
+    ['치명 확률', Math.round(St.crit * 100) + '%'], ['치명 피해', '×' + St.critDmg.toFixed(2)],
+    ['대시', `${St.dashMax}회 · ${St.dashCd.toFixed(2)}초`], ['마법', `${St.spinMax}회 · ${St.spinCd.toFixed(1)}초`],
+    ['방어 판정', St.parryWin.toFixed(2) + '초'], ['퍼펙트 방어', `앞 ${St.perfectWin.toFixed(2)}초, 다음 공격 +${Math.round(St.perfectBonus * 100)}%`], ['포이즈 피해', pc(St.poise)], ['방어 경직', '×' + St.staggerMul.toFixed(2)],
+    ['궁극기 충전', C('forsake') ? '쓸 수 없음' : '×' + St.ultGain.toFixed(2)], ['받는 피해', '×' + St.dmgTaken.toFixed(2)], ['파편 획득', pc(St.shardMul)], ['몸집', '×' + St.size.toFixed(2)],
   ];
+  if (Run.soul) stats.push(['영혼 병', `마법 피해 +${Run.soul}%`]);
+  if (Run.swell) stats.push(['부풀어 오르는 몸', `최대 체력 +${Run.swell}`]);
+  if (Run.iouFloors > 0) stats.push(['악마의 차용증', `남은 ${Run.iouFloors}층 받는 피해 증가`]);
   const bl = Object.entries(Run.blessings).map(([id, c]) => { const b = BLESSINGS.find(x => x.id === id); return `<div class="cbl"><b>${b.name} ×${c}</b> <span class="dim">${b.desc} × ${c}</span></div>`; }).join('') || '<p class="dim">고른 축복이 없어요.</p>';
   o.innerHTML = `<div class="codex-in">
-    <div class="codex-head"><h2>행동 키워드 · 능력치</h2><span class="dim">Tab 또는 Esc로 닫기${Scene === 'fight' ? ' · 여는 동안 전투가 멈춰요' : ''}</span></div>
+    <div class="codex-head"><h2>계약 · 태그 시너지 · 능력치</h2><span class="dim">Tab 또는 Esc로 닫기${Scene === 'fight' ? ' · 여는 동안 전투가 멈춰요' : ''}</span></div>
     <div class="codex-cols">
-      <section><h3>행동 키워드 <span class="dim">${owned.length}개</span></h3><div class="clist">${augHtml}</div></section>
-      <section><h3>합성표 <span class="dim">발견 ${Run.kwSeen ? Run.kwSeen.size : 0}/19</span></h3><div class="clist">${synHtml}</div></section>
+      <section><h3>맺은 계약 <span class="dim">${Run.cts.length}개</span></h3><div class="clist">${ctHtml}</div></section>
+      <section><h3>태그 시너지 <span class="dim">같은 태그 2 · 3 · 4개</span></h3><div class="clist">${tagHtml}</div></section>
       <section><h3>능력치</h3><table class="cstats">${stats.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>
+        ${q ? `<h3>의식 과제</h3><div class="cbl"><b>${QUESTS[q.k].name}</b> <span class="dim">${q.done ? '완수' : `${Math.floor(q.n)} / ${q.goal}`}</span></div>` : ''}
         <h3>고른 축복</h3>${bl}</section>
     </div></div>`;
   o.onclick = e => { if (e.target === o) toggleCodex(); };
   UI.appendChild(o); UI.style.pointerEvents = 'auto';
-  o.addEventListener('remove', () => 0);
 }
